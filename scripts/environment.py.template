@@ -1,0 +1,23 @@
+from fabric.api import *
+
+# alternatively specify command line argument -H host1,host2,...
+env.roledefs = {
+	'master': ["cidre-master"],
+	'slaves': ["cidre-slave001", "cidre-slave002"]
+}
+
+# define user by
+# command line argument -u userName
+# env.user = ""
+
+# define authentication by key file by 
+# command line argument -i /path/to/private/keyfile
+# env.key_filename = ""
+
+# authentication via password
+# recommended: command line argument --initial-password-prompt
+# env.password
+
+# use gateway host
+# command line argument -g gatewayHost
+# env.gateway

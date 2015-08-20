@@ -1,2 +1,14 @@
 /bin/
 /scripts/hosts
+/scripts/manageVM.py
+/scripts/environment.py
+
+# java
+*.class
+*.jar
+*.war
+*.ear
+
+# backup files
+*~
+*.bak
