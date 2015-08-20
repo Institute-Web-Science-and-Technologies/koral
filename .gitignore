@@ -9,6 +9,9 @@
 *.war
 *.ear
 
+# python
+*.pyc
+
 # backup files
 *~
 *.bak

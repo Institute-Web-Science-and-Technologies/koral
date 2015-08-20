@@ -21,3 +21,7 @@ env.roledefs = {
 # use gateway host
 # command line argument -g gatewayHost
 # env.gateway
+
+def initialiseVM():
+    # execute commands to initialize VM
+    return
