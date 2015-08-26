@@ -1,6 +1,6 @@
 from fabric.api import *
 
-# alternatively specify command line argument -H host1,host2,...
+# addresses of masters and slaves
 env.roledefs = {
 	'master': ["cidre-master"],
 	'slaves': ["cidre-slave001", "cidre-slave002"]
