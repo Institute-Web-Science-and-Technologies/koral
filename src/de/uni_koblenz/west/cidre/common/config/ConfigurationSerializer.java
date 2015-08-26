@@ -1,10 +1,14 @@
 package de.uni_koblenz.west.cidre.common.config;
 
-class ConfigurationSerializer implements ConfigurableSerializer<Configuration> {
+class ConfigurationSerializer implements ConfigurableSerializer {
 
 	public String serializeMaster(Configuration conf) {
 		String[] master = conf.getMaster();
-		return master[0] + ":" + master[1];
+		if (master[0] != null) {
+			return master[0] + ":" + master[1];
+		} else {
+			return "";
+		}
 	}
 
 	public String serializeSlaves(Configuration conf) {

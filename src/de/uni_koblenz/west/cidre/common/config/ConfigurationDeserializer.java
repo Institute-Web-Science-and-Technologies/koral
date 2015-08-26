@@ -2,8 +2,7 @@ package de.uni_koblenz.west.cidre.common.config;
 
 import java.util.regex.Pattern;
 
-class ConfigurationDeserializer
-		implements ConfigurableDeserializer<Configuration> {
+class ConfigurationDeserializer implements ConfigurableDeserializer {
 
 	public void deserializeMaster(Configuration conf, String master) {
 		if (master.indexOf(':') == -1) {

@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<config>
+	<property>
+		<name>master</name>
+		<description>The ip and port of the master server, e.g., 192.168.0.1:4711. If no port is specified, the default port 4711 is used.</description>
+		<value></value>
+	</property>
+	<property>
+		<name>slaves</name>
+		<description>The comma separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port 4711 is used.</description>
+		<value></value>
+	</property>
+</config>

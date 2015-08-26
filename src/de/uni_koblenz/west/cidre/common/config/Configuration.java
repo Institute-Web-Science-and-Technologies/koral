@@ -52,4 +52,28 @@ public class Configuration implements Configurable {
 		slaveIPs.add(slaveIP);
 		slavePorts.add(slavePort);
 	}
+
+	/*
+	 * serializer specific code
+	 */
+
+	private ConfigurationSerializer serializer;
+
+	private ConfigurationDeserializer deserializer;
+
+	@Override
+	public ConfigurableSerializer getSerializer() {
+		if (serializer == null) {
+			serializer = new ConfigurationSerializer();
+		}
+		return serializer;
+	}
+
+	@Override
+	public ConfigurableDeserializer getDeserializer() {
+		if (deserializer == null) {
+			deserializer = new ConfigurationDeserializer();
+		}
+		return deserializer;
+	}
 }

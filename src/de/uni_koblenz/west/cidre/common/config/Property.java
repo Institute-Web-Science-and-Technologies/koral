@@ -13,8 +13,6 @@ public @interface Property {
 
 	public String name();
 
-	public String defaultValue() default "TODO configure property!";
-
 	public String description();
 
 }

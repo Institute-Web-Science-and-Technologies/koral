@@ -15,3 +15,4 @@
 # backup files
 *~
 *.bak
+/cidreConfig.xml
