@@ -13,7 +13,7 @@ public class Configuration implements Configurable {
 
 	private String masterPort;
 
-	@Property(name = "slaves", description = "The comma (',') separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port "
+	@Property(name = "slaves", description = "The comma separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port "
 			+ DEFAULT_PORT + " is used.")
 	private List<String> slaveIPs;
 
