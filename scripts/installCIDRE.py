@@ -49,13 +49,13 @@ def resolveCLI():
     run("rm -r commons-cli-1.3.1")
 
 def resolveJeromq():
-    installMaven()
+    #installMaven()
     run("git clone https://github.com/zeromq/jeromq.git")
     with cd("jeromq"):
         run("git checkout tags/v0.3.5")
         run("mvn package -DskipTests")
     run("cp jeromq/target/jeromq-0.3.5.jar cidre/lib/jeromq-0.3.5.jar")
-....sudo("rm -r jeromq")
+    sudo("rm -r jeromq")
 
 def installMaven():
     sudo("apt-get update")

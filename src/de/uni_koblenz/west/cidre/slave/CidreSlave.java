@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre;
+package de.uni_koblenz.west.cidre.slave;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -9,9 +9,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.Configuration;
-import de.uni_koblenz.west.cidre.common.config.XMLSerializer;
+import de.uni_koblenz.west.cidre.common.config.XMLDeserializer;
 
-public class DefaultConfigurationCreator {
+public class CidreSlave {
 
 	public static void main(String[] args) {
 		Options options = createCommandLineOptions();
@@ -21,29 +21,32 @@ public class DefaultConfigurationCreator {
 				printUsage(options);
 				return;
 			}
-			String outputFile = "cidreConfig.xml";
-			if (line.hasOption("o")) {
-				outputFile = line.getOptionValue("o");
+			String confFile = "cidreConfig.xml";
+			if (line.hasOption("c")) {
+				confFile = line.getOptionValue("c");
 			}
-			new XMLSerializer().serialize(new Configuration(), outputFile);
+			Configuration conf = new Configuration();
+			new XMLDeserializer().deserialize(conf, confFile);
 		} catch (ParseException e) {
 			e.printStackTrace();
 			printUsage(options);
 		}
+		// TODO Auto-generated method stub
+
 	}
 
 	private static Options createCommandLineOptions() {
 		Option help = new Option("h", "help", false, "print this help message");
 		help.setRequired(false);
 
-		Option output = Option.builder("o").longOpt("output").hasArg()
+		Option config = Option.builder("c").longOpt("config").hasArg()
 				.argName("configFile")
-				.desc("the file where the default configuration should be created. default is ./cidreConfig.xml")
+				.desc("the configuration file to use. default is ./cidreConfig.xml")
 				.required(false).build();
 
 		Options options = new Options();
 		options.addOption(help);
-		options.addOption(output);
+		options.addOption(config);
 		return options;
 	}
 
@@ -55,9 +58,9 @@ public class DefaultConfigurationCreator {
 
 	private static void printUsage(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
-		formatter
-				.printHelp("java " + DefaultConfigurationCreator.class.getName()
-						+ " [-h] -o <configFile>", options);
+		formatter.printHelp(
+				"java " + CidreSlave.class.getName() + " [-h] -c <configFile>",
+				options);
 	}
 
 }
