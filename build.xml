@@ -27,11 +27,18 @@
 
 	<target name="unjar_dependencies" depends="clean">
 		<unjar dest="${class.dir}">
-			<fileset id="jar_name" dir="${lib.dir}">
+			<fileset dir="${lib.dir}">
 				<include name="**/commons-cli-*.jar" />
 				<exclude name="**/*javadoc.jar" />
 			</fileset>
 			<globmapper from="META-INF/*" to="META-INF-commons-cli/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/jeromq-*.jar" />
+				<exclude name="**/*javadoc.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
 		</unjar>
 	</target>
 
