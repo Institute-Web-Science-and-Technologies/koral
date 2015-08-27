@@ -16,6 +16,7 @@ def performCommonInstallationSteps():
     installAnt()
     cloneCidre()
     resolveDependencies()
+    buildCidre()
 
 def installOracleJDK8():
     sudo("add-apt-repository -y ppa:webupd8team/java")
@@ -44,3 +45,7 @@ def resolveCLI():
     run("rm commons-cli-1.3.1-bin.tar.gz")
     run("mv commons-cli-1.3.1/commons-cli-1.3.1.jar cidre/lib/commons-cli-1.3.1.jar")
     run("rm -r commons-cli-1.3.1")
+
+def buildCidre():
+    with cd("cidre"):
+        run("ant")

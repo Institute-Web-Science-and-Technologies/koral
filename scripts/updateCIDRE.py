@@ -15,3 +15,4 @@ def performCommonUpdateSteps():
 def updateCIDRE():
     with cd("cidre"):
         run("git pull")
+        run("ant")
