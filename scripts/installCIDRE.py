@@ -56,6 +56,7 @@ def resolveJeromq():
         run("mvn package -DskipTests")
     run("cp jeromq/target/jeromq-0.3.5.jar cidre/lib/jeromq-0.3.5.jar")
     sudo("rm -r jeromq")
+    put("../cidreConfig.xml","cidreConfig.xml")
 
 def installMaven():
     sudo("apt-get update")

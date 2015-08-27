@@ -1,7 +1,6 @@
 package de.uni_koblenz.west.cidre.common.logger.receiver;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import org.apache.commons.cli.CommandLine;
@@ -28,9 +27,9 @@ public class JeromqLoggerReceiver extends Thread {
 
 	public JeromqLoggerReceiver(String port) {
 		context = NetworkContextFactory.getNetworkContext();
-		socket = context.createSocket(ZMQ.SUB);
+		socket = context.createSocket(ZMQ.PULL);
 		socket.bind("tcp://*:" + port);
-		writer = new OutputStreamWriter(System.out);
+		writer = null;
 		// TODO Auto-generated constructor stub
 	}
 
@@ -39,7 +38,12 @@ public class JeromqLoggerReceiver extends Thread {
 		Exception mainException = null;
 		try {
 			while (!isInterrupted()) {
-				writer.write(socket.recvStr());
+				String recvStr = socket.recvStr();
+				if (writer == null) {
+					System.out.println(recvStr);
+				} else {
+					writer.write(recvStr);
+				}
 			}
 		} catch (IOException e) {
 			mainException = e;

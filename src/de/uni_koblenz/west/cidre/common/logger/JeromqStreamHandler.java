@@ -28,7 +28,7 @@ public class JeromqStreamHandler extends Handler {
 			receiver += ":" + DEFAULT_PORT;
 		}
 		context = NetworkContextFactory.getNetworkContext();
-		socket = context.createSocket(ZMQ.PUB);
+		socket = context.createSocket(ZMQ.PUSH);
 		// TODO configure socket
 		socket.connect("tcp://" + receiver);
 		formatter = new CSVFormatter(currentServer);
@@ -55,7 +55,9 @@ public class JeromqStreamHandler extends Handler {
 	}
 
 	private void send(String message) {
-		socket.send(message);
+		if (message != null && !message.isEmpty()) {
+			socket.send(message);
+		}
 	}
 
 }

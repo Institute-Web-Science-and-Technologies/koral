@@ -17,3 +17,4 @@ def updateCIDRE():
         run("git pull")
         run("ant")
     run("cp cidre/build/cidre.jar cidre.jar");
+    put("../cidreConfig.xml","cidreConfig.xml")
