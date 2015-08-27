@@ -8,9 +8,10 @@ import de.uni_koblenz.west.cidre.common.config.Configuration;
 public class LoggerFactory {
 
 	public static Logger getJeromqLogger(Configuration conf,
-			String[] currentServer, String name) {
+			String[] currentServer, String name, String receiver) {
 		Logger logger = getLogger(name);
-		logger.addHandler(new JeromqStreamHandler(conf, currentServer));
+		logger.addHandler(
+				new JeromqStreamHandler(conf, currentServer, receiver));
 		return logger;
 	}
 

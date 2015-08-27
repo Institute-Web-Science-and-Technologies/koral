@@ -12,15 +12,19 @@ import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.Configuration;
 import de.uni_koblenz.west.cidre.common.config.XMLDeserializer;
+import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
 
 public class CidreMaster {
 
 	public CidreMaster(Configuration conf) {
-		Logger logger = LoggerFactory.getJeromqLogger(conf, conf.getMaster(),
-				getClass().getName());
-		logger.fine("master started");
-		logger.fine("next message");
+		if (conf.getRomoteLoggerReceiver() != null) {
+			Logger logger = LoggerFactory.getJeromqLogger(conf,
+					conf.getMaster(), getClass().getName(),
+					conf.getRomoteLoggerReceiver());
+			logger.fine("master started");
+			logger.fine("next message");
+		}
 		// TODO Auto-generated constructor stub
 	}
 
@@ -39,14 +43,18 @@ public class CidreMaster {
 			Configuration conf = new Configuration();
 			new XMLDeserializer().deserialize(conf, confFile);
 
+			if (line.hasOption("r")) {
+				conf.setRomoteLoggerReceiver(line.getOptionValue("r"));
+			}
+
+			// TODO Auto-generated method stub
+
 			CidreMaster master = new CidreMaster(conf);
 			master.toString();
 		} catch (ParseException e) {
 			e.printStackTrace();
 			printUsage(options);
 		}
-		// TODO Auto-generated method stub
-
 	}
 
 	private static Options createCommandLineOptions() {
@@ -58,9 +66,17 @@ public class CidreMaster {
 				.desc("the configuration file to use. default is ./cidreConfig.xml")
 				.required(false).build();
 
+		Option remoteLogger = Option.builder("r").longOpt("remoteLogger")
+				.hasArg().argName("receiverIP:Port")
+				.desc("remote receiver to which logging messages are sent. If no port is specified, port "
+						+ JeromqStreamHandler.DEFAULT_PORT
+						+ " is used as default.")
+				.required(false).build();
+
 		Options options = new Options();
 		options.addOption(help);
 		options.addOption(config);
+		options.addOption(remoteLogger);
 		return options;
 	}
 
@@ -73,7 +89,8 @@ public class CidreMaster {
 	private static void printUsage(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(
-				"java " + CidreMaster.class.getName() + " [-h] -c <configFile>",
+				"java " + CidreMaster.class.getName()
+						+ " [-h] [-c <configFile>] [-r <receiverIP:Port>] ",
 				options);
 	}
 

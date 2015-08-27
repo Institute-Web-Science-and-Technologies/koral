@@ -19,6 +19,8 @@ public class Configuration implements Configurable {
 
 	private List<String> slavePorts;
 
+	private String romoteLoggerReceiver;
+
 	public String[] getMaster() {
 		return new String[] { masterIP, masterPort };
 	}
@@ -53,8 +55,16 @@ public class Configuration implements Configurable {
 		slavePorts.add(slavePort);
 	}
 
+	public String getRomoteLoggerReceiver() {
+		return romoteLoggerReceiver;
+	}
+
+	public void setRomoteLoggerReceiver(String romoteLoggerReceiver) {
+		this.romoteLoggerReceiver = romoteLoggerReceiver;
+	}
+
 	/*
-	 * serializer specific code
+	 * serialization specific code
 	 */
 
 	private ConfigurationSerializer serializer;
