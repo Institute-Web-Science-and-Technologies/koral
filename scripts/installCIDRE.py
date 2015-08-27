@@ -64,3 +64,4 @@ def installMaven():
 def buildCidre():
     with cd("cidre"):
         run("ant")
+    run("cp cidre/build/cidre.jar cidre.jar");

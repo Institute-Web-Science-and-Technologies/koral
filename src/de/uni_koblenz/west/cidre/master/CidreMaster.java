@@ -1,5 +1,7 @@
 package de.uni_koblenz.west.cidre.master;
 
+import java.util.logging.Logger;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -10,8 +12,17 @@ import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.Configuration;
 import de.uni_koblenz.west.cidre.common.config.XMLDeserializer;
+import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
 
 public class CidreMaster {
+
+	public CidreMaster(Configuration conf) {
+		Logger logger = LoggerFactory.getJeromqLogger(conf, conf.getMaster(),
+				getClass().getName());
+		logger.fine("master started");
+		logger.fine("next message");
+		// TODO Auto-generated constructor stub
+	}
 
 	public static void main(String[] args) {
 		Options options = createCommandLineOptions();
@@ -27,6 +38,9 @@ public class CidreMaster {
 			}
 			Configuration conf = new Configuration();
 			new XMLDeserializer().deserialize(conf, confFile);
+
+			CidreMaster master = new CidreMaster(conf);
+			master.toString();
 		} catch (ParseException e) {
 			e.printStackTrace();
 			printUsage(options);
