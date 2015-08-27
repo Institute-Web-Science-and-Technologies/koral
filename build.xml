@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="jar" name="Create Runnable Jar for Project cidre">
+
+	<property name="build.dir" value="build" />
+	<property name="class.dir" value="${build.dir}/classes" />
+	<property name="jar.dir" value="${build.dir}" />
+	<property name="lib.dir" value="lib" />
+	<property name="project_name" value="cidre" />
+	<property name="mainclass" value="de.uni_koblenz.west.cidre.CIDRE" />
+
+	<path id="class.path">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<target name="clean">
+		<delete dir="${build.dir}" />
+	</target>
+
+	<target name="compile" depends="clean">
+		<mkdir dir="${class.dir}" />
+		<javac srcdir="src" destdir="${class.dir}">
+			<classpath refid="class.path" />
+		</javac>
+	</target>
+
+	<target name="unjar_dependencies" depends="clean">
+		<unjar dest="${class.dir}">
+			<fileset id="jar_name" dir="${lib.dir}">
+				<include name="**/commons-cli-*.jar" />
+				<exclude name="**/*javadoc.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-commons-cli/*" />
+		</unjar>
+	</target>
+
+	<target name="jar" depends="compile, unjar_dependencies">
+		<jar basedir="${class.dir}" destfile="${jar.dir}/${project_name}.jar">
+			<manifest>
+				<attribute name="Main-Class" value="${mainclass}" />
+			</manifest>
+			<!--<fileset dir="${build.dir}">
+				<include name="**/*.class" />
+			</fileset>-->
+		</jar>
+	</target>
+</project>

@@ -16,3 +16,4 @@
 *~
 *.bak
 /cidreConfig.xml
+/build/
