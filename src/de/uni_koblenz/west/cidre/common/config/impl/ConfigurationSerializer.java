@@ -1,4 +1,6 @@
-package de.uni_koblenz.west.cidre.common.config;
+package de.uni_koblenz.west.cidre.common.config.impl;
+
+import de.uni_koblenz.west.cidre.common.config.ConfigurableSerializer;
 
 class ConfigurationSerializer implements ConfigurableSerializer {
 

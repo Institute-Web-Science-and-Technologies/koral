@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.common.config;
+package de.uni_koblenz.west.cidre.common.config.impl;
 
 class XMLConstants {
 

@@ -3,7 +3,7 @@ package de.uni_koblenz.west.cidre.common.logger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import de.uni_koblenz.west.cidre.common.config.Configuration;
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 
 public class LoggerFactory {
 

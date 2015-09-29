@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.common.config;
+package de.uni_koblenz.west.cidre.common.config.impl;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,6 +13,9 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
+
+import de.uni_koblenz.west.cidre.common.config.Configurable;
+import de.uni_koblenz.west.cidre.common.config.DeserializationException;
 
 public class XMLDeserializer {
 

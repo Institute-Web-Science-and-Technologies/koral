@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.common.config;
+package de.uni_koblenz.west.cidre.common.config.impl;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -14,6 +14,10 @@ import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+
+import de.uni_koblenz.west.cidre.common.config.Configurable;
+import de.uni_koblenz.west.cidre.common.config.Property;
+import de.uni_koblenz.west.cidre.common.config.SerializationException;
 
 public class XMLSerializer {
 

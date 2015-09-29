@@ -10,8 +10,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import de.uni_koblenz.west.cidre.common.config.Configuration;
-import de.uni_koblenz.west.cidre.common.config.XMLDeserializer;
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
 

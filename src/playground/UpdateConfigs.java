@@ -1,9 +1,9 @@
 package playground;
 
 import de.uni_koblenz.west.cidre.common.config.Configurable;
-import de.uni_koblenz.west.cidre.common.config.Configuration;
-import de.uni_koblenz.west.cidre.common.config.XMLDeserializer;
-import de.uni_koblenz.west.cidre.common.config.XMLSerializer;
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
+import de.uni_koblenz.west.cidre.common.config.impl.XMLSerializer;
 
 public class UpdateConfigs {
 

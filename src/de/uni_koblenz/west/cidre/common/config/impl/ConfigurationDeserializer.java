@@ -1,6 +1,8 @@
-package de.uni_koblenz.west.cidre.common.config;
+package de.uni_koblenz.west.cidre.common.config.impl;
 
 import java.util.regex.Pattern;
+
+import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
 
 class ConfigurationDeserializer implements ConfigurableDeserializer {
 

@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.common.config;
+package de.uni_koblenz.west.cidre.common.config.impl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -7,6 +7,9 @@ import java.lang.reflect.Method;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+
+import de.uni_koblenz.west.cidre.common.config.Configurable;
+import de.uni_koblenz.west.cidre.common.config.Property;
 
 enum ConfigurableDeserializerState {
 	STARTED {

@@ -8,8 +8,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import de.uni_koblenz.west.cidre.common.config.Configuration;
-import de.uni_koblenz.west.cidre.common.config.XMLSerializer;
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.config.impl.XMLSerializer;
 
 public class DefaultConfigurationCreator {
 

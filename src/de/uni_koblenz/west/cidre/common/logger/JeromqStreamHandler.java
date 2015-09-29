@@ -8,7 +8,7 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 
-import de.uni_koblenz.west.cidre.common.config.Configuration;
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
 
 public class JeromqStreamHandler extends Handler {

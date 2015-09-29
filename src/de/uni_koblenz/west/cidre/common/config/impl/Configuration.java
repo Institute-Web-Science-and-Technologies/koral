@@ -1,7 +1,12 @@
-package de.uni_koblenz.west.cidre.common.config;
+package de.uni_koblenz.west.cidre.common.config.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import de.uni_koblenz.west.cidre.common.config.Configurable;
+import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
+import de.uni_koblenz.west.cidre.common.config.ConfigurableSerializer;
+import de.uni_koblenz.west.cidre.common.config.Property;
 
 public class Configuration implements Configurable {
 
