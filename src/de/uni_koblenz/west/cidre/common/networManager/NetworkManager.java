@@ -1,14 +1,11 @@
 package de.uni_koblenz.west.cidre.common.networManager;
 
+import java.io.Closeable;
 import java.util.logging.Logger;
-
-import javax.xml.ws.WebServiceException;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
-
-import com.sun.xml.internal.ws.Closeable;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 
@@ -47,7 +44,7 @@ public class NetworkManager implements Closeable {
 	}
 
 	@Override
-	public void close() throws WebServiceException {
+	public void close() {
 		for (Socket soc : senders) {
 			soc.close();
 		}
