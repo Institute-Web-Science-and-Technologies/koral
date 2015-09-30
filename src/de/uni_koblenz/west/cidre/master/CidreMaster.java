@@ -17,7 +17,10 @@ public class CidreMaster extends CidreSystem {
 	public void runOneIteration() {
 		try {
 			Thread.sleep(1000);
-			logger.info(new String(getNetworkManager().receive()));
+			byte[] receive = getNetworkManager().receive();
+			if (receive != null) {
+				logger.info(new String(receive));
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
