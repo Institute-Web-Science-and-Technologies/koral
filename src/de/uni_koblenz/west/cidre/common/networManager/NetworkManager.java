@@ -51,7 +51,6 @@ public class NetworkManager implements Closeable {
 	}
 
 	public byte[] receive() {
-		// TODO make asynchronous
 		if (receiver != null) {
 			return receiver.recv(ZMQ.DONTWAIT);
 		} else {
