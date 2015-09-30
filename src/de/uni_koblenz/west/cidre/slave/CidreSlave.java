@@ -27,7 +27,6 @@ public class CidreSlave extends CidreSystem {
 				NetworkInterface ni = NetworkInterface
 						.getByInetAddress(Inet4Address.getByName(slave[0]));
 				if (ni != null) {
-					System.out.println(ni);
 					return slave;
 				}
 			} catch (SocketException | UnknownHostException e) {

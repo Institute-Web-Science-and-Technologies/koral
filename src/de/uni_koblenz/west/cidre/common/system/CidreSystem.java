@@ -58,7 +58,7 @@ public abstract class CidreSystem extends Thread {
 			}
 		}
 
-		networkManager = new NetworkManager(conf, logger, conf.getMaster());
+		networkManager = new NetworkManager(conf, logger, currentAddress);
 
 		if (logger != null) {
 			logger.info("CIDRE master started");
