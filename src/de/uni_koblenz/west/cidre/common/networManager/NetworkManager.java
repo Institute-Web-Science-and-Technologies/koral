@@ -35,7 +35,7 @@ public class NetworkManager implements Closeable {
 		senders = new Socket[conf.getNumberOfSlaves() + 1];
 		String[] master = conf.getMaster();
 		senders[0] = context.createSocket(ZMQ.PUSH);
-		senders[0].bind("tcp://" + master[0] + ":" + master[1]);
+		senders[0].connect("tcp://" + master[0] + ":" + master[1]);
 		for (int i = 1; i < senders.length; i++) {
 			String[] slave = conf.getSlave(i - 1);
 			senders[i] = context.createSocket(ZMQ.PUSH);
