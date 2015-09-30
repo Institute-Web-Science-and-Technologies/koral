@@ -20,7 +20,7 @@
 
 	<target name="compile" depends="clean">
 		<mkdir dir="${class.dir}" />
-		<javac srcdir="src" destdir="${class.dir}">
+		<javac srcdir="src" destdir="${class.dir}" debut="on">
 			<classpath refid="class.path" />
 		</javac>
 	</target>
