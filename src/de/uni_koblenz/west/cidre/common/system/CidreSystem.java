@@ -33,6 +33,7 @@ public abstract class CidreSystem extends Thread {
 			public void run() {
 				if (isAlive()) {
 					interrupt();
+					shutDown();
 				}
 			}
 		}));
@@ -74,7 +75,6 @@ public abstract class CidreSystem extends Thread {
 		while (!isInterrupted()) {
 			runOneIteration();
 		}
-		shutDown();
 	}
 
 	protected abstract void runOneIteration();
