@@ -2,7 +2,6 @@ package de.uni_koblenz.west.cidre.master;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,8 +49,6 @@ public class CidreMaster extends Thread {
 		}
 
 		networkManager = new NetworkManager(conf, logger, conf.getMaster());
-
-		Arrays.toString(logger.getHandlers());
 
 		if (logger != null) {
 			logger.info("CIDRE master started");
