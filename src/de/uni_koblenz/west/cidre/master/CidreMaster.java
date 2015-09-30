@@ -54,6 +54,10 @@ public class CidreMaster {
 		// TODO Auto-generated constructor stub
 	}
 
+	public void shutDown() {
+		networkManager.close();
+	}
+
 	public static void main(String[] args) {
 		Options options = createCommandLineOptions();
 		try {
@@ -76,7 +80,15 @@ public class CidreMaster {
 			// TODO Auto-generated method stub
 
 			CidreMaster master = new CidreMaster(conf);
-			master.toString();
+
+			// add shutdown hook that terminates everything
+			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+				@Override
+				public void run() {
+					master.shutDown();
+				}
+			}));
+
 		} catch (ParseException e) {
 			e.printStackTrace();
 			printUsage(options);
