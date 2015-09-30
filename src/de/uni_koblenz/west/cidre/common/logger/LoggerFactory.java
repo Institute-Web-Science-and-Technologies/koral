@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.cidre.common.logger;
 
 import java.io.IOException;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,8 +27,11 @@ public class LoggerFactory {
 
 	private static Logger getLogger(String name, Level logLevel) {
 		Logger logger = Logger.getLogger(name);
-		System.out.println(name);
-		System.out.println(logger);
+		for (Handler handler : logger.getHandlers()) {
+			if (handler instanceof ConsoleHandler) {
+				logger.removeHandler(handler);
+			}
+		}
 		logger.setLevel(logLevel);
 		return logger;
 	}
