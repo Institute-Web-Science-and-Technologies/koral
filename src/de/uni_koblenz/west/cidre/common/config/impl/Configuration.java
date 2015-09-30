@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.common.config.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import de.uni_koblenz.west.cidre.common.config.Configurable;
 import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
@@ -18,14 +19,6 @@ public class Configuration implements Configurable {
 
 	private String masterPort;
 
-	@Property(name = "slaves", description = "The comma separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port "
-			+ DEFAULT_PORT + " is used.")
-	private List<String> slaveIPs;
-
-	private List<String> slavePorts;
-
-	private String romoteLoggerReceiver;
-
 	public String[] getMaster() {
 		return new String[] { masterIP, masterPort };
 	}
@@ -38,6 +31,12 @@ public class Configuration implements Configurable {
 		this.masterIP = masterIP;
 		this.masterPort = masterPort;
 	}
+
+	@Property(name = "slaves", description = "The comma separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port "
+			+ DEFAULT_PORT + " is used.")
+	private List<String> slaveIPs;
+
+	private List<String> slavePorts;
 
 	public String[] getSlave(int index) {
 		return new String[] { slaveIPs.get(index), slavePorts.get(index) };
@@ -60,12 +59,36 @@ public class Configuration implements Configurable {
 		slavePorts.add(slavePort);
 	}
 
+	private String romoteLoggerReceiver;
+
 	public String getRomoteLoggerReceiver() {
 		return romoteLoggerReceiver;
 	}
 
 	public void setRomoteLoggerReceiver(String romoteLoggerReceiver) {
 		this.romoteLoggerReceiver = romoteLoggerReceiver;
+	}
+
+	@Property(name = "logLevel", description = "Sets the logging level to one of: OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL")
+	private Level loglevel = Level.INFO;
+
+	@Property(name = "loggingDirectory", description = "Defines an existing directory in which the log files are written.")
+	private String logDirectory = ".";
+
+	public Level getLoglevel() {
+		return loglevel;
+	}
+
+	public void setLoglevel(Level loglevel) {
+		this.loglevel = loglevel;
+	}
+
+	public String getLogDirectory() {
+		return logDirectory;
+	}
+
+	public void setLogDirectory(String logDirectory) {
+		this.logDirectory = logDirectory;
 	}
 
 	/*

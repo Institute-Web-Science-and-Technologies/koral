@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.cidre.common.config.impl;
 
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
@@ -26,6 +27,15 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 				conf.addSlave(parts[0], parts[1]);
 			}
 		}
+	}
+
+	public void deserializeLogLevel(Configuration conf, String logLevel) {
+		conf.setLoglevel(Level.parse(logLevel));
+	}
+
+	public void deserializeLoggingDirectory(Configuration conf,
+			String logDirectory) {
+		conf.setLogDirectory(logDirectory);
 	}
 
 }

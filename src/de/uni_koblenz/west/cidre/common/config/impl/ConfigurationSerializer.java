@@ -24,4 +24,12 @@ class ConfigurationSerializer implements ConfigurableSerializer {
 		return sb.toString();
 	}
 
+	public String serializeLogLevel(Configuration conf) {
+		return conf.getLoglevel().getName();
+	}
+
+	public String serializeLoggingDirectory(Configuration conf) {
+		return conf.getLogDirectory();
+	}
+
 }

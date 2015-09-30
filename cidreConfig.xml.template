@@ -10,4 +10,14 @@
 		<description>The comma separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port 4711 is used.</description>
 		<value></value>
 	</property>
+	<property>
+		<name>logLevel</name>
+		<description>Sets the logging level to one of: OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL</description>
+		<value>INFO</value>
+	</property>
+	<property>
+		<name>loggingDirectory</name>
+		<description>Defines an existing directory in which the log files are written.</description>
+		<value>.</value>
+	</property>
 </config>
