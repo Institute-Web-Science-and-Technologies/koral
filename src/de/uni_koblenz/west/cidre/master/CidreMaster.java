@@ -1,5 +1,7 @@
 package de.uni_koblenz.west.cidre.master;
 
+import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.cli.CommandLine;
@@ -17,11 +19,30 @@ import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
 
 public class CidreMaster {
 
+	private Logger logger;
+
 	public CidreMaster(Configuration conf) {
-		if (conf.getRomoteLoggerReceiver() != null) {
-			Logger logger = LoggerFactory.getJeromqLogger(conf,
-					conf.getMaster(), getClass().getName(),
-					conf.getRomoteLoggerReceiver());
+		if (conf.getLoglevel() != Level.OFF) {
+			if (conf.getRomoteLoggerReceiver() != null) {
+				logger = LoggerFactory.getJeromqLogger(conf, conf.getMaster(),
+						getClass().getName(), conf.getRomoteLoggerReceiver());
+			}
+			try {
+				logger = LoggerFactory.getCSVFileLogger(conf, conf.getMaster(),
+						getClass().getName());
+			} catch (IOException e) {
+				if (logger != null) {
+					logger.warning(
+							"Logging to a CSV file is not possible. Reason: "
+									+ e.getMessage());
+					logger.warning("Continuing without logging to a file.");
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
+				}
+				e.printStackTrace();
+			}
+		}
+		if (logger != null) {
 			logger.fine("master started");
 			logger.fine("next message");
 		}
