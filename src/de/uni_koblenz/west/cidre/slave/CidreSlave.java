@@ -4,6 +4,7 @@ import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Random;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -36,11 +37,14 @@ public class CidreSlave extends CidreSystem {
 				"The current slave cannot be found in the configuration file.");
 	}
 
+	private final int rand = new Random(System.currentTimeMillis()).nextInt();
+
 	@Override
 	public void runOneIteration() {
 		try {
-			getNetworkManager().send(0, ("This is a test message from slave."
-					+ Thread.currentThread()).getBytes());
+			getNetworkManager().send(0,
+					("This is a test message from slave. rand=" + rand)
+							.getBytes());
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 		}
