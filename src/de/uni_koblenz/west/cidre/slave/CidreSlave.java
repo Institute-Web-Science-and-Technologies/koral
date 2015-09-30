@@ -1,66 +1,78 @@
 package de.uni_koblenz.west.cidre.slave;
 
+import java.net.Inet4Address;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
+import de.uni_koblenz.west.cidre.common.system.CidreSystem;
+import de.uni_koblenz.west.cidre.common.system.ConfigurationException;
 
-public class CidreSlave {
+public class CidreSlave extends CidreSystem {
+
+	public CidreSlave(Configuration conf) throws ConfigurationException {
+		super(conf, getCurrentIP(conf));
+	}
+
+	private static String[] getCurrentIP(Configuration conf)
+			throws ConfigurationException {
+		for (int i = 0; i < conf.getNumberOfSlaves(); i++) {
+			String[] slave = conf.getSlave(i);
+			try {
+				NetworkInterface ni = NetworkInterface
+						.getByInetAddress(Inet4Address.getByName(slave[0]));
+				if (ni != null) {
+					System.out.println(ni);
+					return slave;
+				}
+			} catch (SocketException | UnknownHostException e) {
+			}
+		}
+		throw new ConfigurationException(
+				"The current slave cannot be found in the configuration file.");
+	}
+
+	@Override
+	public void runOneIteration() {
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		// TODO
+		interrupt();
+	}
+
+	@Override
+	protected void shutDownInternal() {
+	}
 
 	public static void main(String[] args) {
+		String className = CidreSlave.class.getName();
+		String additionalArgs = "";
 		Options options = createCommandLineOptions();
 		try {
 			CommandLine line = parseCommandLineArgs(options, args);
-			if (line.hasOption("h")) {
-				printUsage(options);
-				return;
+			Configuration conf = initializeConfiguration(options, line,
+					className, additionalArgs);
+
+			CidreSlave slave;
+			try {
+				slave = new CidreSlave(conf);
+				slave.start();
+			} catch (ConfigurationException e) {
+				e.printStackTrace();
 			}
-			String confFile = "cidreConfig.xml";
-			if (line.hasOption("c")) {
-				confFile = line.getOptionValue("c");
-			}
-			Configuration conf = new Configuration();
-			new XMLDeserializer().deserialize(conf, confFile);
+
 		} catch (ParseException e) {
 			e.printStackTrace();
-			printUsage(options);
+			printUsage(className, options, additionalArgs);
 		}
-		// TODO Auto-generated method stub
-
-	}
-
-	private static Options createCommandLineOptions() {
-		Option help = new Option("h", "help", false, "print this help message");
-		help.setRequired(false);
-
-		Option config = Option.builder("c").longOpt("config").hasArg()
-				.argName("configFile")
-				.desc("the configuration file to use. default is ./cidreConfig.xml")
-				.required(false).build();
-
-		Options options = new Options();
-		options.addOption(help);
-		options.addOption(config);
-		return options;
-	}
-
-	private static CommandLine parseCommandLineArgs(Options options,
-			String[] args) throws ParseException {
-		CommandLineParser parser = new DefaultParser();
-		return parser.parse(options, args);
-	}
-
-	private static void printUsage(Options options) {
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(
-				"java " + CidreSlave.class.getName() + " [-h] -c <configFile>",
-				options);
 	}
 
 }
