@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.cidre.common.networManager;
 
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import org.zeromq.ZContext;
@@ -19,6 +20,8 @@ public class NetworkManager implements Closeable {
 
 	private final Socket[] senders;
 
+	private int currentID;
+
 	public NetworkManager(Configuration conf, Logger logger,
 			String[] currentServer) {
 		this.logger = logger;
@@ -36,10 +39,16 @@ public class NetworkManager implements Closeable {
 		String[] master = conf.getMaster();
 		senders[0] = context.createSocket(ZMQ.PUSH);
 		senders[0].connect("tcp://" + master[0] + ":" + master[1]);
+		if (Arrays.equals(currentServer, master)) {
+			currentID = 0;
+		}
 		for (int i = 1; i < senders.length; i++) {
 			String[] slave = conf.getSlave(i - 1);
 			senders[i] = context.createSocket(ZMQ.PUSH);
 			senders[i].connect("tcp://" + slave[0] + ":" + slave[1]);
+			if (Arrays.equals(currentServer, slave)) {
+				currentID = i;
+			}
 		}
 	}
 
@@ -47,6 +56,19 @@ public class NetworkManager implements Closeable {
 		Socket out = senders[receiver];
 		if (out != null) {
 			out.send(message);
+		}
+	}
+
+	public void broadcastToAllOtherSlaves(byte[] message) {
+		for (int i = 1; i < senders.length; i++) {
+			if (i == currentID) {
+				// do not broadcast a message to oneself
+				continue;
+			}
+			Socket out = senders[i];
+			if (out != null) {
+				out.send(message);
+			}
 		}
 	}
 
