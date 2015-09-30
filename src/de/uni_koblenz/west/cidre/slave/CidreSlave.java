@@ -48,7 +48,6 @@ public class CidreSlave extends CidreSystem {
 			e.printStackTrace();
 		}
 		// TODO
-		interrupt();
 	}
 
 	@Override
