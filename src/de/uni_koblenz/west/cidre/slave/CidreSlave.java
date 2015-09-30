@@ -39,6 +39,8 @@ public class CidreSlave extends CidreSystem {
 	@Override
 	public void runOneIteration() {
 		try {
+			getNetworkManager().send(0,
+					"This is a test message from slave.".getBytes());
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();

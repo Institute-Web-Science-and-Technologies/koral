@@ -43,6 +43,16 @@ public class NetworkManager implements Closeable {
 		}
 	}
 
+	public void send(int receiver, byte[] message) {
+		Socket out = senders[receiver];
+		out.send(message);
+	}
+
+	public byte[] receive() {
+		// TODO make asynchronous
+		return receiver.recv();
+	}
+
 	@Override
 	public void close() {
 		for (Socket soc : senders) {
