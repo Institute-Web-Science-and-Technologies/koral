@@ -22,7 +22,7 @@ public class CidreMaster extends CidreSystem {
 			e.printStackTrace();
 		}
 		// TODO
-		interrupt();
+		// interrupt();
 	}
 
 	@Override
