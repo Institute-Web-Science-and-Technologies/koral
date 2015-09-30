@@ -25,6 +25,8 @@ public class LoggerFactory {
 
 	private static Logger getLogger(String name, Level logLevel) {
 		Logger logger = Logger.getLogger(name);
+		System.out.println(name);
+		System.out.println(logger);
 		logger.setLevel(logLevel);
 		return logger;
 	}

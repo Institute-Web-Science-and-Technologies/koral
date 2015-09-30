@@ -21,7 +21,7 @@ public class JeromqLoggerReceiver extends Thread {
 
 	private final ZContext context;
 
-	private final Socket socket;
+	private Socket socket;
 
 	private final Writer writer;
 
@@ -34,34 +34,48 @@ public class JeromqLoggerReceiver extends Thread {
 
 	@Override
 	public void run() {
-		System.out.println("JeromqLoggerReceiver started...");
+		System.out.println(getClass().getName() + " started...");
 		Exception mainException = null;
 		try {
 			while (!isInterrupted()) {
-				String recvStr = socket.recvStr();
-				if (writer == null) {
-					System.out.println(recvStr);
+				String recvStr = socket.recvStr(ZMQ.DONTWAIT);
+				if (recvStr != null) {
+					if (writer == null) {
+						System.out.println(recvStr);
+					} else {
+						writer.write(recvStr);
+					}
 				} else {
-					writer.write(recvStr);
+					Thread.sleep(100);
 				}
 			}
 		} catch (IOException e) {
 			mainException = e;
+		} catch (InterruptedException e) {
 		} finally {
-			try {
-				writer.flush();
-				writer.close();
-			} catch (IOException e1) {
-				if (mainException != null) {
-					mainException.addSuppressed(e1);
-				} else {
-					mainException = e1;
+			if (writer != null) {
+				try {
+					writer.flush();
+					writer.close();
+				} catch (IOException e1) {
+					if (mainException != null) {
+						mainException.addSuppressed(e1);
+					} else {
+						mainException = e1;
+					}
+					throw new RuntimeException(mainException);
 				}
-				throw new RuntimeException(mainException);
 			}
 		}
-		socket.close();
-		NetworkContextFactory.destroyNetworkContext(context);
+	}
+
+	public void shutDown() {
+		if (socket != null) {
+			socket.close();
+			NetworkContextFactory.destroyNetworkContext(context);
+			System.out.println(getClass().getName() + " stopped");
+			socket = null;
+		}
 	}
 
 	public static void main(String[] args) {
@@ -77,7 +91,17 @@ public class JeromqLoggerReceiver extends Thread {
 				port = line.getOptionValue("p");
 			}
 
-			new JeromqLoggerReceiver(port).start();
+			JeromqLoggerReceiver jeromqLoggerReceiver = new JeromqLoggerReceiver(
+					port);
+			jeromqLoggerReceiver.start();
+
+			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+				@Override
+				public void run() {
+					jeromqLoggerReceiver.interrupt();
+					jeromqLoggerReceiver.shutDown();
+				}
+			}));
 
 		} catch (ParseException e) {
 			e.printStackTrace();

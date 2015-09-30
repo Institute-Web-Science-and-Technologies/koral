@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.cidre.master;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,7 +20,7 @@ import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
 
-public class CidreMaster {
+public class CidreMaster extends Thread {
 
 	private Logger logger;
 
@@ -51,11 +53,28 @@ public class CidreMaster {
 		if (logger != null) {
 			logger.info("CIDRE master started");
 		}
-		// TODO Auto-generated constructor stub
+	}
+
+	@Override
+	public void run() {
+		while (!isInterrupted()) {
+			// TODO
+			break;
+		}
+		shutDown();
 	}
 
 	public void shutDown() {
 		networkManager.close();
+		for (Handler handler : logger.getHandlers()) {
+			if (handler instanceof Closeable) {
+				try {
+					((Closeable) handler).close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	public static void main(String[] args) {
@@ -77,16 +96,14 @@ public class CidreMaster {
 				conf.setRomoteLoggerReceiver(line.getOptionValue("r"));
 			}
 
-			// TODO Auto-generated method stub
-
 			CidreMaster master = new CidreMaster(conf);
+			master.start();
 
 			// add shutdown hook that terminates everything
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 				@Override
 				public void run() {
-					System.out.println("executed");
-					master.shutDown();
+					master.interrupt();
 				}
 			}));
 
