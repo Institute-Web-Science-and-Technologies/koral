@@ -40,7 +40,7 @@ public class CidreSlave extends CidreSystem {
 	public void runOneIteration() {
 		try {
 			getNetworkManager().send(0, ("This is a test message from slave."
-					+ Thread.currentThread().getId()).getBytes());
+					+ Thread.currentThread()).getBytes());
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 		}
