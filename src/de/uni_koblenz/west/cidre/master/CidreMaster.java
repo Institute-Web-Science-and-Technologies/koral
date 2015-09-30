@@ -22,7 +22,6 @@ public class CidreMaster extends CidreSystem {
 				logger.info(new String(receive));
 			}
 		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 		// TODO
 		// interrupt();

@@ -81,6 +81,11 @@ public abstract class CidreSystem extends Thread {
 
 	public void shutDown() {
 		networkManager.close();
+		shutDownInternal();
+
+		if (logger != null) {
+			logger.info(getClass().getSimpleName() + " shutted down");
+		}
 		for (Handler handler : logger.getHandlers()) {
 			if (handler instanceof Closeable) {
 				try {
@@ -89,11 +94,6 @@ public abstract class CidreSystem extends Thread {
 					e.printStackTrace();
 				}
 			}
-		}
-		shutDownInternal();
-
-		if (logger != null) {
-			logger.info(getClass().getSimpleName() + " shutted down");
 		}
 	}
 
