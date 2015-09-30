@@ -29,11 +29,9 @@ public class JeromqStreamHandler extends Handler {
 		}
 		context = NetworkContextFactory.getNetworkContext();
 		socket = context.createSocket(ZMQ.PUSH);
-		// TODO configure socket
 		socket.connect("tcp://" + receiver);
 		formatter = new CSVFormatter(currentServer);
 		send(formatter.getHead(this));
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
@@ -43,8 +41,6 @@ public class JeromqStreamHandler extends Handler {
 
 	@Override
 	public void flush() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override

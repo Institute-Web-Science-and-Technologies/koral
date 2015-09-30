@@ -30,11 +30,11 @@ public class JeromqLoggerReceiver extends Thread {
 		socket = context.createSocket(ZMQ.PULL);
 		socket.bind("tcp://*:" + port);
 		writer = null;
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	public void run() {
+		System.out.println("JeromqLoggerReceiver started...");
 		Exception mainException = null;
 		try {
 			while (!isInterrupted()) {
@@ -79,7 +79,6 @@ public class JeromqLoggerReceiver extends Thread {
 
 			new JeromqLoggerReceiver(port).start();
 
-			// TODO Auto-generated method stub
 		} catch (ParseException e) {
 			e.printStackTrace();
 			printUsage(options);
