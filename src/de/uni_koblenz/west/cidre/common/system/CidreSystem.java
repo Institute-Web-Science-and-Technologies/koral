@@ -91,6 +91,10 @@ public abstract class CidreSystem extends Thread {
 			}
 		}
 		shutDownInternal();
+
+		if (logger != null) {
+			logger.info(getClass().getSimpleName() + " shutted down");
+		}
 	}
 
 	protected abstract void shutDownInternal();
