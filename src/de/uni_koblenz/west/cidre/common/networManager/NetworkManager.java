@@ -50,7 +50,7 @@ public class NetworkManager implements Closeable {
 
 	public byte[] receive() {
 		// TODO make asynchronous
-		return receiver.recv();
+		return receiver.recv(ZMQ.DONTWAIT);
 	}
 
 	@Override
