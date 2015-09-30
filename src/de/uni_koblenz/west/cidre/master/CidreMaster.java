@@ -16,10 +16,13 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
+import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
 
 public class CidreMaster {
 
 	private Logger logger;
+
+	private final NetworkManager networkManager;
 
 	public CidreMaster(Configuration conf) {
 		if (conf.getLoglevel() != Level.OFF) {
@@ -42,9 +45,11 @@ public class CidreMaster {
 				e.printStackTrace();
 			}
 		}
+
+		networkManager = new NetworkManager(conf, logger, conf.getMaster());
+
 		if (logger != null) {
-			logger.fine("master started");
-			logger.fine("next message");
+			logger.info("CIDRE master started");
 		}
 		// TODO Auto-generated constructor stub
 	}
