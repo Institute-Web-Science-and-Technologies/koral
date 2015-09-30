@@ -19,7 +19,7 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 	public void deserializeSlaves(Configuration conf, String slaves) {
 		String[] entries = slaves.split(Pattern.quote(","));
 		for (int i = 0; i < entries.length; i++) {
-			String entry = entries[0];
+			String entry = entries[i];
 			if (entry.indexOf(':') == -1) {
 				conf.addSlave(entry);
 			} else {
