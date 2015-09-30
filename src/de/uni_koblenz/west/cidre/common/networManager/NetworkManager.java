@@ -15,7 +15,7 @@ public class NetworkManager implements Closeable {
 
 	private final ZContext context;
 
-	private final Socket receiver;
+	private Socket receiver;
 
 	private final Socket[] senders;
 
@@ -45,20 +45,28 @@ public class NetworkManager implements Closeable {
 
 	public void send(int receiver, byte[] message) {
 		Socket out = senders[receiver];
-		out.send(message);
+		if (out != null) {
+			out.send(message);
+		}
 	}
 
 	public byte[] receive() {
 		// TODO make asynchronous
-		return receiver.recv(ZMQ.DONTWAIT);
+		if (receiver != null) {
+			return receiver.recv(ZMQ.DONTWAIT);
+		} else {
+			return null;
+		}
 	}
 
 	@Override
 	public void close() {
-		for (Socket soc : senders) {
-			soc.close();
+		for (int i = 0; i < senders.length; i++) {
+			senders[i].close();
+			senders[i] = null;
 		}
 		receiver.close();
+		receiver = null;
 		NetworkContextFactory.destroyNetworkContext(context);
 		if (logger != null) {
 			logger.info("connection closed");

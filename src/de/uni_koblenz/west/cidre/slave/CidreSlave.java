@@ -4,7 +4,6 @@ import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -24,7 +23,6 @@ public class CidreSlave extends CidreSystem {
 			throws ConfigurationException {
 		for (int i = 0; i < conf.getNumberOfSlaves(); i++) {
 			String[] slave = conf.getSlave(i);
-			System.out.println(Arrays.toString(slave));
 			try {
 				NetworkInterface ni = NetworkInterface
 						.getByInetAddress(Inet4Address.getByName(slave[0]));
@@ -45,7 +43,6 @@ public class CidreSlave extends CidreSystem {
 					"This is a test message from slave.".getBytes());
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 		// TODO
 	}
