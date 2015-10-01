@@ -24,6 +24,15 @@ class ConfigurationSerializer implements ConfigurableSerializer {
 		return sb.toString();
 	}
 
+	public String serializeClientConnection(Configuration conf) {
+		String[] client = conf.getClient();
+		if (client[0] != null) {
+			return client[0] + ":" + client[1];
+		} else {
+			return "";
+		}
+	}
+
 	public String serializeLogLevel(Configuration conf) {
 		return conf.getLoglevel().getName();
 	}

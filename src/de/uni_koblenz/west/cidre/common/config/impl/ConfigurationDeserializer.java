@@ -29,6 +29,15 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 		}
 	}
 
+	public void deserializeClientConnection(Configuration conf, String client) {
+		if (client.indexOf(':') == -1) {
+			conf.setClient(client);
+		} else {
+			String[] parts = client.split(Pattern.quote(":"));
+			conf.setClient(parts[0], parts[1]);
+		}
+	}
+
 	public void deserializeLogLevel(Configuration conf, String logLevel) {
 		conf.setLoglevel(Level.parse(logLevel));
 	}

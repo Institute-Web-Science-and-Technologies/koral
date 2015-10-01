@@ -69,13 +69,16 @@ public abstract class CidreSystem extends Thread {
 
 	@Override
 	public void run() {
-		while (!isInterrupted()) {
-			runOneIteration();
+		try {
+			while (!isInterrupted()) {
+				runOneIteration();
+			}
+			if (logger != null) {
+				logger.info(getClass().getSimpleName() + " shutted down");
+			}
+		} finally {
+			shutDown();
 		}
-		if (logger != null) {
-			logger.info(getClass().getSimpleName() + " shutted down");
-		}
-		shutDown();
 	}
 
 	protected abstract void runOneIteration();

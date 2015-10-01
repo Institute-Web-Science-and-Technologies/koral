@@ -11,9 +11,9 @@ import de.uni_koblenz.west.cidre.common.config.Property;
 
 public class Configuration implements Configurable {
 
-	private static final String DEFAULT_PORT = "4711";
+	private static final String DEFAULT_PORT = "4710";
 
-	@Property(name = "master", description = "The ip and port of the master server, e.g., 192.168.0.1:4711. If no port is specified, the default port "
+	@Property(name = "master", description = "The ip and port of the master server, e.g., 192.168.0.1:4710. If no port is specified, the default port "
 			+ DEFAULT_PORT + " is used.")
 	private String masterIP;
 
@@ -57,6 +57,27 @@ public class Configuration implements Configurable {
 		}
 		slaveIPs.add(slaveIP);
 		slavePorts.add(slavePort);
+	}
+
+	public static final String DEFAULT_CLIENT_PORT = "4711";
+
+	@Property(name = "clientConnection", description = "The ip and port to which clients can connect, e.g., 192.168.0.1:4711. If no port is specified, the default port "
+			+ DEFAULT_CLIENT_PORT + " is used.")
+	private String clientIP;
+
+	private String clientPort;
+
+	public String[] getClient() {
+		return new String[] { clientIP, clientPort };
+	}
+
+	public void setClient(String clientIP) {
+		setClient(clientIP, DEFAULT_CLIENT_PORT);
+	}
+
+	public void setClient(String clientIP, String clientPort) {
+		this.clientIP = clientIP;
+		this.clientPort = clientPort;
 	}
 
 	private String romoteLoggerReceiver;
