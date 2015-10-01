@@ -17,8 +17,8 @@
 	</property>
 	<property>
 		<name>clientConnectionTimeout</name>
-		<description>The number of milliseconds the master waits for messages from the client before closing the connection. In this time three heartbeat messages are sent. The default value is 10000 milliseconds.</description>
-		<value>0</value>
+		<description>The number of milliseconds the master waits for messages from the client before closing the connection. Every 3000 milliseconds the client sends a keep alive message to the master. The default value is 10000 milliseconds.</description>
+		<value>10000</value>
 	</property>
 	<property>
 		<name>logLevel</name>

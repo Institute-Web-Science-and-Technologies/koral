@@ -52,26 +52,57 @@ public class CidreClient {
 				masterSocket.send(MessageUtils.createStringMessage(
 						MessageType.CLIENT_CONNECTION_CREATION, clientAddress,
 						null));
+				clientConnection.setReceiveTimeOut(
+						(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
 				byte[] answer = clientConnection.recv();
-				if (answer.length != 1 && MessageType.valueOf(
-						answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION) {
+				if (answer == null
+						|| (answer.length != 1 && MessageType.valueOf(
+								answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION)) {
 					System.out.println(
 							"Master is not confirming connection attempt.");
 					closeConnectionToMaster();
 				}
+				new Thread() {
+					@Override
+					public void run() {
+						while (!isInterrupted() && clientConnection != null) {
+							long startTime = System.currentTimeMillis();
+							clientConnection.send(new byte[] {
+									MessageType.CLIENT_IS_ALIVE.getValue() });
+							long remainingSleepTime = Configuration.CLIENT_KEEP_ALIVE_INTERVAL
+									- System.currentTimeMillis() + startTime;
+							if (remainingSleepTime > 0) {
+								try {
+									Thread.sleep(remainingSleepTime);
+								} catch (InterruptedException e) {
+								}
+							}
+						}
+					}
+				}.start();
 			} catch (UnknownHostException e) {
 				System.out.println(
-						"Connection failed, because the local IP address could not be identified.");
+						"Connection failed because the local IP address could not be identified.");
+				shutDown();
 				throw new RuntimeException(e);
 			}
 		}
 		System.out.println("Connection established.");
 	}
 
+	public void processCommands() {
+		// TODO Auto-generated method stub
+
+	}
+
 	private void closeConnectionToMaster() {
 		masterSocket.send(MessageUtils.createStringMessage(
 				MessageType.CLIENT_CLOSES_CONNECTION, clientAddress, null));
-		clientConnection.close();
+		if (clientConnection != null) {
+			clientConnection.close();
+			clientConnection = null;
+		}
+		System.out.println("Connection to master closed.");
 	}
 
 	public void shutDown() {
@@ -103,6 +134,7 @@ public class CidreClient {
 
 			CidreClient client = new CidreClient(master);
 			client.connect();
+			client.processCommands();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 				@Override
