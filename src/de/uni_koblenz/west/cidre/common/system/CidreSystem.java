@@ -86,6 +86,10 @@ public abstract class CidreSystem extends Thread {
 		if (logger != null) {
 			logger.info(getClass().getSimpleName() + " shutted down");
 		}
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e1) {
+		}
 		for (Handler handler : logger.getHandlers()) {
 			if (handler instanceof Closeable) {
 				try {
