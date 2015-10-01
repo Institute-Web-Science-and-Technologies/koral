@@ -38,6 +38,12 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 		}
 	}
 
+	public void deserializeClientConnectionTimeout(Configuration conf,
+			String clientConnectionTimeout) {
+		conf.setClientConnectionTimeout(
+				Long.parseLong(clientConnectionTimeout));
+	}
+
 	public void deserializeLogLevel(Configuration conf, String logLevel) {
 		conf.setLoglevel(Level.parse(logLevel));
 	}

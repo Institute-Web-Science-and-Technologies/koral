@@ -33,6 +33,10 @@ class ConfigurationSerializer implements ConfigurableSerializer {
 		}
 	}
 
+	public String serializeClientConnectionTimeout(Configuration conf) {
+		return new Long(conf.getClientConnectionTimeout()).toString();
+	}
+
 	public String serializeLogLevel(Configuration conf) {
 		return conf.getLoglevel().getName();
 	}

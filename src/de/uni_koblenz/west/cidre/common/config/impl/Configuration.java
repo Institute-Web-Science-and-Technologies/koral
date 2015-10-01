@@ -80,6 +80,21 @@ public class Configuration implements Configurable {
 		this.clientPort = clientPort;
 	}
 
+	public static final long CLIENT_CONNECTION_TIMEOUT = 10000;
+
+	@Property(name = "clientConnectionTimeout", description = "The number of milliseconds the master waits for messages from the client before closing the connection."
+			+ " In this time three heartbeat messages are sent. The default value is "
+			+ CLIENT_CONNECTION_TIMEOUT + " milliseconds.")
+	private long clientConnectionTimeout = CLIENT_CONNECTION_TIMEOUT;
+
+	public long getClientConnectionTimeout() {
+		return clientConnectionTimeout;
+	}
+
+	public void setClientConnectionTimeout(long clientConnectionTimeout) {
+		this.clientConnectionTimeout = clientConnectionTimeout;
+	}
+
 	private String romoteLoggerReceiver;
 
 	public String getRomoteLoggerReceiver() {
