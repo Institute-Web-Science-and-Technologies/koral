@@ -81,7 +81,7 @@ public class CSVFormatter extends SimpleFormatter {
 				+ separator + "" + separator + Thread.currentThread().getId()
 				+ separator + CSVFormatter.class.getName() + separator
 				+ "getTail" + separator + "" + separator + "" + separator
-				+ "shutdown logger" + separator + "";
+				+ "shutting down logger" + separator + "";
 	}
 
 }

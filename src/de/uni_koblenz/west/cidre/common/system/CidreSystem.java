@@ -1,8 +1,6 @@
 package de.uni_koblenz.west.cidre.common.system;
 
-import java.io.Closeable;
 import java.io.IOException;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,16 +83,6 @@ public abstract class CidreSystem extends Thread {
 	public void shutDown() {
 		networkManager.close();
 		shutDownInternal();
-
-		for (Handler handler : logger.getHandlers()) {
-			if (handler instanceof Closeable) {
-				try {
-					((Closeable) handler).close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
 	}
 
 	protected abstract void shutDownInternal();
