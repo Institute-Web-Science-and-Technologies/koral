@@ -12,8 +12,6 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 
 public class NetworkManager implements Closeable {
 
-	private final Logger logger;
-
 	private final ZContext context;
 
 	private Socket receiver;
@@ -24,7 +22,6 @@ public class NetworkManager implements Closeable {
 
 	public NetworkManager(Configuration conf, Logger logger,
 			String[] currentServer) {
-		this.logger = logger;
 		context = NetworkContextFactory.getNetworkContext();
 
 		receiver = context.createSocket(ZMQ.PULL);
@@ -89,9 +86,6 @@ public class NetworkManager implements Closeable {
 		receiver.close();
 		receiver = null;
 		NetworkContextFactory.destroyNetworkContext(context);
-		if (logger != null) {
-			logger.info("connection closed");
-		}
 	}
 
 }

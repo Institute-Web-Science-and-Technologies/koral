@@ -33,7 +33,6 @@ public abstract class CidreSystem extends Thread {
 			public void run() {
 				if (isAlive()) {
 					interrupt();
-					shutDown();
 				}
 			}
 		}));
@@ -75,6 +74,10 @@ public abstract class CidreSystem extends Thread {
 		while (!isInterrupted()) {
 			runOneIteration();
 		}
+		if (logger != null) {
+			logger.info(getClass().getSimpleName() + " shutted down");
+		}
+		shutDown();
 	}
 
 	protected abstract void runOneIteration();
@@ -83,13 +86,6 @@ public abstract class CidreSystem extends Thread {
 		networkManager.close();
 		shutDownInternal();
 
-		if (logger != null) {
-			logger.info(getClass().getSimpleName() + " shutted down");
-		}
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e1) {
-		}
 		for (Handler handler : logger.getHandlers()) {
 			if (handler instanceof Closeable) {
 				try {

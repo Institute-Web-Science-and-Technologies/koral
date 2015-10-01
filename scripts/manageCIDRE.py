@@ -10,7 +10,7 @@ def startMaster(remoteLogger=-1):
 
 @roles('master')
 def stopMaster():
-    run("kill $(cat cidreMaster.pid)")
+    run("kill -15 $(cat cidreMaster.pid)")
     run("rm cidreMaster.pid")
 
 @roles('slaves')
@@ -22,5 +22,5 @@ def startSlave(remoteLogger=-1):
 
 @roles('slaves')
 def stopSlave():
-    run("kill $(cat cidreSlave.pid)")
+    run("kill -15 $(cat cidreSlave.pid)")
     run("rm cidreSlave.pid")

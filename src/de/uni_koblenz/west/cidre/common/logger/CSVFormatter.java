@@ -75,4 +75,13 @@ public class CSVFormatter extends SimpleFormatter {
 		return sb.toString();
 	}
 
+	@Override
+	public String getTail(Handler h) {
+		return currentServer + separator + System.currentTimeMillis()
+				+ separator + "" + separator + Thread.currentThread().getId()
+				+ separator + CSVFormatter.class.getName() + separator
+				+ "getTail" + separator + "" + separator + "" + separator
+				+ "shutdown logger" + separator + "";
+	}
+
 }
