@@ -46,7 +46,7 @@ public class JeromqStreamHandler extends Handler {
 	@Override
 	public void close() throws SecurityException {
 		send(formatter.getTail(this));
-		socket.close();
+		context.destroySocket(socket);
 		NetworkContextFactory.destroyNetworkContext(context);
 	}
 

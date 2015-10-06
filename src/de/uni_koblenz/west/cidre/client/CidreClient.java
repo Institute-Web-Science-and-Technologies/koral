@@ -61,6 +61,7 @@ public class CidreClient {
 					System.out.println(
 							"Master is not confirming connection attempt.");
 					closeConnectionToMaster();
+					return;
 				}
 				new Thread() {
 					@Override
@@ -83,7 +84,6 @@ public class CidreClient {
 			} catch (UnknownHostException e) {
 				System.out.println(
 						"Connection failed because the local IP address could not be identified.");
-				shutDown();
 				throw new RuntimeException(e);
 			}
 		}
@@ -99,16 +99,16 @@ public class CidreClient {
 		masterSocket.send(
 				new byte[] { MessageType.CLIENT_CLOSES_CONNECTION.getValue() });
 		if (clientConnection != null) {
-			clientConnection.close();
+			context.destroySocket(clientConnection);
 			clientConnection = null;
+			System.out.println("Connection to master closed.");
 		}
-		System.out.println("Connection to master closed.");
 	}
 
 	public void shutDown() {
 		if (masterSocket != null) {
 			closeConnectionToMaster();
-			masterSocket.close();
+			context.destroySocket(masterSocket);
 			NetworkContextFactory.destroyNetworkContext(context);
 			System.out.println(getClass().getName() + " stopped");
 			masterSocket = null;

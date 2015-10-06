@@ -140,7 +140,7 @@ public class ClientConnectionManager implements Closeable {
 	public void closeConnection(int clientID) {
 		send(clientID, new byte[] { MessageType.CONNECTION_CLOSED.getValue() });
 		Socket socket = clientConnections.get(clientID);
-		socket.close();
+		context.destroySocket(socket);
 
 		if (logger != null) {
 			logger.finer("connection to client " + clientID + " closed.");
@@ -155,7 +155,7 @@ public class ClientConnectionManager implements Closeable {
 		for (int i = 0; i < clientConnections.size(); i++) {
 			closeConnection(i);
 		}
-		receiver.close();
+		context.destroySocket(receiver);
 		receiver = null;
 		NetworkContextFactory.destroyNetworkContext(context);
 	}

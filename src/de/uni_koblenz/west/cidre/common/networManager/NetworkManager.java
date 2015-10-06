@@ -81,10 +81,10 @@ public class NetworkManager implements Closeable {
 	@Override
 	public void close() {
 		for (int i = 0; i < senders.length; i++) {
-			senders[i].close();
+			context.destroySocket(senders[i]);
 			senders[i] = null;
 		}
-		receiver.close();
+		context.destroySocket(receiver);
 		receiver = null;
 		NetworkContextFactory.destroyNetworkContext(context);
 	}
