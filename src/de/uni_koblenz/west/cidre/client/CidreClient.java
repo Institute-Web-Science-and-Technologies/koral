@@ -44,8 +44,8 @@ public class CidreClient {
 			try {
 				String hostAddress = InetAddress.getLocalHost()
 						.getHostAddress();
-				int port = clientConnection.bindToRandomPort(hostAddress, 49152,
-						61000);
+				int port = clientConnection
+						.bindToRandomPort("tcp://" + hostAddress, 49152, 61000);
 				clientAddress = hostAddress + ":" + port;
 
 				// exchange a unique connection with master

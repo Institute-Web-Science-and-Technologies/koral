@@ -93,7 +93,7 @@ public class ClientConnectionManager implements Closeable {
 
 	public int createConnection(String clientIPAndPort) {
 		Socket socket = context.createSocket(ZMQ.PUSH);
-		socket.connect(clientIPAndPort);
+		socket.connect("tcp://" + clientIPAndPort);
 		for (int i = 0; i < clientConnections.size(); i++) {
 			if (clientConnections.get(i) == null) {
 				if (logger != null) {
