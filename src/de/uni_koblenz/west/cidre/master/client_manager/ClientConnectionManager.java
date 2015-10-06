@@ -19,109 +19,89 @@ public class ClientConnectionManager implements Closeable {
 
 	private final ZContext context;
 
-	private Socket receiver;
+	private Socket inSocket;
 
-	private final List<Socket> clientConnections;
+	private final List<Socket> outClientSockets;
 
 	private final List<Long> latestLifeSignalTimeFromClient;
 
-	private int nextReceiver;
-
 	private final long connectionTimeout;
+
+	private final long lastConnectionTimeoutCheck;
 
 	public ClientConnectionManager(Configuration conf, Logger logger) {
 		this.logger = logger;
 		String[] client = conf.getClient();
 		context = NetworkContextFactory.getNetworkContext();
 
-		receiver = context.createSocket(ZMQ.PULL);
-		receiver.bind("tcp://" + client[0] + ":" + client[1]);
+		inSocket = context.createSocket(ZMQ.PULL);
+		inSocket.bind("tcp://" + client[0] + ":" + client[1]);
 
 		if (logger != null) {
 			logger.info("client manager listening on tcp://" + client[0] + ":"
 					+ client[1]);
 		}
 
-		clientConnections = new ArrayList<>();
+		outClientSockets = new ArrayList<>();
 		latestLifeSignalTimeFromClient = new ArrayList<>();
-		nextReceiver = -1;
 
 		connectionTimeout = conf.getClientConnectionTimeout();
+		lastConnectionTimeoutCheck = System.currentTimeMillis();
 	}
 
 	public byte[] receive() {
-		byte[] message = null;
-		int startPoint = nextReceiver;
-		while (message == null) {
-			if (nextReceiver == -1) {
-				message = receiver.recv(ZMQ.DONTWAIT);
-			} else if (nextReceiver < clientConnections.size()) {
-				Socket nextSocket = clientConnections.get(nextReceiver);
-				if (nextSocket != null) {
-					message = nextSocket.recv(ZMQ.DONTWAIT);
-					if (message != null) {
-						// reset timer for connection
-						latestLifeSignalTimeFromClient.set(nextReceiver,
-								new Long(System.currentTimeMillis()));
-					} else if (System.currentTimeMillis()
-							- latestLifeSignalTimeFromClient
-									.get(nextReceiver) >= connectionTimeout) {
-						// The connection has to be closed due to a timeout
-						if (logger != null) {
-							logger.finer("Timeout for client connection "
-									+ nextReceiver);
-						}
-						closeConnection(nextReceiver);
+		byte[] message = inSocket.recv(ZMQ.DONTWAIT);
+		if (System.currentTimeMillis()
+				- lastConnectionTimeoutCheck > connectionTimeout / 2) {
+			// perform timeout checks
+			for (int i = 0; i < outClientSockets.size(); i++) {
+				if (System.currentTimeMillis() - latestLifeSignalTimeFromClient
+						.get(i) >= connectionTimeout) {
+					// The connection has to be closed due to a timeout
+					if (logger != null) {
+						logger.finer("Timeout for client connection " + i);
 					}
+					closeConnection(i);
 				}
-			}
-			nextReceiver++;
-			if (nextReceiver > clientConnections.size() - 1) {
-				nextReceiver = -1;
-			}
-
-			if (nextReceiver == startPoint) {
-				// one round trip has been finished
-				break;
 			}
 		}
 		return message;
 	}
 
-	public int getSenderIdOfLastMessage() {
-		return nextReceiver == -1 ? clientConnections.size() - 1
-				: nextReceiver - 1;
-	}
-
 	public int createConnection(String clientIPAndPort) {
 		Socket socket = context.createSocket(ZMQ.PUSH);
 		socket.connect("tcp://" + clientIPAndPort);
-		for (int i = 0; i < clientConnections.size(); i++) {
-			if (clientConnections.get(i) == null) {
+		for (int i = 0; i < outClientSockets.size(); i++) {
+			if (outClientSockets.get(i) == null) {
 				if (logger != null) {
 					logger.finer("connected to client " + i + ": "
 							+ clientIPAndPort);
 				}
-				clientConnections.set(i, socket);
+				outClientSockets.set(i, socket);
 				latestLifeSignalTimeFromClient.set(i,
 						new Long(System.currentTimeMillis()));
 				return i;
 			}
 		}
-		clientConnections.add(socket);
+		outClientSockets.add(socket);
 		latestLifeSignalTimeFromClient
 				.add(new Long(System.currentTimeMillis()));
 
 		if (logger != null) {
-			logger.finer("connected to client " + (clientConnections.size() - 1)
+			logger.finer("connected to client " + (outClientSockets.size() - 1)
 					+ ": " + clientIPAndPort);
 		}
 
-		return clientConnections.size() - 1;
+		return outClientSockets.size() - 1;
+	}
+
+	public void updateTimerFor(int clientID) {
+		latestLifeSignalTimeFromClient.set(clientID,
+				new Long(System.currentTimeMillis()));
 	}
 
 	public void send(int receivingClient, byte[] message) {
-		Socket out = clientConnections.get(receivingClient);
+		Socket out = outClientSockets.get(receivingClient);
 		if (out != null) {
 			synchronized (out) {
 				out.send(message);
@@ -130,7 +110,7 @@ public class ClientConnectionManager implements Closeable {
 	}
 
 	public void sendToAll(byte[] message) {
-		for (Socket socket : clientConnections) {
+		for (Socket socket : outClientSockets) {
 			if (socket != null) {
 				synchronized (socket) {
 					socket.send(message);
@@ -141,24 +121,24 @@ public class ClientConnectionManager implements Closeable {
 
 	public void closeConnection(int clientID) {
 		send(clientID, new byte[] { MessageType.CONNECTION_CLOSED.getValue() });
-		Socket socket = clientConnections.get(clientID);
+		Socket socket = outClientSockets.get(clientID);
 		context.destroySocket(socket);
 
 		if (logger != null) {
 			logger.finer("connection to client " + clientID + " closed.");
 		}
 
-		clientConnections.set(clientID, null);
+		outClientSockets.set(clientID, null);
 		latestLifeSignalTimeFromClient.set(clientID, null);
 	}
 
 	@Override
 	public void close() {
-		for (int i = 0; i < clientConnections.size(); i++) {
+		for (int i = 0; i < outClientSockets.size(); i++) {
 			closeConnection(i);
 		}
-		context.destroySocket(receiver);
-		receiver = null;
+		context.destroySocket(inSocket);
+		inSocket = null;
 		NetworkContextFactory.destroyNetworkContext(context);
 	}
 

@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.cidre.master.client_manager;
 
 import java.io.Closeable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
@@ -13,10 +15,13 @@ public class ClientMessageProcessor implements Closeable {
 
 	private final ClientConnectionManager clientConnections;
 
+	private final Map<String, Integer> clientAddress2Id;
+
 	public ClientMessageProcessor(Configuration conf,
 			ClientConnectionManager clientConnections, Logger logger) {
 		this.logger = logger;
 		this.clientConnections = clientConnections;
+		clientAddress2Id = new HashMap<>();
 	}
 
 	public boolean processMessage() {
@@ -30,24 +35,28 @@ public class ClientMessageProcessor implements Closeable {
 					logger.finer("client " + address
 							+ " tries to establish a connection");
 				}
-				int newClientID = clientConnections.createConnection(address);
-				clientConnections.send(newClientID,
+				int clientID = clientConnections.createConnection(address);
+				clientAddress2Id.put(address, clientID);
+				clientConnections.send(clientID,
 						new byte[] { MessageType.CLIENT_CONNECTION_CONFIRMATION
 								.getValue() });
 				break;
 			case CLIENT_IS_ALIVE:
+				address = MessageUtils.extreactMessageString(message, logger);
 				if (logger != null) {
-					logger.finest("received keep alive from client "
-							+ clientConnections.getSenderIdOfLastMessage());
+					logger.finest("received keep alive from client " + address);
 				}
+				clientConnections.updateTimerFor(clientAddress2Id.get(address));
 				break;
 			case CLIENT_CLOSES_CONNECTION:
-				int clientID = clientConnections.getSenderIdOfLastMessage();
+				address = MessageUtils.extreactMessageString(message, logger);
 				if (logger != null) {
 					logger.finer(
-							"client " + clientID + " has closed connection");
+							"client " + address + " has closed connection");
 				}
-				clientConnections.closeConnection(clientID);
+				clientConnections
+						.closeConnection(clientAddress2Id.get(address));
+				clientAddress2Id.remove(address);
 				break;
 			default:
 			}

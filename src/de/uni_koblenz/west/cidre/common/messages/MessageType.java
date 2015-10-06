@@ -23,12 +23,14 @@ public enum MessageType {
 	CLIENT_CONNECTION_CONFIRMATION,
 
 	/**
-	 * client to master
+	 * client to master<br>
+	 * String ip:port
 	 */
 	CLIENT_CLOSES_CONNECTION,
 
 	/**
-	 * client to master
+	 * client to master<br>
+	 * String ip:port
 	 */
 	CLIENT_IS_ALIVE;
 

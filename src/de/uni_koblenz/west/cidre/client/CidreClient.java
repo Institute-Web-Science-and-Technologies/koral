@@ -24,37 +24,37 @@ public class CidreClient {
 
 	private final ZContext context;
 
-	private Socket masterSocket;
+	private Socket outSocket;
 
-	private Socket clientConnection;
+	private Socket inSocket;
 
 	private String clientAddress;
 
 	public CidreClient(String masterAddress) {
 		context = NetworkContextFactory.getNetworkContext();
-		masterSocket = context.createSocket(ZMQ.PUSH);
-		masterSocket.connect("tcp://" + masterAddress);
+		outSocket = context.createSocket(ZMQ.PUSH);
+		outSocket.connect("tcp://" + masterAddress);
 		System.out.println(getClass().getName() + " started.");
 	}
 
 	public void connect() {
 		System.out.println("Connecting to master...");
-		if (clientConnection == null) {
-			clientConnection = context.createSocket(ZMQ.PULL);
+		if (inSocket == null) {
+			inSocket = context.createSocket(ZMQ.PULL);
 			try {
 				String hostAddress = InetAddress.getLocalHost()
 						.getHostAddress();
-				int port = clientConnection
-						.bindToRandomPort("tcp://" + hostAddress, 49152, 61000);
+				int port = inSocket.bindToRandomPort("tcp://" + hostAddress,
+						49152, 61000);
 				clientAddress = hostAddress + ":" + port;
 
 				// exchange a unique connection with master
-				masterSocket.send(MessageUtils.createStringMessage(
+				outSocket.send(MessageUtils.createStringMessage(
 						MessageType.CLIENT_CONNECTION_CREATION, clientAddress,
 						null));
-				clientConnection.setReceiveTimeOut(
+				inSocket.setReceiveTimeOut(
 						(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
-				byte[] answer = clientConnection.recv();
+				byte[] answer = inSocket.recv();
 				if (answer == null
 						|| (answer.length != 1 && MessageType.valueOf(
 								answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION)) {
@@ -66,10 +66,11 @@ public class CidreClient {
 				new Thread() {
 					@Override
 					public void run() {
-						while (!isInterrupted() && clientConnection != null) {
+						while (!isInterrupted() && inSocket != null) {
 							long startTime = System.currentTimeMillis();
-							clientConnection.send(new byte[] {
-									MessageType.CLIENT_IS_ALIVE.getValue() });
+							outSocket.send(MessageUtils.createStringMessage(
+									MessageType.CLIENT_IS_ALIVE, clientAddress,
+									null));
 							long remainingSleepTime = Configuration.CLIENT_KEEP_ALIVE_INTERVAL
 									- System.currentTimeMillis() + startTime;
 							if (remainingSleepTime > 0) {
@@ -96,22 +97,22 @@ public class CidreClient {
 	}
 
 	private void closeConnectionToMaster() {
-		masterSocket.send(
-				new byte[] { MessageType.CLIENT_CLOSES_CONNECTION.getValue() });
-		if (clientConnection != null) {
-			context.destroySocket(clientConnection);
-			clientConnection = null;
+		outSocket.send(MessageUtils.createStringMessage(
+				MessageType.CLIENT_CLOSES_CONNECTION, clientAddress, null));
+		if (inSocket != null) {
+			context.destroySocket(inSocket);
+			inSocket = null;
 			System.out.println("Connection to master closed.");
 		}
 	}
 
 	public void shutDown() {
-		if (masterSocket != null) {
+		if (outSocket != null) {
 			closeConnectionToMaster();
-			context.destroySocket(masterSocket);
+			context.destroySocket(outSocket);
 			NetworkContextFactory.destroyNetworkContext(context);
 			System.out.println(getClass().getName() + " stopped");
-			masterSocket = null;
+			outSocket = null;
 		}
 	}
 
