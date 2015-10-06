@@ -56,21 +56,23 @@ public class ClientConnectionManager implements Closeable {
 			if (nextReceiver == -1) {
 				message = receiver.recv(ZMQ.DONTWAIT);
 			} else if (nextReceiver < clientConnections.size()) {
-				message = clientConnections.get(nextReceiver)
-						.recv(ZMQ.DONTWAIT);
-				if (message != null) {
-					// reset timer for connection
-					latestLifeSignalTimeFromClient.set(nextReceiver,
-							new Long(System.currentTimeMillis()));
-				} else if (System.currentTimeMillis()
-						- latestLifeSignalTimeFromClient
-								.get(nextReceiver) >= connectionTimeout) {
-					// The connection has to be closed due to a timeout
-					if (logger != null) {
-						logger.finer("Timeout for client connection "
-								+ nextReceiver);
+				Socket nextSocket = clientConnections.get(nextReceiver);
+				if (nextSocket != null) {
+					message = nextSocket.recv(ZMQ.DONTWAIT);
+					if (message != null) {
+						// reset timer for connection
+						latestLifeSignalTimeFromClient.set(nextReceiver,
+								new Long(System.currentTimeMillis()));
+					} else if (System.currentTimeMillis()
+							- latestLifeSignalTimeFromClient
+									.get(nextReceiver) >= connectionTimeout) {
+						// The connection has to be closed due to a timeout
+						if (logger != null) {
+							logger.finer("Timeout for client connection "
+									+ nextReceiver);
+						}
+						closeConnection(nextReceiver);
 					}
-					closeConnection(nextReceiver);
 				}
 			}
 			nextReceiver++;
