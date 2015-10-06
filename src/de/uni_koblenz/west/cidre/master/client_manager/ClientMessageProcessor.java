@@ -37,6 +37,10 @@ public class ClientMessageProcessor implements Closeable {
 								.getValue() });
 				break;
 			case CLIENT_IS_ALIVE:
+				if (logger != null) {
+					logger.finest("received keep alive from client "
+							+ clientConnections.getSenderIdOfLastMessage());
+				}
 				break;
 			case CLIENT_CLOSES_CONNECTION:
 				int clientID = clientConnections.getSenderIdOfLastMessage();
