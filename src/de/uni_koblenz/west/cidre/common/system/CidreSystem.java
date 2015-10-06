@@ -77,8 +77,10 @@ public abstract class CidreSystem extends Thread {
 				logger.info(getClass().getSimpleName() + " shutted down");
 			}
 		} catch (Throwable t) {
-			logger.throwing(t.getStackTrace()[0].getClassName(),
-					t.getStackTrace()[0].getMethodName(), t);
+			if (logger != null) {
+				logger.throwing(t.getStackTrace()[0].getClassName(),
+						t.getStackTrace()[0].getMethodName(), t);
+			}
 			throw t;
 		} finally {
 			shutDown();

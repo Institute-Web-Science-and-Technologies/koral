@@ -15,10 +15,18 @@ public class CidreMaster extends CidreSystem {
 
 	public CidreMaster(Configuration conf) {
 		super(conf, conf.getMaster());
-		ClientConnectionManager clientConnections = new ClientConnectionManager(
-				conf, logger);
-		clientMessageProcessor = new ClientMessageProcessor(conf,
-				clientConnections, logger);
+		try {
+			ClientConnectionManager clientConnections = new ClientConnectionManager(
+					conf, logger);
+			clientMessageProcessor = new ClientMessageProcessor(conf,
+					clientConnections, logger);
+		} catch (Throwable t) {
+			if (logger != null) {
+				logger.throwing(t.getStackTrace()[0].getClassName(),
+						t.getStackTrace()[0].getMethodName(), t);
+			}
+			throw t;
+		}
 	}
 
 	@Override
