@@ -2,7 +2,6 @@ package de.uni_koblenz.west.cidre.master.client_manager;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -30,12 +29,9 @@ public class ClientConnectionManager implements Closeable {
 
 	private final long connectionTimeout;
 
-	public ClientConnectionManager(Configuration conf, Logger logger,
-			String[] currentServer) {
+	public ClientConnectionManager(Configuration conf, Logger logger) {
 		this.logger = logger;
 		String[] client = conf.getClient();
-		// TODO remove
-		System.out.println(Arrays.toString(client));
 		context = NetworkContextFactory.getNetworkContext();
 
 		receiver = context.createSocket(ZMQ.PULL);

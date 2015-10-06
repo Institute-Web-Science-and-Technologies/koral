@@ -14,8 +14,7 @@ public class ClientMessageProcessor implements Closeable {
 	private final ClientConnectionManager clientConnections;
 
 	public ClientMessageProcessor(Configuration conf,
-			ClientConnectionManager clientConnections, Logger logger,
-			String[] currentServer) {
+			ClientConnectionManager clientConnections, Logger logger) {
 		this.logger = logger;
 		this.clientConnections = clientConnections;
 	}
