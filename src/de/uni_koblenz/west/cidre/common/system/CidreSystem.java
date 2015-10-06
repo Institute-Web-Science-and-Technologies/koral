@@ -81,7 +81,7 @@ public abstract class CidreSystem extends Thread {
 				logger.throwing(t.getStackTrace()[0].getClassName(),
 						t.getStackTrace()[0].getMethodName(), t);
 				try {
-					Thread.sleep(100);
+					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 				}
 			}
