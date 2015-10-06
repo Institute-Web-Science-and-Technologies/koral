@@ -55,8 +55,13 @@ public class ClientConnectionManager implements Closeable {
 				- lastConnectionTimeoutCheck > connectionTimeout / 2) {
 			// perform timeout checks
 			for (int i = 0; i < outClientSockets.size(); i++) {
-				if (System.currentTimeMillis() - latestLifeSignalTimeFromClient
-						.get(i) >= connectionTimeout) {
+				Long timeSinceLastMessage = latestLifeSignalTimeFromClient
+						.get(i);
+				if (timeSinceLastMessage == null) {
+					continue;
+				}
+				if (System.currentTimeMillis()
+						- timeSinceLastMessage >= connectionTimeout) {
 					// The connection has to be closed due to a timeout
 					if (logger != null) {
 						logger.finer("Timeout for client connection " + i);

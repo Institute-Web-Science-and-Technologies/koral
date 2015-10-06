@@ -59,6 +59,7 @@ public class ClientMessageProcessor implements Closeable {
 				clientAddress2Id.remove(address);
 				break;
 			default:
+				// TODO handle unknown messages
 			}
 		}
 		return message != null;
