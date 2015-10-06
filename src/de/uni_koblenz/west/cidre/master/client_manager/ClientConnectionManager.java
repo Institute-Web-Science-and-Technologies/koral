@@ -34,6 +34,9 @@ public class ClientConnectionManager implements Closeable {
 		String[] client = conf.getClient();
 		context = NetworkContextFactory.getNetworkContext();
 
+		// TODO remove
+		System.out.println("tcp://" + client[0] + ":" + client[1]);
+
 		receiver = context.createSocket(ZMQ.PULL);
 		receiver.bind("tcp://" + client[0] + ":" + client[1]);
 
