@@ -96,8 +96,8 @@ public class CidreClient {
 	}
 
 	private void closeConnectionToMaster() {
-		masterSocket.send(MessageUtils.createStringMessage(
-				MessageType.CLIENT_CLOSES_CONNECTION, clientAddress, null));
+		masterSocket.send(
+				new byte[] { MessageType.CLIENT_CLOSES_CONNECTION.getValue() });
 		if (clientConnection != null) {
 			clientConnection.close();
 			clientConnection = null;

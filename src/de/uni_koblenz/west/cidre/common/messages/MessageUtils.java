@@ -23,4 +23,18 @@ public class MessageUtils {
 		}
 	}
 
+	public static String extreactMessageString(byte[] message, Logger logger) {
+		try {
+			byte[] content = new byte[message.length - 1];
+			System.arraycopy(message, 1, content, 0, content.length);
+			return new String(content, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			if (logger != null) {
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			throw new RuntimeException(e);
+		}
+	}
+
 }
