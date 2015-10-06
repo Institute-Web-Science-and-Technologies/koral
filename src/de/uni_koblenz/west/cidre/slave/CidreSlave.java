@@ -36,15 +36,9 @@ public class CidreSlave extends CidreSystem {
 				"The current slave cannot be found in the configuration file.");
 	}
 
-	// private final int rand = new
-	// Random(System.currentTimeMillis()).nextInt();
-
 	@Override
 	public void runOneIteration() {
 		try {
-			// getNetworkManager().send(0,
-			// ("This is a test message from slave. rand=" + rand)
-			// .getBytes());
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 		}

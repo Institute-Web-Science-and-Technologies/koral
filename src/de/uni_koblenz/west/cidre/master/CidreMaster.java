@@ -6,29 +6,43 @@ import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
+import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
+import de.uni_koblenz.west.cidre.master.client_manager.ClientMessageProcessor;
 
 public class CidreMaster extends CidreSystem {
 
+	private final ClientMessageProcessor clientMessageProcessor;
+
 	public CidreMaster(Configuration conf) {
 		super(conf, conf.getMaster());
+		ClientConnectionManager clientConnections = new ClientConnectionManager(
+				conf, logger, conf.getMaster());
+		clientMessageProcessor = new ClientMessageProcessor(conf,
+				clientConnections, logger, conf.getMaster());
 	}
 
 	@Override
 	public void runOneIteration() {
-		try {
-			Thread.sleep(100);
-			byte[] receive = getNetworkManager().receive();
-			if (receive != null) {
-				logger.info(new String(receive));
-			}
-		} catch (InterruptedException e) {
+		boolean messageReceived = false;
+		// process client message
+		messageReceived = clientMessageProcessor.processMessage();
+		byte[] receive = getNetworkManager().receive();
+		if (receive != null) {
+			messageReceived = true;
+			// TODO
+			logger.info(new String(receive));
 		}
-		// TODO
-		// interrupt();
+		if (!messageReceived) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+			}
+		}
 	}
 
 	@Override
 	protected void shutDownInternal() {
+		clientMessageProcessor.close();
 	}
 
 	public static void main(String[] args) {

@@ -28,8 +28,8 @@ public class NetworkManager implements Closeable {
 		receiver.bind("tcp://" + currentServer[0] + ":" + currentServer[1]);
 
 		if (logger != null) {
-			logger.info("listening on tcp://" + currentServer[0] + ":"
-					+ currentServer[1]);
+			logger.info("network manager listening on tcp://" + currentServer[0]
+					+ ":" + currentServer[1]);
 		}
 
 		senders = new Socket[conf.getNumberOfSlaves() + 1];
