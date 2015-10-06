@@ -29,6 +29,9 @@ public class JeromqStreamHandler extends Handler {
 		}
 		context = NetworkContextFactory.getNetworkContext();
 		socket = context.createSocket(ZMQ.PUSH);
+
+		// TODO remove
+		System.out.println("tcp://" + receiver);
 		socket.connect("tcp://" + receiver);
 		formatter = new CSVFormatter(currentServer);
 		send(formatter.getHead(this));

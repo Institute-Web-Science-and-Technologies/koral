@@ -35,6 +35,9 @@ public class NetworkManager implements Closeable {
 		senders = new Socket[conf.getNumberOfSlaves() + 1];
 		String[] master = conf.getMaster();
 		senders[0] = context.createSocket(ZMQ.PUSH);
+
+		// TODO remove
+		System.out.println("tcp://" + master[0] + ":" + master[1]);
 		senders[0].connect("tcp://" + master[0] + ":" + master[1]);
 		if (Arrays.equals(currentServer, master)) {
 			currentID = 0;
@@ -42,6 +45,9 @@ public class NetworkManager implements Closeable {
 		for (int i = 1; i < senders.length; i++) {
 			String[] slave = conf.getSlave(i - 1);
 			senders[i] = context.createSocket(ZMQ.PUSH);
+
+			// TODO remove
+			System.out.println("tcp://" + slave[0] + ":" + slave[1]);
 			senders[i].connect("tcp://" + slave[0] + ":" + slave[1]);
 			if (Arrays.equals(currentServer, slave)) {
 				currentID = i;
