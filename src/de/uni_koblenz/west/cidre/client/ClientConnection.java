@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.cidre.client;
 
 import java.io.Closeable;
+import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -31,12 +32,18 @@ public class ClientConnection implements Closeable {
 		context = NetworkContextFactory.getNetworkContext();
 	}
 
+	public String getClientAddress() {
+		return clientAddress;
+	}
+
 	public void connect(String masterAddress) {
 		System.out.println("Connecting to master...");
 		outSocket = context.createSocket(ZMQ.PUSH);
 		outSocket.connect("tcp://" + masterAddress);
 		if (inSocket == null) {
 			inSocket = context.createSocket(ZMQ.PULL);
+			inSocket.setReceiveTimeOut(
+					(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
 			try {
 				String hostAddress = getHostAddress();
 				int port = inSocket.bindToRandomPort("tcp://" + hostAddress,
@@ -47,8 +54,6 @@ public class ClientConnection implements Closeable {
 				outSocket.send(MessageUtils.createStringMessage(
 						MessageType.CLIENT_CONNECTION_CREATION, clientAddress,
 						null));
-				inSocket.setReceiveTimeOut(
-						(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
 				byte[] answer = inSocket.recv();
 				if (answer == null
 						|| (answer.length != 1 && MessageType.valueOf(
@@ -116,6 +121,55 @@ public class ClientConnection implements Closeable {
 			}
 			return null;
 		}
+	}
+
+	public void sendCommand(String command, byte[][] args) {
+		try {
+			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
+			byte[] commandBytes = command.getBytes("UTF-8");
+
+			outSocket.sendMore(
+					new byte[] { MessageType.CLIENT_COMMAND.getValue() });
+			outSocket.sendMore(clientAddress);
+			outSocket.sendMore(commandBytes);
+			for (int i = 0; i < args.length; i++) {
+				if (i == args.length - 1) {
+					outSocket.sendMore(args[i]);
+				} else {
+					outSocket.send(args[i]);
+				}
+			}
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public byte[][] getResponse() {
+		byte[] mType = inSocket.recv();
+		MessageType messageType = MessageType.valueOf(mType[0]);
+		byte[][] response = null;
+		switch (messageType) {
+		case REQUEST_FILE:
+			response = new byte[2][];
+			break;
+		case REQUEST_FILE_CHUNK:
+			response = new byte[3][];
+			break;
+		case CLIENT_COMMAND_SUCCEEDED:
+			response = new byte[1][];
+			break;
+		case CLIENT_COMMAND_FAILED:
+			response = new byte[2][];
+			break;
+		default:
+			throw new RuntimeException(
+					"Unexpected response from server: " + messageType.name());
+		}
+		response[0] = mType;
+		for (int i = 1; i < response.length; i++) {
+			response[i] = inSocket.recv();
+		}
+		return response;
 	}
 
 	private void closeConnectionToMaster() {

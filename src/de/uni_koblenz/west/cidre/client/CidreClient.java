@@ -1,5 +1,9 @@
 package de.uni_koblenz.west.cidre.client;
 
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -13,6 +17,7 @@ import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
 public class CidreClient {
@@ -29,8 +34,76 @@ public class CidreClient {
 
 	public void loadGraph(CoverStrategyType graphCover,
 			int nHopReplicationPathLength, String... inputPaths) {
+		List<File> files = getFiles(inputPaths);
+		byte[][] args = new byte[3][];
+		args[0] = ByteBuffer.allocate(4).putInt(graphCover.ordinal()).array();
+		args[1] = ByteBuffer.allocate(4).putInt(nHopReplicationPathLength)
+				.array();
+		args[2] = ByteBuffer.allocate(4).putInt(files.size()).array();
+		connection.sendCommand("load", args);
+
+		byte[][] response = connection.getResponse();
+		while (response != null) {
+			MessageType mtype = MessageType.valueOf(response[0][0]);
+			if (mtype == MessageType.REQUEST_FILE) {
+				int fileID = ByteBuffer.wrap(response[1]).getInt();
+				int chunkID = 0;
+				sendFileChunk(files.get(fileID), chunkID);
+			} else if (mtype == MessageType.REQUEST_FILE_CHUNK) {
+				int fileID = ByteBuffer.wrap(response[1]).getInt();
+				int chunkID = ByteBuffer.wrap(response[2]).getInt();
+				sendFileChunk(files.get(fileID), chunkID);
+			} else {
+				processCommandResponse("loading of a graph ", response);
+				break;
+			}
+			response = connection.getResponse();
+		}
+	}
+
+	private void sendFileChunk(File file, int chunkID) {
 		// TODO Auto-generated method stub
 
+	}
+
+	private void processCommandResponse(String individualMessage,
+			byte[][] response) {
+		MessageType mtype = MessageType.valueOf(response[0][0]);
+		switch (mtype) {
+		case CLIENT_COMMAND_SUCCEEDED:
+			System.out
+					.println(individualMessage + " has finished successfully");
+			break;
+		case CLIENT_COMMAND_FAILED:
+			System.out.println(individualMessage + " has failed.");
+			try {
+				System.out
+						.println("Cause: " + new String(response[1], "UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				throw new RuntimeException(e);
+			}
+			break;
+		default:
+			throw new RuntimeException(
+					"Unexpected message type " + mtype.name());
+		}
+	}
+
+	private List<File> getFiles(String[] inputPaths) {
+		List<File> files = new ArrayList<>();
+		for (String inputPath : inputPaths) {
+			File file = new File(inputPath);
+			if (file.isFile()) {
+				files.add(file);
+			} else {
+				for (File containedFile : file.listFiles()) {
+					if (containedFile.isFile()) {
+						files.add(containedFile);
+					}
+				}
+			}
+		}
+		return files;
 	}
 
 	public void shutDown() {

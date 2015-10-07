@@ -32,7 +32,48 @@ public enum MessageType {
 	 * client to master<br>
 	 * String ip:port
 	 */
-	CLIENT_IS_ALIVE;
+	CLIENT_IS_ALIVE,
+
+	/**
+	 * client to master<br>
+	 * String ip:port<br>
+	 * String command \t arg1 \t arg2 \t ...
+	 */
+	CLIENT_COMMAND,
+
+	/**
+	 * master to client<br>
+	 * int fileID
+	 */
+	REQUEST_FILE,
+
+	/**
+	 * master to client<br>
+	 * int fileID<br>
+	 * int chunkID
+	 */
+	REQUEST_FILE_CHUNK,
+
+	/**
+	 * client to master<br>
+	 * String ip:port<br>
+	 * int fileID<br>
+	 * int chunkID<br>
+	 * int totalChunks<br>
+	 * byte[] file chunk
+	 */
+	FILE_CHUNK,
+
+	/**
+	 * master to client
+	 */
+	CLIENT_COMMAND_SUCCEEDED,
+
+	/**
+	 * master to client<br>
+	 * String error message
+	 */
+	CLIENT_COMMAND_FAILED;
 
 	public byte getValue() {
 		return (byte) ordinal();
