@@ -1,5 +1,8 @@
 package de.uni_koblenz.west.cidre.client;
 
+import java.util.Arrays;
+import java.util.Scanner;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -21,13 +24,9 @@ public class CidreClient {
 
 	public void startUp(String masterAddress) {
 		connection.connect(masterAddress);
-		System.out.println(getClass().getSimpleName() + " started.");
 	}
 
-	public void processCommands() {
-		// TODO Auto-generated method stub
-
-	}
+	// TODO Auto-generated method stub
 
 	public void shutDown() {
 		connection.close();
@@ -35,9 +34,11 @@ public class CidreClient {
 	}
 
 	public static void main(String[] args) {
+		String[][] argParts = splitArgs(args);
+		System.out.println(Arrays.toString(argParts[1]));
 		Options options = createCommandLineOptions();
 		try {
-			CommandLine line = parseCommandLineArgs(options, args);
+			CommandLine line = parseCommandLineArgs(options, argParts[0]);
 			if (line.hasOption("h")) {
 				printUsage(options);
 				return;
@@ -53,7 +54,11 @@ public class CidreClient {
 
 			CidreClient client = new CidreClient();
 			client.startUp(master);
-			client.processCommands();
+			if (argParts[1].length > 0) {
+				executeCommand(argParts[1]);
+			} else {
+				startCLI();
+			}
 
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 				@Override
@@ -65,6 +70,60 @@ public class CidreClient {
 		} catch (ParseException e) {
 			e.printStackTrace();
 			printUsage(options);
+		}
+	}
+
+	private static void startCLI() {
+		System.out.println("Client ready for receiving commands");
+		System.out.println("For help enter \"help\".");
+		try (Scanner scanner = new Scanner(System.in);) {
+			while (true) {
+				System.out.print("> ");
+				if (scanner.hasNext()) {
+					String line = scanner.nextLine().trim();
+					if (!line.isEmpty()) {
+						String[] command = line.split("\\s+");
+						executeCommand(command);
+					}
+				}
+			}
+		}
+	}
+
+	private static void executeCommand(String[] strings) {
+		System.out.println(Arrays.toString(strings));
+		// TODO Auto-generated method stub
+
+	}
+
+	private static String[][] splitArgs(String[] args) {
+		String[][] parts = new String[2][];
+		int i = 0;
+		for (i = 0; i < args.length; i++) {
+			if (isCommand(args[i])) {
+				parts[0] = new String[i];
+				System.arraycopy(args, 0, parts[0], 0, parts[0].length);
+				parts[1] = new String[args.length - i];
+				System.arraycopy(args, i, parts[1], 0, parts[1].length);
+				break;
+			}
+		}
+		if (i >= args.length) {
+			// there does not exist a command
+			// there are only general arguments
+			parts[0] = args;
+			parts[1] = new String[0];
+		}
+		return parts;
+	}
+
+	private static boolean isCommand(String string) {
+		switch (string.toLowerCase()) {
+		case "help":
+		case "load":
+			return true;
+		default:
+			return false;
 		}
 	}
 
