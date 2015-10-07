@@ -1,7 +1,11 @@
 package de.uni_koblenz.west.cidre.client;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -42,8 +46,7 @@ public class CidreClient {
 		if (inSocket == null) {
 			inSocket = context.createSocket(ZMQ.PULL);
 			try {
-				String hostAddress = InetAddress.getLocalHost()
-						.getHostAddress();
+				String hostAddress = getHostAddress();
 				int port = inSocket.bindToRandomPort("tcp://" + hostAddress,
 						49152, 61000);
 				clientAddress = hostAddress + ":" + port;
@@ -89,6 +92,36 @@ public class CidreClient {
 			}
 		}
 		System.out.println("Connection established.");
+	}
+
+	private String getHostAddress() throws UnknownHostException {
+		InetAddress localHost = InetAddress.getLocalHost();
+		if (localHost instanceof Inet4Address
+				&& !localHost.isLoopbackAddress()) {
+			return localHost.getHostAddress();
+		} else {
+			try {
+				Enumeration<NetworkInterface> networkInterfaces = NetworkInterface
+						.getNetworkInterfaces();
+				while (networkInterfaces.hasMoreElements()) {
+					NetworkInterface netIface = networkInterfaces.nextElement();
+					Enumeration<InetAddress> addresses = netIface
+							.getInetAddresses();
+					while (addresses.hasMoreElements()) {
+						InetAddress addr = addresses.nextElement();
+						if (addr instanceof Inet4Address
+								&& !addr.isLoopbackAddress()) {
+							return addr.getHostAddress();
+						}
+					}
+				}
+			} catch (SocketException e1) {
+				System.out.println(
+						"Connection failed because the local IP address could not be identified.");
+				throw new RuntimeException(e1);
+			}
+			return null;
+		}
 	}
 
 	public void processCommands() {
