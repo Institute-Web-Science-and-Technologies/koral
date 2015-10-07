@@ -76,6 +76,7 @@ public class CidreClient {
 	private static void startCLI() {
 		System.out.println("Client ready for receiving commands");
 		System.out.println("For help enter \"help\".");
+		System.out.println("If you want to stop the client enter \"exit\".");
 		try (Scanner scanner = new Scanner(System.in);) {
 			while (true) {
 				System.out.print("> ");
@@ -83,6 +84,10 @@ public class CidreClient {
 					String line = scanner.nextLine().trim();
 					if (!line.isEmpty()) {
 						String[] command = line.split("\\s+");
+						if (command.length == 1
+								&& command[0].toLowerCase().equals("exit")) {
+							break;
+						}
 						executeCommand(command);
 					}
 				}
@@ -120,6 +125,7 @@ public class CidreClient {
 	private static boolean isCommand(String string) {
 		switch (string.toLowerCase()) {
 		case "help":
+		case "exit":
 		case "load":
 			return true;
 		default:
