@@ -93,6 +93,9 @@ public class CidreClient {
 		List<File> files = new ArrayList<>();
 		for (String inputPath : inputPaths) {
 			File file = new File(inputPath);
+			if (!file.exists()) {
+				continue;
+			}
 			if (file.isFile()) {
 				files.add(file);
 			} else {
@@ -168,7 +171,11 @@ public class CidreClient {
 								|| command[0].toLowerCase().equals("quit"))) {
 							break;
 						}
-						executeCommand(client, command);
+						try {
+							executeCommand(client, command);
+						} catch (RuntimeException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 			}
