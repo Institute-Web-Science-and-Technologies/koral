@@ -1,6 +1,6 @@
 package de.uni_koblenz.west.cidre.client;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 import org.apache.commons.cli.CommandLine;
@@ -13,6 +13,7 @@ import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
 public class CidreClient {
 
@@ -26,7 +27,11 @@ public class CidreClient {
 		connection.connect(masterAddress);
 	}
 
-	// TODO Auto-generated method stub
+	public void loadGraph(CoverStrategyType graphCover,
+			int nHopReplicationPathLength, String... inputPaths) {
+		// TODO Auto-generated method stub
+
+	}
 
 	public void shutDown() {
 		connection.close();
@@ -62,9 +67,9 @@ public class CidreClient {
 			}));
 
 			if (argParts[1].length > 0) {
-				executeCommand(argParts[1]);
+				executeCommand(client, argParts[1]);
 			} else {
-				startCLI();
+				startCLI(client);
 			}
 
 		} catch (ParseException e) {
@@ -73,10 +78,11 @@ public class CidreClient {
 		}
 	}
 
-	private static void startCLI() {
+	private static void startCLI(CidreClient client) {
 		System.out.println("Client ready for receiving commands");
 		System.out.println("For help enter \"help\".");
-		System.out.println("If you want to stop the client enter \"exit\".");
+		System.out.println(
+				"If you want to stop the client enter \"exit\" or \"quit\".");
 		try (Scanner scanner = new Scanner(System.in);) {
 			while (true) {
 				System.out.print("> ");
@@ -84,21 +90,88 @@ public class CidreClient {
 					String line = scanner.nextLine().trim();
 					if (!line.isEmpty()) {
 						String[] command = line.split("\\s+");
-						if (command.length == 1
-								&& command[0].toLowerCase().equals("exit")) {
+						if (command.length == 1 && (command[0].toLowerCase()
+								.equals("exit")
+								|| command[0].toLowerCase().equals("quit"))) {
 							break;
 						}
-						executeCommand(command);
+						executeCommand(client, command);
 					}
 				}
 			}
 		}
 	}
 
-	private static void executeCommand(String[] strings) {
-		System.out.println(Arrays.toString(strings));
+	private static void executeCommand(CidreClient client, String[] strings) {
+		String[] args = new String[strings.length - 1];
+		if (args.length > 0) {
+			System.arraycopy(strings, 1, args, 0, args.length);
+		}
+		try {
+			switch (strings[0].toLowerCase()) {
+			case "help":
+				printCommandList();
+				break;
+			case "load":
+				loadGraph(client, args);
+				break;
+			}
+
+		} catch (ParseException e) {
+			System.out.println("Invalid command syntax.");
+			printCommandList();
+		}
 		// TODO Auto-generated method stub
 
+	}
+
+	private static void loadGraph(CidreClient client, String[] args)
+			throws ParseException {
+		Options options = createLoadOptions();
+		CommandLineParser parser = new DefaultParser();
+		CommandLine commandLine = parser.parse(options, args);
+
+		CoverStrategyType graphCover = CoverStrategyType
+				.valueOf(commandLine.getOptionValue("c"));
+
+		int nHopReplicationPathLength = 0;
+		if (commandLine.hasOption("n")) {
+			nHopReplicationPathLength = Integer
+					.parseInt(commandLine.getOptionValue("n"));
+		}
+
+		List<String> inputPaths = commandLine.getArgList();
+		if (inputPaths.isEmpty()) {
+			throw new ParseException(
+					"Please specify at least one graph file to load.");
+		}
+		client.loadGraph(graphCover, nHopReplicationPathLength,
+				inputPaths.toArray(new String[inputPaths.size()]));
+	}
+
+	private static Options createLoadOptions() {
+		StringBuilder sb = new StringBuilder();
+		String delim = "";
+		for (CoverStrategyType type : CoverStrategyType.values()) {
+			sb.append(delim).append(type.name());
+			delim = ", ";
+		}
+
+		Option coverStrategy = Option.builder("c").longOpt("cover").hasArg()
+				.argName("graphCoverStrategy")
+				.desc("The used graph cover strategy wher <graphCoverStrategy> is one of "
+						+ sb.toString())
+				.required(true).build();
+
+		Option nHopReplication = Option.builder("n").longOpt("nHopReplication")
+				.hasArg().argName("path length")
+				.desc("Performs an n-hop replication on the chosen graph cover strategy.")
+				.required(false).build();
+
+		Options options = new Options();
+		options.addOption(coverStrategy);
+		options.addOption(nHopReplication);
+		return options;
 	}
 
 	private static String[][] splitArgs(String[] args) {
@@ -126,6 +199,7 @@ public class CidreClient {
 		switch (string.toLowerCase()) {
 		case "help":
 		case "exit":
+		case "quit":
 		case "load":
 			return true;
 		default:
@@ -158,9 +232,20 @@ public class CidreClient {
 
 	private static void printUsage(Options options) {
 		HelpFormatter formatter = new HelpFormatter();
+		formatter.printHelp("java " + CidreClient.class.getName()
+				+ " [-h] [-m <IP:Port>] <command>", options);
+		System.out.println("The following commands are available:");
+		printCommandList();
+	}
+
+	private static void printCommandList() {
+		System.out.println("help\tprints this help message");
+		System.out.println("exit\tquits the client");
+		System.out.println("quit\tquits the client");
+		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(
-				"java " + CidreClient.class.getName() + " [-h] [-m <IP:Port>] ",
-				options);
+				"load -c <graphCoverStrategy> [-n <pathLength>] <fileOrFolder>...",
+				createLoadOptions());
 	}
 
 }
