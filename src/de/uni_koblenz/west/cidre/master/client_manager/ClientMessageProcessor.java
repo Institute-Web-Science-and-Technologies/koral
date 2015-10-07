@@ -46,7 +46,13 @@ public class ClientMessageProcessor implements Closeable {
 				if (logger != null) {
 					logger.finest("received keep alive from client " + address);
 				}
-				clientConnections.updateTimerFor(clientAddress2Id.get(address));
+				Integer cID = clientAddress2Id.get(address);
+				if (cID != null) {
+					clientConnections.updateTimerFor(cID.intValue());
+				} else if (logger != null) {
+					logger.finest("ignoring keep alive from client " + address
+							+ ". Connection already closed.");
+				}
 				break;
 			case CLIENT_CLOSES_CONNECTION:
 				address = MessageUtils.extreactMessageString(message, logger);
@@ -54,8 +60,13 @@ public class ClientMessageProcessor implements Closeable {
 					logger.finer(
 							"client " + address + " has closed connection");
 				}
-				clientConnections
-						.closeConnection(clientAddress2Id.get(address));
+				cID = clientAddress2Id.get(address);
+				if (cID != null) {
+					clientConnections.closeConnection(cID.intValue());
+				} else if (logger != null) {
+					logger.finest("ignoring attempt from client " + address
+							+ " to close the connection. Connection already closed.");
+				}
 				clientAddress2Id.remove(address);
 				break;
 			default:
