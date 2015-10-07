@@ -24,10 +24,14 @@ public class ClientMessageProcessor implements Closeable {
 		clientAddress2Id = new HashMap<>();
 	}
 
+	/**
+	 * @return <code>true</code>, iff a message was received
+	 */
 	public boolean processMessage() {
 		byte[] message = clientConnections.receive();
 		if (message != null) {
-			switch (MessageType.valueOf(message[0])) {
+			MessageType messageType = MessageType.valueOf(message[0]);
+			switch (messageType) {
 			case CLIENT_CONNECTION_CREATION:
 				String address = MessageUtils.extreactMessageString(message,
 						logger);
@@ -70,7 +74,11 @@ public class ClientMessageProcessor implements Closeable {
 				clientAddress2Id.remove(address);
 				break;
 			default:
-				// TODO handle unknown messages
+				if (logger != null) {
+					logger.finest("ignoring message with unknown message type: "
+							+ messageType);
+				}
+				return true;
 			}
 		}
 		return message != null;
