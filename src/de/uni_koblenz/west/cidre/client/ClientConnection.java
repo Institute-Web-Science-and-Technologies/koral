@@ -58,7 +58,7 @@ public class ClientConnection implements Closeable {
 					closeConnectionToMaster();
 					return;
 				}
-				new Thread() {
+				Thread keepAliveThread = new Thread() {
 					@Override
 					public void run() {
 						while (!isInterrupted() && inSocket != null) {
@@ -76,7 +76,9 @@ public class ClientConnection implements Closeable {
 							}
 						}
 					}
-				}.start();
+				};
+				keepAliveThread.setDaemon(true);
+				keepAliveThread.start();
 			} catch (UnknownHostException e) {
 				System.out.println(
 						"Connection failed because the local IP address could not be identified.");

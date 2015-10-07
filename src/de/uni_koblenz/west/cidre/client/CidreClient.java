@@ -35,7 +35,6 @@ public class CidreClient {
 
 	public static void main(String[] args) {
 		String[][] argParts = splitArgs(args);
-		System.out.println(Arrays.toString(argParts[1]));
 		Options options = createCommandLineOptions();
 		try {
 			CommandLine line = parseCommandLineArgs(options, argParts[0]);
@@ -54,11 +53,6 @@ public class CidreClient {
 
 			CidreClient client = new CidreClient();
 			client.startUp(master);
-			if (argParts[1].length > 0) {
-				executeCommand(argParts[1]);
-			} else {
-				startCLI();
-			}
 
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 				@Override
@@ -66,6 +60,12 @@ public class CidreClient {
 					client.shutDown();
 				}
 			}));
+
+			if (argParts[1].length > 0) {
+				executeCommand(argParts[1]);
+			} else {
+				startCLI();
+			}
 
 		} catch (ParseException e) {
 			e.printStackTrace();
