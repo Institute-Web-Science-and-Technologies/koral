@@ -58,7 +58,7 @@ public class CidreClient {
 				int chunkID = ByteBuffer.wrap(response[2]).getInt();
 				sendFileChunk(files.get(fileID), chunkID);
 			} else {
-				processCommandResponse("loading of a graph ", response);
+				processCommandResponse("loading of a graph", response);
 				break;
 			}
 			response = connection.getResponse();
