@@ -31,52 +31,67 @@ public class ClientMessageProcessor implements Closeable {
 		byte[] message = clientConnections.receive();
 		if (message != null) {
 			MessageType messageType = MessageType.valueOf(message[0]);
-			switch (messageType) {
-			case CLIENT_CONNECTION_CREATION:
-				String address = MessageUtils.extreactMessageString(message,
-						logger);
-				if (logger != null) {
-					logger.finer("client " + address
-							+ " tries to establish a connection");
+			try {
+				switch (messageType) {
+				case CLIENT_CONNECTION_CREATION:
+					String address = MessageUtils.extreactMessageString(message,
+							logger);
+					if (logger != null) {
+						logger.finer("client " + address
+								+ " tries to establish a connection");
+					}
+					int clientID = clientConnections.createConnection(address);
+					clientAddress2Id.put(address, clientID);
+					clientConnections.send(clientID,
+							new byte[] {
+									MessageType.CLIENT_CONNECTION_CONFIRMATION
+											.getValue() });
+					break;
+				case CLIENT_IS_ALIVE:
+					address = MessageUtils.extreactMessageString(message,
+							logger);
+					if (logger != null) {
+						logger.finest(
+								"received keep alive from client " + address);
+					}
+					Integer cID = clientAddress2Id.get(address);
+					if (cID != null) {
+						clientConnections.updateTimerFor(cID.intValue());
+					} else if (logger != null) {
+						logger.finest("ignoring keep alive from client "
+								+ address + ". Connection already closed.");
+					}
+					break;
+				case CLIENT_CLOSES_CONNECTION:
+					address = MessageUtils.extreactMessageString(message,
+							logger);
+					if (logger != null) {
+						logger.finer(
+								"client " + address + " has closed connection");
+					}
+					cID = clientAddress2Id.get(address);
+					if (cID != null) {
+						clientConnections.closeConnection(cID.intValue());
+					} else if (logger != null) {
+						logger.finest("ignoring attempt from client " + address
+								+ " to close the connection. Connection already closed.");
+					}
+					clientAddress2Id.remove(address);
+					break;
+				default:
+					if (logger != null) {
+						logger.finest(
+								"ignoring message with unsupported message type: "
+										+ messageType);
+					}
+					return true;
 				}
-				int clientID = clientConnections.createConnection(address);
-				clientAddress2Id.put(address, clientID);
-				clientConnections.send(clientID,
-						new byte[] { MessageType.CLIENT_CONNECTION_CONFIRMATION
-								.getValue() });
-				break;
-			case CLIENT_IS_ALIVE:
-				address = MessageUtils.extreactMessageString(message, logger);
-				if (logger != null) {
-					logger.finest("received keep alive from client " + address);
-				}
-				Integer cID = clientAddress2Id.get(address);
-				if (cID != null) {
-					clientConnections.updateTimerFor(cID.intValue());
-				} else if (logger != null) {
-					logger.finest("ignoring keep alive from client " + address
-							+ ". Connection already closed.");
-				}
-				break;
-			case CLIENT_CLOSES_CONNECTION:
-				address = MessageUtils.extreactMessageString(message, logger);
-				if (logger != null) {
-					logger.finer(
-							"client " + address + " has closed connection");
-				}
-				cID = clientAddress2Id.get(address);
-				if (cID != null) {
-					clientConnections.closeConnection(cID.intValue());
-				} else if (logger != null) {
-					logger.finest("ignoring attempt from client " + address
-							+ " to close the connection. Connection already closed.");
-				}
-				clientAddress2Id.remove(address);
-				break;
-			default:
+			} catch (IllegalArgumentException e) {
 				if (logger != null) {
 					logger.finest("ignoring message with unknown message type: "
-							+ messageType);
+							+ message[0]);
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
 				}
 				return true;
 			}

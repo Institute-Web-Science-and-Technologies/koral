@@ -68,24 +68,29 @@ public class CidreClient {
 
 	private void processCommandResponse(String individualMessage,
 			byte[][] response) {
-		MessageType mtype = MessageType.valueOf(response[0][0]);
-		switch (mtype) {
-		case CLIENT_COMMAND_SUCCEEDED:
-			System.out
-					.println(individualMessage + " has finished successfully");
-			break;
-		case CLIENT_COMMAND_FAILED:
-			System.out.println(individualMessage + " has failed.");
-			try {
-				System.out
-						.println("Cause: " + new String(response[1], "UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				throw new RuntimeException(e);
+		try {
+			MessageType mtype = MessageType.valueOf(response[0][0]);
+			switch (mtype) {
+			case CLIENT_COMMAND_SUCCEEDED:
+				System.out.println(
+						individualMessage + " has finished successfully");
+				break;
+			case CLIENT_COMMAND_FAILED:
+				System.out.println(individualMessage + " has failed.");
+				try {
+					System.out.println(
+							"Cause: " + new String(response[1], "UTF-8"));
+				} catch (UnsupportedEncodingException e) {
+					throw new RuntimeException(e);
+				}
+				break;
+			default:
+				throw new RuntimeException(
+						"Unexpected message type " + mtype.name());
 			}
-			break;
-		default:
+		} catch (IllegalArgumentException e) {
 			throw new RuntimeException(
-					"Unexpected message type " + mtype.name());
+					"Unknwon message type " + response[0][0]);
 		}
 	}
 
