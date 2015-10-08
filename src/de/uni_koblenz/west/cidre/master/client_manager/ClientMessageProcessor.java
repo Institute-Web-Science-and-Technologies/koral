@@ -107,12 +107,25 @@ public class ClientMessageProcessor implements Closeable {
 			return;
 		}
 		String address = MessageUtils.convertToString(message, logger);
+		if (address.trim().isEmpty()) {
+			if (logger != null) {
+				logger.finest("Client has not sent his address.");
+			}
+			return;
+		}
 		if (logger != null) {
 			logger.finest("received command from client " + address);
 		}
 		logger.finest("address=" + address);// TODO remove
 		Integer clientID = clientAddress2Id.get(address);
 		logger.finest("clientID=" + clientID);// TODO remove
+		if (clientID == null) {
+			if (logger != null) {
+				logger.finest("The connection to client " + address
+						+ " has already been closed.");
+			}
+			return;
+		}
 
 		buffer = clientConnections.receive(true);
 		if (buffer == null) {
