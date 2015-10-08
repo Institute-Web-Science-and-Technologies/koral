@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.cidre.master.client_manager;
 
 import java.io.Closeable;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -16,6 +17,8 @@ public class ClientMessageProcessor implements Closeable {
 
 	private final ClientConnectionManager clientConnections;
 
+	private final File tmpDir;
+
 	private final Map<String, Integer> clientAddress2Id;
 
 	private final Map<String, GraphLoaderTask> clientAddress2GraphLoaderTask;
@@ -24,6 +27,11 @@ public class ClientMessageProcessor implements Closeable {
 			ClientConnectionManager clientConnections, Logger logger) {
 		this.logger = logger;
 		this.clientConnections = clientConnections;
+		tmpDir = new File(conf.getTmpDir());
+		if (!tmpDir.exists() || !tmpDir.isDirectory()) {
+			throw new IllegalArgumentException("The temporary directory "
+					+ conf.getTmpDir() + " is not a directory.");
+		}
 		clientAddress2Id = new HashMap<>();
 		clientAddress2GraphLoaderTask = new HashMap<>();
 	}
@@ -168,7 +176,7 @@ public class ClientMessageProcessor implements Closeable {
 			switch (command) {
 			case "load":
 				GraphLoaderTask loaderTask = new GraphLoaderTask(
-						clientID.intValue(), clientConnections, logger);
+						clientID.intValue(), clientConnections, tmpDir, logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
 				loaderTask.loadGraph(arguments);
 				break;

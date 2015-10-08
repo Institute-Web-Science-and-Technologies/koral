@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.cidre.master.tasks;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
@@ -15,6 +16,8 @@ public class GraphLoaderTask extends Thread {
 
 	private final ClientConnectionManager clientConnections;
 
+	private final File workingDir;
+
 	private CoverStrategyType coverStrategy;
 
 	private int replicationPathLength;
@@ -22,10 +25,34 @@ public class GraphLoaderTask extends Thread {
 	private int numberOfFiles;
 
 	public GraphLoaderTask(int clientID,
-			ClientConnectionManager clientConnections, Logger logger) {
+			ClientConnectionManager clientConnections, File tmpDir,
+			Logger logger) {
 		clientId = clientID;
 		this.clientConnections = clientConnections;
 		this.logger = logger;
+		workingDir = new File(tmpDir.getAbsolutePath() + File.separatorChar
+				+ "cidre_client_" + clientId);
+		if (workingDir.exists()) {
+			deleteContent(workingDir);
+		} else {
+			if (!workingDir.mkdirs()) {
+				throw new RuntimeException(
+						"The working directory " + workingDir.getAbsolutePath()
+								+ " could not be created!");
+			}
+		}
+	}
+
+	private void deleteContent(File dir) {
+		for (File file : dir.listFiles()) {
+			if (file.isDirectory()) {
+				deleteContent(file);
+			}
+			if (!file.delete()) {
+				throw new RuntimeException(
+						file.getAbsolutePath() + " could not be deleted!");
+			}
+		}
 	}
 
 	public void loadGraph(byte[][] args) {
