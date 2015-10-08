@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
+import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
 public class GraphLoaderTask extends Thread implements Closeable {
@@ -23,7 +24,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private int replicationPathLength;
 
-	private int numberOfFiles;
+	private FileReceiver fileReceiver;
 
 	public GraphLoaderTask(int clientID,
 			ClientConnectionManager clientConnections, File tmpDir,
@@ -78,8 +79,18 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		}
 		this.coverStrategy = coverStrategy;
 		this.replicationPathLength = replicationPathLength;
-		this.numberOfFiles = numberOfFiles;
-		start();
+		fileReceiver = new FileReceiver(clientId, clientConnections,
+				numberOfFiles);
+		fileReceiver.requestFiles();
+	}
+
+	public void receiveFileChunk(int fileID, long chunkID,
+			long totalNumberOfChunks, byte[] chunkContent) {
+		fileReceiver.receiveFileChunk(fileID, chunkID, totalNumberOfChunks,
+				chunkContent);
+		if (fileReceiver.isFinished()) {
+			start();
+		}
 	}
 
 	@Override
@@ -92,6 +103,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	@Override
 	public void close() {
+		if (fileReceiver != null) {
+			fileReceiver.close();
+		}
 		deleteContent(workingDir);
 		workingDir.delete();
 	}

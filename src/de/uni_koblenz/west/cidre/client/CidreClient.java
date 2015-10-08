@@ -49,11 +49,7 @@ public class CidreClient {
 		byte[][] response = connection.getResponse();
 		while (response != null) {
 			MessageType mtype = MessageType.valueOf(response[0][0]);
-			if (mtype == MessageType.REQUEST_FILE) {
-				int fileID = ByteBuffer.wrap(response[1]).getInt();
-				int chunkID = 0;
-				sendFileChunk(files.get(fileID), chunkID);
-			} else if (mtype == MessageType.REQUEST_FILE_CHUNK) {
+			if (mtype == MessageType.REQUEST_FILE_CHUNK) {
 				int fileID = ByteBuffer.wrap(response[1]).getInt();
 				int chunkID = ByteBuffer.wrap(response[2]).getInt();
 				sendFileChunk(files.get(fileID), chunkID);

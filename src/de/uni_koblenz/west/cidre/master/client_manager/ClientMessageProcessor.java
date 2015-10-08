@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.master.client_manager;
 
 import java.io.Closeable;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -53,6 +54,9 @@ public class ClientMessageProcessor implements Closeable {
 					break;
 				case CLIENT_COMMAND:
 					processCommand(message);
+					break;
+				case FILE_CHUNK:
+					processFileChunk(message);
 					break;
 				case CLIENT_CLOSES_CONNECTION:
 					processCloseConnection(message);
@@ -116,23 +120,6 @@ public class ClientMessageProcessor implements Closeable {
 			return;
 		}
 		String address = MessageUtils.convertToString(buffer, logger);
-		if (address.trim().isEmpty()) {
-			if (logger != null) {
-				logger.finest("Client has not sent his address.");
-			}
-			return;
-		}
-		if (logger != null) {
-			logger.finest("received command from client " + address);
-		}
-		Integer clientID = clientAddress2Id.get(address);
-		if (clientID == null) {
-			if (logger != null) {
-				logger.finest("The connection to client " + address
-						+ " has already been closed.");
-			}
-			return;
-		}
 
 		terminateTask(address);
 
@@ -172,6 +159,24 @@ public class ClientMessageProcessor implements Closeable {
 			arguments[i] = buffer;
 		}
 
+		if (address.trim().isEmpty()) {
+			if (logger != null) {
+				logger.finest("Client has not sent his address.");
+			}
+			return;
+		}
+		if (logger != null) {
+			logger.finest("received command from client " + address);
+		}
+		Integer clientID = clientAddress2Id.get(address);
+		if (clientID == null) {
+			if (logger != null) {
+				logger.finest("The connection to client " + address
+						+ " has already been closed.");
+			}
+			return;
+		}
+
 		try {
 			switch (command) {
 			case "load":
@@ -209,6 +214,86 @@ public class ClientMessageProcessor implements Closeable {
 				terminateTask(address);
 			}
 		}
+	}
+
+	private void processFileChunk(byte[] message) {
+		byte[] buffer = clientConnections.receive(true);
+		if (buffer == null) {
+			if (logger != null) {
+				logger.finest(
+						"Client has sent a command request but missed to send his id.");
+			}
+			return;
+		}
+		String address = MessageUtils.convertToString(buffer, logger);
+
+		buffer = clientConnections.receive(true);
+		if (buffer == null) {
+			if (logger != null) {
+				logger.finest("Client " + address
+						+ " has not sent the id of the file this chunk belongs to.");
+			}
+			return;
+		}
+		int fileID = ByteBuffer.wrap(buffer).getInt();
+
+		buffer = clientConnections.receive(true);
+		if (buffer == null) {
+			if (logger != null) {
+				logger.finest("Client " + address
+						+ " has not sent the id of the chunk.");
+			}
+			return;
+		}
+		long chunkID = ByteBuffer.wrap(buffer).getLong();
+
+		buffer = clientConnections.receive(true);
+		if (buffer == null) {
+			if (logger != null) {
+				logger.finest("Client " + address
+						+ " has not sent the total number of chunks.");
+			}
+			return;
+		}
+		long totalNumberOfChunks = ByteBuffer.wrap(buffer).getLong();
+
+		buffer = clientConnections.receive(true);
+		if (buffer == null) {
+			if (logger != null) {
+				logger.finest("Client " + address
+						+ " has not sent the content of chunk " + chunkID
+						+ " of file" + fileID + ".");
+			}
+			return;
+		}
+
+		if (address.trim().isEmpty()) {
+			if (logger != null) {
+				logger.finest("Client has not sent his address.");
+			}
+			return;
+		}
+		if (logger != null) {
+			logger.finest("received file chunk from client " + address);
+		}
+		Integer clientID = clientAddress2Id.get(address);
+		if (clientID == null) {
+			if (logger != null) {
+				logger.finest("The connection to client " + address
+						+ " has already been closed.");
+			}
+			return;
+		}
+
+		GraphLoaderTask task = clientAddress2GraphLoaderTask.get(address);
+		if (task == null) {
+			if (logger != null) {
+				logger.finest("Client " + address
+						+ " has send a file chunk but there is no task that will receive the chunk.");
+			}
+			return;
+		}
+		task.receiveFileChunk(fileID, chunkID, totalNumberOfChunks, buffer);
 	}
 
 	private void terminateTask(String address) {
