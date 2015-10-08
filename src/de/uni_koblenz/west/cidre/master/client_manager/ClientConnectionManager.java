@@ -49,8 +49,23 @@ public class ClientConnectionManager implements Closeable {
 		lastConnectionTimeoutCheck = System.currentTimeMillis();
 	}
 
-	public byte[] receive() {
-		byte[] message = inSocket.recv(ZMQ.DONTWAIT);
+	/**
+	 * If it waits for a response, <code>null</code> is returned if no response
+	 * has arrived before the timeout occurred.
+	 * 
+	 * @param waitForResponse
+	 * @return
+	 */
+	public byte[] receive(boolean waitForResponse) {
+		byte[] message = null;
+		if (waitForResponse) {
+			int previousTimeOut = inSocket.getReceiveTimeOut();
+			inSocket.setReceiveTimeOut((int) connectionTimeout / 3);
+			message = inSocket.recv();
+			inSocket.setReceiveTimeOut(previousTimeOut);
+		} else {
+			message = inSocket.recv(ZMQ.DONTWAIT);
+		}
 		if (System.currentTimeMillis()
 				- lastConnectionTimeoutCheck > connectionTimeout / 2) {
 			// perform timeout checks

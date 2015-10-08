@@ -38,11 +38,12 @@ public class CidreClient {
 		if (files.isEmpty()) {
 			throw new RuntimeException("No graph file could be found.");
 		}
-		byte[][] args = new byte[3][];
-		args[0] = ByteBuffer.allocate(4).putInt(graphCover.ordinal()).array();
-		args[1] = ByteBuffer.allocate(4).putInt(nHopReplicationPathLength)
+		byte[][] args = new byte[4][];
+		args[0] = new byte[] { (byte) 3 };
+		args[1] = ByteBuffer.allocate(4).putInt(graphCover.ordinal()).array();
+		args[2] = ByteBuffer.allocate(4).putInt(nHopReplicationPathLength)
 				.array();
-		args[2] = ByteBuffer.allocate(4).putInt(files.size()).array();
+		args[3] = ByteBuffer.allocate(4).putInt(files.size()).array();
 		connection.sendCommand("load", args);
 
 		byte[][] response = connection.getResponse();

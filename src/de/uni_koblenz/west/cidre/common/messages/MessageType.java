@@ -36,8 +36,13 @@ public enum MessageType {
 
 	/**
 	 * client to master<br>
+	 * <br>
 	 * String ip:port<br>
-	 * String command \t arg1 \t arg2 \t ...
+	 * String command<br>
+	 * byte numberOfArgs<br>
+	 * byte[] arg1<br>
+	 * ...<br>
+	 * byte[] arg_{numberOfArgs}
 	 */
 	CLIENT_COMMAND,
 

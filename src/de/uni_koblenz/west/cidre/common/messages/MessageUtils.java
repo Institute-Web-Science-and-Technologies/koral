@@ -24,10 +24,14 @@ public class MessageUtils {
 	}
 
 	public static String extreactMessageString(byte[] message, Logger logger) {
+		byte[] content = new byte[message.length - 1];
+		System.arraycopy(message, 1, content, 0, content.length);
+		return convertToString(content, logger);
+	}
+
+	public static String convertToString(byte[] message, Logger logger) {
 		try {
-			byte[] content = new byte[message.length - 1];
-			System.arraycopy(message, 1, content, 0, content.length);
-			return new String(content, "UTF-8");
+			return new String(message, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			if (logger != null) {
 				logger.throwing(e.getStackTrace()[0].getClassName(),
