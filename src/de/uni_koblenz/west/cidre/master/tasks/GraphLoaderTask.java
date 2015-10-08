@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.cidre.master.tasks;
 
+import java.io.Closeable;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
@@ -8,7 +9,7 @@ import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
-public class GraphLoaderTask extends Thread {
+public class GraphLoaderTask extends Thread implements Closeable {
 
 	private final Logger logger;
 
@@ -87,6 +88,12 @@ public class GraphLoaderTask extends Thread {
 		// TODO Server may only load a graph once
 		clientConnections.send(clientId,
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
+	}
+
+	@Override
+	public void close() {
+		deleteContent(workingDir);
+		workingDir.delete();
 	}
 
 }

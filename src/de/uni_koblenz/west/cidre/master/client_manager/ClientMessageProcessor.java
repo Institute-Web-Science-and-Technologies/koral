@@ -217,6 +217,7 @@ public class ClientMessageProcessor implements Closeable {
 			if (task.isAlive()) {
 				task.interrupt();
 			}
+			task.close();
 			clientAddress2GraphLoaderTask.remove(address);
 		}
 	}
@@ -241,6 +242,14 @@ public class ClientMessageProcessor implements Closeable {
 
 	@Override
 	public void close() {
+		for (GraphLoaderTask task : clientAddress2GraphLoaderTask.values()) {
+			if (task != null) {
+				if (task.isAlive()) {
+					task.interrupt();
+				}
+				task.close();
+			}
+		}
 		clientConnections.close();
 	}
 
