@@ -98,7 +98,6 @@ public class ClientMessageProcessor implements Closeable {
 	}
 
 	private void processCommand(byte[] message) {
-		logger.fine(message.length + "");
 		byte[] buffer = clientConnections.receive(true);
 		if (buffer == null) {
 			if (logger != null) {
