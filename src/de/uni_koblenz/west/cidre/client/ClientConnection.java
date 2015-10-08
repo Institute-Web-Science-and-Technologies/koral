@@ -134,9 +134,9 @@ public class ClientConnection implements Closeable {
 			outSocket.sendMore(commandBytes);
 			for (int i = 0; i < args.length; i++) {
 				if (i == args.length - 1) {
-					outSocket.sendMore(args[i]);
-				} else {
 					outSocket.send(args[i]);
+				} else {
+					outSocket.sendMore(args[i]);
 				}
 			}
 		} catch (UnsupportedEncodingException e) {
