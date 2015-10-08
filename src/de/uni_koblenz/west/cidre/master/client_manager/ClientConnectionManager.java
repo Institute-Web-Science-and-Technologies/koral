@@ -2,7 +2,6 @@ package de.uni_koblenz.west.cidre.master.client_manager;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -66,10 +65,6 @@ public class ClientConnectionManager implements Closeable {
 			inSocket.setReceiveTimeOut(previousTimeOut);
 		} else {
 			message = inSocket.recv(ZMQ.DONTWAIT);
-		}
-		// TODO remove
-		if (message != null) {
-			logger.finest(Arrays.toString(message));
 		}
 		if (System.currentTimeMillis()
 				- lastConnectionTimeoutCheck > connectionTimeout / 2) {

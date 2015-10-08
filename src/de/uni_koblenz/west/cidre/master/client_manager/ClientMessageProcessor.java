@@ -106,7 +106,7 @@ public class ClientMessageProcessor implements Closeable {
 			}
 			return;
 		}
-		String address = MessageUtils.convertToString(message, logger);
+		String address = MessageUtils.convertToString(buffer, logger);
 		if (address.trim().isEmpty()) {
 			if (logger != null) {
 				logger.finest("Client has not sent his address.");
