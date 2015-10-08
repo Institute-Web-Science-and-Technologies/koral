@@ -3,6 +3,7 @@ package de.uni_koblenz.west.cidre.master.tasks;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
@@ -13,6 +14,12 @@ public class GraphLoaderTask extends Thread {
 	private final int clientId;
 
 	private final ClientConnectionManager clientConnections;
+
+	private CoverStrategyType coverStrategy;
+
+	private int replicationPathLength;
+
+	private int numberOfFiles;
 
 	public GraphLoaderTask(int clientID,
 			ClientConnectionManager clientConnections, Logger logger) {
@@ -41,12 +48,18 @@ public class GraphLoaderTask extends Thread {
 					+ ", replicationPathLength=" + replicationPathLength
 					+ ", numberOfFiles=" + numberOfFiles + ")");
 		}
-		// TODO Auto-generated method stub
+		this.coverStrategy = coverStrategy;
+		this.replicationPathLength = replicationPathLength;
+		this.numberOfFiles = numberOfFiles;
+		start();
 	}
 
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
+		// TODO Server may only load a graph once
+		clientConnections.send(clientId,
+				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 	}
 
 }

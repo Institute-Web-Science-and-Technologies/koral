@@ -78,6 +78,7 @@ public class ClientMessageProcessor implements Closeable {
 		}
 		int clientID = clientConnections.createConnection(address);
 		clientAddress2Id.put(address, clientID);
+		terminateTask(address);
 		clientConnections.send(clientID, new byte[] {
 				MessageType.CLIENT_CONNECTION_CONFIRMATION.getValue() });
 	}
@@ -124,6 +125,8 @@ public class ClientMessageProcessor implements Closeable {
 			}
 			return;
 		}
+
+		terminateTask(address);
 
 		buffer = clientConnections.receive(true);
 		if (buffer == null) {
@@ -195,15 +198,18 @@ public class ClientMessageProcessor implements Closeable {
 					logger));
 			// remove started graph loader tasks
 			if (command.equals("load")) {
-				GraphLoaderTask task = clientAddress2GraphLoaderTask
-						.get(address);
-				if (task != null) {
-					if (task.isAlive()) {
-						task.interrupt();
-					}
-					clientAddress2GraphLoaderTask.remove(address);
-				}
+				terminateTask(address);
 			}
+		}
+	}
+
+	private void terminateTask(String address) {
+		GraphLoaderTask task = clientAddress2GraphLoaderTask.get(address);
+		if (task != null) {
+			if (task.isAlive()) {
+				task.interrupt();
+			}
+			clientAddress2GraphLoaderTask.remove(address);
 		}
 	}
 
@@ -221,6 +227,7 @@ public class ClientMessageProcessor implements Closeable {
 			logger.finest("ignoring attempt from client " + address
 					+ " to close the connection. Connection already closed.");
 		}
+		terminateTask(address);
 		clientAddress2Id.remove(address);
 	}
 
