@@ -168,7 +168,9 @@ public class ClientMessageProcessor implements Closeable {
 						clientID.intValue(), clientConnections, logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
 				loaderTask.loadGraph(arguments);
-				// TODO break;
+				// TODO remove
+				throw new RuntimeException("any reason");
+				// break;
 			default:
 				String errorMessage = "unknown command: " + command + " with "
 						+ numberOfArguments + " arguments.";

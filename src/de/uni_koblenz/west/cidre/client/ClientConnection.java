@@ -164,7 +164,7 @@ public class ClientConnection implements Closeable {
 				response = new byte[1][];
 				break;
 			case CLIENT_COMMAND_FAILED:
-				response = new byte[2][];
+				response = new byte[1][];
 				break;
 			default:
 				throw new RuntimeException("Unexpected response from server: "

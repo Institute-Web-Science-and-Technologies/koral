@@ -85,8 +85,8 @@ public class CidreClient {
 			case CLIENT_COMMAND_FAILED:
 				System.out.println(individualMessage + " has failed.");
 				try {
-					System.out.println(
-							"Cause: " + new String(response[1], "UTF-8"));
+					System.out.println("Cause: " + new String(response[0], 1,
+							response[0].length - 1, "UTF-8"));
 				} catch (UnsupportedEncodingException e) {
 					throw new RuntimeException(e);
 				}
