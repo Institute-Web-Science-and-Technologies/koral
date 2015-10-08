@@ -130,6 +130,17 @@ public class Configuration implements Configurable {
 		this.logDirectory = logDirectory;
 	}
 
+	@Property(name = "tmpDir", description = "Defines the directory where intermediate data is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.")
+	private String tmpDir = System.getProperty("java.io.tmpdir");
+
+	public String getTmpDir() {
+		return tmpDir;
+	}
+
+	public void setTmpDir(String tmpDir) {
+		this.tmpDir = tmpDir;
+	}
+
 	/*
 	 * serialization specific code
 	 */

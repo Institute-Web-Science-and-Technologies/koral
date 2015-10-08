@@ -45,4 +45,8 @@ class ConfigurationSerializer implements ConfigurableSerializer {
 		return conf.getLogDirectory();
 	}
 
+	public String serializeTmpDir(Configuration conf) {
+		return conf.getTmpDir();
+	}
+
 }

@@ -30,4 +30,9 @@
 		<description>Defines an existing directory in which the log files are written.</description>
 		<value>.</value>
 	</property>
+	<property>
+		<name>tmpDir</name>
+		<description>Defines the directory where intermediate data is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.</description>
+		<value></value>
+	</property>
 </config>

@@ -53,4 +53,8 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 		conf.setLogDirectory(logDirectory);
 	}
 
+	public void deserializeTmpDir(Configuration conf, String tmpDir) {
+		conf.setTmpDir(tmpDir);
+	}
+
 }
