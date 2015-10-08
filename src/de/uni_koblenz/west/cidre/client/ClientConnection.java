@@ -146,8 +146,8 @@ public class ClientConnection implements Closeable {
 
 	public byte[][] getResponse() {
 		byte[][] response = null;
+		byte[] mType = inSocket.recv();
 		try {
-			byte[] mType = inSocket.recv();
 			if (mType == null) {
 				System.out.println("Master did not respond to request.");
 				return null;
@@ -175,8 +175,7 @@ public class ClientConnection implements Closeable {
 				response[i] = inSocket.recv();
 			}
 		} catch (IllegalArgumentException e) {
-			throw new RuntimeException(
-					"Unknwon message type " + response[0][0]);
+			throw new RuntimeException("Unknwon message type " + mType[0], e);
 		}
 		return response;
 	}

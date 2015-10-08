@@ -110,7 +110,9 @@ public class ClientMessageProcessor implements Closeable {
 		if (logger != null) {
 			logger.finest("received command from client " + address);
 		}
+		logger.finest("address=" + address);// TODO remove
 		Integer clientID = clientAddress2Id.get(address);
+		logger.finest("clientID=" + clientID);// TODO remove
 
 		buffer = clientConnections.receive(true);
 		if (buffer == null) {
@@ -121,6 +123,7 @@ public class ClientMessageProcessor implements Closeable {
 			return;
 		}
 		String command = MessageUtils.convertToString(buffer, logger);
+		logger.finest("command=" + command);// TODO remove
 
 		buffer = clientConnections.receive(true);
 		if (buffer == null) {
@@ -132,6 +135,7 @@ public class ClientMessageProcessor implements Closeable {
 			return;
 		}
 		byte numberOfArguments = buffer[0];
+		logger.finest("numberOfArguments=" + numberOfArguments);// TODO remove
 
 		byte[][] arguments = new byte[numberOfArguments][];
 		for (int i = 0; i < numberOfArguments; i++) {
