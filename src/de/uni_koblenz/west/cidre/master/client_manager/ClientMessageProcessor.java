@@ -30,8 +30,8 @@ public class ClientMessageProcessor implements Closeable {
 	public boolean processMessage() {
 		byte[] message = clientConnections.receive();
 		if (message != null) {
-			MessageType messageType = MessageType.valueOf(message[0]);
 			try {
+				MessageType messageType = MessageType.valueOf(message[0]);
 				switch (messageType) {
 				case CLIENT_CONNECTION_CREATION:
 					String address = MessageUtils.extreactMessageString(message,

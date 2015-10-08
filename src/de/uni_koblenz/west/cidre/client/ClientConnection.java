@@ -145,29 +145,34 @@ public class ClientConnection implements Closeable {
 	}
 
 	public byte[][] getResponse() {
-		byte[] mType = inSocket.recv();
-		MessageType messageType = MessageType.valueOf(mType[0]);
 		byte[][] response = null;
-		switch (messageType) {
-		case REQUEST_FILE:
-			response = new byte[2][];
-			break;
-		case REQUEST_FILE_CHUNK:
-			response = new byte[3][];
-			break;
-		case CLIENT_COMMAND_SUCCEEDED:
-			response = new byte[1][];
-			break;
-		case CLIENT_COMMAND_FAILED:
-			response = new byte[2][];
-			break;
-		default:
+		try {
+			byte[] mType = inSocket.recv();
+			MessageType messageType = MessageType.valueOf(mType[0]);
+			switch (messageType) {
+			case REQUEST_FILE:
+				response = new byte[2][];
+				break;
+			case REQUEST_FILE_CHUNK:
+				response = new byte[3][];
+				break;
+			case CLIENT_COMMAND_SUCCEEDED:
+				response = new byte[1][];
+				break;
+			case CLIENT_COMMAND_FAILED:
+				response = new byte[2][];
+				break;
+			default:
+				throw new RuntimeException("Unexpected response from server: "
+						+ messageType.name());
+			}
+			response[0] = mType;
+			for (int i = 1; i < response.length; i++) {
+				response[i] = inSocket.recv();
+			}
+		} catch (IllegalArgumentException e) {
 			throw new RuntimeException(
-					"Unexpected response from server: " + messageType.name());
-		}
-		response[0] = mType;
-		for (int i = 1; i < response.length; i++) {
-			response[i] = inSocket.recv();
+					"Unknwon message type " + response[0][0]);
 		}
 		return response;
 	}
