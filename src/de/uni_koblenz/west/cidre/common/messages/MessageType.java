@@ -49,12 +49,13 @@ public enum MessageType {
 	/**
 	 * master to client<br>
 	 * int fileID<br>
-	 * int chunkID
+	 * long chunkID
 	 */
 	REQUEST_FILE_CHUNK,
 
 	/**
 	 * client to master<br>
+	 * <br>
 	 * String ip:port<br>
 	 * int fileID<br>
 	 * long chunkID<br>
