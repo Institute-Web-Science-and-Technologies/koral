@@ -168,9 +168,7 @@ public class ClientMessageProcessor implements Closeable {
 						clientID.intValue(), clientConnections, logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
 				loaderTask.loadGraph(arguments);
-				// TODO remove
-				throw new RuntimeException("any reason");
-				// break;
+				break;
 			default:
 				String errorMessage = "unknown command: " + command + " with "
 						+ numberOfArguments + " arguments.";
@@ -189,13 +187,12 @@ public class ClientMessageProcessor implements Closeable {
 				logger.throwing(e.getStackTrace()[0].getClassName(),
 						e.getStackTrace()[0].getMethodName(), e);
 			}
-			clientConnections.send(clientID,
-					MessageUtils.createStringMessage(
-							MessageType.CLIENT_COMMAND_FAILED,
-							"error during execution of " + command + " with "
-									+ numberOfArguments + " arguments:\n"
-									+ e.getMessage(),
-							logger));
+			clientConnections.send(clientID, MessageUtils.createStringMessage(
+					MessageType.CLIENT_COMMAND_FAILED,
+					"error during execution of " + command + " with "
+							+ numberOfArguments + " arguments:\n"
+							+ e.getClass().getName() + ": " + e.getMessage(),
+					logger));
 			// remove started graph loader tasks
 			if (command.equals("load")) {
 				GraphLoaderTask task = clientAddress2GraphLoaderTask
