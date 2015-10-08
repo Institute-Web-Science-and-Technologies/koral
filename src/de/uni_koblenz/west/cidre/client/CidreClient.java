@@ -35,6 +35,9 @@ public class CidreClient {
 	public void loadGraph(CoverStrategyType graphCover,
 			int nHopReplicationPathLength, String... inputPaths) {
 		List<File> files = getFiles(inputPaths);
+		if (files.isEmpty()) {
+			throw new RuntimeException("No graph file could be found.");
+		}
 		byte[][] args = new byte[3][];
 		args[0] = ByteBuffer.allocate(4).putInt(graphCover.ordinal()).array();
 		args[1] = ByteBuffer.allocate(4).putInt(nHopReplicationPathLength)
@@ -58,6 +61,9 @@ public class CidreClient {
 				break;
 			}
 			response = connection.getResponse();
+		}
+		if (response == null) {
+			System.out.println("loading of a graph failed");
 		}
 	}
 

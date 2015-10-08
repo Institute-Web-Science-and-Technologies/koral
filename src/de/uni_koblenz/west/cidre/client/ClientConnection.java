@@ -148,6 +148,10 @@ public class ClientConnection implements Closeable {
 		byte[][] response = null;
 		try {
 			byte[] mType = inSocket.recv();
+			if (mType == null) {
+				System.out.println("Master did not respond to request.");
+				return null;
+			}
 			MessageType messageType = MessageType.valueOf(mType[0]);
 			switch (messageType) {
 			case REQUEST_FILE:
