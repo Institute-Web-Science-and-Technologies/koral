@@ -46,13 +46,15 @@ public class CidreClient {
 		args[3] = ByteBuffer.allocate(4).putInt(files.size()).array();
 		connection.sendCommand("load", args);
 
+		FileSetChunkReader reader = new FileSetChunkReader();
 		byte[][] response = connection.getResponse();
 		while (response != null) {
 			MessageType mtype = MessageType.valueOf(response[0][0]);
 			if (mtype == MessageType.REQUEST_FILE_CHUNK) {
 				int fileID = ByteBuffer.wrap(response[0], 1, 4).getInt();
-				long chunkID = ByteBuffer.wrap(response[0], 5, 8).getInt();
-				sendFileChunk(files.get(fileID), chunkID);
+				long chunkID = ByteBuffer.wrap(response[0], 5, 8).getLong();
+				connection.sendFileChunk(reader.getFileChunk(files.get(fileID),
+						fileID, chunkID));
 			} else {
 				processCommandResponse("loading of a graph", response);
 				break;
@@ -62,11 +64,6 @@ public class CidreClient {
 		if (response == null) {
 			System.out.println("loading of a graph failed");
 		}
-	}
-
-	private void sendFileChunk(File file, long chunkID) {
-		// TODO Auto-generated method stub
-
 	}
 
 	private void processCommandResponse(String individualMessage,

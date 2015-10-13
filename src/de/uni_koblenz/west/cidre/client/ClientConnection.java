@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.Enumeration;
 
 import org.zeromq.ZContext;
@@ -17,6 +18,7 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
+import de.uni_koblenz.west.cidre.master.client_manager.FileChunk;
 
 public class ClientConnection implements Closeable {
 
@@ -139,6 +141,25 @@ public class ClientConnection implements Closeable {
 					outSocket.sendMore(args[i]);
 				}
 			}
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void sendFileChunk(FileChunk fileChunk) {
+		try {
+			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
+
+			outSocket
+					.sendMore(new byte[] { MessageType.FILE_CHUNK.getValue() });
+			outSocket.sendMore(clientAddress);
+			outSocket.sendMore(ByteBuffer.allocate(4)
+					.putInt(fileChunk.getFileID()).array());
+			outSocket.sendMore(ByteBuffer.allocate(8)
+					.putLong(fileChunk.getSequenceNumber()).array());
+			outSocket.sendMore(ByteBuffer.allocate(8)
+					.putLong(fileChunk.getTotalNumberOfSequences()).array());
+			outSocket.send(fileChunk.getContent());
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}

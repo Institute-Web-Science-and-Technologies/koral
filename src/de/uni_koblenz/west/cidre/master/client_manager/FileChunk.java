@@ -1,6 +1,6 @@
 package de.uni_koblenz.west.cidre.master.client_manager;
 
-class FileChunk implements Comparable<FileChunk> {
+public class FileChunk implements Comparable<FileChunk> {
 
 	private final int fileID;
 
