@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.master.tasks;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
@@ -87,10 +88,27 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	public void receiveFileChunk(int fileID, long chunkID,
 			long totalNumberOfChunks, byte[] chunkContent) {
-		fileReceiver.receiveFileChunk(fileID, chunkID, totalNumberOfChunks,
-				chunkContent);
-		if (fileReceiver.isFinished()) {
-			start();
+		if (fileReceiver == null) {
+			// this task has been closed
+			return;
+		}
+		try {
+			fileReceiver.receiveFileChunk(fileID, chunkID, totalNumberOfChunks,
+					chunkContent);
+			if (fileReceiver.isFinished()) {
+				start();
+			} else if (clientConnections.isConnectionClosed(clientId)) {
+				close();
+			}
+		} catch (IOException e) {
+			if (logger != null) {
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			clientConnections.send(clientId, MessageUtils.createStringMessage(
+					MessageType.CLIENT_COMMAND_FAILED,
+					e.getClass().getName() + ": " + e.getMessage(), logger));
+			close();
 		}
 	}
 
@@ -114,9 +132,11 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		}
 		if (fileReceiver != null) {
 			fileReceiver.close();
+			fileReceiver = null;
 		}
-		deleteContent(workingDir);
-		workingDir.delete();
+		// TODO uncomment when implementation is finished
+		// deleteContent(workingDir);
+		// workingDir.delete();
 	}
 
 }

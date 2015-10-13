@@ -15,16 +15,33 @@ class FileChunk implements Comparable<FileChunk> {
 		this.sequenceNumber = sequenceNumber;
 	}
 
+	public FileChunk(int fileID, long sequenceNumber,
+			long totalNumberOfSequences) {
+		this(fileID, sequenceNumber);
+		this.totalNumberOfSequences = totalNumberOfSequences;
+	}
+
+	public int getFileID() {
+		return fileID;
+	}
+
 	public long getSequenceNumber() {
 		return sequenceNumber;
+	}
+
+	public long getTotalNumberOfSequences() {
+		return totalNumberOfSequences;
+	}
+
+	public void setTotalNumberOfSequences(long totalNumberOfSequences) {
+		this.totalNumberOfSequences = totalNumberOfSequences;
 	}
 
 	public boolean isReceived() {
 		return content != null;
 	}
 
-	public void setContent(long totalNumberOfSequences, byte[] content) {
-		this.totalNumberOfSequences = totalNumberOfSequences;
+	public void setContent(byte[] content) {
 		this.content = content;
 	}
 

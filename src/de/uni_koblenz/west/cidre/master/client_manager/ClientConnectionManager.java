@@ -120,6 +120,10 @@ public class ClientConnectionManager implements Closeable {
 				new Long(System.currentTimeMillis()));
 	}
 
+	public boolean isConnectionClosed(int client) {
+		return outClientSockets.get(client) == null;
+	}
+
 	public void send(int receivingClient, byte[] message) {
 		Socket out = outClientSockets.get(receivingClient);
 		if (out != null) {

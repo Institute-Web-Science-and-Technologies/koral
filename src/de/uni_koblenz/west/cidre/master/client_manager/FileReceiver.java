@@ -33,8 +33,6 @@ public class FileReceiver implements Closeable {
 
 	private final PriorityQueue<FileChunk> unprocessedChunks;
 
-	// TODO handle connection terminations;
-
 	public FileReceiver(File workingDir, int clientID,
 			ClientConnectionManager clientConnections, int numberOfFiles,
 			Logger logger) {
@@ -54,23 +52,25 @@ public class FileReceiver implements Closeable {
 
 	private void requestNextFile() {
 		if (out != null) {
-			try {
-				out.close();
-			} catch (IOException e) {
-				logger.throwing(e.getStackTrace()[0].getClassName(),
-						e.getStackTrace()[0].getMethodName(), e);
-			}
+			close();
 		}
 		currentFile++;
 		if (currentFile < totalNumberOfFiles) {
+			logger.finest("Receiving file " + currentFile);
 			try {
 				out = new BufferedOutputStream(new FileOutputStream(
 						new File(workingDir.getAbsolutePath()
 								+ File.separatorChar + currentFile)));
 			} catch (FileNotFoundException e) {
-				logger.throwing(e.getStackTrace()[0].getClassName(),
-						e.getStackTrace()[0].getMethodName(), e);
+				if (logger != null) {
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
+				}
 			}
+		}
+		if (logger != null) {
+			logger.finest("Requesting file " + currentFile + " from client "
+					+ clientID + ".");
 		}
 		requestNextFileChunk();
 	}
@@ -91,7 +91,8 @@ public class FileReceiver implements Closeable {
 			if (chunk.isLastChunk()) {
 				break;
 			}
-			chunk = new FileChunk(currentFile, chunk.getSequenceNumber() + 1);
+			chunk = new FileChunk(currentFile, chunk.getSequenceNumber() + 1,
+					chunk.getTotalNumberOfSequences());
 			unprocessedChunks.add(chunk);
 			requestFileChunk(chunk);
 		}
@@ -109,12 +110,52 @@ public class FileReceiver implements Closeable {
 	}
 
 	public void receiveFileChunk(int fileID, long chunkID,
-			long totalNumberOfChunks, byte[] chunkContent) {
-		// TODO Auto-generated method stub
-		// write and remove all initial file chunks
-		// remove all chunks with invalid fileIDs
-		// request further graph chunks
-		// request next file
+			long totalNumberOfChunks, byte[] chunkContent) throws IOException {
+		assert!unprocessedChunks.isEmpty();
+		// update content of file chunks
+		for (FileChunk chunk : unprocessedChunks) {
+			if (chunk.getFileID() != fileID) {
+				continue;
+			}
+			if (chunk.getSequenceNumber() == chunkID) {
+				chunk.setContent(chunkContent);
+			}
+			chunk.setTotalNumberOfSequences(totalNumberOfChunks);
+		}
+		// process file chunks
+		FileChunk chunk = null;
+		boolean fileIsFinished = false;
+		do {
+			if (fileIsFinished
+					&& unprocessedChunks.peek().getFileID() == fileID) {
+				// remove further file chunks behind the last file chunk of
+				// this file
+				unprocessedChunks.poll();
+			} else {
+				chunk = unprocessedChunks.peek();
+				if (chunk.getFileID() < fileID) {
+					// remove chunks from old files
+					unprocessedChunks.poll();
+				} else if (chunk.getFileID() == fileID && chunk.isReceived()) {
+					// write all already received file dhunks to disk
+					out.write(chunk.getContent());
+					unprocessedChunks.poll();
+					fileIsFinished = chunk.isLastChunk();
+				} else {
+					break;
+				}
+			}
+		} while (unprocessedChunks.isEmpty() || !chunk.isReceived()
+				|| chunk.getFileID() > fileID);
+		if (fileIsFinished) {
+			if (logger != null) {
+				logger.finest("Received file " + fileID + " from client "
+						+ clientID + " completely.");
+			}
+			requestNextFile();
+		} else {
+			requestNextFileChunk();
+		}
 	}
 
 	public boolean isFinished() {
@@ -127,8 +168,10 @@ public class FileReceiver implements Closeable {
 			try {
 				out.close();
 			} catch (IOException e) {
-				logger.throwing(e.getStackTrace()[0].getClassName(),
-						e.getStackTrace()[0].getMethodName(), e);
+				if (logger != null) {
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
+				}
 			}
 		}
 	}
