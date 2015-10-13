@@ -23,7 +23,7 @@ public class CIDRE {
 		case "client":
 			CidreClient.main(followUpArgs);
 			return;
-		case "logReceiver":
+		case "logreceiver":
 			JeromqLoggerReceiver.main(followUpArgs);
 			return;
 		}
