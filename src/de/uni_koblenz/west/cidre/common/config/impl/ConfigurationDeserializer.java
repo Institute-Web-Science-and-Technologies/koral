@@ -54,7 +54,9 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 	}
 
 	public void deserializeTmpDir(Configuration conf, String tmpDir) {
-		conf.setTmpDir(tmpDir);
+		if (tmpDir != null && !tmpDir.isEmpty()) {
+			conf.setTmpDir(tmpDir);
+		}
 	}
 
 }

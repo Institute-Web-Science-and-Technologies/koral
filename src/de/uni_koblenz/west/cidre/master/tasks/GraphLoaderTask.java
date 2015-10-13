@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
@@ -103,6 +104,14 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	@Override
 	public void close() {
+		if (isAlive()) {
+			interrupt();
+			clientConnections.send(clientId,
+					MessageUtils.createStringMessage(
+							MessageType.CLIENT_COMMAND_FAILED,
+							"GraphLoaderTask has been closed befor it could finish.",
+							logger));
+		}
 		if (fileReceiver != null) {
 			fileReceiver.close();
 		}
