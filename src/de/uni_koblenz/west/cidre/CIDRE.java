@@ -1,5 +1,7 @@
 package de.uni_koblenz.west.cidre;
 
+import de.uni_koblenz.west.cidre.client.CidreClient;
+import de.uni_koblenz.west.cidre.common.logger.receiver.JeromqLoggerReceiver;
 import de.uni_koblenz.west.cidre.master.CidreMaster;
 import de.uni_koblenz.west.cidre.slave.CidreSlave;
 
@@ -18,6 +20,12 @@ public class CIDRE {
 		case "slave":
 			CidreSlave.main(followUpArgs);
 			return;
+		case "client":
+			CidreClient.main(followUpArgs);
+			return;
+		case "logReceiver":
+			JeromqLoggerReceiver.main(followUpArgs);
+			return;
 		}
 		printUsage();
 	}
@@ -27,6 +35,10 @@ public class CIDRE {
 				"java " + CIDRE.class.getName() + " master <argsOfMaster>");
 		System.out.println(
 				"java " + CIDRE.class.getName() + " slave <argsOfSlave>");
+		System.out.println(
+				"java " + CIDRE.class.getName() + " client <argsOfClient>");
+		System.out.println("java " + CIDRE.class.getName()
+				+ " logReceiver <argsOfLogReceiver>");
 	}
 
 }
