@@ -96,6 +96,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			fileReceiver.receiveFileChunk(fileID, chunkID, totalNumberOfChunks,
 					chunkContent);
 			if (fileReceiver.isFinished()) {
+				fileReceiver.close();
+				fileReceiver = null;
 				start();
 			} else if (clientConnections.isConnectionClosed(clientId)) {
 				close();
