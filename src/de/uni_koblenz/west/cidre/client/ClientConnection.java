@@ -198,6 +198,12 @@ public class ClientConnection implements Closeable {
 		return response;
 	}
 
+	public void sendCommandAbortion(String command) {
+		outSocket.send(MessageUtils.createStringMessage(
+				MessageType.CLIENT_COMMAND_ABORTED,
+				clientAddress + "|" + command, null));
+	}
+
 	private void closeConnectionToMaster() {
 		outSocket.send(MessageUtils.createStringMessage(
 				MessageType.CLIENT_CLOSES_CONNECTION, clientAddress, null));

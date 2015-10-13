@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
@@ -60,6 +61,9 @@ public class ClientMessageProcessor
 					break;
 				case FILE_CHUNK:
 					processFileChunk(message);
+					break;
+				case CLIENT_COMMAND_ABORTED:
+					processAbortCommand(message);
 					break;
 				case CLIENT_CLOSES_CONNECTION:
 					processCloseConnection(message);
@@ -294,6 +298,24 @@ public class ClientMessageProcessor
 			return;
 		}
 		task.receiveFileChunk(fileID, chunkID, totalNumberOfChunks, buffer);
+	}
+
+	private void processAbortCommand(byte[] message) {
+		String abortionContext = MessageUtils.extreactMessageString(message,
+				logger);
+		String[] parts = abortionContext.split(Pattern.quote("|"));
+		if (logger != null) {
+			logger.finer("client " + parts[0] + " aborts command " + parts[1]);
+		}
+		switch (parts[1].toLowerCase()) {
+		case "load":
+			terminateTask(parts[0]);
+			break;
+		default:
+			if (logger != null) {
+				logger.finer("unknown aborted command: " + parts[1]);
+			}
+		}
 	}
 
 	private void terminateTask(String address) {

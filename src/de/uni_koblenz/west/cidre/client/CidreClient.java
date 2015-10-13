@@ -46,7 +46,6 @@ public class CidreClient {
 		args[3] = ByteBuffer.allocate(4).putInt(files.size()).array();
 		connection.sendCommand("load", args);
 
-		// TODO add field reader and close it
 		byte[][] response = connection.getResponse();
 		try (FileSetChunkReader reader = new FileSetChunkReader();) {
 			while (response != null) {
@@ -63,7 +62,7 @@ public class CidreClient {
 				response = connection.getResponse();
 			}
 		} catch (Throwable t) {
-
+			connection.sendCommandAbortion("load");
 			throw t;
 		}
 		if (response == null) {
@@ -211,8 +210,6 @@ public class CidreClient {
 			System.out.println("Invalid command syntax.");
 			printCommandList();
 		}
-		// TODO Auto-generated method stub
-
 	}
 
 	private static void loadGraph(CidreClient client, String[] args)

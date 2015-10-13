@@ -65,6 +65,14 @@ public enum MessageType {
 	FILE_CHUNK,
 
 	/**
+	 * client to master<br>
+	 * String ip:port<br>
+	 * String "|" <br>
+	 * String command
+	 */
+	CLIENT_COMMAND_ABORTED,
+
+	/**
 	 * master to client
 	 */
 	CLIENT_COMMAND_SUCCEEDED,
