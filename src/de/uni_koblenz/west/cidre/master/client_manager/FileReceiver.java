@@ -56,7 +56,10 @@ public class FileReceiver implements Closeable {
 		}
 		currentFile++;
 		if (currentFile < totalNumberOfFiles) {
-			logger.finest("Receiving file " + currentFile);
+			if (logger != null) {
+				logger.finest("Requesting file " + currentFile + " from client "
+						+ clientID + ".");
+			}
 			try {
 				out = new BufferedOutputStream(new FileOutputStream(
 						new File(workingDir.getAbsolutePath()
@@ -67,12 +70,8 @@ public class FileReceiver implements Closeable {
 							e.getStackTrace()[0].getMethodName(), e);
 				}
 			}
+			requestNextFileChunk();
 		}
-		if (logger != null) {
-			logger.finest("Requesting file " + currentFile + " from client "
-					+ clientID + ".");
-		}
-		requestNextFileChunk();
 	}
 
 	private void requestNextFileChunk() {
