@@ -36,7 +36,7 @@ public enum MessageType {
 
 	/**
 	 * client to master<br>
-	 * <br>
+	 * (multipart message)<br>
 	 * String ip:port<br>
 	 * String command<br>
 	 * byte numberOfArgs<br>
@@ -55,7 +55,7 @@ public enum MessageType {
 
 	/**
 	 * client to master<br>
-	 * <br>
+	 * (multipart message)<br>
 	 * String ip:port<br>
 	 * int fileID<br>
 	 * long chunkID<br>

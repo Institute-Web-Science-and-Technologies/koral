@@ -50,8 +50,8 @@ public class CidreClient {
 		while (response != null) {
 			MessageType mtype = MessageType.valueOf(response[0][0]);
 			if (mtype == MessageType.REQUEST_FILE_CHUNK) {
-				int fileID = ByteBuffer.wrap(response[1]).getInt();
-				int chunkID = ByteBuffer.wrap(response[2]).getInt();
+				int fileID = ByteBuffer.wrap(response[0], 1, 4).getInt();
+				long chunkID = ByteBuffer.wrap(response[0], 5, 8).getInt();
 				sendFileChunk(files.get(fileID), chunkID);
 			} else {
 				processCommandResponse("loading of a graph", response);
@@ -64,7 +64,7 @@ public class CidreClient {
 		}
 	}
 
-	private void sendFileChunk(File file, int chunkID) {
+	private void sendFileChunk(File file, long chunkID) {
 		// TODO Auto-generated method stub
 
 	}
