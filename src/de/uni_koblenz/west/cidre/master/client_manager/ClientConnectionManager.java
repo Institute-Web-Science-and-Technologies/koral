@@ -2,7 +2,9 @@ package de.uni_koblenz.west.cidre.master.client_manager;
 
 import java.io.Closeable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.zeromq.ZContext;
@@ -29,6 +31,8 @@ public class ClientConnectionManager implements Closeable {
 
 	private final long lastConnectionTimeoutCheck;
 
+	private final Set<ClosedConnectionListener> listeners;
+
 	public ClientConnectionManager(Configuration conf, Logger logger) {
 		this.logger = logger;
 		String[] client = conf.getClient();
@@ -47,6 +51,13 @@ public class ClientConnectionManager implements Closeable {
 
 		connectionTimeout = conf.getClientConnectionTimeout();
 		lastConnectionTimeoutCheck = System.currentTimeMillis();
+
+		listeners = new HashSet<>();
+	}
+
+	public void addClosedConnectionListener(
+			ClientMessageProcessor clientMessageProcessor) {
+		listeners.add(clientMessageProcessor);
 	}
 
 	/**
@@ -154,6 +165,10 @@ public class ClientConnectionManager implements Closeable {
 
 		outClientSockets.set(clientID, null);
 		latestLifeSignalTimeFromClient.set(clientID, null);
+
+		for (ClosedConnectionListener listener : listeners) {
+			listener.notifyOnClosedConnection(clientID);
+		}
 	}
 
 	@Override

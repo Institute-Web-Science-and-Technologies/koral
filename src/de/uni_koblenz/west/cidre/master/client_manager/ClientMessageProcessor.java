@@ -5,6 +5,7 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
@@ -12,7 +13,8 @@ import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.master.tasks.GraphLoaderTask;
 
-public class ClientMessageProcessor implements Closeable {
+public class ClientMessageProcessor
+		implements Closeable, ClosedConnectionListener {
 
 	private final Logger logger;
 
@@ -35,6 +37,7 @@ public class ClientMessageProcessor implements Closeable {
 		}
 		clientAddress2Id = new HashMap<>();
 		clientAddress2GraphLoaderTask = new HashMap<>();
+		this.clientConnections.addClosedConnectionListener(this);
 	}
 
 	/**
@@ -90,7 +93,6 @@ public class ClientMessageProcessor implements Closeable {
 		}
 		int clientID = clientConnections.createConnection(address);
 		clientAddress2Id.put(address, clientID);
-		terminateTask(address);
 		clientConnections.send(clientID, new byte[] {
 				MessageType.CLIENT_CONNECTION_CONFIRMATION.getValue() });
 	}
@@ -120,8 +122,6 @@ public class ClientMessageProcessor implements Closeable {
 			return;
 		}
 		String address = MessageUtils.convertToString(buffer, logger);
-
-		terminateTask(address);
 
 		buffer = clientConnections.receive(true);
 		if (buffer == null) {
@@ -321,8 +321,6 @@ public class ClientMessageProcessor implements Closeable {
 			logger.finest("ignoring attempt from client " + address
 					+ " to close the connection. Connection already closed.");
 		}
-		terminateTask(address);
-		clientAddress2Id.remove(address);
 	}
 
 	@Override
@@ -336,6 +334,21 @@ public class ClientMessageProcessor implements Closeable {
 			}
 		}
 		clientConnections.close();
+	}
+
+	@Override
+	public void notifyOnClosedConnection(int clientID) {
+		String address = null;
+		for (Entry<String, Integer> entry : clientAddress2Id.entrySet()) {
+			if (entry.getValue() != null
+					&& entry.getValue().intValue() == clientID) {
+				address = entry.getKey();
+			}
+		}
+		if (address != null) {
+			terminateTask(address);
+			clientAddress2Id.remove(address);
+		}
 	}
 
 }
