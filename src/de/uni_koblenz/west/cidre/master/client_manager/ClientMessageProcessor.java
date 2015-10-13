@@ -277,9 +277,9 @@ public class ClientMessageProcessor
 			}
 			return;
 		}
-		if (logger != null) {
-			logger.finest("received file chunk from client " + address);
-		}
+		// if (logger != null) {
+		// logger.finest("received file chunk from client " + address);
+		// }
 		Integer clientID = clientAddress2Id.get(address);
 		if (clientID == null) {
 			if (logger != null) {
