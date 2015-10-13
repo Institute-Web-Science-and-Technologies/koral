@@ -137,10 +137,13 @@ public class FileReceiver implements Closeable {
 					// remove chunks from old files
 					unprocessedChunks.poll();
 				} else if (chunk.getFileID() == fileID && chunk.isReceived()) {
-					// write all already received file dhunks to disk
+					// write all already received file chunks to disk
 					out.write(chunk.getContent());
 					unprocessedChunks.poll();
-					fileIsFinished = chunk.isLastChunk();
+					if (chunk.isLastChunk()) {
+						fileIsFinished = true;
+						removeAllPendingFileChunksFromFile(fileID);
+					}
 				} else {
 					break;
 				}
@@ -155,6 +158,15 @@ public class FileReceiver implements Closeable {
 			requestNextFile();
 		} else {
 			requestNextFileChunk();
+		}
+	}
+
+	private void removeAllPendingFileChunksFromFile(int fileID) {
+		for (FileChunk chunk = unprocessedChunks.peek(); chunk != null
+				&& !unprocessedChunks.isEmpty()
+				&& chunk.getFileID() == fileID; chunk = unprocessedChunks
+						.peek()) {
+			unprocessedChunks.poll();
 		}
 	}
 
