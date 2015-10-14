@@ -1,5 +1,6 @@
 import environment
 from fabric.api import *
+from fabric.contrib.files import *
 
 @roles('master')
 def installMaster():
@@ -34,7 +35,8 @@ def installAnt():
     sudo("apt-get -y install ant")
 
 def cloneCidre():
-    sudo("rm -r cidre")
+    if exists("cidre", use_sudo=True):
+        sudo("rm -r cidre")
     run("git clone server.djanke-diss:/git/cidre.git")
 
 def resolveDependencies():
