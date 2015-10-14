@@ -166,6 +166,8 @@ public class ClientConnection implements Closeable {
 	}
 
 	public byte[][] getResponse() {
+		inSocket.setReceiveTimeOut(
+				(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
 		byte[][] response = null;
 		byte[] mType = inSocket.recv();
 		try {
@@ -176,11 +178,7 @@ public class ClientConnection implements Closeable {
 			MessageType messageType = MessageType.valueOf(mType[0]);
 			switch (messageType) {
 			case REQUEST_FILE_CHUNK:
-				response = new byte[1][];
-				break;
 			case CLIENT_COMMAND_SUCCEEDED:
-				response = new byte[1][];
-				break;
 			case CLIENT_COMMAND_FAILED:
 				response = new byte[1][];
 				break;
