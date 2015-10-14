@@ -104,4 +104,10 @@ public class FileChunk implements Comparable<FileChunk> {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return "FileChunk [fileID=" + fileID + ", sequenceNumber="
+				+ sequenceNumber + "/" + (totalNumberOfSequences - 1) + "]";
+	}
+
 }

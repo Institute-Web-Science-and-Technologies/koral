@@ -103,6 +103,13 @@ public class FileReceiver implements Closeable {
 			unprocessedChunks.add(chunk);
 			requestFileChunk(chunk);
 		}
+		// TODO remove
+		try {
+			out.write(unprocessedChunks.toString().getBytes());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void requestFileChunk(FileChunk chunk) {
