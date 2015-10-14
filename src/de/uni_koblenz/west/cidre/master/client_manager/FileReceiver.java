@@ -79,14 +79,20 @@ public class FileReceiver implements Closeable {
 	private void requestNextFileChunk() {
 		FileChunk chunk = unprocessedChunks.peek();
 		if (chunk == null) {
+			// no chunk has been requested yet
 			chunk = new FileChunk(currentFile, 0);
 			unprocessedChunks.add(chunk);
 			requestFileChunk(chunk);
-		} else if (!chunk.isReceived()) {
-			// there are file chunks that have not been received yet
-			// request them again
-			requestFileChunk(chunk);
+		} else {
+			// rerequest unreceived chunks
+			for (FileChunk fChunk : unprocessedChunks) {
+				if (!fChunk.isReceived()) {
+					requestFileChunk(fChunk);
+				}
+				chunk = fChunk;
+			}
 		}
+		// request additional file chunks
 		while (unprocessedChunks
 				.size() < NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS) {
 			if (chunk.isLastChunk()) {
@@ -155,7 +161,7 @@ public class FileReceiver implements Closeable {
 			}
 			chunk = unprocessedChunks.peek();
 		}
-		if (chunk.isLastChunk()) {
+		if (chunk != null && chunk.isReceived() && chunk.isLastChunk()) {
 			// delete all further file chunks of this file
 			FileChunk first = unprocessedChunks.peek();
 			while (first != null && first.getFileID() == fileID) {

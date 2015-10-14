@@ -56,7 +56,8 @@ public class FileChunk implements Comparable<FileChunk> {
 	}
 
 	public boolean isLastChunk() {
-		return content != null && sequenceNumber >= totalNumberOfSequences - 1;
+		return totalNumberOfSequences > 0
+				&& sequenceNumber >= totalNumberOfSequences - 1;
 	}
 
 	public byte[] getContent() {
