@@ -232,7 +232,7 @@ public class ClientMessageProcessor
 		String address = MessageUtils.convertToString(buffer, logger);
 
 		buffer = clientConnections.receive(true);
-		if (buffer == null) {
+		if (buffer == null || buffer.length != 4) {
 			if (logger != null) {
 				logger.finest("Client " + address
 						+ " has not sent the id of the file this chunk belongs to.");
@@ -252,7 +252,7 @@ public class ClientMessageProcessor
 		long chunkID = ByteBuffer.wrap(buffer).getLong();
 
 		buffer = clientConnections.receive(true);
-		if (buffer == null) {
+		if (buffer == null || buffer.length != 8) {
 			if (logger != null) {
 				logger.finest("Client " + address
 						+ " has not sent the total number of chunks.");
