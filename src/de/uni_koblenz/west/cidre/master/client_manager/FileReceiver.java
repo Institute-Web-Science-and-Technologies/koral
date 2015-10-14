@@ -143,8 +143,8 @@ public class FileReceiver implements Closeable {
 				} else if (chunk.getFileID() == fileID && chunk.isReceived()) {
 					// write all already received file chunks to disk
 					// TODO remove
-					out.write(("\nchunk " + chunk.getFileID() + "/"
-							+ chunk.getTotalNumberOfSequences() + ": ")
+					out.write(("\nchunk " + chunk.getSequenceNumber() + "/"
+							+ (chunk.getTotalNumberOfSequences() - 1) + ": ")
 									.getBytes());
 					out.write(chunk.getContent());
 					unprocessedChunks.poll();

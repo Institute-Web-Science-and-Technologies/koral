@@ -35,7 +35,7 @@ public class FileSetChunkReader implements AutoCloseable, Closeable {
 	public FileChunk getFileChunk(File file, int fileID, long chunkID) {
 		// TODO remove
 		System.out.println("requested file " + fileID + " chunk " + chunkID
-				+ "/" + getNumberOfChunksInFile(file));
+				+ "/" + (getNumberOfChunksInFile(file) - 1));
 		FileChunk chunk = getChunkFromCache(fileID, chunkID);
 		if (chunk == null) {
 			chunk = readChunkFromFile(file, fileID, chunkID);
