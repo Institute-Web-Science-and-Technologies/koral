@@ -13,7 +13,7 @@ import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
 
 public class FileSetChunkReader implements AutoCloseable, Closeable {
 
-	private final static int CHUNK_SIZE = 8192;
+	private final static int CHUNK_SIZE = 100;// 8192;
 
 	private final static int CACHE_SIZE = FileReceiver.NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS;
 
@@ -73,12 +73,16 @@ public class FileSetChunkReader implements AutoCloseable, Closeable {
 			int numberOfReadBytes = input.read(chunkContent);
 			if (numberOfReadBytes == -1) {
 				return new byte[0];
-			} else if (numberOfReadBytes == CHUNK_SIZE) {
-				return chunkContent;
 			} else {
-				byte[] result = new byte[numberOfReadBytes];
-				System.arraycopy(chunkContent, 0, result, 0, numberOfReadBytes);
-				return result;
+				indexOfNextReadByte += numberOfReadBytes;
+				if (numberOfReadBytes == CHUNK_SIZE) {
+					return chunkContent;
+				} else {
+					byte[] result = new byte[numberOfReadBytes];
+					System.arraycopy(chunkContent, 0, result, 0,
+							numberOfReadBytes);
+					return result;
+				}
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -95,6 +99,7 @@ public class FileSetChunkReader implements AutoCloseable, Closeable {
 		try {
 			input.skip(
 					indexOfFirstRequestedChunkByteInFile - indexOfNextReadByte);
+			indexOfNextReadByte = indexOfFirstRequestedChunkByteInFile;
 		} catch (IOException e) {
 			close();
 			throw new RuntimeException(e);
