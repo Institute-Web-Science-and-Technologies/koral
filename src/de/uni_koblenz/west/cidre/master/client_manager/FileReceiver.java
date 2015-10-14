@@ -15,7 +15,7 @@ import de.uni_koblenz.west.cidre.common.messages.MessageType;
 
 public class FileReceiver implements Closeable {
 
-	public static final int NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS = 10;
+	public static final int NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS = 100;
 
 	public static final int FILE_CHUNK_REQUEST_TIMEOUT = 1000;
 
