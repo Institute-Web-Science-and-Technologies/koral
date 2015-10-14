@@ -17,6 +17,8 @@ public class FileReceiver implements Closeable {
 
 	public static final int NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS = 10;
 
+	public static final int FILE_CHUNK_REQUEST_TIMEOUT = 1000;
+
 	private final Logger logger;
 
 	private final int clientID;
@@ -106,6 +108,7 @@ public class FileReceiver implements Closeable {
 				.putLong(chunk.getSequenceNumber()).array();
 		System.arraycopy(chunkID, 0, request, 5, chunkID.length);
 		clientConnections.send(clientID, request);
+		chunk.setRequestTime(System.currentTimeMillis());
 	}
 
 	public void receiveFileChunk(int fileID, long chunkID,
@@ -119,7 +122,9 @@ public class FileReceiver implements Closeable {
 			if (chunk.getSequenceNumber() == chunkID) {
 				chunk.setContent(chunkContent);
 			}
-			chunk.setTotalNumberOfSequences(totalNumberOfChunks);
+			if (chunk.getTotalNumberOfSequences() == 0) {
+				chunk.setTotalNumberOfSequences(totalNumberOfChunks);
+			}
 		}
 		// process file chunks
 		FileChunk chunk = null;
@@ -137,6 +142,10 @@ public class FileReceiver implements Closeable {
 					unprocessedChunks.poll();
 				} else if (chunk.getFileID() == fileID && chunk.isReceived()) {
 					// write all already received file chunks to disk
+					// TODO remove
+					out.write(("\nchunk " + chunk.getFileID() + "/"
+							+ chunk.getTotalNumberOfSequences() + ": ")
+									.getBytes());
 					out.write(chunk.getContent());
 					unprocessedChunks.poll();
 					fileIsFinished = chunk.isLastChunk();

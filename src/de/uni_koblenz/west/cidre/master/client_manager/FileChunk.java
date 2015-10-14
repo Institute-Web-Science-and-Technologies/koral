@@ -10,6 +10,8 @@ public class FileChunk implements Comparable<FileChunk> {
 
 	private byte[] content;
 
+	private long requestTime;
+
 	public FileChunk(int fileID, long sequenceNumber) {
 		this.fileID = fileID;
 		this.sequenceNumber = sequenceNumber;
@@ -19,6 +21,14 @@ public class FileChunk implements Comparable<FileChunk> {
 			long totalNumberOfSequences) {
 		this(fileID, sequenceNumber);
 		this.totalNumberOfSequences = totalNumberOfSequences;
+	}
+
+	public void setRequestTime(long requestTime) {
+		this.requestTime = requestTime;
+	}
+
+	public long getRequestTime() {
+		return requestTime;
 	}
 
 	public int getFileID() {
