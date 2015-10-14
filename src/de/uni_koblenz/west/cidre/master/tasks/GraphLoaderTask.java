@@ -136,9 +136,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			fileReceiver.close();
 			fileReceiver = null;
 		}
-		// TODO uncomment when implementation is finished
-		// deleteContent(workingDir);
-		// workingDir.delete();
+		deleteContent(workingDir);
+		workingDir.delete();
 	}
 
 }

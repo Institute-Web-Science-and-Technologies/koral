@@ -117,14 +117,6 @@ public class FileReceiver implements Closeable {
 		System.arraycopy(chunkID, 0, request, 5, chunkID.length);
 		clientConnections.send(clientID, request);
 		chunk.setRequestTime(System.currentTimeMillis());
-		// TODO remove
-		// try {
-		// out.write(("\nchunk " + chunk.getSequenceNumber() + "/"
-		// + (chunk.getTotalNumberOfSequences() - 1) + " requested")
-		// .getBytes());
-		// } catch (IOException e) {
-		// e.printStackTrace();
-		// }
 	}
 
 	public void receiveFileChunk(int fileID, long chunkID,
@@ -151,10 +143,6 @@ public class FileReceiver implements Closeable {
 		// write out already received chunks
 		while (chunk != null && chunk.getFileID() == fileID
 				&& chunk.isReceived()) {
-			// TODO remove
-			// out.write(("\nchunk " + chunk.getSequenceNumber() + "/"
-			// + (chunk.getTotalNumberOfSequences() - 1) + ": ")
-			// .getBytes());
 			out.write(chunk.getContent());
 			unprocessedChunks.poll();
 			if (chunk.isLastChunk()) {

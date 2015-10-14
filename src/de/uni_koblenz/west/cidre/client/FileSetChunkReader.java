@@ -13,7 +13,7 @@ import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
 
 public class FileSetChunkReader implements AutoCloseable, Closeable {
 
-	private final static int CHUNK_SIZE = 100;// 8192;
+	private final static int CHUNK_SIZE = 8192;
 
 	private final static int CACHE_SIZE = FileReceiver.NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS;
 
@@ -33,9 +33,6 @@ public class FileSetChunkReader implements AutoCloseable, Closeable {
 	}
 
 	public FileChunk getFileChunk(File file, int fileID, long chunkID) {
-		// TODO remove
-		System.out.println("requested file " + fileID + " chunk " + chunkID
-				+ "/" + (getNumberOfChunksInFile(file) - 1));
 		FileChunk chunk = getChunkFromCache(fileID, chunkID);
 		if (chunk == null) {
 			chunk = readChunkFromFile(file, fileID, chunkID);
