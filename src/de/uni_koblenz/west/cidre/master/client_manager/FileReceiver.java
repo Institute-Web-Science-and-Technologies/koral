@@ -135,36 +135,33 @@ public class FileReceiver implements Closeable {
 				chunk.setTotalNumberOfSequences(totalNumberOfChunks);
 			}
 		}
-		// process file chunks
-		FileChunk chunk = null;
-		boolean fileIsFinished = false;
-		do {
-			if (fileIsFinished
-					&& unprocessedChunks.peek().getFileID() == fileID) {
-				// remove further file chunks behind the last file chunk of
-				// this file
-				unprocessedChunks.poll();
-			} else {
-				chunk = unprocessedChunks.peek();
-				if (chunk.getFileID() < fileID) {
-					// remove chunks from old files
-					unprocessedChunks.poll();
-				} else if (chunk.getFileID() == fileID && chunk.isReceived()) {
-					// write all already received file chunks to disk
-					// TODO remove
-					out.write(("\nchunk " + chunk.getSequenceNumber() + "/"
-							+ (chunk.getTotalNumberOfSequences() - 1) + ": ")
-									.getBytes());
-					out.write(chunk.getContent());
-					unprocessedChunks.poll();
-					fileIsFinished = chunk.isLastChunk();
-				} else {
-					break;
-				}
+		FileChunk chunk = unprocessedChunks.peek();
+		// remove chunks of old files
+		while (chunk != null && chunk.getFileID() < fileID) {
+			unprocessedChunks.poll();
+			chunk = unprocessedChunks.peek();
+		}
+		// write out already received chunks
+		while (chunk != null && chunk.getFileID() == fileID
+				&& chunk.isReceived()) {
+			// TODO remove
+			out.write(("\nchunk " + chunk.getSequenceNumber() + "/"
+					+ (chunk.getTotalNumberOfSequences() - 1) + ": ")
+							.getBytes());
+			out.write(chunk.getContent());
+			unprocessedChunks.poll();
+			if (chunk.isLastChunk()) {
+				break;
 			}
-		} while (!unprocessedChunks.isEmpty() && chunk.isReceived()
-				&& chunk.getFileID() <= fileID);
-		if (fileIsFinished) {
+			chunk = unprocessedChunks.peek();
+		}
+		if (chunk.isLastChunk()) {
+			// delete all further file chunks of this file
+			FileChunk first = unprocessedChunks.peek();
+			while (first != null && first.getFileID() == fileID) {
+				unprocessedChunks.poll();
+				first = unprocessedChunks.peek();
+			}
 			if (logger != null) {
 				logger.finest("Received file " + fileID + " from client "
 						+ clientID + " completely.");
