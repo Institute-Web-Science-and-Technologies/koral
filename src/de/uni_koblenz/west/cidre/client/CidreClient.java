@@ -59,8 +59,8 @@ public class CidreClient {
 					connection.sendFileChunk(fileChunk);
 					// some output for user
 					if (fileChunk.getSequenceNumber() == 0) {
-						System.out.println(
-								"Sending file " + fileChunk.getFileID());
+						System.out.println("Sending file " + files
+								.get(fileChunk.getFileID()).getAbsolutePath());
 					} else {
 						final long numberOfOutputs = 10;
 						long outputInterval = fileChunk
