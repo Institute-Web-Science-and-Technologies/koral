@@ -18,6 +18,7 @@ import org.apache.commons.cli.ParseException;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.master.client_manager.FileChunk;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
 public class CidreClient {
@@ -53,8 +54,24 @@ public class CidreClient {
 				if (mtype == MessageType.REQUEST_FILE_CHUNK) {
 					int fileID = ByteBuffer.wrap(response[0], 1, 4).getInt();
 					long chunkID = ByteBuffer.wrap(response[0], 5, 8).getLong();
-					connection.sendFileChunk(reader
-							.getFileChunk(files.get(fileID), fileID, chunkID));
+					FileChunk fileChunk = reader.getFileChunk(files.get(fileID),
+							fileID, chunkID);
+					connection.sendFileChunk(fileChunk);
+					// some output for user
+					if (fileChunk.getSequenceNumber() == 0) {
+						System.out.println(
+								"Sending file " + fileChunk.getFileID());
+					} else {
+						final long numberOfOutputs = 10;
+						long outputInterval = fileChunk
+								.getTotalNumberOfSequences() / numberOfOutputs;
+						if (fileChunk.getSequenceNumber()
+								% outputInterval == 0) {
+							System.out.println((fileChunk.getSequenceNumber()
+									/ outputInterval * numberOfOutputs)
+									+ " % finished");
+						}
+					}
 				} else {
 					processCommandResponse("loading of a graph", response);
 					break;
