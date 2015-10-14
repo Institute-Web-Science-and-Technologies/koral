@@ -95,9 +95,10 @@ public class FileReceiver implements Closeable {
 				if (!fChunk.isReceived()) {
 					requestFileChunk(fChunk);
 				}
-				chunk = fChunk;
+				chunk = chunk.compareTo(fChunk) < 0 ? fChunk : chunk;
 			}
 		}
+		// invariant: chunk is the last requested file chunk
 		// request additional file chunks
 		while (unprocessedChunks
 				.size() < NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS) {
