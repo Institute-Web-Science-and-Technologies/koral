@@ -86,7 +86,8 @@ public class FileReceiver implements Closeable {
 		} else {
 			// rerequest unreceived chunks
 			for (FileChunk fChunk : unprocessedChunks) {
-				if (!fChunk.isReceived()) {
+				if (!fChunk.isReceived() && System.currentTimeMillis() - fChunk
+						.getRequestTime() > FILE_CHUNK_REQUEST_TIMEOUT) {
 					requestFileChunk(fChunk);
 				}
 				chunk = chunk.compareTo(fChunk) < 0 ? fChunk : chunk;
@@ -128,7 +129,7 @@ public class FileReceiver implements Closeable {
 
 	public void receiveFileChunk(int fileID, long chunkID,
 			long totalNumberOfChunks, byte[] chunkContent) throws IOException {
-		assert!unprocessedChunks.isEmpty();
+		assert !unprocessedChunks.isEmpty();
 		// update content of file chunks
 		for (FileChunk chunk : unprocessedChunks) {
 			if (chunk.getFileID() != fileID) {
