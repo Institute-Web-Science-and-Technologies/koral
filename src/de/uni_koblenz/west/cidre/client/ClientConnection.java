@@ -174,7 +174,7 @@ public class ClientConnection implements Closeable {
 			mType = inSocket.recv(ZMQ.DONTWAIT);
 			if (mType == null) {
 				try {
-					Thread.sleep(100);
+					Thread.sleep(10);
 				} catch (InterruptedException e) {
 				}
 			}
