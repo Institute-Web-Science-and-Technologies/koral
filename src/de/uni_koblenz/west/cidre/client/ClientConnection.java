@@ -166,10 +166,19 @@ public class ClientConnection implements Closeable {
 	}
 
 	public byte[][] getResponse() {
-		inSocket.setReceiveTimeOut(
-				(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
 		byte[][] response = null;
-		byte[] mType = inSocket.recv();
+		long startTime = System.currentTimeMillis();
+		byte[] mType = null;
+		while (mType == null && System.currentTimeMillis()
+				- startTime < Configuration.CLIENT_CONNECTION_TIMEOUT) {
+			mType = inSocket.recv(ZMQ.DONTWAIT);
+			if (mType == null) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+				}
+			}
+		}
 		try {
 			if (mType == null) {
 				System.out.println("Master did not respond to request.");
