@@ -82,6 +82,12 @@ public class FileReceiver implements Closeable {
 			// no chunk has been requested yet
 			chunk = new FileChunk(currentFile, 0);
 			unprocessedChunks.add(chunk);
+			// TODO remove
+			try {
+				out.write(("\nadded " + chunk.toString()).getBytes());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			requestFileChunk(chunk);
 		} else {
 			// rerequest unreceived chunks
@@ -102,13 +108,11 @@ public class FileReceiver implements Closeable {
 					chunk.getTotalNumberOfSequences());
 			unprocessedChunks.add(chunk);
 			requestFileChunk(chunk);
-		}
-		// TODO remove
-		try {
-			out.write(unprocessedChunks.toString().getBytes());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			try {
+				out.write(("\nadded " + chunk.toString()).getBytes());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
