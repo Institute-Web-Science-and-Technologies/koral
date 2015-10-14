@@ -69,7 +69,7 @@ public class CidreClient {
 								% outputInterval == 0) {
 							System.out.println((fileChunk.getSequenceNumber()
 									/ outputInterval * numberOfOutputs)
-									+ " % finished");
+									+ "% finished");
 						}
 					}
 				} else {
