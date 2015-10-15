@@ -26,6 +26,9 @@ public class Dictionary {
 			}
 			Model model = RDFDataMgr.loadModel(file.getAbsolutePath());
 			StmtIterator it = model.listStatements();
+			if (!it.hasNext() && logger != null) {
+				logger.finest(file.getAbsolutePath() + " has no content.");
+			}
 			while (it.hasNext()) {
 				Statement statement = it.next();
 				Resource subject = statement.getSubject();
