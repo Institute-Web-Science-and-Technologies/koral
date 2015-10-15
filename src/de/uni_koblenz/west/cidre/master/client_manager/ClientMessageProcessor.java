@@ -104,9 +104,9 @@ public class ClientMessageProcessor
 	private void processKeepAlive(byte[] message) {
 		String address;
 		address = MessageUtils.extreactMessageString(message, logger);
-		if (logger != null) {
-			logger.finest("received keep alive from client " + address);
-		}
+		// if (logger != null) {
+		// logger.finest("received keep alive from client " + address);
+		// }
 		Integer cID = clientAddress2Id.get(address);
 		if (cID != null) {
 			clientConnections.updateTimerFor(cID.intValue());
