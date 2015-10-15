@@ -10,6 +10,7 @@ import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
+import de.uni_koblenz.west.cidre.master.dictionary.Dictionary;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
 public class GraphLoaderTask extends Thread implements Closeable {
@@ -116,10 +117,21 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	@Override
 	public void run() {
+		File[] encodedFiles = encodeGraphFiles();
 		// TODO Auto-generated method stub
 		// TODO Server may only load a graph once
 		clientConnections.send(clientId,
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
+	}
+
+	private File[] encodeGraphFiles() {
+		if (logger != null) {
+			logger.finer("encoding received files");
+		}
+		File[] plainFiles = workingDir.listFiles();
+		Dictionary dict = new Dictionary(logger);
+		File[] encodedFiles = dict.encode(plainFiles);
+		return encodedFiles;
 	}
 
 	@Override
