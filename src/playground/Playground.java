@@ -1,28 +1,23 @@
 package playground;
 
-import org.apache.jena.rdf.model.Model;
+import java.io.File;
+
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.riot.RDFDataMgr;
+
+import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 
 public class Playground {
 
 	public static void main(String[] args) {
-		Model model = RDFDataMgr
-				.loadModel("/home/danijank/Downloads/testdata/0");
-		System.out.println(model);
-		StmtIterator it = model.listStatements();
-		while (it.hasNext()) {
-			Statement statement = it.next();
+		for (Statement statement : new RDFFileIterator(
+				new File("/home/danijank/Downloads/testdata"), null)) {
 			Resource subject = statement.getSubject();
-			System.out.println("subject: " + subject);
 			Property predicate = statement.getPredicate();
-			System.out.println("property: " + predicate);
 			RDFNode object = statement.getObject();
-			System.out.println("object: " + object);
+			System.out.println(subject + " " + predicate + " " + object);
 		}
 	}
 

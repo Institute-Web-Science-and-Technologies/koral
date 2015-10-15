@@ -26,7 +26,7 @@ public class HashCoverCreator implements GraphCoverCreator {
 						+ "\n");
 			}
 		}
-		// TODO Auto-generated method stub
+		// TODO handle empty chunks
 		return null;
 	}
 

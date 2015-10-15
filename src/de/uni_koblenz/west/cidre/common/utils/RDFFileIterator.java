@@ -37,6 +37,7 @@ public class RDFFileIterator
 	private void getNextIterator() {
 		if (currentFile >= rdfFiles.length) {
 			iterator = null;
+			return;
 		}
 		RiotException e = null;
 		do {
