@@ -65,7 +65,7 @@ public class CidreClient {
 						final long numberOfOutputs = 10;
 						long outputInterval = fileChunk
 								.getTotalNumberOfSequences() / numberOfOutputs;
-						if (fileChunk.getSequenceNumber()
+						if (outputInterval > 0 && fileChunk.getSequenceNumber()
 								% outputInterval == 0) {
 							System.out.println((fileChunk.getSequenceNumber()
 									/ outputInterval * numberOfOutputs)
