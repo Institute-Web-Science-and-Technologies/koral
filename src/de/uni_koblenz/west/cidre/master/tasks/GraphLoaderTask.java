@@ -155,18 +155,27 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private File[] createGraphChunks() {
 		if (logger != null) {
-			logger.finer("creating graph cover");
+			logger.finer("creatinon of graph cover started");
 		}
 		clientConnections.send(clientId,
 				MessageUtils.createStringMessage(
 						MessageType.MASTER_WORK_IN_PROGRESS,
 						"Started creation of graph cover.", logger));
+
 		RDFFileIterator rdfFiles = new RDFFileIterator(workingDir, logger);
 		GraphCoverCreator coverCreator = GraphCoverCreatorFactory
 				.getGraphCoverCreator(coverStrategy, logger);
 		File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir,
 				numberOfGraphChunks);
 		// TODO implement n-hop extension
+
+		if (logger != null) {
+			logger.finer("creation of graph cover finished");
+		}
+		clientConnections.send(clientId,
+				MessageUtils.createStringMessage(
+						MessageType.MASTER_WORK_IN_PROGRESS,
+						"Finished creation of graph cover.", logger));
 		return chunks;
 	}
 
