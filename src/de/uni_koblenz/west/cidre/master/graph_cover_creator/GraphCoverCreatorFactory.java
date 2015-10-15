@@ -10,7 +10,7 @@ public class GraphCoverCreatorFactory {
 			CoverStrategyType strategy, Logger logger) {
 		switch (strategy) {
 		case HASH:
-			return new HashCoverCreator(strategy, logger);
+			return new HashCoverCreator(logger);
 		case HIERARCHICAL:
 		case MIN_EDGE_CUT:
 		default:
