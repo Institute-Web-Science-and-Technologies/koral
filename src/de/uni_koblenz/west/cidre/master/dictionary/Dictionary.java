@@ -20,32 +20,31 @@ public class Dictionary {
 		this.logger = logger;
 	}
 
-	public File[] encode(File... files) {
-		for (File file : files) {
-			if (logger != null) {
-				logger.finest("encoding " + file);
+	public File encode(File file) {
+		if (logger != null) {
+			logger.finest("encoding " + file);
+		}
+		try {
+			Model model = RDFDataMgr.loadModel(file.getAbsolutePath());
+			StmtIterator it = model.listStatements();
+			if (!it.hasNext() && logger != null) {
+				logger.finest(file.getAbsolutePath() + " has no content.");
 			}
-			try {
-				Model model = RDFDataMgr.loadModel(file.getAbsolutePath());
-				StmtIterator it = model.listStatements();
-				if (!it.hasNext() && logger != null) {
-					logger.finest(file.getAbsolutePath() + " has no content.");
-				}
-				while (it.hasNext()) {
-					Statement statement = it.next();
-					Resource subject = statement.getSubject();
-					Property predicate = statement.getPredicate();
-					RDFNode object = statement.getObject();
-					if (logger != null) {
-						logger.info(subject + " " + predicate + " " + object);
-					}
-				}
-			} catch (RiotException e) {
+			while (it.hasNext()) {
+				Statement statement = it.next();
+				Resource subject = statement.getSubject();
+				Property predicate = statement.getPredicate();
+				RDFNode object = statement.getObject();
 				if (logger != null) {
-					logger.throwing(e.getStackTrace()[0].getClassName(),
-							e.getStackTrace()[0].getMethodName(), e);
+					logger.info(subject + " " + predicate + " " + object);
 				}
 			}
+		} catch (RiotException e) {
+			if (logger != null) {
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			throw new RuntimeException(e);
 		}
 		// TODO client keep alive
 		return null;

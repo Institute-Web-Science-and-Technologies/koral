@@ -102,6 +102,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			if (fileReceiver.isFinished()) {
 				fileReceiver.close();
 				fileReceiver = null;
+				clientConnections.send(clientId,
+						MessageUtils.createStringMessage(
+								MessageType.MASTER_WORK_IN_PROGRESS,
+								"Master received all files.", logger));
 				start();
 			} else if (clientConnections.isConnectionClosed(clientId)) {
 				close();
@@ -157,8 +161,25 @@ public class GraphLoaderTask extends Thread implements Closeable {
 						MessageType.MASTER_WORK_IN_PROGRESS,
 						"Started encoding of received files.", logger));
 		File[] plainFiles = workingDir.listFiles();
+		File[] encodedFiles = new File[plainFiles.length];
 		Dictionary dict = new Dictionary(logger);
-		File[] encodedFiles = dict.encode(plainFiles);
+		for (int i = 0; i < plainFiles.length; i++) {
+			clientConnections.send(clientId,
+					MessageUtils.createStringMessage(
+							MessageType.MASTER_WORK_IN_PROGRESS,
+							"Started encoding of file " + i + ".", logger));
+			try {
+				encodedFiles[i] = dict.encode(plainFiles[i]);
+			} catch (RuntimeException e) {
+				clientConnections
+						.send(clientId,
+								MessageUtils.createStringMessage(
+										MessageType.MASTER_WORK_IN_PROGRESS,
+										"Error during encoding of file " + i
+												+ ": " + e.getMessage(),
+										logger));
+			}
+		}
 		clientConnections.send(clientId,
 				MessageUtils.createStringMessage(
 						MessageType.MASTER_WORK_IN_PROGRESS,

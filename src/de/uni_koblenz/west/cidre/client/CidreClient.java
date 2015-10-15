@@ -71,8 +71,6 @@ public class CidreClient {
 							System.out.println((fileChunk.getSequenceNumber()
 									/ outputInterval * numberOfOutputs)
 									+ "% finished");
-						} else if (outputInterval == 0) {
-							System.out.println("100% finished");
 						}
 					}
 				} else if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
