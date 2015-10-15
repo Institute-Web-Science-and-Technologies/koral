@@ -44,6 +44,10 @@ public class RDFFileIterator
 			try {
 				iterator = null;
 				e = null;
+				// TODO implement streamed approach, this does not work for big
+				// files!!!
+				// https://github.com/apache/jena/blob/master/jena-arq/src-examples/arq/examples/riot/ExRIOT_6.java
+				// https://jena.apache.org/documentation/io/rdf-input.html#streammanager-and-locationmapper
 				Model model = RDFDataMgr
 						.loadModel(rdfFiles[currentFile++].getAbsolutePath());
 				iterator = model.listStatements();
