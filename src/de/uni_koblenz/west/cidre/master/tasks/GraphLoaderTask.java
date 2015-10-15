@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
@@ -28,6 +29,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 	private int replicationPathLength;
 
 	private FileReceiver fileReceiver;
+
+	private Thread keepAliveThread;
 
 	public GraphLoaderTask(int clientID,
 			ClientConnectionManager clientConnections, File tmpDir,
@@ -117,20 +120,49 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	@Override
 	public void run() {
+		keepAliveThread = new Thread() {
+			@Override
+			public void run() {
+				while (!isInterrupted()) {
+					long startTime = System.currentTimeMillis();
+					clientConnections.send(clientId, new byte[] {
+							MessageType.MASTER_WORK_IN_PROGRESS.getValue() });
+					long remainingSleepTime = Configuration.CLIENT_KEEP_ALIVE_INTERVAL
+							- System.currentTimeMillis() + startTime;
+					if (remainingSleepTime > 0) {
+						try {
+							Thread.sleep(remainingSleepTime);
+						} catch (InterruptedException e) {
+						}
+					}
+				}
+			}
+		};
+		keepAliveThread.isDaemon();
+
 		File[] encodedFiles = encodeGraphFiles();
 		// TODO Auto-generated method stub
 		// TODO Server may only load a graph once
+		keepAliveThread.interrupt();
 		clientConnections.send(clientId,
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 	}
 
 	private File[] encodeGraphFiles() {
 		if (logger != null) {
-			logger.finer("encoding received files");
+			logger.finer("encoding of received files");
 		}
+		clientConnections.send(clientId,
+				MessageUtils.createStringMessage(
+						MessageType.MASTER_WORK_IN_PROGRESS,
+						"Started encoding of received files.", logger));
 		File[] plainFiles = workingDir.listFiles();
 		Dictionary dict = new Dictionary(logger);
 		File[] encodedFiles = dict.encode(plainFiles);
+		clientConnections.send(clientId,
+				MessageUtils.createStringMessage(
+						MessageType.MASTER_WORK_IN_PROGRESS,
+						"Finished encoding of received files.", logger));
 		return encodedFiles;
 	}
 
@@ -141,8 +173,11 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			clientConnections.send(clientId,
 					MessageUtils.createStringMessage(
 							MessageType.CLIENT_COMMAND_FAILED,
-							"GraphLoaderTask has been closed befor it could finish.",
+							"GraphLoaderTask has been closed before it could finish.",
 							logger));
+		}
+		if (keepAliveThread != null && keepAliveThread.isAlive()) {
+			keepAliveThread.interrupt();
 		}
 		if (fileReceiver != null) {
 			fileReceiver.close();

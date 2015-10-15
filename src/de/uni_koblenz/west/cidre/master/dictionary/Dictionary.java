@@ -10,6 +10,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RiotException;
 
 public class Dictionary {
 
@@ -24,21 +25,29 @@ public class Dictionary {
 			if (logger != null) {
 				logger.finest("encoding " + file);
 			}
-			Model model = RDFDataMgr.loadModel(file.getAbsolutePath());
-			StmtIterator it = model.listStatements();
-			if (!it.hasNext() && logger != null) {
-				logger.finest(file.getAbsolutePath() + " has no content.");
-			}
-			while (it.hasNext()) {
-				Statement statement = it.next();
-				Resource subject = statement.getSubject();
-				Property predicate = statement.getPredicate();
-				RDFNode object = statement.getObject();
+			try {
+				Model model = RDFDataMgr.loadModel(file.getAbsolutePath());
+				StmtIterator it = model.listStatements();
+				if (!it.hasNext() && logger != null) {
+					logger.finest(file.getAbsolutePath() + " has no content.");
+				}
+				while (it.hasNext()) {
+					Statement statement = it.next();
+					Resource subject = statement.getSubject();
+					Property predicate = statement.getPredicate();
+					RDFNode object = statement.getObject();
+					if (logger != null) {
+						logger.info(subject + " " + predicate + " " + object);
+					}
+				}
+			} catch (RiotException e) {
 				if (logger != null) {
-					logger.info(subject + " " + predicate + " " + object);
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
 				}
 			}
 		}
+		// TODO client keep alive
 		return null;
 	}
 

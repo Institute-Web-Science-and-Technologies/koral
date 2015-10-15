@@ -187,6 +187,7 @@ public class ClientConnection implements Closeable {
 			MessageType messageType = MessageType.valueOf(mType[0]);
 			switch (messageType) {
 			case REQUEST_FILE_CHUNK:
+			case MASTER_WORK_IN_PROGRESS:
 			case CLIENT_COMMAND_SUCCEEDED:
 			case CLIENT_COMMAND_FAILED:
 				response = new byte[1][];

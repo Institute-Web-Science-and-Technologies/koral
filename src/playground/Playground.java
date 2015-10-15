@@ -12,7 +12,7 @@ public class Playground {
 
 	public static void main(String[] args) {
 		Model model = RDFDataMgr
-				.loadModel("/home/danijank/Downloads/exampleGraph.n3");
+				.loadModel("/home/danijank/Downloads/testdata/0");
 		System.out.println(model);
 		StmtIterator it = model.listStatements();
 		while (it.hasNext()) {

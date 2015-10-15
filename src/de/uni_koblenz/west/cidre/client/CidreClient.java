@@ -18,6 +18,7 @@ import org.apache.commons.cli.ParseException;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.master.client_manager.FileChunk;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
@@ -70,7 +71,14 @@ public class CidreClient {
 							System.out.println((fileChunk.getSequenceNumber()
 									/ outputInterval * numberOfOutputs)
 									+ "% finished");
+						} else if (outputInterval == 0) {
+							System.out.println("100% finished");
 						}
+					}
+				} else if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
+					if (response[0].length > 1) {
+						System.out.println(MessageUtils
+								.extreactMessageString(response[0], null));
 					}
 				} else {
 					processCommandResponse("loading of a graph", response);
