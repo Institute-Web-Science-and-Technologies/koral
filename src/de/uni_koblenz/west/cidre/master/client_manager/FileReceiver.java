@@ -31,17 +31,20 @@ public class FileReceiver implements Closeable {
 
 	private int currentFile;
 
+	private final String[] fileExtensions;
+
 	private OutputStream out;
 
 	private final PriorityQueue<FileChunk> unprocessedChunks;
 
 	public FileReceiver(File workingDir, int clientID,
 			ClientConnectionManager clientConnections, int numberOfFiles,
-			Logger logger) {
+			String[] fileExtensions, Logger logger) {
 		this.workingDir = workingDir;
 		this.clientID = clientID;
 		this.clientConnections = clientConnections;
 		totalNumberOfFiles = numberOfFiles;
+		this.fileExtensions = fileExtensions;
 		this.logger = logger;
 		unprocessedChunks = new PriorityQueue<>(
 				NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS);
@@ -65,7 +68,8 @@ public class FileReceiver implements Closeable {
 			try {
 				out = new BufferedOutputStream(new FileOutputStream(
 						new File(workingDir.getAbsolutePath()
-								+ File.separatorChar + currentFile)));
+								+ File.separatorChar + currentFile + "."
+								+ fileExtensions[currentFile])));
 			} catch (FileNotFoundException e) {
 				if (logger != null) {
 					logger.throwing(e.getStackTrace()[0].getClassName(),

@@ -14,6 +14,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.jena.util.FileUtils;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
@@ -40,12 +41,13 @@ public class CidreClient {
 		if (files.isEmpty()) {
 			throw new RuntimeException("No graph file could be found.");
 		}
-		byte[][] args = new byte[4][];
+		byte[][] args = new byte[4 + files.size()][];
 		args[0] = new byte[] { (byte) 3 };
 		args[1] = ByteBuffer.allocate(4).putInt(graphCover.ordinal()).array();
 		args[2] = ByteBuffer.allocate(4).putInt(nHopReplicationPathLength)
 				.array();
 		args[3] = ByteBuffer.allocate(4).putInt(files.size()).array();
+		fillWithFileEndings(args, 4, files);
 		connection.sendCommand("load", args);
 
 		byte[][] response = connection.getResponse();
@@ -93,6 +95,24 @@ public class CidreClient {
 		}
 	}
 
+	private void fillWithFileEndings(byte[][] array, int startIndex,
+			List<File> files) {
+		for (int i = startIndex; i < array.length; i++) {
+			String filename = files.get(i - startIndex).getAbsolutePath();
+			String extension = "";
+			if (filename.endsWith(".gz")) {
+				extension = ".gz";
+				filename = filename.substring(0, filename.length() - 3);
+			}
+			extension = FileUtils.getFilenameExt(filename) + extension;
+			try {
+				array[i] = extension.getBytes("UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
 	private void processCommandResponse(String individualMessage,
 			byte[][] response) {
 		try {
@@ -122,6 +142,7 @@ public class CidreClient {
 	}
 
 	private List<File> getFiles(String[] inputPaths) {
+		GraphFileFilter filter = new GraphFileFilter();
 		List<File> files = new ArrayList<>();
 		for (String inputPath : inputPaths) {
 			File file = new File(inputPath);
@@ -129,9 +150,11 @@ public class CidreClient {
 				continue;
 			}
 			if (file.isFile()) {
-				files.add(file);
+				if (filter.accept(file)) {
+					files.add(file);
+				}
 			} else {
-				for (File containedFile : file.listFiles()) {
+				for (File containedFile : file.listFiles(filter)) {
 					if (containedFile.isFile()) {
 						files.add(containedFile);
 					}

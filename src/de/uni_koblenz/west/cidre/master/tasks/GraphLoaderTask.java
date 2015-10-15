@@ -64,20 +64,31 @@ public class GraphLoaderTask extends Thread implements Closeable {
 	}
 
 	public void loadGraph(byte[][] args) {
-		if (args.length != 3) {
+		if (args.length < 4) {
 			throw new IllegalArgumentException(
-					"Loading a graph requires 3 arguments, but received only "
+					"Loading a graph requires at least 4 arguments, but received only "
 							+ args.length + " arguments.");
 		}
 		CoverStrategyType coverStrategy = CoverStrategyType.values()[ByteBuffer
 				.wrap(args[0]).getInt()];
 		int replicationPathLength = ByteBuffer.wrap(args[1]).getInt();
 		int numberOfFiles = ByteBuffer.wrap(args[2]).getInt();
-		loadGraph(coverStrategy, replicationPathLength, numberOfFiles);
+		loadGraph(coverStrategy, replicationPathLength, numberOfFiles,
+				getFileExtensions(args, 3));
+	}
+
+	private String[] getFileExtensions(byte[][] args, int startIndex) {
+		String[] fileExtension = new String[args.length - startIndex];
+		for (int i = 0; i < fileExtension.length; i++) {
+			fileExtension[i] = MessageUtils
+					.convertToString(args[startIndex + i], logger);
+		}
+		return fileExtension;
 	}
 
 	public void loadGraph(CoverStrategyType coverStrategy,
-			int replicationPathLength, int numberOfFiles) {
+			int replicationPathLength, int numberOfFiles,
+			String[] fileExtensions) {
 		if (logger != null) {
 			logger.finer("loadGraph(coverStrategy=" + coverStrategy.name()
 					+ ", replicationPathLength=" + replicationPathLength
@@ -86,7 +97,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		this.coverStrategy = coverStrategy;
 		this.replicationPathLength = replicationPathLength;
 		fileReceiver = new FileReceiver(workingDir, clientId, clientConnections,
-				numberOfFiles, logger);
+				numberOfFiles, fileExtensions, logger);
 		fileReceiver.requestFiles();
 	}
 
