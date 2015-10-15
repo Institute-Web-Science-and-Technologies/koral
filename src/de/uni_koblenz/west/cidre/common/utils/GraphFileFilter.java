@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.client;
+package de.uni_koblenz.west.cidre.common.utils;
 
 import java.io.File;
 import java.io.FileFilter;

@@ -6,13 +6,14 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
-import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
-import de.uni_koblenz.west.cidre.master.dictionary.Dictionary;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreatorFactory;
 
 public class GraphLoaderTask extends Thread implements Closeable {
 
@@ -28,13 +29,16 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private int replicationPathLength;
 
+	private int numberOfGraphChunks;
+
 	private FileReceiver fileReceiver;
 
-	private Thread keepAliveThread;
+	private ClientConnectionKeepAliveTask keepAliveThread;
 
 	public GraphLoaderTask(int clientID,
 			ClientConnectionManager clientConnections, File tmpDir,
 			Logger logger) {
+		isDaemon();
 		clientId = clientID;
 		this.clientConnections = clientConnections;
 		this.logger = logger;
@@ -63,7 +67,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		}
 	}
 
-	public void loadGraph(byte[][] args) {
+	public void loadGraph(byte[][] args, int numberOfGraphChunks) {
 		if (args.length < 4) {
 			throw new IllegalArgumentException(
 					"Loading a graph requires at least 4 arguments, but received only "
@@ -73,8 +77,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 				.wrap(args[0]).getInt()];
 		int replicationPathLength = ByteBuffer.wrap(args[1]).getInt();
 		int numberOfFiles = ByteBuffer.wrap(args[2]).getInt();
-		loadGraph(coverStrategy, replicationPathLength, numberOfFiles,
-				getFileExtensions(args, 3));
+		loadGraph(coverStrategy, replicationPathLength, numberOfGraphChunks,
+				numberOfFiles, getFileExtensions(args, 3));
 	}
 
 	private String[] getFileExtensions(byte[][] args, int startIndex) {
@@ -87,8 +91,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 	}
 
 	public void loadGraph(CoverStrategyType coverStrategy,
-			int replicationPathLength, int numberOfFiles,
-			String[] fileExtensions) {
+			int replicationPathLength, int numberOfGraphChunks,
+			int numberOfFiles, String[] fileExtensions) {
 		if (logger != null) {
 			logger.finer("loadGraph(coverStrategy=" + coverStrategy.name()
 					+ ", replicationPathLength=" + replicationPathLength
@@ -96,6 +100,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		}
 		this.coverStrategy = coverStrategy;
 		this.replicationPathLength = replicationPathLength;
+		this.numberOfGraphChunks = numberOfGraphChunks;
 		fileReceiver = new FileReceiver(workingDir, clientId, clientConnections,
 				numberOfFiles, fileExtensions, logger);
 		fileReceiver.requestFiles();
@@ -135,27 +140,12 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	@Override
 	public void run() {
-		keepAliveThread = new Thread() {
-			@Override
-			public void run() {
-				while (!isInterrupted()) {
-					long startTime = System.currentTimeMillis();
-					clientConnections.send(clientId, new byte[] {
-							MessageType.MASTER_WORK_IN_PROGRESS.getValue() });
-					long remainingSleepTime = Configuration.CLIENT_KEEP_ALIVE_INTERVAL
-							- System.currentTimeMillis() + startTime;
-					if (remainingSleepTime > 0) {
-						try {
-							Thread.sleep(remainingSleepTime);
-						} catch (InterruptedException e) {
-						}
-					}
-				}
-			}
-		};
-		keepAliveThread.isDaemon();
+		keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections,
+				clientId);
+		keepAliveThread.start();
 
-		File[] encodedFiles = encodeGraphFiles();
+		File[] chunks = createGraphChunks();
+		File[] encodedFiles = encodeGraphFiles(chunks);
 		// TODO Auto-generated method stub
 		// TODO Server may only load a graph once
 		keepAliveThread.interrupt();
@@ -163,39 +153,56 @@ public class GraphLoaderTask extends Thread implements Closeable {
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 	}
 
-	private File[] encodeGraphFiles() {
+	private File[] createGraphChunks() {
 		if (logger != null) {
-			logger.finer("encoding of received files");
+			logger.finer("creating graph cover");
 		}
 		clientConnections.send(clientId,
 				MessageUtils.createStringMessage(
 						MessageType.MASTER_WORK_IN_PROGRESS,
-						"Started encoding of received files.", logger));
-		File[] plainFiles = workingDir.listFiles();
-		File[] encodedFiles = new File[plainFiles.length];
-		Dictionary dict = new Dictionary(logger);
-		for (int i = 0; i < plainFiles.length; i++) {
-			clientConnections.send(clientId,
-					MessageUtils.createStringMessage(
-							MessageType.MASTER_WORK_IN_PROGRESS,
-							"Started encoding of file " + i + ".", logger));
-			try {
-				encodedFiles[i] = dict.encode(plainFiles[i]);
-			} catch (RuntimeException e) {
-				clientConnections
-						.send(clientId,
-								MessageUtils.createStringMessage(
-										MessageType.MASTER_WORK_IN_PROGRESS,
-										"Error during encoding of file " + i
-												+ ": " + e.getMessage(),
-										logger));
-			}
-		}
-		clientConnections.send(clientId,
-				MessageUtils.createStringMessage(
-						MessageType.MASTER_WORK_IN_PROGRESS,
-						"Finished encoding of received files.", logger));
-		return encodedFiles;
+						"Started creation of graph cover.", logger));
+		RDFFileIterator rdfFiles = new RDFFileIterator(workingDir, logger);
+		GraphCoverCreator coverCreator = GraphCoverCreatorFactory
+				.getGraphCoverCreator(coverStrategy, logger);
+		File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir,
+				numberOfGraphChunks);
+		// TODO implement n-hop extension
+		return chunks;
+	}
+
+	private File[] encodeGraphFiles(File[] plainFiles) {
+		// if (logger != null) {
+		// logger.finer("encoding of received files");
+		// }
+		// clientConnections.send(clientId,
+		// MessageUtils.createStringMessage(
+		// MessageType.MASTER_WORK_IN_PROGRESS,
+		// "Started encoding of received files.", logger));
+		// File[] encodedFiles = new File[plainFiles.length];
+		// Dictionary dict = new Dictionary(logger);
+		// for (int i = 0; i < plainFiles.length; i++) {
+		// clientConnections.send(clientId,
+		// MessageUtils.createStringMessage(
+		// MessageType.MASTER_WORK_IN_PROGRESS,
+		// "Started encoding of file " + i + ".", logger));
+		// try {
+		// encodedFiles[i] = dict.encode(plainFiles[i]);
+		// } catch (RuntimeException e) {
+		// clientConnections
+		// .send(clientId,
+		// MessageUtils.createStringMessage(
+		// MessageType.MASTER_WORK_IN_PROGRESS,
+		// "Error during encoding of file " + i
+		// + ": " + e.getMessage(),
+		// logger));
+		// }
+		// }
+		// clientConnections.send(clientId,
+		// MessageUtils.createStringMessage(
+		// MessageType.MASTER_WORK_IN_PROGRESS,
+		// "Finished encoding of received files.", logger));
+		// return encodedFiles;
+		return null;
 	}
 
 	@Override

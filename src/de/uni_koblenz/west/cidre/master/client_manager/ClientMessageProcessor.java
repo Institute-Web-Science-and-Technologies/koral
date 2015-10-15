@@ -27,10 +27,13 @@ public class ClientMessageProcessor
 
 	private final Map<String, GraphLoaderTask> clientAddress2GraphLoaderTask;
 
+	private final int numberOfChunks;
+
 	public ClientMessageProcessor(Configuration conf,
 			ClientConnectionManager clientConnections, Logger logger) {
 		this.logger = logger;
 		this.clientConnections = clientConnections;
+		numberOfChunks = conf.getNumberOfSlaves();
 		tmpDir = new File(conf.getTmpDir());
 		if (!tmpDir.exists() || !tmpDir.isDirectory()) {
 			throw new IllegalArgumentException("The temporary directory "
@@ -187,7 +190,7 @@ public class ClientMessageProcessor
 				GraphLoaderTask loaderTask = new GraphLoaderTask(
 						clientID.intValue(), clientConnections, tmpDir, logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
-				loaderTask.loadGraph(arguments);
+				loaderTask.loadGraph(arguments, numberOfChunks);
 				break;
 			default:
 				String errorMessage = "unknown command: " + command + " with "
