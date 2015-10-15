@@ -42,28 +42,65 @@
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
-				<include name="**/jena-*.jar" />
+				<include name="**/jena-base-*.jar" />
 				<exclude name="**/*sources.jar" />
 			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+			<globmapper from="META-INF/*" to="META-INF-jena-base/*" />
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
-				<include name="**/slf4j-*.jar" />
+				<include name="**/jena-core-*.jar" />
+				<exclude name="**/*sources.jar" />
 			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+			<globmapper from="META-INF/*" to="META-INF-jena-core/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/jena-arq-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jena-arq/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/jena-iri-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jena-iri/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/jena-shaded-guava-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jena-shaded-guava/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/slf4j-api-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-slf4j-api/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/slf4j-nop-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-slf4j-nop/*" />
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
 				<include name="**/xercesImpl-*.jar" />
 			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+			<globmapper from="META-INF/*" to="META-INF-xercesImpl/*" />
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
 				<include name="**/xml-apis-*.jar" />
 			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+			<mapper>
+				<globmapper from="META-INF/*" to="META-INF-xml-apis/*" />
+				<globmapper from="license/*" to="license-xml-apis/*" />
+			</mapper>
 		</unjar>
 	</target>
 
