@@ -42,7 +42,7 @@ public class CidreClient {
 			throw new RuntimeException("No graph file could be found.");
 		}
 		byte[][] args = new byte[4 + files.size()][];
-		args[0] = new byte[] { (byte) 3 };
+		args[0] = new byte[] { (byte) (args.length - 1) };
 		args[1] = ByteBuffer.allocate(4).putInt(graphCover.ordinal()).array();
 		args[2] = ByteBuffer.allocate(4).putInt(nHopReplicationPathLength)
 				.array();
