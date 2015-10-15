@@ -46,7 +46,7 @@ public class ClientMessageProcessor
 	 */
 	public boolean processMessage() {
 		byte[] message = clientConnections.receive(false);
-		if (message != null) {
+		if (message != null && message.length > 0) {
 			try {
 				MessageType messageType = MessageType.valueOf(message[0]);
 				switch (messageType) {
