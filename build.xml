@@ -40,6 +40,31 @@
 			</fileset>
 			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
 		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/jena-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/slf4j-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/xercesImpl-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/xml-apis-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+		</unjar>
 	</target>
 
 	<target name="jar" depends="compile, unjar_dependencies">

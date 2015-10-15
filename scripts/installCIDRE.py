@@ -42,6 +42,7 @@ def cloneCidre():
 def resolveDependencies():
     resolveCLI()
     resolveJeromq()
+    resolveJena()
 
 def resolveCLI():
     run("wget http://apache.mirror.digionline.de//commons/cli/binaries/commons-cli-1.3.1-bin.tar.gz")
@@ -59,6 +60,26 @@ def resolveJeromq():
     run("cp jeromq/target/jeromq-0.3.5.jar cidre/lib/jeromq-0.3.5.jar")
     sudo("rm -r jeromq")
     put("../cidreConfig.xml","cidreConfig.xml")
+
+def resolveJena():
+    run("wget http://mirror.23media.de/apache/jena/binaries/apache-jena-3.0.0.tar.gz")
+    run("tar -xf apache-jena-3.0.0.tar.gz")
+    run("rm apache-jena-3.0.0.tar.gz")
+    run("mv apache-jena-3.0.0/lib/jena-arq-3.0.0.jar cidre/lib/jena-arq-3.0.0.jar")
+    run("mv apache-jena-3.0.0/lib/jena-base-3.0.0.jar cidre/lib/jena-base-3.0.0.jar")
+    run("mv apache-jena-3.0.0/lib/jena-core-3.0.0.jar cidre/lib/jena-core-3.0.0.jar")
+    run("mv apache-jena-3.0.0/lib/jena-iri-3.0.0.jar cidre/lib/jena-iri-3.0.0.jar")
+    run("mv apache-jena-3.0.0/lib/jena-shaded-guava-3.0.0.jar cidre/lib/jena-shaded-guava-3.0.0.jar")
+    run("mv apache-jena-3.0.0/lib/xercesImpl-2.11.0.jar cidre/lib/xercesImpl-2.11.0.jar")
+    run("mv apache-jena-3.0.0/lib/xml-apis-1.4.01.jar cidre/lib/xml-apis-1.4.01.jar")
+    run("mv apache-jena-3.0.0/lib/slf4j-api-1.7.12.jar cidre/lib/slf4j-api-1.7.12.jar")
+    run("rm -r apache-jena-3.0.0")
+    # use logger that discards log messages
+    run("wget http://www.slf4j.org/dist/slf4j-1.7.12.tar.gz")
+    run("tar -xf slf4j-1.7.12.tar.gz")
+    run("rm slf4j-1.7.12.tar.gz")
+    run("mv slf4j-1.7.12/slf4j-nop-1.7.12.jar cidre/lib/slf4j-nop-1.7.12.jar")
+    run("rm -r slf4j-1.7.12")
 
 def installMaven():
     sudo("apt-get update")
