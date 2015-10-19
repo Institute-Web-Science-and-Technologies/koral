@@ -9,12 +9,12 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.BitSet;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.graph.Triple;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -59,13 +59,12 @@ public class HashCoverCreator implements GraphCoverCreator {
 					targetChunk *= -1;
 				}
 
-				if (statement.length == 3) {
-					graph.getDefaultGraph().add(new Triple(statement[0],
-							statement[1], statement[2]));
-				} else {
-					graph.add(new Quad(statement[3], statement[0], statement[1],
-							statement[2]));
-				}
+				// ignore graphs and add all triples to the same graph
+				// encode the containment information as graph name
+				graph.add(new Quad(
+						encodeContainmentInformation(targetChunk,
+								numberOfGraphChunks),
+						statement[0], statement[1], statement[2]));
 				RDFDataMgr.write(outputs[targetChunk], graph, RDFFormat.NQ);
 				graph.clear();
 			}
@@ -81,6 +80,18 @@ public class HashCoverCreator implements GraphCoverCreator {
 			}
 		}
 		return chunkFiles;
+	}
+
+	private Node encodeContainmentInformation(int targetChunk,
+			int numberOfGraphChunks) {
+		BitSet bitset = new BitSet(numberOfGraphChunks);
+		bitset.set(targetChunk);
+		byte[] content = bitset.toByteArray();
+		StringBuilder sb = new StringBuilder();
+		for (byte b : content) {
+			sb.append(":").append(b);
+		}
+		return NodeFactory.createURI("urn:containment" + sb.toString());
 	}
 
 	private int computeHash(String string) {
