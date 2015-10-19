@@ -53,6 +53,9 @@ public class RDFFileIterator
 	}
 
 	private void getNextIterator() {
+		if (currentFile > 0 && currentFile <= rdfFiles.length) {
+			rdfFiles[currentFile - 1].delete();
+		}
 		if (currentFile >= rdfFiles.length) {
 			iterator = null;
 			return;
@@ -74,8 +77,6 @@ public class RDFFileIterator
 					RDFDataMgr.parse(inputStream,
 							rdfFiles[currentFile++].getAbsolutePath());
 				} catch (RiotException e) {
-					System.err.println(
-							rdfFiles[currentFile - 1].getAbsolutePath());
 					if (logger != null) {
 						logger.finer("Skipping rest of file "
 								+ rdfFiles[currentFile - 1].getAbsolutePath()
@@ -120,6 +121,7 @@ public class RDFFileIterator
 			getNextIterator();
 		}
 		if (!hasNext()) {
+			rdfFiles[rdfFiles.length - 1].delete();
 			close();
 		}
 		return next;
