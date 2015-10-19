@@ -2,16 +2,23 @@ package de.uni_koblenz.west.cidre.common.utils;
 
 import java.io.File;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
+import org.apache.jena.riot.lang.PipedQuadsStream;
+import org.apache.jena.riot.lang.PipedRDFIterator;
+import org.apache.jena.riot.lang.PipedRDFStream;
+import org.apache.jena.riot.lang.PipedTriplesStream;
+import org.apache.jena.sparql.core.Quad;
 
-public class RDFFileIterator
-		implements Iterable<Statement>, Iterator<Statement> {
+public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]> {
 
 	private final Logger logger;
 
@@ -19,7 +26,11 @@ public class RDFFileIterator
 
 	private int currentFile;
 
-	private StmtIterator iterator;
+	private PipedRDFIterator<?> iterator;
+
+	private boolean isQuad;
+
+	private final ExecutorService executor;
 
 	public RDFFileIterator(File file, Logger logger) {
 		this.logger = logger;
@@ -31,6 +42,7 @@ public class RDFFileIterator
 		} else {
 			rdfFiles = new File[0];
 		}
+		executor = Executors.newSingleThreadExecutor();
 		getNextIterator();
 	}
 
@@ -39,29 +51,38 @@ public class RDFFileIterator
 			iterator = null;
 			return;
 		}
-		RiotException e = null;
-		do {
-			try {
-				iterator = null;
-				e = null;
-				// TODO implement streamed approach, this does not work for big
-				// files!!!
-				// https://github.com/apache/jena/blob/master/jena-arq/src-examples/arq/examples/riot/ExRIOT_6.java
-				// https://jena.apache.org/documentation/io/rdf-input.html#streammanager-and-locationmapper
-				Model model = RDFDataMgr
-						.loadModel(rdfFiles[currentFile++].getAbsolutePath());
-				iterator = model.listStatements();
-			} catch (RiotException e1) {
-				if (logger != null) {
-					logger.finer("Skipping file "
-							+ rdfFiles[currentFile - 1].getAbsolutePath()
-							+ " because of the following error.");
-					logger.throwing(e1.getStackTrace()[0].getClassName(),
-							e1.getStackTrace()[0].getMethodName(), e1);
+
+		iterator = new PipedRDFIterator<>();
+		Lang lang = RDFLanguages
+				.filenameToLang(rdfFiles[currentFile].getName());
+		isQuad = RDFLanguages.isQuads(lang);
+		@SuppressWarnings("unchecked")
+		PipedRDFStream<?> inputStream = isQuad
+				? new PipedQuadsStream((PipedRDFIterator<Quad>) iterator)
+				: new PipedTriplesStream((PipedRDFIterator<Triple>) iterator);
+
+		Runnable parser = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					RDFDataMgr.parse(inputStream,
+							rdfFiles[currentFile++].getAbsolutePath());
+				} catch (RiotException e) {
+					System.err.println(
+							rdfFiles[currentFile - 1].getAbsolutePath());
+					e.printStackTrace();
+					if (logger != null) {
+						logger.finer("Skipping rest of file "
+								+ rdfFiles[currentFile - 1].getAbsolutePath()
+								+ " because of the following error.");
+						logger.throwing(e.getStackTrace()[0].getClassName(),
+								e.getStackTrace()[0].getMethodName(), e);
+					}
 				}
-				e = e1;
 			}
-		} while (currentFile < rdfFiles.length && e != null);
+		};
+
+		executor.submit(parser);
 	}
 
 	@Override
@@ -70,16 +91,37 @@ public class RDFFileIterator
 	}
 
 	@Override
-	public Statement next() {
-		Statement next = iterator.next();
+	public Node[] next() {
+		Node[] next = null;
+		if (isQuad) {
+			Quad quad = (Quad) iterator.next();
+			if (Quad.isDefaultGraphGenerated(quad.getGraph())) {
+				next = new Node[3];
+			} else {
+				next = new Node[4];
+				next[3] = quad.getGraph();
+			}
+			next[0] = quad.getSubject();
+			next[1] = quad.getPredicate();
+			next[2] = quad.getObject();
+		} else {
+			Triple triple = (Triple) iterator.next();
+			next = new Node[3];
+			next[0] = triple.getSubject();
+			next[1] = triple.getPredicate();
+			next[2] = triple.getObject();
+		}
 		if (!iterator.hasNext()) {
 			getNextIterator();
+		}
+		if (!hasNext()) {
+			executor.shutdown();
 		}
 		return next;
 	}
 
 	@Override
-	public Iterator<Statement> iterator() {
+	public Iterator<Node[]> iterator() {
 		return this;
 	}
 

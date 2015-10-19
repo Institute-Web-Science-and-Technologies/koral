@@ -3,7 +3,7 @@ package de.uni_koblenz.west.cidre.master.graph_cover_creator.impl;
 import java.io.File;
 import java.util.logging.Logger;
 
-import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.graph.Node;
 
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
@@ -19,11 +19,15 @@ public class HashCoverCreator implements GraphCoverCreator {
 	@Override
 	public File[] createGraphCover(RDFFileIterator rdfFiles, File workingDir,
 			int numberOfGraphChunks) {
-		for (Statement statement : rdfFiles) {
+		for (Node[] statement : rdfFiles) {
 			if (logger != null) {
-				logger.finest("\n" + statement.getSubject() + " "
-						+ statement.getPredicate() + " " + statement.getObject()
-						+ "\n");
+				StringBuilder sb = new StringBuilder();
+				String delim = "";
+				for (Node node : statement) {
+					sb.append(delim).append(node.toString(true));
+					delim = " ";
+				}
+				logger.finest("\n" + sb.toString() + "\n");
 			}
 		}
 		// TODO handle empty chunks
