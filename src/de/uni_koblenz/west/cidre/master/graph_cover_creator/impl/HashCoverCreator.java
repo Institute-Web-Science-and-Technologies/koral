@@ -93,6 +93,8 @@ public class HashCoverCreator implements GraphCoverCreator {
 						e.getStackTrace()[0].getMethodName(), e);
 			}
 			throw new RuntimeException(e);
+		} finally {
+			digest.reset();
 		}
 		int result = 0;
 		for (int i = 0; i < hash.length; i += 4) {
