@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.cidre.common.utils;
 
+import java.io.Closeable;
 import java.io.File;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
@@ -18,7 +19,12 @@ import org.apache.jena.riot.lang.PipedRDFStream;
 import org.apache.jena.riot.lang.PipedTriplesStream;
 import org.apache.jena.sparql.core.Quad;
 
-public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]> {
+/**
+ * Blank nodes get an id unique to the computer on which the graph file is read
+ * first.
+ */
+public class RDFFileIterator
+		implements Iterable<Node[]>, Iterator<Node[]>, Closeable {
 
 	private final Logger logger;
 
@@ -115,9 +121,14 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]> {
 			getNextIterator();
 		}
 		if (!hasNext()) {
-			executor.shutdown();
+			close();
 		}
 		return next;
+	}
+
+	@Override
+	public void close() {
+		executor.shutdown();
 	}
 
 	@Override

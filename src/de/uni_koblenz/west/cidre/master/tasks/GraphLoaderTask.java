@@ -155,7 +155,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private File[] createGraphChunks() {
 		if (logger != null) {
-			logger.finer("creatinon of graph cover started");
+			logger.finer("creation of graph cover started");
 		}
 		clientConnections.send(clientId,
 				MessageUtils.createStringMessage(
@@ -167,6 +167,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 				.getGraphCoverCreator(coverStrategy, logger);
 		File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir,
 				numberOfGraphChunks);
+		// TODO handle empty chunks
 		// TODO implement n-hop extension
 
 		if (logger != null) {
@@ -231,8 +232,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			fileReceiver.close();
 			fileReceiver = null;
 		}
-		deleteContent(workingDir);
-		workingDir.delete();
+		// deleteContent(workingDir);
+		// workingDir.delete();
 	}
 
 }

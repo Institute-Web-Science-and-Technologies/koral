@@ -2,23 +2,16 @@ package playground;
 
 import java.io.File;
 
-import org.apache.jena.graph.Node;
-
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HashCoverCreator;
 
 public class Playground {
 
 	public static void main(String[] args) {
-		for (Node[] nodes : new RDFFileIterator(
-				new File("/home/danijank/Downloads/testdata"), null)) {
-			String delim = "";
-			for (Node node : nodes) {
-				System.out.print(delim);
-				System.out.print(node.toString(true));
-				delim = " ";
-			}
-			System.out.println();
-		}
+		File workingDir = new File("/home/danijank/Downloads/testdata");
+		RDFFileIterator iterator = new RDFFileIterator(workingDir, null);
+		HashCoverCreator coverCreator = new HashCoverCreator(null);
+		coverCreator.createGraphCover(iterator, workingDir, 4);
 	}
 
 }
