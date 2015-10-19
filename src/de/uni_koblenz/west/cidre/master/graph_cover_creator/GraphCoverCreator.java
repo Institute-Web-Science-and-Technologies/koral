@@ -7,7 +7,8 @@ import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 public interface GraphCoverCreator {
 
 	/**
-	 * TODO handle empty chunks
+	 * the chunks are NQ-files with the containment information encoded as graph
+	 * URI
 	 * 
 	 * @param rdfFiles
 	 * @param workingDir
