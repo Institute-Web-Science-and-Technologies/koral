@@ -5,6 +5,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
@@ -22,11 +26,21 @@ import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 
 public class HashCoverCreator implements GraphCoverCreator {
 
-	@SuppressWarnings("unused")
 	private final Logger logger;
+
+	private final MessageDigest digest;
 
 	public HashCoverCreator(Logger logger) {
 		this.logger = logger;
+		try {
+			digest = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			if (logger != null) {
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -38,8 +52,9 @@ public class HashCoverCreator implements GraphCoverCreator {
 		try {
 			for (Node[] statement : rdfFiles) {
 				transformBlankNodes(statement);
-				int targetChunk = statement[0].toString().hashCode()
-						% outputs.length;
+				// assign to triple to chunk according to hash on subject
+				String subjectString = statement[0].toString();
+				int targetChunk = computeHash(subjectString) % outputs.length;
 				if (targetChunk < 0) {
 					targetChunk *= -1;
 				}
@@ -66,6 +81,26 @@ public class HashCoverCreator implements GraphCoverCreator {
 			}
 		}
 		return chunkFiles;
+	}
+
+	private int computeHash(String string) {
+		byte[] hash = null;
+		try {
+			hash = digest.digest(string.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			if (logger != null) {
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			throw new RuntimeException(e);
+		}
+		int result = 0;
+		for (int i = 0; i < hash.length; i += 4) {
+			result ^= ByteBuffer
+					.wrap(hash, i, i + 4 < hash.length ? 4 : hash.length - i)
+					.getInt();
+		}
+		return result;
 	}
 
 	private void transformBlankNodes(Node[] statement) {

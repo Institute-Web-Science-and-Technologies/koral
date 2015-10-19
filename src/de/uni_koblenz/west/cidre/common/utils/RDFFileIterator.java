@@ -76,7 +76,6 @@ public class RDFFileIterator
 				} catch (RiotException e) {
 					System.err.println(
 							rdfFiles[currentFile - 1].getAbsolutePath());
-					e.printStackTrace();
 					if (logger != null) {
 						logger.finer("Skipping rest of file "
 								+ rdfFiles[currentFile - 1].getAbsolutePath()
