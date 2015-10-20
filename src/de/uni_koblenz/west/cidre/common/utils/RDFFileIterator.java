@@ -38,8 +38,15 @@ public class RDFFileIterator
 
 	private final ExecutorService executor;
 
+	private final boolean deleteReadFiles;
+
 	public RDFFileIterator(File file, Logger logger) {
+		this(file, true, logger);
+	}
+
+	public RDFFileIterator(File file, boolean deleteFiles, Logger logger) {
 		this.logger = logger;
+		deleteReadFiles = deleteFiles;
 		GraphFileFilter filter = new GraphFileFilter();
 		if (file.exists() && file.isFile() && filter.accept(file)) {
 			rdfFiles = new File[] { file };
@@ -53,7 +60,8 @@ public class RDFFileIterator
 	}
 
 	private void getNextIterator() {
-		if (currentFile > 0 && currentFile <= rdfFiles.length) {
+		if (deleteReadFiles && currentFile > 0
+				&& currentFile <= rdfFiles.length) {
 			rdfFiles[currentFile - 1].delete();
 		}
 		if (currentFile >= rdfFiles.length) {
@@ -121,7 +129,9 @@ public class RDFFileIterator
 			getNextIterator();
 		}
 		if (!hasNext()) {
-			rdfFiles[rdfFiles.length - 1].delete();
+			if (deleteReadFiles) {
+				rdfFiles[rdfFiles.length - 1].delete();
+			}
 			close();
 		}
 		return next;

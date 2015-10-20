@@ -9,7 +9,7 @@ public class Playground {
 
 	public static void main(String[] args) {
 		File workingDir = new File("/home/danijank/Downloads/testdata");
-		RDFFileIterator iterator = new RDFFileIterator(workingDir, null);
+		RDFFileIterator iterator = new RDFFileIterator(workingDir, false, null);
 		HashCoverCreator coverCreator = new HashCoverCreator(null);
 		coverCreator.createGraphCover(iterator, workingDir, 4);
 	}
