@@ -49,6 +49,7 @@ public class HashCoverCreator implements GraphCoverCreator {
 		DatasetGraph graph = DatasetGraphFactory.createMem();
 		File[] chunkFiles = getGraphChunkFiles(workingDir, numberOfGraphChunks);
 		OutputStream[] outputs = getOutputStreams(chunkFiles);
+		boolean[] writtenFiles = new boolean[chunkFiles.length];
 		try {
 			for (Node[] statement : rdfFiles) {
 				transformBlankNodes(statement);
@@ -67,6 +68,7 @@ public class HashCoverCreator implements GraphCoverCreator {
 						statement[0], statement[1], statement[2]));
 				RDFDataMgr.write(outputs[targetChunk], graph, RDFFormat.NQ);
 				graph.clear();
+				writtenFiles[targetChunk] = true;
 			}
 		} finally {
 			rdfFiles.close();
@@ -76,6 +78,15 @@ public class HashCoverCreator implements GraphCoverCreator {
 						stream.close();
 					}
 				} catch (IOException e) {
+				}
+			}
+			// delete empty chunks
+			for (int i = 0; i < chunkFiles.length; i++) {
+				if (!writtenFiles[i]) {
+					if (chunkFiles[i] != null && chunkFiles[i].exists()) {
+						chunkFiles[i].delete();
+						chunkFiles[i] = null;
+					}
 				}
 			}
 		}

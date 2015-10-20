@@ -153,7 +153,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			File[] chunks = createGraphChunks();
 			File[] encodedFiles = encodeGraphFiles(chunks);
 			// TODO in case of failure reset database
-			// TODO Auto-generated method stub
 			keepAliveThread.interrupt();
 			clientConnections.send(clientId, new byte[] {
 					MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
@@ -183,7 +182,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
 				.getGraphCoverCreator(coverStrategy, logger);
 		File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir,
 				numberOfGraphChunks);
-		// TODO handle empty chunks
 		if (replicationPathLength != 0) {
 			// TODO implement n-hop extension
 		}

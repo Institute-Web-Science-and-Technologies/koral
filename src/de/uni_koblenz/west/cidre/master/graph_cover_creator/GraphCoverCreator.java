@@ -13,7 +13,9 @@ public interface GraphCoverCreator {
 	 * @param rdfFiles
 	 * @param workingDir
 	 * @param numberOfGraphChunks
-	 * @return
+	 * @return <code>{@link File}[]</code> that contains the graph chunk file
+	 *         for slave i at index i. If a graph chunk is empty,
+	 *         <code>null</code> is stored in the array.
 	 */
 	public File[] createGraphCover(RDFFileIterator rdfFiles, File workingDir,
 			int numberOfGraphChunks);
