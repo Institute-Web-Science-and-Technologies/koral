@@ -150,10 +150,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
 					clientConnections, clientId);
 			keepAliveThread.start();
 
-			if (isAlive()) {
-				throw new RuntimeException("this is a test");
-			}
-
 			File[] chunks = createGraphChunks();
 			File[] encodedFiles = encodeGraphFiles(chunks);
 			// TODO in case of failure reset database
