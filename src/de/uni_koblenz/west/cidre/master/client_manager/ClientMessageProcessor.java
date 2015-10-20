@@ -336,11 +336,13 @@ public class ClientMessageProcessor
 	private void terminateTask(String address) {
 		GraphLoaderTask task = clientAddress2GraphLoaderTask.get(address);
 		if (task != null) {
-			if (task.isAlive()) {
-				task.interrupt();
-			}
 			task.close();
-			clientAddress2GraphLoaderTask.remove(address);
+			if (task.isGraphLoadingOrLoaded()) {
+				// graph has loaded successfully, so it can be removed
+				// otherwise let in the map so that isGraphLoaded() can notify
+				// the master about aborted loading
+				clientAddress2GraphLoaderTask.remove(address);
+			}
 		}
 	}
 
@@ -389,10 +391,20 @@ public class ClientMessageProcessor
 	}
 
 	public boolean isGraphLoaded(boolean graphHasBeenLoaded) {
-		for (GraphLoaderTask task : clientAddress2GraphLoaderTask.values()) {
-			if (task != null && task instanceof GraphLoaderTask) {
-				return task.isGraphLoadingOrLoaded();
+		Entry<String, GraphLoaderTask> task = null;
+		for (Entry<String, GraphLoaderTask> entry : clientAddress2GraphLoaderTask
+				.entrySet()) {
+			if (entry.getValue() != null
+					&& entry.getValue() instanceof GraphLoaderTask) {
+				task = entry;
+				break;
 			}
+		}
+		if (task != null) {
+			if (!task.getValue().isGraphLoadingOrLoaded()) {
+				clientAddress2GraphLoaderTask.remove(task.getKey());
+			}
+			return task.getValue().isGraphLoadingOrLoaded();
 		}
 		return graphHasBeenLoaded;
 	}
