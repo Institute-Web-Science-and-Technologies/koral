@@ -42,7 +42,8 @@ public class CidreMaster extends CidreSystem {
 		// process client message
 		messageReceived = clientMessageProcessor
 				.processMessage(graphHasBeenLoaded);
-		graphHasBeenLoaded = clientMessageProcessor.isGraphLoaded();
+		graphHasBeenLoaded = clientMessageProcessor
+				.isGraphLoaded(graphHasBeenLoaded);
 		byte[] receive = getNetworkManager().receive();
 		if (receive != null) {
 			messageReceived = true;

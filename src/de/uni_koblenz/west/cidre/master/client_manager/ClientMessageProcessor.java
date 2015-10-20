@@ -388,13 +388,13 @@ public class ClientMessageProcessor
 		}
 	}
 
-	public boolean isGraphLoaded() {
+	public boolean isGraphLoaded(boolean graphHasBeenLoaded) {
 		for (GraphLoaderTask task : clientAddress2GraphLoaderTask.values()) {
-			if (task != null && task.isGraphLoadingOrLoaded()) {
-				return true;
+			if (task != null && !task.isGraphLoadingOrLoaded()) {
+				return false;
 			}
 		}
-		return false;
+		return graphHasBeenLoaded;
 	}
 
 }
