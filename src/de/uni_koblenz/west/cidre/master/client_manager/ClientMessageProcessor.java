@@ -390,8 +390,8 @@ public class ClientMessageProcessor
 
 	public boolean isGraphLoaded(boolean graphHasBeenLoaded) {
 		for (GraphLoaderTask task : clientAddress2GraphLoaderTask.values()) {
-			if (task != null && !task.isGraphLoadingOrLoaded()) {
-				return false;
+			if (task != null && task instanceof GraphLoaderTask) {
+				return task.isGraphLoadingOrLoaded();
 			}
 		}
 		return graphHasBeenLoaded;
