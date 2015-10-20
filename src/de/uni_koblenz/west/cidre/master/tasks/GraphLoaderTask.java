@@ -196,15 +196,15 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		return chunks;
 	}
 
-	private File[] encodeGraphFiles(File[] plainFiles) {
-		// if (logger != null) {
-		// logger.finer("encoding of received files");
-		// }
-		// clientConnections.send(clientId,
-		// MessageUtils.createStringMessage(
-		// MessageType.MASTER_WORK_IN_PROGRESS,
-		// "Started encoding of received files.", logger));
-		// File[] encodedFiles = new File[plainFiles.length];
+	private File[] encodeGraphFiles(File[] plainGraphChunks) {
+		if (logger != null) {
+			logger.finer("encoding graph chunks");
+		}
+		clientConnections.send(clientId,
+				MessageUtils.createStringMessage(
+						MessageType.MASTER_WORK_IN_PROGRESS,
+						"Started encoding of graph chunks.", logger));
+		File[] encodedFiles = new File[plainGraphChunks.length];
 		// Dictionary dict = new Dictionary(logger);
 		// for (int i = 0; i < plainFiles.length; i++) {
 		// clientConnections.send(clientId,
@@ -223,12 +223,11 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		// logger));
 		// }
 		// }
-		// clientConnections.send(clientId,
-		// MessageUtils.createStringMessage(
-		// MessageType.MASTER_WORK_IN_PROGRESS,
-		// "Finished encoding of received files.", logger));
-		// return encodedFiles;
-		return null;
+		clientConnections.send(clientId,
+				MessageUtils.createStringMessage(
+						MessageType.MASTER_WORK_IN_PROGRESS,
+						"Finished encoding of graph chunks.", logger));
+		return encodedFiles;
 	}
 
 	public boolean isGraphLoadingOrLoaded() {
