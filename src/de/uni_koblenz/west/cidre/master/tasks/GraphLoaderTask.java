@@ -145,21 +145,32 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	@Override
 	public void run() {
-		keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections,
-				clientId);
-		keepAliveThread.start();
+		try {
+			keepAliveThread = new ClientConnectionKeepAliveTask(
+					clientConnections, clientId);
+			keepAliveThread.start();
 
-		if (isAlive()) {
-			throw new RuntimeException("this is a test");
+			if (isAlive()) {
+				throw new RuntimeException("this is a test");
+			}
+
+			File[] chunks = createGraphChunks();
+			File[] encodedFiles = encodeGraphFiles(chunks);
+			// TODO in case of failure reset database
+			// TODO Auto-generated method stub
+			keepAliveThread.interrupt();
+			clientConnections.send(clientId, new byte[] {
+					MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
+		} catch (Throwable e) {
+			if (logger != null) {
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			clientConnections.send(clientId, MessageUtils.createStringMessage(
+					MessageType.CLIENT_COMMAND_FAILED,
+					e.getClass().getName() + ":" + e.getMessage(), logger));
+			close();
 		}
-
-		File[] chunks = createGraphChunks();
-		File[] encodedFiles = encodeGraphFiles(chunks);
-		// TODO in case of failure reset database
-		// TODO Auto-generated method stub
-		keepAliveThread.interrupt();
-		clientConnections.send(clientId,
-				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 	}
 
 	private File[] createGraphChunks() {
