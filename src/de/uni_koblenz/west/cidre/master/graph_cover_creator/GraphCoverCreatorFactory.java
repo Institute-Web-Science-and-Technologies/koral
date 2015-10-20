@@ -12,7 +12,9 @@ public class GraphCoverCreatorFactory {
 		case HASH:
 			return new HashCoverCreator(logger);
 		case HIERARCHICAL:
+			// TODO implement hierarchical hash cover
 		case MIN_EDGE_CUT:
+			// TODO implement min edge-cut cover
 		default:
 			return null;
 
