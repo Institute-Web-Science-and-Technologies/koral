@@ -89,6 +89,7 @@ public class ClientConnection implements Closeable {
 			} catch (UnknownHostException e) {
 				System.out.println(
 						"Connection failed because the local IP address could not be identified.");
+				closeConnectionToMaster();
 				throw new RuntimeException(e);
 			}
 		}
@@ -125,7 +126,15 @@ public class ClientConnection implements Closeable {
 		}
 	}
 
+	public boolean isConnected() {
+		return inSocket != null;
+	}
+
 	public void sendCommand(String command, byte[][] args) {
+		if (!isConnected()) {
+			throw new RuntimeException(
+					"The client has not connected to the master, yet.");
+		}
 		try {
 			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
 			byte[] commandBytes = command.getBytes("UTF-8");
@@ -147,6 +156,10 @@ public class ClientConnection implements Closeable {
 	}
 
 	public void sendFileChunk(FileChunk fileChunk) {
+		if (!isConnected()) {
+			throw new RuntimeException(
+					"The client has not connected to the master, yet.");
+		}
 		try {
 			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
 
@@ -166,6 +179,10 @@ public class ClientConnection implements Closeable {
 	}
 
 	public byte[][] getResponse() {
+		if (!isConnected()) {
+			throw new RuntimeException(
+					"The client has not connected to the master, yet.");
+		}
 		byte[][] response = null;
 		long startTime = System.currentTimeMillis();
 		byte[] mType = null;

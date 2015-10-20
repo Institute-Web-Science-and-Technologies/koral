@@ -32,8 +32,9 @@ public class CidreClient {
 		connection = new ClientConnection();
 	}
 
-	public void startUp(String masterAddress) {
+	public boolean startUp(String masterAddress) {
 		connection.connect(masterAddress);
+		return connection.isConnected();
 	}
 
 	public void loadGraph(CoverStrategyType graphCover,
@@ -189,7 +190,10 @@ public class CidreClient {
 			}
 
 			CidreClient client = new CidreClient();
-			client.startUp(master);
+			if (!client.startUp(master)) {
+				client.shutDown();
+				return;
+			}
 
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 				@Override
