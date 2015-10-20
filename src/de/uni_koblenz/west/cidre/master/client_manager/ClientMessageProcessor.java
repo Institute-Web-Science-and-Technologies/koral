@@ -45,9 +45,10 @@ public class ClientMessageProcessor
 	}
 
 	/**
+	 * @param graphHasBeenLoaded
 	 * @return <code>true</code>, iff a message was received
 	 */
-	public boolean processMessage() {
+	public boolean processMessage(boolean graphHasBeenLoaded) {
 		byte[] message = clientConnections.receive(false);
 		if (message != null && message.length > 0) {
 			try {
@@ -60,7 +61,7 @@ public class ClientMessageProcessor
 					processKeepAlive(message);
 					break;
 				case CLIENT_COMMAND:
-					processCommand(message);
+					processCommand(message, graphHasBeenLoaded);
 					break;
 				case FILE_CHUNK:
 					processFileChunk(message);
@@ -119,7 +120,7 @@ public class ClientMessageProcessor
 		}
 	}
 
-	private void processCommand(byte[] message) {
+	private void processCommand(byte[] message, boolean graphHasBeenLoaded) {
 		byte[] buffer = clientConnections.receive(true);
 		if (buffer == null) {
 			if (logger != null) {
@@ -187,6 +188,17 @@ public class ClientMessageProcessor
 		try {
 			switch (command) {
 			case "load":
+				if (graphHasBeenLoaded) {
+					String errorMessage = "Loading of graph rejected: CIDRE is currently loading a graph or it has already loaded a graph.";
+					if (logger != null) {
+						logger.finer(errorMessage);
+					}
+					clientConnections.send(clientID,
+							MessageUtils.createStringMessage(
+									MessageType.CLIENT_COMMAND_FAILED,
+									errorMessage, logger));
+					break;
+				}
 				GraphLoaderTask loaderTask = new GraphLoaderTask(
 						clientID.intValue(), clientConnections, tmpDir, logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
@@ -374,6 +386,15 @@ public class ClientMessageProcessor
 			terminateTask(address);
 			clientAddress2Id.remove(address);
 		}
+	}
+
+	public boolean isGraphLoaded() {
+		for (GraphLoaderTask task : clientAddress2GraphLoaderTask.values()) {
+			if (task != null && task.isGraphLoadingOrLoaded()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

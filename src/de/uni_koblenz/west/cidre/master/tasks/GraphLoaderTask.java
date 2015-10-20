@@ -35,10 +35,13 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private ClientConnectionKeepAliveTask keepAliveThread;
 
+	private boolean graphIsLoadingOrLoaded;
+
 	public GraphLoaderTask(int clientID,
 			ClientConnectionManager clientConnections, File tmpDir,
 			Logger logger) {
 		isDaemon();
+		graphIsLoadingOrLoaded = true;
 		clientId = clientID;
 		this.clientConnections = clientConnections;
 		this.logger = logger;
@@ -124,6 +127,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 								"Master received all files.", logger));
 				start();
 			} else if (clientConnections.isConnectionClosed(clientId)) {
+				graphIsLoadingOrLoaded = false;
 				close();
 			}
 		} catch (IOException e) {
@@ -134,6 +138,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			clientConnections.send(clientId, MessageUtils.createStringMessage(
 					MessageType.CLIENT_COMMAND_FAILED,
 					e.getClass().getName() + ": " + e.getMessage(), logger));
+			graphIsLoadingOrLoaded = false;
 			close();
 		}
 	}
@@ -146,8 +151,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 		File[] chunks = createGraphChunks();
 		File[] encodedFiles = encodeGraphFiles(chunks);
+		// TODO in case of failure reset database
 		// TODO Auto-generated method stub
-		// TODO Server may only load a graph once
 		keepAliveThread.interrupt();
 		clientConnections.send(clientId,
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
@@ -168,7 +173,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir,
 				numberOfGraphChunks);
 		// TODO handle empty chunks
-		// TODO implement n-hop extension
+		if (replicationPathLength != 0) {
+			// TODO implement n-hop extension
+		}
 
 		if (logger != null) {
 			logger.finer("creation of graph cover finished");
@@ -215,6 +222,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		return null;
 	}
 
+	public boolean isGraphLoadingOrLoaded() {
+		return graphIsLoadingOrLoaded;
+	}
+
 	@Override
 	public void close() {
 		if (isAlive()) {
@@ -224,6 +235,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 							MessageType.CLIENT_COMMAND_FAILED,
 							"GraphLoaderTask has been closed before it could finish.",
 							logger));
+			graphIsLoadingOrLoaded = false;
 		}
 		if (keepAliveThread != null && keepAliveThread.isAlive()) {
 			keepAliveThread.interrupt();

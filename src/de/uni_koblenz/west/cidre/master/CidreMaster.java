@@ -13,6 +13,8 @@ public class CidreMaster extends CidreSystem {
 
 	private final ClientMessageProcessor clientMessageProcessor;
 
+	private boolean graphHasBeenLoaded;
+
 	public CidreMaster(Configuration conf) {
 		super(conf, conf.getMaster());
 		try {
@@ -20,6 +22,7 @@ public class CidreMaster extends CidreSystem {
 					conf, logger);
 			clientMessageProcessor = new ClientMessageProcessor(conf,
 					clientConnections, logger);
+			graphHasBeenLoaded = false;
 		} catch (Throwable t) {
 			if (logger != null) {
 				logger.throwing(t.getStackTrace()[0].getClassName(),
@@ -37,7 +40,9 @@ public class CidreMaster extends CidreSystem {
 	public void runOneIteration() {
 		boolean messageReceived = false;
 		// process client message
-		messageReceived = clientMessageProcessor.processMessage();
+		messageReceived = clientMessageProcessor
+				.processMessage(graphHasBeenLoaded);
+		graphHasBeenLoaded = clientMessageProcessor.isGraphLoaded();
 		byte[] receive = getNetworkManager().receive();
 		if (receive != null) {
 			messageReceived = true;
