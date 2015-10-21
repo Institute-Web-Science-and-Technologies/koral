@@ -209,8 +209,6 @@ public class Configuration implements Configurable {
 		this.dictionaryCacheType = dictionaryCacheType;
 	}
 
-	// TODO add options
-
 	/*
 	 * serialization specific code
 	 */

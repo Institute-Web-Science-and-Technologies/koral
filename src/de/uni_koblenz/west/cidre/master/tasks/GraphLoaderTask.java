@@ -198,7 +198,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private File[] encodeGraphFiles(File[] plainGraphChunks) {
 		if (logger != null) {
-			logger.finer("encoding graph chunks");
+			logger.finer("encoding of graph chunks");
 		}
 		clientConnections.send(clientId,
 				MessageUtils.createStringMessage(
@@ -223,6 +223,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		// logger));
 		// }
 		// }
+		if (logger != null) {
+			logger.finer("encoding of graph chunks finished");
+		}
 		clientConnections.send(clientId,
 				MessageUtils.createStringMessage(
 						MessageType.MASTER_WORK_IN_PROGRESS,

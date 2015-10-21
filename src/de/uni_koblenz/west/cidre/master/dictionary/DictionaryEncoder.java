@@ -1,13 +1,29 @@
 package de.uni_koblenz.west.cidre.master.dictionary;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDictionary;
 
-public class DictionaryEncoder {
+public class DictionaryEncoder implements Closeable {
+
+	private final Logger logger;
+
+	private final Dictionary dictionary;
 
 	public DictionaryEncoder(Configuration conf, Logger logger) {
-		// TODO Auto-generated constructor stub
+		this.logger = logger;
+		dictionary = new MapDBDictionary(conf.getDictionaryStorageType(),
+				conf.getDictionaryDir(), conf.useTransactionsForDictionary(),
+				conf.isDictionaryAsynchronouslyWritten(),
+				conf.getDictionaryCacheType(), logger);
+	}
+
+	@Override
+	public void close() throws IOException {
+		dictionary.close();
 	}
 
 }
