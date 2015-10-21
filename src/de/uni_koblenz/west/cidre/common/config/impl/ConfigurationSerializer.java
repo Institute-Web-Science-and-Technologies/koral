@@ -49,4 +49,25 @@ class ConfigurationSerializer implements ConfigurableSerializer {
 		return conf.getTmpDir();
 	}
 
+	public String serializeDictionaryStorageType(Configuration conf) {
+		return conf.getDictionaryStorageType().name();
+	}
+
+	public String serializeDictionaryDir(Configuration conf) {
+		return conf.getDictionaryDir();
+	}
+
+	public String serializeEnableTransactionsForDictionary(Configuration conf) {
+		return new Boolean(conf.useTransactionsForDictionary()).toString();
+	}
+
+	public String serializeEnableAsynchronousWritesForDictionary(
+			Configuration conf) {
+		return new Boolean(conf.isDictionaryAsynchronouslyWritten()).toString();
+	}
+
+	public String serializeDictionaryCacheType(Configuration conf) {
+		return conf.getDictionaryCacheType().name();
+	}
+
 }

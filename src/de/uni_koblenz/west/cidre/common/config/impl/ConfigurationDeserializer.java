@@ -4,6 +4,8 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
+import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBStorageOptions;
 
 class ConfigurationDeserializer implements ConfigurableDeserializer {
 
@@ -56,6 +58,53 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 	public void deserializeTmpDir(Configuration conf, String tmpDir) {
 		if (tmpDir != null && !tmpDir.isEmpty()) {
 			conf.setTmpDir(tmpDir);
+		}
+	}
+
+	public void deserializeDictionaryStorageType(Configuration conf,
+			String storageType) {
+		if (storageType != null && !storageType.isEmpty()) {
+			try {
+				conf.setDictionaryStorageType(
+						MapDBStorageOptions.valueOf(storageType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
+	}
+
+	public void deserializeDictionaryDir(Configuration conf,
+			String dictionaryDir) {
+		if (dictionaryDir != null && !dictionaryDir.isEmpty()) {
+			conf.setDictionaryDir(dictionaryDir);
+		}
+	}
+
+	public void deserializeEnableTransactionsForDictionary(Configuration conf,
+			String enableTransactions) {
+		if (enableTransactions != null && !enableTransactions.isEmpty()) {
+			conf.setUseTransactionsForDictionary(
+					Boolean.parseBoolean(enableTransactions));
+		}
+	}
+
+	public void deserializeEnableAsynchronousWritesForDictionary(
+			Configuration conf, String writeAsynchronously) {
+		if (writeAsynchronously != null && !writeAsynchronously.isEmpty()) {
+			conf.setDictionaryAsynchronouslyWritten(
+					Boolean.parseBoolean(writeAsynchronously));
+		}
+	}
+
+	public void deserializeDictionaryCacheType(Configuration conf,
+			String cacheType) {
+		if (cacheType != null && !cacheType.isEmpty()) {
+			try {
+				conf.setDictionaryCacheType(
+						MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
 		}
 	}
 

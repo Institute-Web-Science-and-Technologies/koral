@@ -8,6 +8,8 @@ import de.uni_koblenz.west.cidre.common.config.Configurable;
 import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
 import de.uni_koblenz.west.cidre.common.config.ConfigurableSerializer;
 import de.uni_koblenz.west.cidre.common.config.Property;
+import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBStorageOptions;
 
 public class Configuration implements Configurable {
 
@@ -141,6 +143,21 @@ public class Configuration implements Configurable {
 		this.tmpDir = tmpDir;
 	}
 
+	@Property(name = "dictionaryStorageType", description = "Defines how the dictionary is stored:"
+			+ "\nMEMORY = dictionary is only stored in memory"
+			+ "\nMEMORY_MAPPED_FILE = dictionary is stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required."
+			+ "\nRANDOM_ACCESS_FILE = dictionary is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.")
+	private MapDBStorageOptions dictionaryStorageType = MapDBStorageOptions.MEMORY_MAPPED_FILE;
+
+	public MapDBStorageOptions getDictionaryStorageType() {
+		return dictionaryStorageType;
+	}
+
+	public void setDictionaryStorageType(
+			MapDBStorageOptions dictionaryStorageType) {
+		this.dictionaryStorageType = dictionaryStorageType;
+	}
+
 	@Property(name = "dictionaryDir", description = "Defines the directory where the dictionary is stored.")
 	private String dictionaryDir = ".";
 
@@ -150,6 +167,46 @@ public class Configuration implements Configurable {
 
 	public void setDictionaryDir(String dictionaryDir) {
 		this.dictionaryDir = dictionaryDir;
+	}
+
+	@Property(name = "enableTransactionsForDictionary", description = "If set to true, transactions are used. Transactions are only required if processing updates in future work.")
+	private boolean useTransactionsForDictionary = false;
+
+	public boolean useTransactionsForDictionary() {
+		return useTransactionsForDictionary;
+	}
+
+	public void setUseTransactionsForDictionary(boolean useTransactions) {
+		useTransactionsForDictionary = useTransactions;
+	}
+
+	@Property(name = "enableAsynchronousWritesForDictionary", description = "If set to true, updates are written in a separate thread asynchronously.")
+	private boolean isDictionaryAsynchronouslyWritten = true;
+
+	public boolean isDictionaryAsynchronouslyWritten() {
+		return isDictionaryAsynchronouslyWritten;
+	}
+
+	public void setDictionaryAsynchronouslyWritten(
+			boolean isAsynchronousWritten) {
+		isDictionaryAsynchronouslyWritten = isAsynchronousWritten;
+	}
+
+	@Property(name = "dictionaryCacheType", description = "Defines how the instance cache works:"
+			+ "\nNONE = no instances are cached"
+			+ "\nHASH_TABLE = a cached instance is deleted, if a hash collision occurs"
+			+ "\nLEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size"
+			+ "\nHARD_REFERENCE = no instance is removed from the cache automatically"
+			+ "\nSOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full"
+			+ "\nWEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them")
+	private MapDBCacheOptions dictionaryCacheType = MapDBCacheOptions.HASH_TABLE;
+
+	public MapDBCacheOptions getDictionaryCacheType() {
+		return dictionaryCacheType;
+	}
+
+	public void setDictionaryCacheType(MapDBCacheOptions dictionaryCacheType) {
+		this.dictionaryCacheType = dictionaryCacheType;
 	}
 
 	// TODO add options
