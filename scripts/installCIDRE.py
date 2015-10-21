@@ -45,6 +45,7 @@ def resolveDependencies():
     #installMaven()
     resolveJeromq()
     resolveJena()
+    resolveMapDB()
 
 def resolveCLI():
     run("wget http://apache.mirror.digionline.de//commons/cli/binaries/commons-cli-1.3.1-bin.tar.gz")
@@ -84,6 +85,14 @@ def resolveJena():
     run("rm slf4j-1.7.12.tar.gz")
     run("mv slf4j-1.7.12/slf4j-nop-1.7.12.jar cidre/lib/slf4j-nop-1.7.12.jar")
     run("rm -r slf4j-1.7.12")
+
+def resolveMapDB():
+    run("git clone https://github.com/jankotek/mapdb.git")
+    with cd("mapdb"):
+        run("git checkout tags/mapdb-1.0.8")
+        run("mvn package -DskipTests")
+    run("cp mapdb/target/mapdb-1.0.8.jar cidre/lib/mapdb-1.0.8.jar")
+    sudo("rm -r mapdb")
 
 def buildCidre():
     with cd("cidre"):

@@ -13,7 +13,7 @@ These libraries are:
 		- xml-apis
 	- slf4j-api version: 1.7.12 (MIT licence (X11 Licence) - compatible with LGPL v3)
 - slf4j-nop version: 1.7.12 from http://www.slf4j.org/dist/slf4j-1.7.12.tar.gz (MIT licence (X11 Licence) - compatible with LGPL v3)
-
+- mapdb from version: 1.0.8  https://github.com/jankotek/mapdb.git [ http://www.mapdb.org/ ] (Apache Licence Version 2.0 - compatible with LGPL v3)
 
 
 - Symas Lightning Memory-Mapped Database (LMDB) version: LMDB_0.9.16 from https://github.com/LMDB/lmdb.git [ http://symas.com/mdb/ ] (OpenLDAP Public License v 2.8 - compatible with LGPL)
