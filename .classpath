@@ -21,6 +21,5 @@
 	<classpathentry kind="lib" path="lib/xml-apis-1.4.01.jar"/>
 	<classpathentry kind="lib" path="lib/jena-iri-3.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-nop-1.7.12.jar"/>
-	<classpathentry kind="lib" path="lib/lmdbjni-0.4.4.jar" sourcepath="lib/lmdbjni-0.4.4-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
