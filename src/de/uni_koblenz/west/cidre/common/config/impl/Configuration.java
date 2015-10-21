@@ -141,6 +141,19 @@ public class Configuration implements Configurable {
 		this.tmpDir = tmpDir;
 	}
 
+	@Property(name = "dictionaryDir", description = "Defines the directory where the dictionary is stored.")
+	private String dictionaryDir = ".";
+
+	public String getDictionaryDir() {
+		return dictionaryDir;
+	}
+
+	public void setDictionaryDir(String dictionaryDir) {
+		this.dictionaryDir = dictionaryDir;
+	}
+
+	// TODO add options
+
 	/*
 	 * serialization specific code
 	 */

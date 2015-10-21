@@ -27,6 +27,8 @@ public class Playground {
 		} finally {
 			db.close();
 		}
+
+		// http://www.mapdb.org/doc/index.html
 	}
 
 }
