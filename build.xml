@@ -102,6 +102,13 @@
 				<globmapper from="license/*" to="license-xml-apis/*" />
 			</mapper>
 		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/lmdbjni-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-lmdbjni/*" />
+		</unjar>
 	</target>
 
 	<target name="jar" depends="compile, unjar_dependencies">

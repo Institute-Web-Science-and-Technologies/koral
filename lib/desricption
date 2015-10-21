@@ -12,4 +12,9 @@ These libraries are:
 		- xercesImpl
 		- xml-apis
 	- slf4j-api version: 1.7.12 (MIT licence (X11 Licence) - compatible with LGPL v3)
-slf4j-nop version: 1.7.12 from http://www.slf4j.org/dist/slf4j-1.7.12.tar.gz (MIT licence (X11 Licence) - compatible with LGPL v3)
+- slf4j-nop version: 1.7.12 from http://www.slf4j.org/dist/slf4j-1.7.12.tar.gz (MIT licence (X11 Licence) - compatible with LGPL v3)
+- Symas Lightning Memory-Mapped Database (LMDB) version: LMDB_0.9.16 from https://github.com/LMDB/lmdb.git [ http://symas.com/mdb/ ] (OpenLDAP Public License v 2.8 - compatible with LGPL)
+- LMDB JNI version: 0.4.4 from https://github.com/deephacks/lmdbjni.git (Apache License Version 2.0 - compatible with LGPL v3)
+
+not used:
+- Oracle Berkeley DB Java Edition version: 6.4.9 from http://download.oracle.com/maven/com/sleepycat/je/6.4.9/je-6.4.9.jar (...-sources.jar (GNU AGPL v3 - NOT compatible with LGPL )
