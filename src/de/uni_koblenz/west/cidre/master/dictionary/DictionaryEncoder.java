@@ -29,6 +29,10 @@ public class DictionaryEncoder implements Closeable {
 		return null;
 	}
 
+	public void clear() {
+		dictionary.clear();
+	}
+
 	@Override
 	public void close() {
 		dictionary.close();

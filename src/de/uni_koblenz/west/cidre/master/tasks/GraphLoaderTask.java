@@ -161,11 +161,12 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 			File[] chunks = createGraphChunks();
 			File[] encodedFiles = encodeGraphFiles(chunks);
-			// TODO in case of failure reset database
+
 			keepAliveThread.interrupt();
 			clientConnections.send(clientId, new byte[] {
 					MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 		} catch (Throwable e) {
+			clearDatabase();
 			if (logger != null) {
 				logger.throwing(e.getStackTrace()[0].getClassName(),
 						e.getStackTrace()[0].getMethodName(), e);
@@ -175,6 +176,11 @@ public class GraphLoaderTask extends Thread implements Closeable {
 					e.getClass().getName() + ":" + e.getMessage(), logger));
 			close();
 		}
+	}
+
+	private void clearDatabase() {
+		dictionary.clear();
+		statistics.clear();
 	}
 
 	private File[] createGraphChunks() {

@@ -14,6 +14,11 @@ public class GraphStatistics implements Closeable {
 		// TODO Auto-generated constructor stub
 	}
 
+	public void clear() {
+		// TODO Auto-generated method stub
+
+	}
+
 	@Override
 	public void close() {
 		// TODO Auto-generated method stub

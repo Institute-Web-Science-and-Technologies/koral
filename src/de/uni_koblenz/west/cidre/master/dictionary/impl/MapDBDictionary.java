@@ -160,6 +160,26 @@ public class MapDBDictionary implements Dictionary {
 	}
 
 	@Override
+	public void clear() {
+		if (encoder != null) {
+			if (encoder instanceof HTreeMap) {
+				((HTreeMap<String, Long>) encoder).clear();
+			} else {
+				assert encoder instanceof BTreeMap;
+				((BTreeMap<String, Long>) encoder).clear();
+			}
+		}
+		if (decoder != null) {
+			if (decoder instanceof HTreeMap) {
+				((HTreeMap<Long, String>) decoder).clear();
+			} else {
+				assert decoder instanceof BTreeMap;
+				((BTreeMap<Long, String>) decoder).clear();
+			}
+		}
+	}
+
+	@Override
 	public void close() {
 		if (encoder != null) {
 			if (encoder instanceof HTreeMap) {
