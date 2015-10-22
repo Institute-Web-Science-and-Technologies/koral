@@ -1,11 +1,7 @@
 package playground;
 
-import java.io.File;
-
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.HTreeMap;
-import org.mapdb.Serializer;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Playground {
 
@@ -15,18 +11,19 @@ public class Playground {
 		// null);
 		// HashCoverCreator coverCreator = new HashCoverCreator(null);
 		// coverCreator.createGraphCover(iterator, workingDir, 4);
-		DB db = DBMaker.newFileDB(new File("/home/danijank/Downloads/test.db"))
-				.transactionDisable().closeOnJvmShutdown()
-				.mmapFileEnableIfSupported().asyncWriteEnable().make();
-		try {
-			HTreeMap<String, Long> map = db.createHashMap("encoder")
-					.keySerializer(new Serializer.CompressionWrapper<>(
-							Serializer.STRING))
-					.valueSerializer(Serializer.LONG).makeOrGet();
-			System.out.println(map.get("test"));
-		} finally {
-			db.close();
-		}
+		long longValue = 0x00_00_00_00_00_00_00_01l;
+		short shortValue = Short.MIN_VALUE;
+		byte[] longB = ByteBuffer.allocate(8).putLong(longValue).array();
+		byte[] shortB = ByteBuffer.allocate(2).putShort(shortValue).array();
+		System.arraycopy(shortB, 0, longB, 0, shortB.length);
+
+		long newLong = shortValue;
+		newLong = newLong << 48;
+		newLong |= longValue;
+
+		System.out.println(Arrays.toString(longB));
+		System.out.println(Arrays
+				.toString(ByteBuffer.allocate(8).putLong(newLong).array()));
 
 		// TODO http://www.mapdb.org/doc/index.html
 	}

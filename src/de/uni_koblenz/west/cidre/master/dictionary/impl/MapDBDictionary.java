@@ -23,6 +23,10 @@ public class MapDBDictionary implements Dictionary {
 
 	private final ConcurrentMap<Long, String> decoder;
 
+	private long nextID = 0;
+
+	private final long maxID = 0x0000ffffffffffffl;
+
 	public MapDBDictionary(MapDBStorageOptions storageType,
 			MapDBDataStructureOptions dataStructure, String storageDir,
 			boolean useTransactions, boolean writeAsynchronously,
@@ -89,9 +93,42 @@ public class MapDBDictionary implements Dictionary {
 	public long encode(String value) {
 		Long id = encoder.get(value);
 		if (id == null) {
-			// TODO Auto-generated method stub
+			if (nextID > maxID) {
+				throw new RuntimeException(
+						"The maximum number of Strings have been encoded.");
+			} else {
+				id = nextID++;
+				encoder.put(value, id);
+				decoder.put(id, value);
+			}
 		}
 		return id.longValue();
+	}
+
+	@Override
+	public long setOwner(String value, short owner) {
+		return setOwner(value, encode(value), owner);
+	}
+
+	@Override
+	public long setOwner(long id, short owner) {
+		return setOwner(decode(id), id, owner);
+	}
+
+	private long setOwner(String value, long oldID, short owner) {
+		if (oldID < 0 || oldID > maxID) {
+			throw new IllegalArgumentException(
+					"the first two bytes of the id must be 0");
+		}
+		long newID = owner;
+		newID = newID << 48;
+		newID |= oldID;
+
+		encoder.replace(value, oldID, newID);
+		decoder.remove(oldID, value);
+		decoder.put(newID, value);
+
+		return newID;
 	}
 
 	@Override
