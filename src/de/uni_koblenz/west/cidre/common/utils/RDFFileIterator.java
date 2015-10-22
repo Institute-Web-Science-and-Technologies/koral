@@ -23,8 +23,8 @@ import org.apache.jena.sparql.core.Quad;
  * Blank nodes get an id unique to the computer on which the graph file is read
  * first.
  */
-public class RDFFileIterator
-		implements Iterable<Node[]>, Iterator<Node[]>, Closeable {
+public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
+		Closeable, AutoCloseable {
 
 	private final Logger logger;
 

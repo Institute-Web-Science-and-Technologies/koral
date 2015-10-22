@@ -25,4 +25,9 @@ public class GraphStatistics implements Closeable {
 
 	}
 
+	public void count(long subject, long property, long object, int chunk) {
+		// TODO Auto-generated method stub
+
+	}
+
 }
