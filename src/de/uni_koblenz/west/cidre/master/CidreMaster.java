@@ -8,10 +8,16 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientMessageProcessor;
+import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 public class CidreMaster extends CidreSystem {
 
 	private final ClientMessageProcessor clientMessageProcessor;
+
+	private final DictionaryEncoder dictionary;
+
+	private final GraphStatistics statistics;
 
 	private boolean graphHasBeenLoaded;
 
@@ -20,8 +26,10 @@ public class CidreMaster extends CidreSystem {
 		try {
 			ClientConnectionManager clientConnections = new ClientConnectionManager(
 					conf, logger);
+			dictionary = new DictionaryEncoder(conf, logger);
+			statistics = new GraphStatistics(conf, logger);
 			clientMessageProcessor = new ClientMessageProcessor(conf,
-					clientConnections, logger);
+					clientConnections, dictionary, statistics, logger);
 			graphHasBeenLoaded = false;
 		} catch (Throwable t) {
 			if (logger != null) {
@@ -61,6 +69,8 @@ public class CidreMaster extends CidreSystem {
 	@Override
 	protected void shutDownInternal() {
 		clientMessageProcessor.close();
+		dictionary.close();
+		statistics.close();
 	}
 
 	public static void main(String[] args) {

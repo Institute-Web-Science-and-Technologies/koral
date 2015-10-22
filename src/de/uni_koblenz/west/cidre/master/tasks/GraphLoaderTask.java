@@ -11,9 +11,11 @@ import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
+import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreatorFactory;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 public class GraphLoaderTask extends Thread implements Closeable {
 
@@ -22,6 +24,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
 	private final int clientId;
 
 	private final ClientConnectionManager clientConnections;
+
+	private final DictionaryEncoder dictionary;
+
+	private final GraphStatistics statistics;
 
 	private final File workingDir;
 
@@ -38,12 +44,15 @@ public class GraphLoaderTask extends Thread implements Closeable {
 	private boolean graphIsLoadingOrLoaded;
 
 	public GraphLoaderTask(int clientID,
-			ClientConnectionManager clientConnections, File tmpDir,
-			Logger logger) {
+			ClientConnectionManager clientConnections,
+			DictionaryEncoder dictionary, GraphStatistics statistics,
+			File tmpDir, Logger logger) {
 		isDaemon();
 		graphIsLoadingOrLoaded = true;
 		clientId = clientID;
 		this.clientConnections = clientConnections;
+		this.dictionary = dictionary;
+		this.statistics = statistics;
 		this.logger = logger;
 		workingDir = new File(tmpDir.getAbsolutePath() + File.separatorChar
 				+ "cidre_client_" + clientId);
@@ -204,25 +213,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 				MessageUtils.createStringMessage(
 						MessageType.MASTER_WORK_IN_PROGRESS,
 						"Started encoding of graph chunks.", logger));
-		File[] encodedFiles = new File[plainGraphChunks.length];
-		// Dictionary dict = new Dictionary(logger);
-		// for (int i = 0; i < plainFiles.length; i++) {
-		// clientConnections.send(clientId,
-		// MessageUtils.createStringMessage(
-		// MessageType.MASTER_WORK_IN_PROGRESS,
-		// "Started encoding of file " + i + ".", logger));
-		// try {
-		// encodedFiles[i] = dict.encode(plainFiles[i]);
-		// } catch (RuntimeException e) {
-		// clientConnections
-		// .send(clientId,
-		// MessageUtils.createStringMessage(
-		// MessageType.MASTER_WORK_IN_PROGRESS,
-		// "Error during encoding of file " + i
-		// + ": " + e.getMessage(),
-		// logger));
-		// }
-		// }
+		File[] encodedFiles = dictionary.encodeGraphChunks(plainGraphChunks,
+				statistics);
 		if (logger != null) {
 			logger.finer("encoding of graph chunks finished");
 		}

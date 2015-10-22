@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.master.tasks.GraphLoaderTask;
 
 public class ClientMessageProcessor
@@ -20,6 +22,10 @@ public class ClientMessageProcessor
 	private final Logger logger;
 
 	private final ClientConnectionManager clientConnections;
+
+	private final DictionaryEncoder dictionary;
+
+	private final GraphStatistics statistics;
 
 	private final File tmpDir;
 
@@ -30,9 +36,13 @@ public class ClientMessageProcessor
 	private final int numberOfChunks;
 
 	public ClientMessageProcessor(Configuration conf,
-			ClientConnectionManager clientConnections, Logger logger) {
+			ClientConnectionManager clientConnections,
+			DictionaryEncoder dictionary, GraphStatistics statistics,
+			Logger logger) {
 		this.logger = logger;
 		this.clientConnections = clientConnections;
+		this.dictionary = dictionary;
+		this.statistics = statistics;
 		numberOfChunks = conf.getNumberOfSlaves();
 		tmpDir = new File(conf.getTmpDir());
 		if (!tmpDir.exists() || !tmpDir.isDirectory()) {
@@ -200,7 +210,8 @@ public class ClientMessageProcessor
 					break;
 				}
 				GraphLoaderTask loaderTask = new GraphLoaderTask(
-						clientID.intValue(), clientConnections, tmpDir, logger);
+						clientID.intValue(), clientConnections, dictionary,
+						statistics, tmpDir, logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
 				loaderTask.loadGraph(arguments, numberOfChunks);
 				break;

@@ -42,4 +42,7 @@ public interface Dictionary extends Closeable {
 	 */
 	public String decode(long id);
 
+	@Override
+	public void close();
+
 }

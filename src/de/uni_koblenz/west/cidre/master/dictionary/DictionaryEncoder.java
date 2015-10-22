@@ -1,11 +1,12 @@
 package de.uni_koblenz.west.cidre.master.dictionary;
 
 import java.io.Closeable;
-import java.io.IOException;
+import java.io.File;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDictionary;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 public class DictionaryEncoder implements Closeable {
 
@@ -22,8 +23,14 @@ public class DictionaryEncoder implements Closeable {
 				conf.getDictionaryCacheType());
 	}
 
+	public File[] encodeGraphChunks(File[] plainGraphChunks,
+			GraphStatistics statistics) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	@Override
-	public void close() throws IOException {
+	public void close() {
 		dictionary.close();
 	}
 
