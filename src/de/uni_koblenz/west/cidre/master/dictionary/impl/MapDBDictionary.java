@@ -46,8 +46,8 @@ public class MapDBDictionary implements Dictionary {
 						+ "decoder.db",
 				useTransactions, writeAsynchronously, cacheType);
 
+		// create datastructure
 		try {
-			// create datastructure
 			switch (dataStructure) {
 			case B_TREE_MAP:
 				encoder = encoderDatabase.createTreeMap("encoder")
@@ -70,8 +70,9 @@ public class MapDBDictionary implements Dictionary {
 								Serializer.STRING))
 						.makeOrGet();
 			}
-		} finally {
+		} catch (Throwable e) {
 			close();
+			throw e;
 		}
 	}
 
@@ -91,15 +92,27 @@ public class MapDBDictionary implements Dictionary {
 
 	@Override
 	public long encode(String value) {
-		Long id = encoder.get(value);
+		Long id = null;
+		try {
+			id = encoder.get(value);
+		} catch (Throwable e) {
+			close();
+			throw e;
+		}
 		if (id == null) {
 			if (nextID > maxID) {
 				throw new RuntimeException(
 						"The maximum number of Strings have been encoded.");
 			} else {
-				id = nextID++;
-				encoder.put(value, id);
-				decoder.put(id, value);
+				try {
+					id = nextID;
+					encoder.put(value, id);
+					decoder.put(id, value);
+					nextID++;
+				} catch (Throwable e) {
+					close();
+					throw e;
+				}
 			}
 		}
 		return id.longValue();
@@ -124,16 +137,26 @@ public class MapDBDictionary implements Dictionary {
 		newID = newID << 48;
 		newID |= oldID;
 
-		encoder.replace(value, oldID, newID);
-		decoder.remove(oldID, value);
-		decoder.put(newID, value);
+		try {
+			encoder.replace(value, oldID, newID);
+			decoder.remove(oldID, value);
+			decoder.put(newID, value);
+		} catch (Throwable e) {
+			close();
+			throw e;
+		}
 
 		return newID;
 	}
 
 	@Override
 	public String decode(long id) {
-		return decoder.get(id);
+		try {
+			return decoder.get(id);
+		} catch (Throwable e) {
+			close();
+			throw e;
+		}
 	}
 
 	@Override
