@@ -53,6 +53,10 @@ class ConfigurationSerializer implements ConfigurableSerializer {
 		return conf.getDictionaryStorageType().name();
 	}
 
+	public String serializeDictionaryDataStructure(Configuration conf) {
+		return conf.getDictionaryDataStructure().name();
+	}
+
 	public String serializeDictionaryDir(Configuration conf) {
 		return conf.getDictionaryDir();
 	}

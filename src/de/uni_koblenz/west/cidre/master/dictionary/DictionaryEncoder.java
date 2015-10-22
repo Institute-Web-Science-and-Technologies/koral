@@ -16,7 +16,8 @@ public class DictionaryEncoder implements Closeable {
 	public DictionaryEncoder(Configuration conf, Logger logger) {
 		this.logger = logger;
 		dictionary = new MapDBDictionary(conf.getDictionaryStorageType(),
-				conf.getDictionaryDir(), conf.useTransactionsForDictionary(),
+				conf.getDictionaryDataStructure(), conf.getDictionaryDir(),
+				conf.useTransactionsForDictionary(),
 				conf.isDictionaryAsynchronouslyWritten(),
 				conf.getDictionaryCacheType(), logger);
 	}

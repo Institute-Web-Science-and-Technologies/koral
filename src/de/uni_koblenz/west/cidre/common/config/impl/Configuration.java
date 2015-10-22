@@ -9,6 +9,7 @@ import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
 import de.uni_koblenz.west.cidre.common.config.ConfigurableSerializer;
 import de.uni_koblenz.west.cidre.common.config.Property;
 import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDataStructureOptions;
 import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBStorageOptions;
 
 public class Configuration implements Configurable {
@@ -143,7 +144,7 @@ public class Configuration implements Configurable {
 		this.tmpDir = tmpDir;
 	}
 
-	@Property(name = "dictionaryStorageType", description = "Defines how the dictionary is stored:"
+	@Property(name = "dictionaryStorageType", description = "Defines how the dictionary is persisted:"
 			+ "\nMEMORY = dictionary is only stored in memory"
 			+ "\nMEMORY_MAPPED_FILE = dictionary is stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required."
 			+ "\nRANDOM_ACCESS_FILE = dictionary is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.")
@@ -156,6 +157,20 @@ public class Configuration implements Configurable {
 	public void setDictionaryStorageType(
 			MapDBStorageOptions dictionaryStorageType) {
 		this.dictionaryStorageType = dictionaryStorageType;
+	}
+
+	@Property(name = "dictionaryDataStructure", description = "Defines the data structure used for storing the dictionary:"
+			+ "\nHASH_TREE_MAP = fast single thread access, slow concurrent access, memory efficient"
+			+ "\nB_TREE_MAP = slower single thread access, faster concurrent access, costs more memory")
+	private MapDBDataStructureOptions dictionaryDataStructure = MapDBDataStructureOptions.HASH_TREE_MAP;
+
+	public MapDBDataStructureOptions getDictionaryDataStructure() {
+		return dictionaryDataStructure;
+	}
+
+	public void setDictionaryDataStructure(
+			MapDBDataStructureOptions dictionaryDataStructure) {
+		this.dictionaryDataStructure = dictionaryDataStructure;
 	}
 
 	@Property(name = "dictionaryDir", description = "Defines the directory where the dictionary is stored.")

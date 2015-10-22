@@ -1,8 +1,10 @@
 package de.uni_koblenz.west.cidre.master.dictionary.impl;
 
 import java.io.File;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 
+import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -16,9 +18,10 @@ public class MapDBDictionary implements Dictionary {
 
 	private final DB database;
 
-	private final HTreeMap<String, Long> encoder;
+	private final ConcurrentMap<String, Long> encoder;
 
-	public MapDBDictionary(MapDBStorageOptions storageType, String storageDir,
+	public MapDBDictionary(MapDBStorageOptions storageType,
+			MapDBDataStructureOptions dataStructure, String storageDir,
 			boolean useTransactions, boolean writeAsynchronously,
 			MapDBCacheOptions cacheType, Logger logger) {
 		this.logger = logger;
@@ -35,10 +38,20 @@ public class MapDBDictionary implements Dictionary {
 		database = dbmaker.make();
 
 		try {
-			encoder = database.createHashMap("encoder")
-					.keySerializer(new Serializer.CompressionWrapper<>(
-							Serializer.STRING))
-					.valueSerializer(Serializer.LONG).makeOrGet();
+			switch (dataStructure) {
+			case B_TREE_MAP:
+				encoder = database.createHashMap("encoder")
+						.keySerializer(new Serializer.CompressionWrapper<>(
+								Serializer.STRING))
+						.valueSerializer(Serializer.LONG).makeOrGet();
+				break;
+			case HASH_TREE_MAP:
+			default:
+				encoder = database.createHashMap("encoder")
+						.keySerializer(new Serializer.CompressionWrapper<>(
+								Serializer.STRING))
+						.valueSerializer(Serializer.LONG).makeOrGet();
+			}
 		} finally {
 			close();
 		}
@@ -48,7 +61,12 @@ public class MapDBDictionary implements Dictionary {
 
 	@Override
 	public void close() {
-		encoder.close();
+		if (encoder instanceof HTreeMap) {
+			((HTreeMap<String, Long>) encoder).close();
+		} else {
+			assert encoder instanceof BTreeMap;
+			((BTreeMap<String, Long>) encoder).close();
+		}
 		database.close();
 	}
 

@@ -37,11 +37,18 @@
 	</property>
 	<property>
 		<name>dictionaryStorageType</name>
-		<description>Defines how the dictionary is stored:
+		<description>Defines how the dictionary is persisted:
 MEMORY = dictionary is only stored in memory
 MEMORY_MAPPED_FILE = dictionary is stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required.
 RANDOM_ACCESS_FILE = dictionary is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.</description>
 		<value>MEMORY_MAPPED_FILE</value>
+	</property>
+	<property>
+		<name>dictionaryDataStructure</name>
+		<description>Defines the data structure used for storing the dictionary:
+HASH_TREE_MAP = fast single thread access, slow concurrent access, memory efficient
+B_TREE_MAP = slower single thread access, faster concurrent access, costs more memory</description>
+		<value>HASH_TREE_MAP</value>
 	</property>
 	<property>
 		<name>dictionaryDir</name>

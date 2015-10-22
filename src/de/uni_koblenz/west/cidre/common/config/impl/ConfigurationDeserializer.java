@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 
 import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
 import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDataStructureOptions;
 import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBStorageOptions;
 
 class ConfigurationDeserializer implements ConfigurableDeserializer {
@@ -67,6 +68,18 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 			try {
 				conf.setDictionaryStorageType(
 						MapDBStorageOptions.valueOf(storageType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
+	}
+
+	public void deserializeDictionaryDataStructure(Configuration conf,
+			String dataStructure) {
+		if (dataStructure != null && !dataStructure.isEmpty()) {
+			try {
+				conf.setDictionaryDataStructure(MapDBDataStructureOptions
+						.valueOf(dataStructure.toUpperCase()));
 			} catch (IllegalArgumentException e) {
 
 			}
