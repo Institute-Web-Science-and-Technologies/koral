@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.cidre.common.config.impl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -174,7 +175,7 @@ public class Configuration implements Configurable {
 	}
 
 	@Property(name = "dictionaryDir", description = "Defines the directory where the dictionary is stored.")
-	private String dictionaryDir = ".";
+	private String dictionaryDir = "." + File.separatorChar + "dictionary";
 
 	public String getDictionaryDir() {
 		return dictionaryDir;

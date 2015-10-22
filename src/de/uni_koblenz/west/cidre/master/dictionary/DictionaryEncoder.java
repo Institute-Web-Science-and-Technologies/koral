@@ -19,7 +19,7 @@ public class DictionaryEncoder implements Closeable {
 				conf.getDictionaryDataStructure(), conf.getDictionaryDir(),
 				conf.useTransactionsForDictionary(),
 				conf.isDictionaryAsynchronouslyWritten(),
-				conf.getDictionaryCacheType(), logger);
+				conf.getDictionaryCacheType());
 	}
 
 	@Override
