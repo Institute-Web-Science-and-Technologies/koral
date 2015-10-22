@@ -52,8 +52,8 @@ B_TREE_MAP = slower single thread access, faster concurrent access, costs more m
 	</property>
 	<property>
 		<name>dictionaryDir</name>
-		<description>Defines the directory where the dictionary is stored.</description>
-		<value>.</value>
+		<description>Defines a non-existing directory where the dictionary is stored.</description>
+		<value>./dictionary</value>
 	</property>
 	<property>
 		<name>enableTransactionsForDictionary</name>

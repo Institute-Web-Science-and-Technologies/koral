@@ -174,7 +174,7 @@ public class Configuration implements Configurable {
 		this.dictionaryDataStructure = dictionaryDataStructure;
 	}
 
-	@Property(name = "dictionaryDir", description = "Defines the directory where the dictionary is stored.")
+	@Property(name = "dictionaryDir", description = "Defines a non-existing directory where the dictionary is stored.")
 	private String dictionaryDir = "." + File.separatorChar + "dictionary";
 
 	public String getDictionaryDir() {
