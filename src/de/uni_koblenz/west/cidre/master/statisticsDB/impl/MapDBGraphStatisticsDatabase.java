@@ -9,9 +9,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBCacheOptions;
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDataStructureOptions;
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBStorageOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBDataStructureOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatisticsDatabase;
 
 public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
@@ -22,10 +22,18 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
 	private long[] ownerLoad;
 
+	private final short numberOfChunks;
+
 	public MapDBGraphStatisticsDatabase(MapDBStorageOptions storageType,
 			MapDBDataStructureOptions dataStructure, String dir,
 			boolean useTransactions, boolean writeAsynchronously,
 			MapDBCacheOptions cacheType, short numberOfChunks) {
+		File statisticsDir = new File(dir);
+		if (!statisticsDir.exists()) {
+			statisticsDir.mkdirs();
+		}
+
+		this.numberOfChunks = numberOfChunks;
 		persistenceFile = new File(
 				dir + File.separatorChar + "persistence.bin");
 		if (persistenceFile.exists()) {

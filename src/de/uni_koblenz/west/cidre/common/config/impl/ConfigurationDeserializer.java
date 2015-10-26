@@ -4,9 +4,9 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBCacheOptions;
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDataStructureOptions;
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBStorageOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBDataStructureOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 
 class ConfigurationDeserializer implements ConfigurableDeserializer {
 

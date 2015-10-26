@@ -9,9 +9,9 @@ import de.uni_koblenz.west.cidre.common.config.Configurable;
 import de.uni_koblenz.west.cidre.common.config.ConfigurableDeserializer;
 import de.uni_koblenz.west.cidre.common.config.ConfigurableSerializer;
 import de.uni_koblenz.west.cidre.common.config.Property;
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBCacheOptions;
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDataStructureOptions;
-import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBStorageOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBDataStructureOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 
 public class Configuration implements Configurable {
 

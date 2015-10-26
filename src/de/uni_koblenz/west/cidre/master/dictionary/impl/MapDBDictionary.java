@@ -1,32 +1,30 @@
 package de.uni_koblenz.west.cidre.master.dictionary.impl;
 
 import java.io.File;
-import java.util.concurrent.ConcurrentMap;
 
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.BTreeKeySerializer.BasicKeySerializer;
-import org.mapdb.BTreeMap;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 
+import de.uni_koblenz.west.cidre.common.mapDB.BTreeMapWrapper;
+import de.uni_koblenz.west.cidre.common.mapDB.HashTreeMapWrapper;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBDataStructureOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBMapWrapper;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.master.dictionary.Dictionary;
 
 public class MapDBDictionary implements Dictionary {
 
-	private final DB encoderDatabase;
+	private final MapDBMapWrapper<String, Long> encoder;
 
-	private final ConcurrentMap<String, Long> encoder;
-
-	private final DB decoderDatabase;
-
-	private final ConcurrentMap<Long, String> decoder;
+	private final MapDBMapWrapper<Long, String> decoder;
 
 	private long nextID = 0;
 
 	private final long maxID = 0x0000ffffffffffffl;
 
+	@SuppressWarnings("unchecked")
 	public MapDBDictionary(MapDBStorageOptions storageType,
 			MapDBDataStructureOptions dataStructure, String storageDir,
 			boolean useTransactions, boolean writeAsynchronously,
@@ -35,40 +33,37 @@ public class MapDBDictionary implements Dictionary {
 		if (!dictionaryDir.exists()) {
 			dictionaryDir.mkdirs();
 		}
-
-		// create or load database
-		encoderDatabase = getDatabase(storageType,
-				dictionaryDir.getAbsolutePath() + File.separatorChar
-						+ "encoder.db",
-				useTransactions, writeAsynchronously, cacheType);
-		decoderDatabase = getDatabase(storageType,
-				dictionaryDir.getAbsolutePath() + File.separatorChar
-						+ "decoder.db",
-				useTransactions, writeAsynchronously, cacheType);
-
-		// create datastructure
 		try {
 			switch (dataStructure) {
 			case B_TREE_MAP:
-				encoder = encoderDatabase.createTreeMap("encoder")
-						.keySerializer(BTreeKeySerializer.STRING)
-						.valueSerializer(Serializer.LONG).makeOrGet();
-				decoder = decoderDatabase.createTreeMap("decoder")
-						.keySerializer(BasicKeySerializer.BASIC)
-						.valuesOutsideNodesEnable()
-						.valueSerializer(Serializer.STRING).makeOrGet();
+				encoder = new BTreeMapWrapper<>(storageType,
+						dictionaryDir.getAbsolutePath() + File.separatorChar
+								+ "encoder.db",
+						useTransactions, writeAsynchronously, cacheType,
+						"encoder", BTreeKeySerializer.STRING, Serializer.LONG,
+						false);
+				decoder = new BTreeMapWrapper<>(storageType,
+						dictionaryDir.getAbsolutePath() + File.separatorChar
+								+ "decoder.db",
+						useTransactions, writeAsynchronously, cacheType,
+						"decoder", BasicKeySerializer.BASIC, Serializer.STRING,
+						true);
 				break;
 			case HASH_TREE_MAP:
 			default:
-				encoder = encoderDatabase.createHashMap("encoder")
-						.keySerializer(new Serializer.CompressionWrapper<>(
-								Serializer.STRING))
-						.valueSerializer(Serializer.LONG).makeOrGet();
-				decoder = decoderDatabase.createHashMap("decoder")
-						.keySerializer(Serializer.LONG)
-						.valueSerializer(new Serializer.CompressionWrapper<>(
-								Serializer.STRING))
-						.makeOrGet();
+				encoder = new HashTreeMapWrapper<>(storageType,
+						dictionaryDir.getAbsolutePath() + File.separatorChar
+								+ "encoder.db",
+						useTransactions, writeAsynchronously, cacheType,
+						"encoder",
+						new Serializer.CompressionWrapper<>(Serializer.STRING),
+						Serializer.LONG);
+				decoder = new HashTreeMapWrapper<>(storageType,
+						dictionaryDir.getAbsolutePath() + File.separatorChar
+								+ "decoder.db",
+						useTransactions, writeAsynchronously, cacheType,
+						"decoder", Serializer.LONG,
+						new Serializer.CompressionWrapper<>(Serializer.STRING));
 			}
 		} catch (Throwable e) {
 			close();
@@ -88,20 +83,6 @@ public class MapDBDictionary implements Dictionary {
 			close();
 			throw e;
 		}
-	}
-
-	private DB getDatabase(MapDBStorageOptions storageType, String databaseFile,
-			boolean useTransactions, boolean writeAsynchronously,
-			MapDBCacheOptions cacheType) {
-		DBMaker<?> dbmaker = storageType.getDBMaker(databaseFile);
-		if (!useTransactions) {
-			dbmaker = dbmaker.transactionDisable().closeOnJvmShutdown();
-		}
-		if (writeAsynchronously) {
-			dbmaker = dbmaker.asyncWriteEnable();
-		}
-		dbmaker = cacheType.setCaching(dbmaker);
-		return dbmaker.make();
 	}
 
 	@Override
@@ -181,43 +162,21 @@ public class MapDBDictionary implements Dictionary {
 	@Override
 	public void clear() {
 		if (encoder != null) {
-			if (encoder instanceof HTreeMap) {
-				((HTreeMap<String, Long>) encoder).clear();
-			} else {
-				assert encoder instanceof BTreeMap;
-				((BTreeMap<String, Long>) encoder).clear();
-			}
+			encoder.clear();
 		}
 		if (decoder != null) {
-			if (decoder instanceof HTreeMap) {
-				((HTreeMap<Long, String>) decoder).clear();
-			} else {
-				assert decoder instanceof BTreeMap;
-				((BTreeMap<Long, String>) decoder).clear();
-			}
+			decoder.clear();
 		}
 	}
 
 	@Override
 	public void close() {
 		if (encoder != null) {
-			if (encoder instanceof HTreeMap) {
-				((HTreeMap<String, Long>) encoder).close();
-			} else {
-				assert encoder instanceof BTreeMap;
-				((BTreeMap<String, Long>) encoder).close();
-			}
+			encoder.close();
 		}
 		if (decoder != null) {
-			if (decoder instanceof HTreeMap) {
-				((HTreeMap<Long, String>) decoder).close();
-			} else {
-				assert decoder instanceof BTreeMap;
-				((BTreeMap<Long, String>) decoder).close();
-			}
+			decoder.close();
 		}
-		encoderDatabase.close();
-		decoderDatabase.close();
 	}
 
 }

@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.master.dictionary.impl;
+package de.uni_koblenz.west.cidre.common.mapDB;
 
 import org.mapdb.DBMaker;
 
