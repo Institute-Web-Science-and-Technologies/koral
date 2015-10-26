@@ -132,7 +132,7 @@ public class HashCoverCreator implements GraphCoverCreator {
 			Node node = statement[i];
 			if (node.isBlank()) {
 				statement[i] = NodeFactory
-						.createURI("urn:uuid:" + node.getBlankNodeId());
+						.createURI("urn:blankNode:" + node.getBlankNodeId());
 			}
 		}
 	}

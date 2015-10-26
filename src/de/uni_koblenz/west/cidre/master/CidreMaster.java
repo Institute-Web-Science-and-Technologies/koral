@@ -44,6 +44,9 @@ public class CidreMaster extends CidreSystem {
 		}
 	}
 
+	// TODO before sending to sparql reqester replace urn:blankNode: by _: for
+	// proper blank node syntax
+
 	@Override
 	public void runOneIteration() {
 		boolean messageReceived = false;
