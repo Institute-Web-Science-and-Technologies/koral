@@ -8,9 +8,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
+import org.mapdb.BTreeKeySerializer.BasicKeySerializer;
+import org.mapdb.Serializer;
+
+import de.uni_koblenz.west.cidre.common.mapDB.BTreeMapWrapper;
+import de.uni_koblenz.west.cidre.common.mapDB.HashTreeMapWrapper;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBDataStructureOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBMapWrapper;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatisticsDatabase;
 
@@ -24,6 +31,9 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
 	private final short numberOfChunks;
 
+	private final MapDBMapWrapper<Long, long[]> map;
+
+	@SuppressWarnings("unchecked")
 	public MapDBGraphStatisticsDatabase(MapDBStorageOptions storageType,
 			MapDBDataStructureOptions dataStructure, String dir,
 			boolean useTransactions, boolean writeAsynchronously,
@@ -42,7 +52,29 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 			numberOfTriplesPerChunk = new long[numberOfChunks];
 			ownerLoad = new long[numberOfChunks];
 		}
-		// TODO Auto-generated constructor stub
+
+		try {
+			switch (dataStructure) {
+			case B_TREE_MAP:
+				map = new BTreeMapWrapper<>(storageType,
+						statisticsDir.getAbsolutePath() + File.separatorChar
+								+ "statistics.db",
+						useTransactions, writeAsynchronously, cacheType,
+						"decoder", BasicKeySerializer.BASIC,
+						Serializer.LONG_ARRAY, true);
+				break;
+			case HASH_TREE_MAP:
+			default:
+				map = new HashTreeMapWrapper<>(storageType,
+						statisticsDir.getAbsolutePath() + File.separatorChar
+								+ "statistics.db",
+						useTransactions, writeAsynchronously, cacheType,
+						"decoder", Serializer.LONG, Serializer.LONG_ARRAY);
+			}
+		} catch (Throwable e) {
+			close();
+			throw e;
+		}
 	}
 
 	private void loadPersistenceFile() {
@@ -68,57 +100,90 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
 	@Override
 	public void incrementSubjectCount(long subject, int chunk) {
-		// TODO Auto-generated method stub
-
+		incrementValue(subject, chunk);
 	}
 
 	@Override
 	public void incrementPropertyCount(long property, int chunk) {
-		// TODO Auto-generated method stub
-
+		incrementValue(property, numberOfChunks + chunk);
 	}
 
 	@Override
 	public void incrementObjectCount(long object, int chunk) {
-		// TODO Auto-generated method stub
-
+		incrementValue(object, 2 * numberOfChunks + chunk);
 	}
 
 	@Override
-	public void incrementRessourceOccurrences(long ressource, int chunk) {
-		// TODO Auto-generated method stub
+	public void incrementRessourceOccurrences(long resource, int chunk) {
+		incrementValue(resource, 3 * numberOfChunks);
+	}
 
+	private void incrementValue(long resourceID, int column) {
+		try {
+			long[] statistics = map.get(resourceID);
+			if (statistics == null) {
+				statistics = new long[numberOfChunks];
+			}
+			statistics[column]++;
+			// MapDB does not detect changes in array automatically
+			map.put(resourceID, statistics);
+		} catch (Throwable e) {
+			close();
+			throw e;
+		}
 	}
 
 	@Override
-	public void inrementNumberOfTriplesPerChunk(int chunk) {
-		// TODO Auto-generated method stub
-
+	public void incrementNumberOfTriplesPerChunk(int chunk) {
+		numberOfTriplesPerChunk[chunk]++;
 	}
 
 	@Override
 	public long[] getStatisticsForResource(long id) {
-		// TODO Auto-generated method stub
-		return null;
+		long[] statistics = map.get(id);
+		if (statistics == null) {
+			return null;
+		}
+		return Arrays.copyOf(statistics, statistics.length);
 	}
 
 	@Override
 	public long[] getChunkSizes() {
-		// TODO Auto-generated method stub
-		return null;
+		return Arrays.copyOf(numberOfTriplesPerChunk,
+				numberOfTriplesPerChunk.length);
 	}
 
 	@Override
 	public long[] getOwnerLoad() {
-		// TODO Auto-generated method stub
-		return null;
+		return Arrays.copyOf(ownerLoad, ownerLoad.length);
 	}
 
 	@Override
-	public long setOwner(long id, short owner) {
-		// TODO if already set, do not look into tables
+	public long setOwner(long oldID, short owner) {
+		short oldOwner = (short) (oldID >>> 48);
+		if (oldOwner != 0 && oldOwner != owner) {
+			throw new IllegalArgumentException(
+					"the first two bytes of the id must be 0 or equal to the new owner "
+							+ owner);
+		}
+		if (oldOwner == owner) {
+			return oldID;
+		}
+		long newID = owner;
+		newID = newID << 48;
+		newID |= oldID;
+
+		try {
+			long[] statistics = map.get(oldID);
+			map.remove(oldID);
+			map.put(newID, statistics);
+		} catch (Throwable e) {
+			close();
+			throw e;
+		}
 		ownerLoad[owner]++;
-		return 0;
+
+		return newID;
 	}
 
 	@Override
@@ -130,13 +195,12 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 			numberOfTriplesPerChunk[i] = 0;
 			ownerLoad[i] = 0;
 		}
-		// TODO Auto-generated method stub
-
+		map.clear();
 	}
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
+		map.close();
 		persistNumberOfTriplesPerChunk();
 	}
 
