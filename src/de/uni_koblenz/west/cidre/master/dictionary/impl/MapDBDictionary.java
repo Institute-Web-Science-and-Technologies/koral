@@ -74,6 +74,20 @@ public class MapDBDictionary implements Dictionary {
 			close();
 			throw e;
 		}
+		resetNextId();
+	}
+
+	private void resetNextId() {
+		try {
+			for (Long usedIds : decoder.keySet()) {
+				if (usedIds != null && usedIds > nextID) {
+					nextID = usedIds + 1;
+				}
+			}
+		} catch (Throwable e) {
+			close();
+			throw e;
+		}
 	}
 
 	private DB getDatabase(MapDBStorageOptions storageType, String databaseFile,

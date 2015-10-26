@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
@@ -67,7 +68,12 @@ public class DictionaryEncoder implements Closeable {
 					statistics.count(subject, property, object, i);
 					byte[] containment = DeSerializer
 							.deserializeBitSetFromNode(quad[3]).toByteArray();
-					// TODO Auto-generated method stub
+					out.write(ByteBuffer.allocate(8).putLong(subject).array());
+					out.write(ByteBuffer.allocate(8).putLong(property).array());
+					out.write(ByteBuffer.allocate(8).putLong(object).array());
+					out.write(ByteBuffer.allocate(2)
+							.putShort((short) containment.length).array());
+					out.write(containment);
 				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
