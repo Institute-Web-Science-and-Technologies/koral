@@ -32,7 +32,7 @@ public interface Dictionary extends Closeable {
 	 * @param owner
 	 * @return
 	 * @throws IllegalArgumentException
-	 *             if the first two bytes of id are not 0
+	 *             if the first two bytes of id are not 0 or not equal to owner
 	 */
 	public long setOwner(long id, short owner);
 

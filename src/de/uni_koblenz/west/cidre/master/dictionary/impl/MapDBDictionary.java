@@ -23,7 +23,7 @@ public class MapDBDictionary implements Dictionary {
 
 	private final ConcurrentMap<Long, String> decoder;
 
-	private long nextID = 0;
+	private long nextID = Long.MIN_VALUE;
 
 	private final long maxID = 0x0000ffffffffffffl;
 
@@ -143,9 +143,14 @@ public class MapDBDictionary implements Dictionary {
 	}
 
 	private long setOwner(String value, long oldID, short owner) {
-		if (oldID < 0 || oldID > maxID) {
+		short oldOwner = (short) (oldID >>> 48);
+		if (oldOwner != 0 && oldOwner != owner) {
 			throw new IllegalArgumentException(
-					"the first two bytes of the id must be 0");
+					"the first two bytes of the id must be 0 or equal to the new owner "
+							+ owner);
+		}
+		if (oldOwner == owner) {
+			return oldID;
 		}
 		long newID = owner;
 		newID = newID << 48;
