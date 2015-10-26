@@ -23,7 +23,7 @@ public class MapDBDictionary implements Dictionary {
 
 	private final ConcurrentMap<Long, String> decoder;
 
-	private long nextID = Long.MIN_VALUE;
+	private long nextID = 0;
 
 	private final long maxID = 0x0000ffffffffffffl;
 

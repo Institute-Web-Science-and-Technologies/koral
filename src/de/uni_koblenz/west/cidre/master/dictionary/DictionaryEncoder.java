@@ -171,7 +171,7 @@ public class DictionaryEncoder implements Closeable {
 			if (readBytes > 0) {
 				totalBytesRead += readBytes;
 			}
-		} while (readBytes != -1 && totalBytesRead < 8);
+		} while (readBytes != -1 && totalBytesRead < bytesToRead.length);
 		if (readBytes == -1) {
 			throw new IOException(
 					"InputStream has ended before value could be read completely.");
