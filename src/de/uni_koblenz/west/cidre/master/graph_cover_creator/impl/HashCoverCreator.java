@@ -23,6 +23,7 @@ import org.apache.jena.sparql.core.Quad;
 
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
+import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 
 public class HashCoverCreator implements GraphCoverCreator {
 
@@ -97,12 +98,7 @@ public class HashCoverCreator implements GraphCoverCreator {
 			int numberOfGraphChunks) {
 		BitSet bitset = new BitSet(numberOfGraphChunks);
 		bitset.set(targetChunk);
-		byte[] content = bitset.toByteArray();
-		StringBuilder sb = new StringBuilder();
-		for (byte b : content) {
-			sb.append(":").append(b);
-		}
-		return NodeFactory.createURI("urn:containment" + sb.toString());
+		return DeSerializer.serializeBitSetAsNode(bitset);
 	}
 
 	private int computeHash(String string) {

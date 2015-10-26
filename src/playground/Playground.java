@@ -11,9 +11,7 @@ public class Playground {
 		File workingDir = new File("/home/danijank/Downloads/testdata");
 		RDFFileIterator iterator = new RDFFileIterator(workingDir, false, null);
 		HashCoverCreator coverCreator = new HashCoverCreator(null);
-		coverCreator.createGraphCover(iterator, workingDir, 4);
-
-		// TODO http://www.mapdb.org/doc/index.html
+		File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 	}
 
 }

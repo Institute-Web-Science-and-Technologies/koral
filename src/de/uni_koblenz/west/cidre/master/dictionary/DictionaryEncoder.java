@@ -15,7 +15,11 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDictionary;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
+import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 
+/**
+ * Triple Nodes are encoded using {@link DeSerializer}
+ */
 public class DictionaryEncoder implements Closeable {
 
 	private final Logger logger;
@@ -54,11 +58,15 @@ public class DictionaryEncoder implements Closeable {
 							new GZIPOutputStream(new FileOutputStream(
 									intermediateFiles[i])));) {
 				for (Node[] quad : iter) {
-					long subject = dictionary.encode(quad[0].toString());
-					long property = dictionary.encode(quad[1].toString());
-					long object = dictionary.encode(quad[2].toString());
+					long subject = dictionary
+							.encode(DeSerializer.serializeNode(quad[0]));
+					long property = dictionary
+							.encode(DeSerializer.serializeNode(quad[1]));
+					long object = dictionary
+							.encode(DeSerializer.serializeNode(quad[2]));
 					statistics.count(subject, property, object, i);
-					byte[] containment;
+					byte[] containment = DeSerializer
+							.deserializeBitSetFromNode(quad[3]).toByteArray();
 					// TODO Auto-generated method stub
 				}
 			} catch (IOException e) {
@@ -72,6 +80,14 @@ public class DictionaryEncoder implements Closeable {
 			GraphStatistics statistics) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public Node decode(long id) {
+		String plainText = dictionary.decode(id);
+		if (plainText == null) {
+			return null;
+		}
+		return DeSerializer.deserializeNode(plainText);
 	}
 
 	public void clear() {
