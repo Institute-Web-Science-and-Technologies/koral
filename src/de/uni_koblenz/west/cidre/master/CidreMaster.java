@@ -27,7 +27,8 @@ public class CidreMaster extends CidreSystem {
 			ClientConnectionManager clientConnections = new ClientConnectionManager(
 					conf, logger);
 			dictionary = new DictionaryEncoder(conf, logger);
-			statistics = new GraphStatistics(conf, logger);
+			statistics = new GraphStatistics(conf,
+					(short) conf.getNumberOfSlaves(), logger);
 			clientMessageProcessor = new ClientMessageProcessor(conf,
 					clientConnections, dictionary, statistics, logger);
 			graphHasBeenLoaded = false;

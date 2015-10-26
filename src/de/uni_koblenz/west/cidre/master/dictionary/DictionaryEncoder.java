@@ -3,14 +3,13 @@ package de.uni_koblenz.west.cidre.master.dictionary;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PushbackInputStream;
-import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -60,9 +59,10 @@ public class DictionaryEncoder implements Closeable {
 							+ File.separatorChar + "chunk" + i + ".enc.int.gz");
 			try (RDFFileIterator iter = new RDFFileIterator(plainGraphChunks[i],
 					logger);
-					OutputStream out = new BufferedOutputStream(
-							new GZIPOutputStream(new FileOutputStream(
-									intermediateFiles[i])));) {
+					DataOutputStream out = new DataOutputStream(
+							new BufferedOutputStream(
+									new GZIPOutputStream(new FileOutputStream(
+											intermediateFiles[i]))));) {
 				for (Node[] quad : iter) {
 					long subject = dictionary
 							.encode(DeSerializer.serializeNode(quad[0]));
@@ -73,11 +73,11 @@ public class DictionaryEncoder implements Closeable {
 					statistics.count(subject, property, object, i);
 					byte[] containment = DeSerializer
 							.deserializeBitSetFromNode(quad[3]).toByteArray();
-					out.write(ByteBuffer.allocate(8).putLong(subject).array());
-					out.write(ByteBuffer.allocate(8).putLong(property).array());
-					out.write(ByteBuffer.allocate(8).putLong(object).array());
-					out.write(ByteBuffer.allocate(2)
-							.putShort((short) containment.length).array());
+
+					out.writeLong(subject);
+					out.writeLong(property);
+					out.writeLong(object);
+					out.writeShort((short) containment.length);
 					out.write(containment);
 				}
 			} catch (IOException e) {
@@ -97,18 +97,25 @@ public class DictionaryEncoder implements Closeable {
 			encodedFiles[i] = new File(
 					intermediateFiles[i].getParentFile().getAbsolutePath()
 							+ File.separatorChar + "chunk" + i + ".enc.gz");
-			try (PushbackInputStream in = new PushbackInputStream(
+			try (DataInputStream in = new DataInputStream(
 					new BufferedInputStream(new GZIPInputStream(
-							new FileInputStream(intermediateFiles[i]))),
-					1);
-					OutputStream out = new BufferedOutputStream(
-							new GZIPOutputStream(
-									new FileOutputStream(encodedFiles[i])));) {
-				while (!isFinished(in)) {
-					long subject = readLong(in);
-					long property = readLong(in);
-					long object = readLong(in);
-					byte[] containment = readByteArray(in);
+							new FileInputStream(intermediateFiles[i]))));
+					DataOutputStream out = new DataOutputStream(
+							new BufferedOutputStream(new GZIPOutputStream(
+									new FileOutputStream(encodedFiles[i]))));) {
+				while (true) {
+					long subject;
+					try {
+						subject = in.readLong();
+					} catch (EOFException e) {
+						// the end of the file has been reached
+						break;
+					}
+					long property = in.readLong();
+					long object = in.readLong();
+					short containmentLength = in.readShort();
+					byte[] containment = new byte[containmentLength];
+					in.readFully(containment);
 
 					short sOwner = statistics.getOwner(subject);
 					short pOwner = statistics.getOwner(property);
@@ -121,14 +128,10 @@ public class DictionaryEncoder implements Closeable {
 					long newObject = dictionary.setOwner(object, oOwner);
 					statistics.setOwner(object, oOwner);
 
-					out.write(
-							ByteBuffer.allocate(8).putLong(newSubject).array());
-					out.write(ByteBuffer.allocate(8).putLong(newProperty)
-							.array());
-					out.write(
-							ByteBuffer.allocate(8).putLong(newObject).array());
-					out.write(ByteBuffer.allocate(2)
-							.putShort((short) containment.length).array());
+					out.writeLong(newSubject);
+					out.writeLong(newProperty);
+					out.writeLong(newObject);
+					out.writeShort((short) containment.length);
 					out.write(containment);
 				}
 			} catch (IOException e) {
@@ -137,45 +140,6 @@ public class DictionaryEncoder implements Closeable {
 			intermediateFiles[i].delete();
 		}
 		return encodedFiles;
-	}
-
-	private boolean isFinished(PushbackInputStream in) throws IOException {
-		int nextByte = in.read();
-		boolean isFinished = nextByte == -1;
-		in.unread(nextByte);
-		return isFinished;
-	}
-
-	private long readLong(InputStream in) throws IOException {
-		byte[] longBytes = new byte[8];
-		readBytes(in, longBytes);
-		return ByteBuffer.wrap(longBytes).getLong();
-	}
-
-	private byte[] readByteArray(InputStream in) throws IOException {
-		byte[] lengthBytes = new byte[2];
-		readBytes(in, lengthBytes);
-		int length = ByteBuffer.wrap(lengthBytes).getShort();
-		byte[] byteArray = new byte[length];
-		readBytes(in, byteArray);
-		return byteArray;
-	}
-
-	private void readBytes(InputStream in, byte[] bytesToRead)
-			throws IOException {
-		int readBytes = 0;
-		int totalBytesRead = 0;
-		do {
-			readBytes = in.read(bytesToRead, totalBytesRead,
-					bytesToRead.length - totalBytesRead);
-			if (readBytes > 0) {
-				totalBytesRead += readBytes;
-			}
-		} while (readBytes != -1 && totalBytesRead < bytesToRead.length);
-		if (readBytes == -1) {
-			throw new IOException(
-					"InputStream has ended before value could be read completely.");
-		}
 	}
 
 	public Node decode(long id) {

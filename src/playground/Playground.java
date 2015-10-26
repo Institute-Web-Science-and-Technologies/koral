@@ -18,7 +18,7 @@ public class Playground {
 		Configuration conf = new Configuration();
 		conf.setDictionaryDir("/home/danijank/Downloads/testdata/dictionary");
 		DictionaryEncoder encoder = new DictionaryEncoder(conf, null);
-		GraphStatistics statistics = new GraphStatistics(conf, null);
+		GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
 		encoder.encodeGraphChunks(cover, statistics);
 	}
 
