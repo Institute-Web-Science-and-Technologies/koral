@@ -121,4 +121,63 @@ class ConfigurationDeserializer implements ConfigurableDeserializer {
 		}
 	}
 
+	public void deserializeStatisticsStorageType(Configuration conf,
+			String storageType) {
+		if (storageType != null && !storageType.isEmpty()) {
+			try {
+				conf.setStatisticsStorageType(
+						MapDBStorageOptions.valueOf(storageType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
+	}
+
+	public void deserializeStatisticsDataStructure(Configuration conf,
+			String dataStructure) {
+		if (dataStructure != null && !dataStructure.isEmpty()) {
+			try {
+				conf.setStatisticsDataStructure(MapDBDataStructureOptions
+						.valueOf(dataStructure.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
+	}
+
+	public void deserializeStatisticsDir(Configuration conf,
+			String dictionaryDir) {
+		if (dictionaryDir != null && !dictionaryDir.isEmpty()) {
+			conf.setStatisticsDir(dictionaryDir);
+		}
+	}
+
+	public void deserializeEnableTransactionsForStatistics(Configuration conf,
+			String enableTransactions) {
+		if (enableTransactions != null && !enableTransactions.isEmpty()) {
+			conf.setUseTransactionsForStatistics(
+					Boolean.parseBoolean(enableTransactions));
+		}
+	}
+
+	public void deserializeEnableAsynchronousWritesForStatistics(
+			Configuration conf, String writeAsynchronously) {
+		if (writeAsynchronously != null && !writeAsynchronously.isEmpty()) {
+			conf.setStatisticsAsynchronouslyWritten(
+					Boolean.parseBoolean(writeAsynchronously));
+		}
+	}
+
+	public void deserializeStatisticsCacheType(Configuration conf,
+			String cacheType) {
+		if (cacheType != null && !cacheType.isEmpty()) {
+			try {
+				conf.setStatisticsCacheType(
+						MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
+	}
+
 }

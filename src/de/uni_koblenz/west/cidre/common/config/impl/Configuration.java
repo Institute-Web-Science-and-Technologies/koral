@@ -185,7 +185,9 @@ public class Configuration implements Configurable {
 		this.dictionaryDir = dictionaryDir;
 	}
 
-	@Property(name = "enableTransactionsForDictionary", description = "If set to true, transactions are used. Transactions are only required if processing updates in future work.")
+	// @Property(name = "enableTransactionsForDictionary", description = "If set
+	// to true, transactions are used. Transactions are only required if
+	// processing updates in future work.")
 	private boolean useTransactionsForDictionary = false;
 
 	public boolean useTransactionsForDictionary() {
@@ -223,6 +225,89 @@ public class Configuration implements Configurable {
 
 	public void setDictionaryCacheType(MapDBCacheOptions dictionaryCacheType) {
 		this.dictionaryCacheType = dictionaryCacheType;
+	}
+
+	@Property(name = "statisticsStorageType", description = "Defines how the statistics tables are persisted:"
+			+ "\nMEMORY = tables are only stored in memory"
+			+ "\nMEMORY_MAPPED_FILE = tables are stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required."
+			+ "\nRANDOM_ACCESS_FILE = tables are is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.")
+	private MapDBStorageOptions statisticsStorageType = MapDBStorageOptions.MEMORY_MAPPED_FILE;
+
+	public MapDBStorageOptions getStatisticsStorageType() {
+		return statisticsStorageType;
+	}
+
+	public void setStatisticsStorageType(
+			MapDBStorageOptions statisticsStorageType) {
+		this.statisticsStorageType = statisticsStorageType;
+	}
+
+	@Property(name = "statisticsDataStructure", description = "Defines the data structure used for storing the statiscts tables:"
+			+ "\nHASH_TREE_MAP = fast single thread access, slow concurrent access, memory efficient"
+			+ "\nB_TREE_MAP = slower single thread access, faster concurrent access, costs more memory")
+	private MapDBDataStructureOptions statisticsDataStructure = MapDBDataStructureOptions.HASH_TREE_MAP;
+
+	public MapDBDataStructureOptions getStatisticsDataStructure() {
+		return statisticsDataStructure;
+	}
+
+	public void setStatisticsDataStructure(
+			MapDBDataStructureOptions statisticsDataStructure) {
+		this.statisticsDataStructure = statisticsDataStructure;
+	}
+
+	@Property(name = "statisticsDir", description = "Defines a non-existing directory where the statistics are stored.")
+	private String statisticsDir = "." + File.separatorChar + "statistics";
+
+	public String getStatisticsDir() {
+		return statisticsDir;
+	}
+
+	public void setStatisticsDir(String statisticsDir) {
+		this.statisticsDir = statisticsDir;
+	}
+
+	// @Property(name = "enableTransactionsForStatistics", description = "If set
+	// to true, transactions are used. Transactions are only required if
+	// processing updates in future work.")
+	private boolean useTransactionsForStatistics = false;
+
+	public boolean useTransactionsForStatistics() {
+		return useTransactionsForStatistics;
+	}
+
+	public void setUseTransactionsForStatistics(
+			boolean useTransactionsForStatistics) {
+		this.useTransactionsForStatistics = useTransactionsForStatistics;
+	}
+
+	@Property(name = "enableAsynchronousWritesForStatistics", description = "If set to true, updates are written in a separate thread asynchronously.")
+	private boolean areStatisticsAsynchronouslyWritten = true;
+
+	public boolean areStatisticsAsynchronouslyWritten() {
+		return areStatisticsAsynchronouslyWritten;
+	}
+
+	public void setStatisticsAsynchronouslyWritten(
+			boolean isAsynchronousWritten) {
+		areStatisticsAsynchronouslyWritten = isAsynchronousWritten;
+	}
+
+	@Property(name = "statisticsCacheType", description = "Defines how the instance cache works:"
+			+ "\nNONE = no instances are cached"
+			+ "\nHASH_TABLE = a cached instance is deleted, if a hash collision occurs"
+			+ "\nLEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size"
+			+ "\nHARD_REFERENCE = no instance is removed from the cache automatically"
+			+ "\nSOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full"
+			+ "\nWEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them")
+	private MapDBCacheOptions statisticsCacheType = MapDBCacheOptions.HASH_TABLE;
+
+	public MapDBCacheOptions getStatisticsCacheType() {
+		return statisticsCacheType;
+	}
+
+	public void setStatisticsCacheType(MapDBCacheOptions statisticsCacheType) {
+		this.statisticsCacheType = statisticsCacheType;
 	}
 
 	/*
