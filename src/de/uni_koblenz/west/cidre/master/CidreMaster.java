@@ -83,6 +83,7 @@ public class CidreMaster extends CidreSystem {
 		clientMessageProcessor.clear();
 		dictionary.clear();
 		statistics.clear();
+		graphHasBeenLoaded = false;
 		// TODO clear slaves
 	}
 
