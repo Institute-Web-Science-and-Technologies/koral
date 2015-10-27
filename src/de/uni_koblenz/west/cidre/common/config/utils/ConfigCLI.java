@@ -20,7 +20,7 @@ public class ConfigCLI {
 		new XMLDeserializer().deserialize(conf, new File(args[0]));
 
 		try {
-			System.out.println(getSerializedValue(conf, args[1]));
+			System.out.print(getSerializedValue(conf, args[1]));
 		} catch (NoSuchMethodException | SecurityException
 				| IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException e) {

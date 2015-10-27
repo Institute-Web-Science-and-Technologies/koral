@@ -31,6 +31,6 @@ def clearCidre():
     dictDir = run("java -cp cidre.jar de.uni_koblenz.west.cidre.common.config.utils.ConfigCLI cidreConfig.xml dictionaryDir")
     if exists(dictDir, use_sudo=True):
         sudo("rm -r " + dictDir)
-    statDir = run("java -cp cidre.jar de.uni_koblenz.west.cidre.common.config.utils.ConfigCLI cidreConfig.xml dictionaryDir")
+    statDir = run("java -cp cidre.jar de.uni_koblenz.west.cidre.common.config.utils.ConfigCLI cidreConfig.xml statisticsDir")
     if exists(statDir, use_sudo=True):
-        sudo("rm -r " + statisticsDir)
+        sudo("rm -r " + statDir)
