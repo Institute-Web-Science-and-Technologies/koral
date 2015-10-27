@@ -18,3 +18,6 @@ def start(remoteLogger=-1):
 def stop():
     execute(manageCIDRE.stopSlave)
     execute(manageCIDRE.stopMaster)
+
+def clear():
+    execute(manageCIDRE.clearCidre)

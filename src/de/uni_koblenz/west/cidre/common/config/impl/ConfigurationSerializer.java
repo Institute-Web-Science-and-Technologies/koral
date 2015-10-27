@@ -2,7 +2,7 @@ package de.uni_koblenz.west.cidre.common.config.impl;
 
 import de.uni_koblenz.west.cidre.common.config.ConfigurableSerializer;
 
-class ConfigurationSerializer implements ConfigurableSerializer {
+public class ConfigurationSerializer implements ConfigurableSerializer {
 
 	public String serializeMaster(Configuration conf) {
 		String[] master = conf.getMaster();

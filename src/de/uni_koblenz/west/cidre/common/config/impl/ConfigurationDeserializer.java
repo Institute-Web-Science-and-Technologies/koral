@@ -8,7 +8,7 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 
-class ConfigurationDeserializer implements ConfigurableDeserializer {
+public class ConfigurationDeserializer implements ConfigurableDeserializer {
 
 	public void deserializeMaster(Configuration conf, String master) {
 		if (master.indexOf(':') == -1) {
