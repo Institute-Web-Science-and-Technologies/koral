@@ -209,7 +209,8 @@ public class ClientMessageProcessor
 						master.getDictionary(), master.getStatistics(), tmpDir,
 						logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
-				loaderTask.loadGraph(arguments, numberOfChunks);
+				loaderTask.loadGraph(arguments, numberOfChunks,
+						master.getFileSenderConnection());
 				break;
 			case "drop":
 				processDropTables(clientID);

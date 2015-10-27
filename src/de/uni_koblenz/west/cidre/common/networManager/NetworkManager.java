@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.cidre.common.networManager;
 
 import java.io.Closeable;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -9,8 +10,13 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileChunk;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiverConnection;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
 
-public class NetworkManager implements Closeable {
+public class NetworkManager
+		implements Closeable, FileSenderConnection, FileReceiverConnection {
 
 	private final ZContext context;
 
@@ -76,6 +82,32 @@ public class NetworkManager implements Closeable {
 		} else {
 			return null;
 		}
+	}
+
+	@Override
+	public void requestFileChunk(int clientID, int fileID, FileChunk chunk) {
+		byte[] request = new byte[1 + 4 + 8];
+		request[0] = MessageType.REQUEST_FILE_CHUNK.getValue();
+		byte[] fileIDBytes = ByteBuffer.allocate(4).putInt(fileID).array();
+		System.arraycopy(fileIDBytes, 0, request, 1, fileIDBytes.length);
+		byte[] chunkID = ByteBuffer.allocate(8)
+				.putLong(chunk.getSequenceNumber()).array();
+		System.arraycopy(chunkID, 0, request, 5, chunkID.length);
+		send(clientID, request);
+		chunk.setRequestTime(System.currentTimeMillis());
+	}
+
+	@Override
+	public void sendFileChunk(int slaveID, FileChunk fileChunk) {
+		senders[slaveID]
+				.sendMore(new byte[] { MessageType.FILE_CHUNK.getValue() });
+		senders[slaveID].sendMore(
+				ByteBuffer.allocate(4).putInt(fileChunk.getFileID()).array());
+		senders[slaveID].sendMore(ByteBuffer.allocate(8)
+				.putLong(fileChunk.getSequenceNumber()).array());
+		senders[slaveID].sendMore(ByteBuffer.allocate(8)
+				.putLong(fileChunk.getTotalNumberOfSequences()).array());
+		senders[slaveID].send(fileChunk.getContent());
 	}
 
 	@Override

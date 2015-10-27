@@ -60,7 +60,8 @@ public class CidreClient {
 				if (mtype == MessageType.REQUEST_FILE_CHUNK) {
 					int fileID = ByteBuffer.wrap(response[0], 1, 4).getInt();
 					long chunkID = ByteBuffer.wrap(response[0], 5, 8).getLong();
-					FileChunk fileChunk = sender.sendFileChunk(fileID, chunkID);
+					FileChunk fileChunk = sender.sendFileChunk(0, fileID,
+							chunkID);
 					// some output for user
 					if (fileChunk.getSequenceNumber() == 0) {
 						System.out.println("Sending file " + files

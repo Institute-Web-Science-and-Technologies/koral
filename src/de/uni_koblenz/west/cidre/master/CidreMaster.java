@@ -5,6 +5,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientMessageProcessor;
@@ -51,6 +52,10 @@ public class CidreMaster extends CidreSystem {
 
 	public GraphStatistics getStatistics() {
 		return statistics;
+	}
+
+	public FileSenderConnection getFileSenderConnection() {
+		return super.getNetworkManager();
 	}
 
 	// TODO before sending to sparql reqester replace urn:blankNode: by _: for

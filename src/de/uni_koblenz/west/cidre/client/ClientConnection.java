@@ -161,7 +161,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 	}
 
 	@Override
-	public void sendFileChunk(FileChunk fileChunk) {
+	public void sendFileChunk(int slaveID, FileChunk fileChunk) {
 		if (!isConnected()) {
 			throw new RuntimeException(
 					"The client has not connected to the master, yet.");

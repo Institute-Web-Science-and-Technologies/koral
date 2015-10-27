@@ -47,13 +47,23 @@ public enum MessageType {
 	CLIENT_COMMAND,
 
 	/**
+	 * <p>
 	 * master to client<br>
 	 * int fileID<br>
 	 * long chunkID
+	 * </p>
+	 * 
+	 * <p>
+	 * slave to master<br>
+	 * short slaveID<br>
+	 * int fileID<br>
+	 * long chunkID
+	 * </p>
 	 */
 	REQUEST_FILE_CHUNK,
 
 	/**
+	 * <p>
 	 * client to master<br>
 	 * (multipart message)<br>
 	 * String ip:port<br>
@@ -61,6 +71,16 @@ public enum MessageType {
 	 * long chunkID<br>
 	 * long totalChunks<br>
 	 * byte[] file chunk
+	 * </p>
+	 * 
+	 * <p>
+	 * master to slave<br>
+	 * (multipart message)<br>
+	 * int fileID<br>
+	 * long chunkID<br>
+	 * long totalChunks<br>
+	 * byte[] file chunk
+	 * </p>
 	 */
 	FILE_CHUNK,
 

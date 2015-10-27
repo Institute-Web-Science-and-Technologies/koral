@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
@@ -38,6 +39,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 	private int numberOfGraphChunks;
 
 	private FileReceiver fileReceiver;
+
+	private FileSenderConnection senderConnection;
 
 	private ClientConnectionKeepAliveTask keepAliveThread;
 
@@ -79,7 +82,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		}
 	}
 
-	public void loadGraph(byte[][] args, int numberOfGraphChunks) {
+	public void loadGraph(byte[][] args, int numberOfGraphChunks,
+			FileSenderConnection senderConnection) {
 		if (args.length < 4) {
 			throw new IllegalArgumentException(
 					"Loading a graph requires at least 4 arguments, but received only "
@@ -90,7 +94,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		int replicationPathLength = ByteBuffer.wrap(args[1]).getInt();
 		int numberOfFiles = ByteBuffer.wrap(args[2]).getInt();
 		loadGraph(coverStrategy, replicationPathLength, numberOfGraphChunks,
-				numberOfFiles, getFileExtensions(args, 3));
+				numberOfFiles, getFileExtensions(args, 3), senderConnection);
 	}
 
 	private String[] getFileExtensions(byte[][] args, int startIndex) {
@@ -104,7 +108,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	public void loadGraph(CoverStrategyType coverStrategy,
 			int replicationPathLength, int numberOfGraphChunks,
-			int numberOfFiles, String[] fileExtensions) {
+			int numberOfFiles, String[] fileExtensions,
+			FileSenderConnection senderConnection) {
 		if (logger != null) {
 			logger.finer("loadGraph(coverStrategy=" + coverStrategy.name()
 					+ ", replicationPathLength=" + replicationPathLength
@@ -116,6 +121,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		fileReceiver = new FileReceiver(workingDir, clientId, clientConnections,
 				numberOfFiles, fileExtensions, logger);
 		fileReceiver.requestFiles();
+		this.senderConnection = senderConnection;
 	}
 
 	public void receiveFileChunk(int fileID, long chunkID,
@@ -161,6 +167,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 			File[] chunks = createGraphChunks();
 			File[] encodedFiles = encodeGraphFiles(chunks);
+			// TODO send encodedFiles to slaves
 
 			keepAliveThread.interrupt();
 			clientConnections.send(clientId, new byte[] {
