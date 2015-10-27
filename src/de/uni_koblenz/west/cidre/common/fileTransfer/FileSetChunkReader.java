@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.client;
+package de.uni_koblenz.west.cidre.common.fileTransfer;
 
 import java.io.Closeable;
 import java.io.File;
@@ -7,9 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.PriorityQueue;
-
-import de.uni_koblenz.west.cidre.master.client_manager.FileChunk;
-import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
 
 public class FileSetChunkReader implements AutoCloseable, Closeable {
 

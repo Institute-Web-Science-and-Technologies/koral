@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
-import de.uni_koblenz.west.cidre.master.client_manager.FileReceiver;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;

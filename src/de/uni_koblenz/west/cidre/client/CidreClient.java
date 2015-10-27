@@ -17,11 +17,12 @@ import org.apache.commons.cli.ParseException;
 import org.apache.jena.util.FileUtils;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileChunk;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileSender;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
-import de.uni_koblenz.west.cidre.master.client_manager.FileChunk;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
 public class CidreClient {
@@ -53,15 +54,13 @@ public class CidreClient {
 		connection.sendCommand("load", args);
 
 		byte[][] response = connection.getResponse();
-		try (FileSetChunkReader reader = new FileSetChunkReader();) {
+		try (FileSender sender = new FileSender(files, connection);) {
 			while (response != null) {
 				MessageType mtype = MessageType.valueOf(response[0][0]);
 				if (mtype == MessageType.REQUEST_FILE_CHUNK) {
 					int fileID = ByteBuffer.wrap(response[0], 1, 4).getInt();
 					long chunkID = ByteBuffer.wrap(response[0], 5, 8).getLong();
-					FileChunk fileChunk = reader.getFileChunk(files.get(fileID),
-							fileID, chunkID);
-					connection.sendFileChunk(fileChunk);
+					FileChunk fileChunk = sender.sendFileChunk(fileID, chunkID);
 					// some output for user
 					if (fileChunk.getSequenceNumber() == 0) {
 						System.out.println("Sending file " + files
@@ -97,22 +96,27 @@ public class CidreClient {
 		}
 	}
 
-	public void dropDatabase() {
-		connection.sendCommand("drop", new byte[0][0]);
-		byte[][] response = connection.getResponse();
-		while (response != null) {
-			MessageType mtype = MessageType.valueOf(response[0][0]);
-			if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
-				if (response[0].length > 1) {
-					System.out.println(MessageUtils
-							.extreactMessageString(response[0], null));
+	private List<File> getFiles(String[] inputPaths) {
+		GraphFileFilter filter = new GraphFileFilter();
+		List<File> files = new ArrayList<>();
+		for (String inputPath : inputPaths) {
+			File file = new File(inputPath);
+			if (!file.exists()) {
+				continue;
+			}
+			if (file.isFile()) {
+				if (filter.accept(file)) {
+					files.add(file);
 				}
 			} else {
-				processCommandResponse("dropping database", response);
-				break;
+				for (File containedFile : file.listFiles(filter)) {
+					if (containedFile.isFile()) {
+						files.add(containedFile);
+					}
+				}
 			}
-			response = connection.getResponse();
 		}
+		return files;
 	}
 
 	private void fillWithFileEndings(byte[][] array, int startIndex,
@@ -130,6 +134,24 @@ public class CidreClient {
 			} catch (UnsupportedEncodingException e) {
 				throw new RuntimeException(e);
 			}
+		}
+	}
+
+	public void dropDatabase() {
+		connection.sendCommand("drop", new byte[0][0]);
+		byte[][] response = connection.getResponse();
+		while (response != null) {
+			MessageType mtype = MessageType.valueOf(response[0][0]);
+			if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
+				if (response[0].length > 1) {
+					System.out.println(MessageUtils
+							.extreactMessageString(response[0], null));
+				}
+			} else {
+				processCommandResponse("dropping database", response);
+				break;
+			}
+			response = connection.getResponse();
 		}
 	}
 
@@ -159,29 +181,6 @@ public class CidreClient {
 			throw new RuntimeException(
 					"Unknwon message type " + response[0][0]);
 		}
-	}
-
-	private List<File> getFiles(String[] inputPaths) {
-		GraphFileFilter filter = new GraphFileFilter();
-		List<File> files = new ArrayList<>();
-		for (String inputPath : inputPaths) {
-			File file = new File(inputPath);
-			if (!file.exists()) {
-				continue;
-			}
-			if (file.isFile()) {
-				if (filter.accept(file)) {
-					files.add(file);
-				}
-			} else {
-				for (File containedFile : file.listFiles(filter)) {
-					if (containedFile.isFile()) {
-						files.add(containedFile);
-					}
-				}
-			}
-		}
-		return files;
 	}
 
 	public void shutDown() {

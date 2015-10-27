@@ -15,12 +15,13 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileChunk;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
-import de.uni_koblenz.west.cidre.master.client_manager.FileChunk;
 
-public class ClientConnection implements Closeable {
+public class ClientConnection implements Closeable, FileSenderConnection {
 
 	private final ZContext context;
 
@@ -159,6 +160,7 @@ public class ClientConnection implements Closeable {
 		}
 	}
 
+	@Override
 	public void sendFileChunk(FileChunk fileChunk) {
 		if (!isConnected()) {
 			throw new RuntimeException(

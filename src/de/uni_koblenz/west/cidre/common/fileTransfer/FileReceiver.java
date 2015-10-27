@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.master.client_manager;
+package de.uni_koblenz.west.cidre.common.fileTransfer;
 
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
@@ -7,11 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.PriorityQueue;
 import java.util.logging.Logger;
-
-import de.uni_koblenz.west.cidre.common.messages.MessageType;
 
 public class FileReceiver implements Closeable {
 
@@ -23,7 +20,7 @@ public class FileReceiver implements Closeable {
 
 	private final int clientID;
 
-	private final ClientConnectionManager clientConnections;
+	private final FileReceiverConnection connectionToSender;
 
 	private final File workingDir;
 
@@ -38,11 +35,11 @@ public class FileReceiver implements Closeable {
 	private final PriorityQueue<FileChunk> unprocessedChunks;
 
 	public FileReceiver(File workingDir, int clientID,
-			ClientConnectionManager clientConnections, int numberOfFiles,
+			FileReceiverConnection connectionToSender, int numberOfFiles,
 			String[] fileExtensions, Logger logger) {
 		this.workingDir = workingDir;
 		this.clientID = clientID;
-		this.clientConnections = clientConnections;
+		this.connectionToSender = connectionToSender;
 		totalNumberOfFiles = numberOfFiles;
 		this.fileExtensions = fileExtensions;
 		this.logger = logger;
@@ -86,13 +83,14 @@ public class FileReceiver implements Closeable {
 			// no chunk has been requested yet
 			chunk = new FileChunk(currentFile, 0);
 			unprocessedChunks.add(chunk);
-			requestFileChunk(chunk);
+			connectionToSender.requestFileChunk(clientID, currentFile, chunk);
 		} else {
 			// rerequest unreceived chunks
 			for (FileChunk fChunk : unprocessedChunks) {
 				if (!fChunk.isReceived() && System.currentTimeMillis() - fChunk
 						.getRequestTime() > FILE_CHUNK_REQUEST_TIMEOUT) {
-					requestFileChunk(fChunk);
+					connectionToSender.requestFileChunk(clientID, currentFile,
+							fChunk);
 				}
 				chunk = chunk.compareTo(fChunk) < 0 ? fChunk : chunk;
 			}
@@ -107,20 +105,8 @@ public class FileReceiver implements Closeable {
 			chunk = new FileChunk(currentFile, chunk.getSequenceNumber() + 1,
 					chunk.getTotalNumberOfSequences());
 			unprocessedChunks.add(chunk);
-			requestFileChunk(chunk);
+			connectionToSender.requestFileChunk(clientID, currentFile, chunk);
 		}
-	}
-
-	private void requestFileChunk(FileChunk chunk) {
-		byte[] request = new byte[1 + 4 + 8];
-		request[0] = MessageType.REQUEST_FILE_CHUNK.getValue();
-		byte[] fileID = ByteBuffer.allocate(4).putInt(currentFile).array();
-		System.arraycopy(fileID, 0, request, 1, fileID.length);
-		byte[] chunkID = ByteBuffer.allocate(8)
-				.putLong(chunk.getSequenceNumber()).array();
-		System.arraycopy(chunkID, 0, request, 5, chunkID.length);
-		clientConnections.send(clientID, request);
-		chunk.setRequestTime(System.currentTimeMillis());
 	}
 
 	public void receiveFileChunk(int fileID, long chunkID,

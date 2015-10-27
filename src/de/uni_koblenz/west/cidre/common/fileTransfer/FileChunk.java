@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.master.client_manager;
+package de.uni_koblenz.west.cidre.common.fileTransfer;
 
 public class FileChunk implements Comparable<FileChunk> {
 
