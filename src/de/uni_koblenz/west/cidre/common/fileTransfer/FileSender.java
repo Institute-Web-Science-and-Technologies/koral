@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.common.fileTransfer;
 
 import java.io.Closeable;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FileSender implements Closeable, AutoCloseable {
@@ -14,6 +15,13 @@ public class FileSender implements Closeable, AutoCloseable {
 
 	public FileSender(List<File> files, FileSenderConnection connection) {
 		this.files = files;
+		reader = new FileSetChunkReader();
+		this.connection = connection;
+	}
+
+	public FileSender(File file, FileSenderConnection connection) {
+		files = new ArrayList<>();
+		files.add(file);
 		reader = new FileSetChunkReader();
 		this.connection = connection;
 	}
