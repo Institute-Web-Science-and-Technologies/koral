@@ -17,6 +17,7 @@ public class Playground {
 		File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 		Configuration conf = new Configuration();
 		conf.setDictionaryDir("/home/danijank/Downloads/testdata/dictionary");
+		conf.setStatisticsDir("/home/danijank/Downloads/testdata/statistics");
 		DictionaryEncoder encoder = new DictionaryEncoder(conf, null);
 		GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
 		encoder.encodeGraphChunks(cover, statistics);
