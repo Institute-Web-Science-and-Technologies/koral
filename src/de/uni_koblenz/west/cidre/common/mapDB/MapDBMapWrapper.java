@@ -30,7 +30,9 @@ public abstract class MapDBMapWrapper<K, V>
 
 	@Override
 	public void close() {
-		database.close();
+		if (!database.isClosed()) {
+			database.close();
+		}
 	}
 
 }
