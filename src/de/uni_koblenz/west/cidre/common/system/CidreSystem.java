@@ -100,6 +100,12 @@ public abstract class CidreSystem extends Thread {
 
 	protected abstract void shutDownInternal();
 
+	public void clear() {
+		clearInternal();
+	}
+
+	public abstract void clearInternal();
+
 	protected static Options createCommandLineOptions() {
 		Option help = new Option("h", "help", false, "print this help message");
 		help.setRequired(false);

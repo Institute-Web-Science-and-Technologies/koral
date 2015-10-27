@@ -97,6 +97,24 @@ public class CidreClient {
 		}
 	}
 
+	public void dropDatabase() {
+		connection.sendCommand("drop", new byte[0][0]);
+		byte[][] response = connection.getResponse();
+		while (response != null) {
+			MessageType mtype = MessageType.valueOf(response[0][0]);
+			if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
+				if (response[0].length > 1) {
+					System.out.println(MessageUtils
+							.extreactMessageString(response[0], null));
+				}
+			} else {
+				processCommandResponse("dropping database", response);
+				break;
+			}
+			response = connection.getResponse();
+		}
+	}
+
 	private void fillWithFileEndings(byte[][] array, int startIndex,
 			List<File> files) {
 		for (int i = startIndex; i < array.length; i++) {
@@ -255,6 +273,9 @@ public class CidreClient {
 			case "load":
 				loadGraph(client, args);
 				break;
+			case "drop":
+				dropDatabase(client, args);
+				break;
 			}
 
 		} catch (ParseException e) {
@@ -285,6 +306,10 @@ public class CidreClient {
 		}
 		client.loadGraph(graphCover, nHopReplicationPathLength,
 				inputPaths.toArray(new String[inputPaths.size()]));
+	}
+
+	private static void dropDatabase(CidreClient client, String[] args) {
+		client.dropDatabase();
 	}
 
 	private static Options createLoadOptions() {
@@ -384,6 +409,8 @@ public class CidreClient {
 		formatter.printHelp(
 				"load -c <graphCoverStrategy> [-n <pathLength>] <fileOrFolder>...",
 				createLoadOptions());
+		System.out.println(
+				"drop\tdeletes the database and its content. All running tasks, e.g., executed queries are terminated.");
 	}
 
 }

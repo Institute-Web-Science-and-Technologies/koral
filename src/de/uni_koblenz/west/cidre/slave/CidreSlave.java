@@ -49,6 +49,10 @@ public class CidreSlave extends CidreSystem {
 	protected void shutDownInternal() {
 	}
 
+	@Override
+	public void clearInternal() {
+	}
+
 	public static void main(String[] args) {
 		String className = CidreSlave.class.getName();
 		String additionalArgs = "";

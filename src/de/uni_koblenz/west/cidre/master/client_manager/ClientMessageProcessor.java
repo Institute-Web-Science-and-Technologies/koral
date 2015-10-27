@@ -12,8 +12,7 @@ import java.util.regex.Pattern;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
-import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
-import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
+import de.uni_koblenz.west.cidre.master.CidreMaster;
 import de.uni_koblenz.west.cidre.master.tasks.GraphLoaderTask;
 
 public class ClientMessageProcessor
@@ -23,9 +22,7 @@ public class ClientMessageProcessor
 
 	private final ClientConnectionManager clientConnections;
 
-	private final DictionaryEncoder dictionary;
-
-	private final GraphStatistics statistics;
+	private final CidreMaster master;
 
 	private final File tmpDir;
 
@@ -36,13 +33,11 @@ public class ClientMessageProcessor
 	private final int numberOfChunks;
 
 	public ClientMessageProcessor(Configuration conf,
-			ClientConnectionManager clientConnections,
-			DictionaryEncoder dictionary, GraphStatistics statistics,
+			ClientConnectionManager clientConnections, CidreMaster master,
 			Logger logger) {
 		this.logger = logger;
 		this.clientConnections = clientConnections;
-		this.dictionary = dictionary;
-		this.statistics = statistics;
+		this.master = master;
 		numberOfChunks = conf.getNumberOfSlaves();
 		tmpDir = new File(conf.getTmpDir());
 		if (!tmpDir.exists() || !tmpDir.isDirectory()) {
@@ -210,10 +205,14 @@ public class ClientMessageProcessor
 					break;
 				}
 				GraphLoaderTask loaderTask = new GraphLoaderTask(
-						clientID.intValue(), clientConnections, dictionary,
-						statistics, tmpDir, logger);
+						clientID.intValue(), clientConnections,
+						master.getDictionary(), master.getStatistics(), tmpDir,
+						logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
 				loaderTask.loadGraph(arguments, numberOfChunks);
+				break;
+			case "drop":
+				processDropTables(clientID);
 				break;
 			default:
 				String errorMessage = "unknown command: " + command + " with "
@@ -244,6 +243,17 @@ public class ClientMessageProcessor
 				terminateTask(address);
 			}
 		}
+	}
+
+	private void processDropTables(int clientID) {
+		if (logger != null) {
+			logger.finer("Dropping database");
+		}
+		master.clear();
+		clientConnections.send(clientID,
+				MessageUtils.createStringMessage(
+						MessageType.CLIENT_COMMAND_SUCCEEDED,
+						"Database is dropped, successfully.", logger));
 	}
 
 	private void processFileChunk(byte[] message) {
@@ -375,6 +385,15 @@ public class ClientMessageProcessor
 
 	@Override
 	public void close() {
+		stopAllGraphLoaderTasks();
+		clientConnections.close();
+	}
+
+	public void clear() {
+		stopAllGraphLoaderTasks();
+	}
+
+	private void stopAllGraphLoaderTasks() {
 		for (GraphLoaderTask task : clientAddress2GraphLoaderTask.values()) {
 			if (task != null) {
 				if (task.isAlive()) {
@@ -383,7 +402,6 @@ public class ClientMessageProcessor
 				task.close();
 			}
 		}
-		clientConnections.close();
 	}
 
 	@Override

@@ -30,7 +30,7 @@ public class CidreMaster extends CidreSystem {
 			statistics = new GraphStatistics(conf,
 					(short) conf.getNumberOfSlaves(), logger);
 			clientMessageProcessor = new ClientMessageProcessor(conf,
-					clientConnections, dictionary, statistics, logger);
+					clientConnections, this, logger);
 			graphHasBeenLoaded = false;
 		} catch (Throwable t) {
 			if (logger != null) {
@@ -43,6 +43,14 @@ public class CidreMaster extends CidreSystem {
 			}
 			throw t;
 		}
+	}
+
+	public DictionaryEncoder getDictionary() {
+		return dictionary;
+	}
+
+	public GraphStatistics getStatistics() {
+		return statistics;
 	}
 
 	// TODO before sending to sparql reqester replace urn:blankNode: by _: for
@@ -68,6 +76,14 @@ public class CidreMaster extends CidreSystem {
 			} catch (InterruptedException e) {
 			}
 		}
+	}
+
+	@Override
+	public void clearInternal() {
+		clientMessageProcessor.clear();
+		dictionary.clear();
+		statistics.clear();
+		// TODO clear slaves
 	}
 
 	@Override
