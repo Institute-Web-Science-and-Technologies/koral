@@ -124,9 +124,6 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 			if (statistics == null) {
 				statistics = new long[3 * numberOfChunks + 1];
 			}
-			// TODO remove
-			System.out
-					.println(resourceID + " -> " + Arrays.toString(statistics));
 			statistics[column]++;
 			// MapDB does not detect changes in array automatically
 			map.put(resourceID, statistics);

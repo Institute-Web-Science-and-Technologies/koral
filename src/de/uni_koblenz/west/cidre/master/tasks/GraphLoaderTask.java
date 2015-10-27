@@ -220,7 +220,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 						MessageType.MASTER_WORK_IN_PROGRESS,
 						"Started encoding of graph chunks.", logger));
 		File[] encodedFiles = dictionary.encodeGraphChunks(plainGraphChunks,
-				statistics);
+				statistics, workingDir);
 		if (logger != null) {
 			logger.finer("encoding of graph chunks finished");
 		}

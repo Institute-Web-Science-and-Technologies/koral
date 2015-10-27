@@ -1,7 +1,6 @@
 package de.uni_koblenz.west.cidre.master.statisticsDB;
 
 import java.io.Closeable;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.logging.Logger;
 
@@ -44,10 +43,11 @@ public class GraphStatistics implements Closeable {
 	}
 
 	public short getOwner(long id) {
+		short owner = (short) (id >>> 48);
+		if (owner != 0) {
+			return owner;
+		}
 		long[] statistics = database.getStatisticsForResource(id);
-		// TODO remove
-		System.out.println(">>>> " + id + " -> " + (statistics == null
-				? statistics : Arrays.toString(statistics)));
 
 		BitSet ownerCandidates = new BitSet(numberOfChunks);
 		ownerCandidates.set(0, numberOfChunks, true);

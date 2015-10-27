@@ -7,7 +7,7 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
 public abstract class MapDBMapWrapper<K, V>
-		implements Closeable, ConcurrentMap<K, V> {
+		implements Closeable, AutoCloseable, ConcurrentMap<K, V> {
 
 	protected final DB database;
 

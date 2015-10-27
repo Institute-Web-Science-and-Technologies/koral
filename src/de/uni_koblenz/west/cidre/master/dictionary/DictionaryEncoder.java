@@ -15,8 +15,13 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.jena.graph.Node;
+import org.mapdb.Serializer;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.mapDB.HashTreeMapWrapper;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBMapWrapper;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.dictionary.impl.MapDBDictionary;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
@@ -41,10 +46,10 @@ public class DictionaryEncoder implements Closeable {
 	}
 
 	public File[] encodeGraphChunks(File[] plainGraphChunks,
-			GraphStatistics statistics) {
+			GraphStatistics statistics, File workingDir) {
 		File[] itermediateFiles = encodeGraphChunksAndCountStatistics(
 				plainGraphChunks, statistics);
-		return setOwnership(itermediateFiles, statistics);
+		return setOwnership(itermediateFiles, statistics, workingDir);
 	}
 
 	private File[] encodeGraphChunksAndCountStatistics(File[] plainGraphChunks,
@@ -88,58 +93,88 @@ public class DictionaryEncoder implements Closeable {
 	}
 
 	private File[] setOwnership(File[] intermediateFiles,
-			GraphStatistics statistics) {
+			GraphStatistics statistics, File workingDir) {
 		File[] encodedFiles = new File[intermediateFiles.length];
-		for (int i = 0; i < intermediateFiles.length; i++) {
-			if (intermediateFiles[i] == null) {
-				continue;
-			}
-			encodedFiles[i] = new File(
-					intermediateFiles[i].getParentFile().getAbsolutePath()
-							+ File.separatorChar + "chunk" + i + ".enc.gz");
-			try (DataInputStream in = new DataInputStream(
-					new BufferedInputStream(new GZIPInputStream(
-							new FileInputStream(intermediateFiles[i]))));
-					DataOutputStream out = new DataOutputStream(
-							new BufferedOutputStream(new GZIPOutputStream(
-									new FileOutputStream(encodedFiles[i]))));) {
-				while (true) {
-					long subject;
-					try {
-						subject = in.readLong();
-					} catch (EOFException e) {
-						// the end of the file has been reached
-						break;
-					}
-					long property = in.readLong();
-					long object = in.readLong();
-					short containmentLength = in.readShort();
-					byte[] containment = new byte[containmentLength];
-					in.readFully(containment);
-
-					short sOwner = statistics.getOwner(subject);
-					short pOwner = statistics.getOwner(property);
-					short oOwner = statistics.getOwner(object);
-
-					long newSubject = dictionary.setOwner(subject, sOwner);
-					statistics.setOwner(subject, sOwner);
-					long newProperty = dictionary.setOwner(property, pOwner);
-					statistics.setOwner(property, pOwner);
-					long newObject = dictionary.setOwner(object, oOwner);
-					statistics.setOwner(object, oOwner);
-
-					out.writeLong(newSubject);
-					out.writeLong(newProperty);
-					out.writeLong(newObject);
-					out.writeShort((short) containment.length);
-					out.write(containment);
+		File tmpDir = new File(
+				workingDir.getAbsolutePath() + File.separatorChar + "ownerMap");
+		if (!tmpDir.exists()) {
+			tmpDir.mkdirs();
+		}
+		try (MapDBMapWrapper<Long, Long> old2newId = new HashTreeMapWrapper<>(
+				MapDBStorageOptions.MEMORY_MAPPED_FILE,
+				tmpDir.getAbsolutePath() + File.separatorChar + "ownership",
+				false, true, MapDBCacheOptions.LEAST_RECENTLY_USED,
+				"ownershipMap", Serializer.LONG, Serializer.LONG);) {
+			for (int i = 0; i < intermediateFiles.length; i++) {
+				if (intermediateFiles[i] == null) {
+					continue;
 				}
-			} catch (IOException e) {
-				throw new RuntimeException(e);
+				encodedFiles[i] = new File(
+						intermediateFiles[i].getParentFile().getAbsolutePath()
+								+ File.separatorChar + "chunk" + i + ".enc.gz");
+				try (DataInputStream in = new DataInputStream(
+						new BufferedInputStream(new GZIPInputStream(
+								new FileInputStream(intermediateFiles[i]))));
+						DataOutputStream out = new DataOutputStream(
+								new BufferedOutputStream(new GZIPOutputStream(
+										new FileOutputStream(
+												encodedFiles[i]))));) {
+					while (true) {
+						long subject;
+						try {
+							subject = in.readLong();
+						} catch (EOFException e) {
+							// the end of the file has been reached
+							break;
+						}
+						long property = in.readLong();
+						long object = in.readLong();
+						short containmentLength = in.readShort();
+						byte[] containment = new byte[containmentLength];
+						in.readFully(containment);
+
+						long newSubject = adjustOwner(old2newId, statistics,
+								subject);
+						long newProperty = adjustOwner(old2newId, statistics,
+								property);
+						long newObject = adjustOwner(old2newId, statistics,
+								object);
+
+						out.writeLong(newSubject);
+						out.writeLong(newProperty);
+						out.writeLong(newObject);
+						out.writeShort((short) containment.length);
+						out.write(containment);
+					}
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				intermediateFiles[i].delete();
 			}
-			intermediateFiles[i].delete();
+		} finally {
+			deleteDirectory(tmpDir);
 		}
 		return encodedFiles;
+	}
+
+	private void deleteDirectory(File tmpDir) {
+		for (File file : tmpDir.listFiles()) {
+			file.delete();
+		}
+		tmpDir.delete();
+	}
+
+	private long adjustOwner(MapDBMapWrapper<Long, Long> old2newId,
+			GraphStatistics statistics, long id) {
+		Long knownNewId = old2newId.get(id);
+		if (knownNewId != null) {
+			return knownNewId.longValue();
+		}
+		short newOwner = statistics.getOwner(id);
+		long newId = dictionary.setOwner(id, newOwner);
+		statistics.setOwner(id, newOwner);
+		old2newId.put(id, newId);
+		return newId;
 	}
 
 	public Node decode(long id) {
