@@ -143,11 +143,15 @@ public class ClientConnection implements Closeable {
 					new byte[] { MessageType.CLIENT_COMMAND.getValue() });
 			outSocket.sendMore(clientAddress);
 			outSocket.sendMore(commandBytes);
-			for (int i = 0; i < args.length; i++) {
-				if (i == args.length - 1) {
-					outSocket.send(args[i]);
-				} else {
-					outSocket.sendMore(args[i]);
+			if (args.length == 0) {
+				outSocket.send(new byte[] { (byte) 0 });
+			} else {
+				for (int i = 0; i < args.length; i++) {
+					if (i == args.length - 1) {
+						outSocket.send(args[i]);
+					} else {
+						outSocket.sendMore(args[i]);
+					}
 				}
 			}
 		} catch (UnsupportedEncodingException e) {

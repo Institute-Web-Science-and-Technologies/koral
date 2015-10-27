@@ -364,6 +364,7 @@ public class CidreClient {
 		case "exit":
 		case "quit":
 		case "load":
+		case "drop":
 			return true;
 		default:
 			return false;

@@ -254,6 +254,9 @@ public class ClientMessageProcessor
 				MessageUtils.createStringMessage(
 						MessageType.CLIENT_COMMAND_SUCCEEDED,
 						"Database is dropped, successfully.", logger));
+		if (logger != null) {
+			logger.finer("Database is dropped.");
+		}
 	}
 
 	private void processFileChunk(byte[] message) {

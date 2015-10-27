@@ -75,8 +75,14 @@ public class MapDBDictionary implements Dictionary {
 	private void resetNextId() {
 		try {
 			for (Long usedIds : decoder.keySet()) {
-				if (usedIds != null && usedIds > nextID) {
-					nextID = usedIds + 1;
+				if (usedIds != null) {
+					long id = usedIds.longValue();
+					// delete ownership
+					id = id << 16;
+					id = id >>> 16;
+					if (id >= nextID) {
+						nextID = id + 1;
+					}
 				}
 			}
 		} catch (Throwable e) {
@@ -167,6 +173,7 @@ public class MapDBDictionary implements Dictionary {
 		if (decoder != null) {
 			decoder.clear();
 		}
+		nextID = 0;
 	}
 
 	@Override
