@@ -10,6 +10,7 @@ import java.util.ListIterator;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
+import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
@@ -51,6 +52,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private final MessageNotifier messageNotifier;
 
+	private FileSenderConnection fileSenderConnection;
+
 	public GraphLoaderTask(int clientID,
 			ClientConnectionManager clientConnections,
 			DictionaryEncoder dictionary, GraphStatistics statistics,
@@ -88,7 +91,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		}
 	}
 
-	public void loadGraph(byte[][] args, int numberOfGraphChunks) {
+	public void loadGraph(byte[][] args, int numberOfGraphChunks,
+			FileSenderConnection fileSenderConnection) {
 		if (args.length < 4) {
 			throw new IllegalArgumentException(
 					"Loading a graph requires at least 4 arguments, but received only "
@@ -99,7 +103,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		int replicationPathLength = ByteBuffer.wrap(args[1]).getInt();
 		int numberOfFiles = ByteBuffer.wrap(args[2]).getInt();
 		loadGraph(coverStrategy, replicationPathLength, numberOfGraphChunks,
-				numberOfFiles, getFileExtensions(args, 3));
+				numberOfFiles, getFileExtensions(args, 3),
+				fileSenderConnection);
 	}
 
 	private String[] getFileExtensions(byte[][] args, int startIndex) {
@@ -113,7 +118,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	public void loadGraph(CoverStrategyType coverStrategy,
 			int replicationPathLength, int numberOfGraphChunks,
-			int numberOfFiles, String[] fileExtensions) {
+			int numberOfFiles, String[] fileExtensions,
+			FileSenderConnection fileSenderConnection) {
 		if (logger != null) {
 			logger.finer("loadGraph(coverStrategy=" + coverStrategy.name()
 					+ ", replicationPathLength=" + replicationPathLength
@@ -122,6 +128,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		this.coverStrategy = coverStrategy;
 		this.replicationPathLength = replicationPathLength;
 		this.numberOfGraphChunks = numberOfGraphChunks;
+		this.fileSenderConnection = fileSenderConnection;
 		fileReceiver = new FileReceiver(workingDir, clientId, clientConnections,
 				numberOfFiles, fileExtensions, logger);
 		fileReceiver.requestFiles();
@@ -179,10 +186,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
 				}
 				// slave ids start with 1!
 				FileChunkRequestProcessor sender = new FileChunkRequestProcessor(
-						i + 1);
+						i + 1, logger);
 				messageNotifier.registerMessageListener(
 						FileChunkRequestListener.class, sender);
-				sender.sendFile(file);
+				sender.sendFile(file, fileSenderConnection);
 			}
 
 			while (!isInterrupted() && !fileSenders.isEmpty()) {
@@ -210,8 +217,17 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			}
 
 			keepAliveThread.interrupt();
-			clientConnections.send(clientId, new byte[] {
-					MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
+
+			if (fileSenders.isEmpty()) {
+				clientConnections.send(clientId, new byte[] {
+						MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
+			} else {
+				clientConnections.send(clientId,
+						MessageUtils.createStringMessage(
+								MessageType.CLIENT_COMMAND_FAILED,
+								"Loading of graph was interrupted before all slaves have loaded the graph.",
+								logger));
+			}
 		} catch (Throwable e) {
 			clearDatabase();
 			if (logger != null) {

@@ -68,7 +68,7 @@ public class ClientMessageProcessor
 				case CLIENT_COMMAND:
 					processCommand(message, graphHasBeenLoaded);
 					break;
-				case FILE_CHUNK:
+				case FILE_CHUNK_RESPONSE:
 					processFileChunk(message);
 					break;
 				case CLIENT_COMMAND_ABORTED:
@@ -209,7 +209,8 @@ public class ClientMessageProcessor
 						master.getDictionary(), master.getStatistics(), tmpDir,
 						master, logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
-				loaderTask.loadGraph(arguments, numberOfChunks);
+				loaderTask.loadGraph(arguments, numberOfChunks,
+						master.getFileSenderConnection());
 				break;
 			case "drop":
 				processDropTables(clientID);

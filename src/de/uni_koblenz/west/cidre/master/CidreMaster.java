@@ -94,7 +94,7 @@ public class CidreMaster extends CidreSystem {
 		try {
 			messageType = MessageType.valueOf(receivedMessage[0]);
 			switch (messageType) {
-			case REQUEST_FILE_CHUNK:
+			case FILE_CHUNK_REQUEST:
 				byte[][] message = new byte[4][];
 				message[0] = new byte[] { receivedMessage[0] };
 				message[1] = new byte[2];
@@ -110,7 +110,7 @@ public class CidreMaster extends CidreSystem {
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);
 				break;
-			case FILE_TRANSFER_COMPLETE:
+			case GRAPH_LOADING_COMPLETE:
 				message = new byte[2][];
 				message[0] = new byte[] { receivedMessage[0] };
 				message[1] = new byte[2];

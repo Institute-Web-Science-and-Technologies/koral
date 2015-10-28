@@ -19,7 +19,7 @@ public enum MessageType {
 	 * long chunkID
 	 * </p>
 	 */
-	REQUEST_FILE_CHUNK {
+	FILE_CHUNK_REQUEST {
 		@Override
 		public Class<? extends MessageListener> getListenerType() {
 			return FileChunkRequestListener.class;
@@ -46,7 +46,7 @@ public enum MessageType {
 	 * byte[] file chunk
 	 * </p>
 	 */
-	FILE_CHUNK {
+	FILE_CHUNK_RESPONSE {
 		@Override
 		public Class<? extends MessageListener> getListenerType() {
 			// TODO Auto-generated method stub
@@ -128,7 +128,8 @@ public enum MessageType {
 	 */
 
 	/**
-	 * master to slave
+	 * master to slave<br>
+	 * long totalNumberOfChunks
 	 */
 	START_FILE_TRANSFER,
 
@@ -136,7 +137,7 @@ public enum MessageType {
 	 * slave to master<br>
 	 * short slaveID
 	 */
-	FILE_TRANSFER_COMPLETE {
+	GRAPH_LOADING_COMPLETE {
 		@Override
 		public Class<? extends MessageListener> getListenerType() {
 			return FileChunkRequestListener.class;

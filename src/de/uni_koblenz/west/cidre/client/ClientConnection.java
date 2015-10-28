@@ -169,8 +169,8 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		try {
 			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
 
-			outSocket
-					.sendMore(new byte[] { MessageType.FILE_CHUNK.getValue() });
+			outSocket.sendMore(
+					new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() });
 			outSocket.sendMore(clientAddress);
 			outSocket.sendMore(ByteBuffer.allocate(4)
 					.putInt(fileChunk.getFileID()).array());
@@ -182,6 +182,11 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public void sendFileLength(int slaveID, long totalNumberOfFileChunks) {
+		throw new UnsupportedOperationException();
 	}
 
 	public byte[][] getResponse() {
@@ -209,7 +214,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			}
 			MessageType messageType = MessageType.valueOf(mType[0]);
 			switch (messageType) {
-			case REQUEST_FILE_CHUNK:
+			case FILE_CHUNK_REQUEST:
 			case MASTER_WORK_IN_PROGRESS:
 			case CLIENT_COMMAND_SUCCEEDED:
 			case CLIENT_COMMAND_FAILED:

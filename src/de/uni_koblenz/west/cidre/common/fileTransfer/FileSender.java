@@ -26,6 +26,12 @@ public class FileSender implements Closeable, AutoCloseable {
 		this.connection = connection;
 	}
 
+	public void sendFile(int slaveID, File file) {
+		connection.sendFileLength(slaveID,
+				reader.getNumberOfChunksInFile(file));
+
+	}
+
 	public FileChunk sendFileChunk(int slaveID, int fileID, long chunkID) {
 		FileChunk fileChunk = reader.getFileChunk(files.get(fileID), fileID,
 				chunkID);

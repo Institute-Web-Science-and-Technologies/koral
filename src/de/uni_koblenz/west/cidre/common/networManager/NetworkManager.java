@@ -94,7 +94,7 @@ public class NetworkManager
 	@Override
 	public void requestFileChunk(int clientID, int fileID, FileChunk chunk) {
 		byte[] request = new byte[1 + 4 + 8];
-		request[0] = MessageType.REQUEST_FILE_CHUNK.getValue();
+		request[0] = MessageType.FILE_CHUNK_REQUEST.getValue();
 		byte[] fileIDBytes = ByteBuffer.allocate(4).putInt(fileID).array();
 		System.arraycopy(fileIDBytes, 0, request, 1, fileIDBytes.length);
 		byte[] chunkID = ByteBuffer.allocate(8)
@@ -106,8 +106,8 @@ public class NetworkManager
 
 	@Override
 	public void sendFileChunk(int slaveID, FileChunk fileChunk) {
-		senders[slaveID]
-				.sendMore(new byte[] { MessageType.FILE_CHUNK.getValue() });
+		senders[slaveID].sendMore(
+				new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() });
 		senders[slaveID].sendMore(
 				ByteBuffer.allocate(4).putInt(fileChunk.getFileID()).array());
 		senders[slaveID].sendMore(ByteBuffer.allocate(8)
@@ -115,6 +115,14 @@ public class NetworkManager
 		senders[slaveID].sendMore(ByteBuffer.allocate(8)
 				.putLong(fileChunk.getTotalNumberOfSequences()).array());
 		senders[slaveID].send(fileChunk.getContent());
+	}
+
+	@Override
+	public void sendFileLength(int slaveID, long totalNumberOfFileChunks) {
+		byte[] message = ByteBuffer.allocate(9)
+				.put(MessageType.START_FILE_TRANSFER.getValue())
+				.putLong(totalNumberOfFileChunks).array();
+		senders[slaveID].send(message);
 	}
 
 	@Override

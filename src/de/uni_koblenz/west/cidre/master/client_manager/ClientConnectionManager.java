@@ -161,7 +161,7 @@ public class ClientConnectionManager
 	@Override
 	public void requestFileChunk(int clientID, int fileID, FileChunk chunk) {
 		byte[] request = new byte[1 + 4 + 8];
-		request[0] = MessageType.REQUEST_FILE_CHUNK.getValue();
+		request[0] = MessageType.FILE_CHUNK_REQUEST.getValue();
 		byte[] fileIDBytes = ByteBuffer.allocate(4).putInt(fileID).array();
 		System.arraycopy(fileIDBytes, 0, request, 1, fileIDBytes.length);
 		byte[] chunkID = ByteBuffer.allocate(8)

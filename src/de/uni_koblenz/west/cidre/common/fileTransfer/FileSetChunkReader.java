@@ -120,7 +120,7 @@ public class FileSetChunkReader implements AutoCloseable, Closeable {
 		currentlyReadFile = file;
 	}
 
-	private long getNumberOfChunksInFile(File file) {
+	public long getNumberOfChunksInFile(File file) {
 		long fileLength = file.length();
 		long numberOfChunks = fileLength / CHUNK_SIZE;
 		if (fileLength % CHUNK_SIZE != 0) {

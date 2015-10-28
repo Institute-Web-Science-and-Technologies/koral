@@ -57,7 +57,7 @@ public class CidreClient {
 		try (FileSender sender = new FileSender(files, connection);) {
 			while (response != null) {
 				MessageType mtype = MessageType.valueOf(response[0][0]);
-				if (mtype == MessageType.REQUEST_FILE_CHUNK) {
+				if (mtype == MessageType.FILE_CHUNK_REQUEST) {
 					int fileID = ByteBuffer.wrap(response[0], 1, 4).getInt();
 					long chunkID = ByteBuffer.wrap(response[0], 5, 8).getLong();
 					FileChunk fileChunk = sender.sendFileChunk(0, fileID,
