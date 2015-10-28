@@ -171,7 +171,7 @@ public enum MessageType {
 
 	public static MessageType valueOf(byte messagePrefix) {
 		MessageType[] messageTypes = values();
-		if (messagePrefix < messageTypes.length && messagePrefix != 0) {
+		if (messagePrefix < messageTypes.length) {
 			return messageTypes[messagePrefix];
 		}
 		throw new IllegalArgumentException(
