@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.common.messages;
 
 import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
+import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 
 public enum MessageType {
 
@@ -49,8 +50,7 @@ public enum MessageType {
 	FILE_CHUNK_RESPONSE {
 		@Override
 		public Class<? extends MessageListener> getListenerType() {
-			// TODO Auto-generated method stub
-			return super.getListenerType();
+			return GraphChunkListener.class;
 		}
 	},
 
@@ -131,7 +131,24 @@ public enum MessageType {
 	 * master to slave<br>
 	 * long totalNumberOfChunks
 	 */
-	START_FILE_TRANSFER,
+	START_FILE_TRANSFER {
+		@Override
+		public Class<? extends MessageListener> getListenerType() {
+			return GraphChunkListener.class;
+		}
+	},
+
+	/**
+	 * slave to master<br>
+	 * short slaveID<br>
+	 * String error message
+	 */
+	GRAPH_LOADING_FAILED {
+		@Override
+		public Class<? extends MessageListener> getListenerType() {
+			return FileChunkRequestListener.class;
+		}
+	},
 
 	/**
 	 * slave to master<br>

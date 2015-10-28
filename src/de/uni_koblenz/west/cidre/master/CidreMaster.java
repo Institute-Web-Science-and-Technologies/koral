@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.master;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -14,6 +15,7 @@ import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientMessageProcessor;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.cidre.master.networkManager.MasterNetworkManager;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 public class CidreMaster extends CidreSystem {
@@ -27,7 +29,8 @@ public class CidreMaster extends CidreSystem {
 	private boolean graphHasBeenLoaded;
 
 	public CidreMaster(Configuration conf) {
-		super(conf, conf.getMaster());
+		super(conf, conf.getMaster(),
+				new MasterNetworkManager(conf, conf.getMaster()));
 		try {
 			ClientConnectionManager clientConnections = new ClientConnectionManager(
 					conf, logger);
@@ -59,7 +62,7 @@ public class CidreMaster extends CidreSystem {
 	}
 
 	public FileSenderConnection getFileSenderConnection() {
-		return super.getNetworkManager();
+		return (MasterNetworkManager) super.getNetworkManager();
 	}
 
 	// TODO before sending to sparql reqester replace urn:blankNode: by _: for
@@ -116,6 +119,16 @@ public class CidreMaster extends CidreSystem {
 				message[1] = new byte[2];
 				System.arraycopy(receivedMessage, 1, message[1], 0,
 						message[1].length);
+				slaveID = ByteBuffer.wrap(message[1]).getShort();
+				notifyMessageListener(messageType.getListenerType(), slaveID,
+						message);
+				break;
+			case GRAPH_LOADING_FAILED:
+				message = new byte[2][];
+				message[0] = new byte[] { receivedMessage[0] };
+				message[1] = Arrays.copyOfRange(receivedMessage, 1, 3);
+				message[2] = Arrays.copyOfRange(receivedMessage, 3,
+						receivedMessage.length);
 				slaveID = ByteBuffer.wrap(message[1]).getShort();
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);

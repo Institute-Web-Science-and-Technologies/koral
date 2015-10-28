@@ -203,6 +203,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 								FileChunkRequestListener.class, sender);
 						sender.close();
 						iterator.remove();
+					} else if (sender.isFailed()) {
+						throw new RuntimeException(sender.getErrorMessage());
 					}
 				}
 				long timeToSleep = 100

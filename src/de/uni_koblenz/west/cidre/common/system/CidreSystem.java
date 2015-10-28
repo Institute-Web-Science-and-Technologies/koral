@@ -32,7 +32,8 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 
 	private Map<Class<? extends MessageListener>, List<? extends MessageListener>[]> listeners;
 
-	public CidreSystem(Configuration conf, String[] currentAddress) {
+	public CidreSystem(Configuration conf, String[] currentAddress,
+			NetworkManager networkManager) {
 		// add shutdown hook that terminates everything
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			@Override
@@ -64,7 +65,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			}
 		}
 
-		networkManager = new NetworkManager(conf, logger, currentAddress);
+		this.networkManager = networkManager;
 
 		listeners = new HashMap<>();
 

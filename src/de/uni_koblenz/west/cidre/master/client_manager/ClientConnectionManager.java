@@ -171,6 +171,16 @@ public class ClientConnectionManager
 		chunk.setRequestTime(System.currentTimeMillis());
 	}
 
+	@Override
+	public void sendFinish(int clientID) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void sendFailNotification(int slaveID, String message) {
+		throw new UnsupportedOperationException();
+	}
+
 	public void closeConnection(int clientID) {
 		send(clientID, new byte[] { MessageType.CONNECTION_CLOSED.getValue() });
 		Socket socket = outClientSockets.get(clientID);

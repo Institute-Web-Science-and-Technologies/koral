@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSender;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
 
 public class FileChunkRequestProcessor implements FileChunkRequestListener {
@@ -19,6 +20,8 @@ public class FileChunkRequestProcessor implements FileChunkRequestListener {
 	private FileSender fileSender;
 
 	private boolean isGraphLoadingComplete;
+
+	private String errorMessage;
 
 	public FileChunkRequestProcessor(int slaveID, Logger logger) {
 		this.slaveID = slaveID;
@@ -54,6 +57,10 @@ public class FileChunkRequestProcessor implements FileChunkRequestListener {
 				long chunkID = ByteBuffer.wrap(message[3]).getLong();
 				fileSender.sendFileChunk(slaveID, fileID, chunkID);
 				break;
+			case GRAPH_LOADING_FAILED:
+				slaveID = ByteBuffer.wrap(message[1]).getShort();
+				errorMessage = MessageUtils.convertToString(message[2], null);
+				break;
 			default:
 				if (logger != null) {
 					logger.finer("Unsupported message type: " + mType.name());
@@ -72,6 +79,14 @@ public class FileChunkRequestProcessor implements FileChunkRequestListener {
 						e.getStackTrace()[0].getMethodName(), e);
 			}
 		}
+	}
+
+	public boolean isFailed() {
+		return errorMessage != null;
+	}
+
+	public String getErrorMessage() {
+		return errorMessage;
 	}
 
 	public boolean isFinished() {
