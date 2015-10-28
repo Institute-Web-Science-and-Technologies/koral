@@ -54,12 +54,15 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private FileSenderConnection fileSenderConnection;
 
+	private boolean isStarted;
+
 	public GraphLoaderTask(int clientID,
 			ClientConnectionManager clientConnections,
 			DictionaryEncoder dictionary, GraphStatistics statistics,
 			File tmpDir, MessageNotifier messageNotifier, Logger logger) {
 		isDaemon();
 		graphIsLoadingOrLoaded = true;
+		isStarted = false;
 		clientId = clientID;
 		this.clientConnections = clientConnections;
 		this.dictionary = dictionary;
@@ -170,6 +173,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	@Override
 	public void run() {
+		isStarted = true;
 		try {
 			keepAliveThread = new ClientConnectionKeepAliveTask(
 					clientConnections, clientId);
@@ -309,6 +313,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 							MessageType.CLIENT_COMMAND_FAILED,
 							"GraphLoaderTask has been closed before it could finish.",
 							logger));
+			graphIsLoadingOrLoaded = false;
+		} else if (!isStarted) {
 			graphIsLoadingOrLoaded = false;
 		}
 		if (keepAliveThread != null && keepAliveThread.isAlive()) {
