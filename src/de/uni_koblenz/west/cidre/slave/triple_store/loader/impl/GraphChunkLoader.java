@@ -45,64 +45,75 @@ public class GraphChunkLoader implements GraphChunkListener {
 				new String[] { ".enc.gz" }, logger);
 	}
 
-	// TODO unregister listener when finished
-
 	@Override
 	public void processMessage(byte[][] message) {
 		if (message == null || message.length == 0) {
 			return;
 		}
-		MessageType mType = null;
 		try {
-			mType = MessageType.valueOf(message[0][0]);
-			switch (mType) {
-			case START_FILE_TRANSFER:
-				long totalNumberOfChunks = ByteBuffer.wrap(message[1])
-						.getLong();
-				if (totalNumberOfChunks < FileReceiver.NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS) {
-					receiver.adjustMaximalNumberOfParallelRequests(
-							(int) totalNumberOfChunks);
-				}
-				receiver.requestFiles();
-				break;
-			case FILE_CHUNK_RESPONSE:
-				int fileID = ByteBuffer.wrap(message[1]).getInt();
-				long chunkID = ByteBuffer.wrap(message[2]).getLong();
-				totalNumberOfChunks = ByteBuffer.wrap(message[3]).getLong();
-				byte[] chunkContent = message[4];
-				try {
-					receiver.receiveFileChunk(fileID, chunkID,
-							totalNumberOfChunks, chunkContent);
-					if (receiver.isFinished()) {
-						receiver.close();
-						loadGraphChunk();
+			MessageType mType = null;
+			try {
+				mType = MessageType.valueOf(message[0][0]);
+				switch (mType) {
+				case START_FILE_TRANSFER:
+					long totalNumberOfChunks = ByteBuffer.wrap(message[1])
+							.getLong();
+					if (totalNumberOfChunks < FileReceiver.NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS) {
+						receiver.adjustMaximalNumberOfParallelRequests(
+								(int) totalNumberOfChunks);
 					}
-				} catch (IOException e) {
+					receiver.requestFiles();
+					break;
+				case FILE_CHUNK_RESPONSE:
+					int fileID = ByteBuffer.wrap(message[1]).getInt();
+					long chunkID = ByteBuffer.wrap(message[2]).getLong();
+					totalNumberOfChunks = ByteBuffer.wrap(message[3]).getLong();
+					byte[] chunkContent = message[4];
+					try {
+						receiver.receiveFileChunk(fileID, chunkID,
+								totalNumberOfChunks, chunkContent);
+						if (receiver.isFinished()) {
+							receiver.close();
+							loadGraphChunk();
+						}
+					} catch (IOException e) {
+						if (logger != null) {
+							logger.finer(
+									"error during receiving a graph chunk");
+							logger.throwing(e.getStackTrace()[0].getClassName(),
+									e.getStackTrace()[0].getMethodName(), e);
+						}
+						connection.sendFailNotification(slaveID,
+								e.getMessage());
+						close();
+					}
+					break;
+				default:
 					if (logger != null) {
-						logger.finer("error during receiving a graph chunk");
-						logger.throwing(e.getStackTrace()[0].getClassName(),
-								e.getStackTrace()[0].getMethodName(), e);
+						logger.finer(
+								"Unsupported message type: " + mType.name());
 					}
-					connection.sendFailNotification(slaveID, e.getMessage());
 				}
-				break;
-			default:
+			} catch (IllegalArgumentException e) {
 				if (logger != null) {
-					logger.finer("Unsupported message type: " + mType.name());
+					logger.finer("Unknown message type: " + message[0][0]);
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
+				}
+			} catch (BufferUnderflowException | IndexOutOfBoundsException e) {
+				if (logger != null) {
+					logger.finer("Message of type " + mType + " is too short.");
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
 				}
 			}
-		} catch (IllegalArgumentException e) {
+		} catch (RuntimeException e) {
 			if (logger != null) {
-				logger.finer("Unknown message type: " + message[0][0]);
 				logger.throwing(e.getStackTrace()[0].getClassName(),
 						e.getStackTrace()[0].getMethodName(), e);
 			}
-		} catch (BufferUnderflowException | IndexOutOfBoundsException e) {
-			if (logger != null) {
-				logger.finer("Message of type " + mType + " is too short.");
-				logger.throwing(e.getStackTrace()[0].getClassName(),
-						e.getStackTrace()[0].getMethodName(), e);
-			}
+			connection.sendFailNotification(slaveID, e.getMessage());
+			close();
 		}
 	}
 
@@ -110,8 +121,6 @@ public class GraphChunkLoader implements GraphChunkListener {
 		// TODO Auto-generated method stub
 
 		connection.sendFinish(slaveID);
-		messageNotifier.unregisterMessageListener(GraphChunkListener.class,
-				this);
 		close();
 	}
 
@@ -123,6 +132,8 @@ public class GraphChunkLoader implements GraphChunkListener {
 	@Override
 	public void close() {
 		// TODO Auto-generated method stub
+		messageNotifier.unregisterMessageListener(GraphChunkListener.class,
+				this);
 		receiver.close();
 		deleteDir(workingDir);
 	}
