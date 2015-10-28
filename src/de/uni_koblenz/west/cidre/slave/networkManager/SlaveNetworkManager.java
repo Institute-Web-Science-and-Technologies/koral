@@ -18,13 +18,10 @@ public class SlaveNetworkManager extends NetworkManager
 
 	@Override
 	public void requestFileChunk(int clientID, int fileID, FileChunk chunk) {
-		byte[] request = new byte[1 + 4 + 8];
-		request[0] = MessageType.FILE_CHUNK_REQUEST.getValue();
-		byte[] fileIDBytes = ByteBuffer.allocate(4).putInt(fileID).array();
-		System.arraycopy(fileIDBytes, 0, request, 1, fileIDBytes.length);
-		byte[] chunkID = ByteBuffer.allocate(8)
+		byte[] request = ByteBuffer.allocate(1 + 2 + 4 + 8)
+				.put(MessageType.FILE_CHUNK_REQUEST.getValue())
+				.putShort((short) clientID).putInt(fileID)
 				.putLong(chunk.getSequenceNumber()).array();
-		System.arraycopy(chunkID, 0, request, 5, chunkID.length);
 		send(0, request);
 		chunk.setRequestTime(System.currentTimeMillis());
 	}
