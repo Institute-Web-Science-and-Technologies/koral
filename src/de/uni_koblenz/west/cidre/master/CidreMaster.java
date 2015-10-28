@@ -110,6 +110,16 @@ public class CidreMaster extends CidreSystem {
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);
 				break;
+			case FILE_TRANSFER_COMPLETE:
+				message = new byte[2][];
+				message[0] = new byte[] { receivedMessage[0] };
+				message[1] = new byte[2];
+				System.arraycopy(receivedMessage, 1, message[1], 0,
+						message[1].length);
+				slaveID = ByteBuffer.wrap(message[1]).getShort();
+				notifyMessageListener(messageType.getListenerType(), slaveID,
+						message);
+				break;
 			default:
 				if (logger != null) {
 					logger.finer("Unknown message type received from slave: "

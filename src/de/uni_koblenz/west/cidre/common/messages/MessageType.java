@@ -6,50 +6,6 @@ import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
 public enum MessageType {
 
 	/**
-	 * from master to clients
-	 */
-	CONNECTION_CLOSED,
-
-	/*
-	 * client specific messages
-	 */
-
-	/**
-	 * client to master<br>
-	 * String ip:port
-	 */
-	CLIENT_CONNECTION_CREATION,
-
-	/**
-	 * master to client
-	 */
-	CLIENT_CONNECTION_CONFIRMATION,
-
-	/**
-	 * client to master<br>
-	 * String ip:port
-	 */
-	CLIENT_CLOSES_CONNECTION,
-
-	/**
-	 * client to master<br>
-	 * String ip:port
-	 */
-	CLIENT_IS_ALIVE,
-
-	/**
-	 * client to master<br>
-	 * (multipart message)<br>
-	 * String ip:port<br>
-	 * String command<br>
-	 * byte numberOfArgs<br>
-	 * byte[] arg1<br>
-	 * ...<br>
-	 * byte[] arg_{numberOfArgs}
-	 */
-	CLIENT_COMMAND,
-
-	/**
 	 * <p>
 	 * master to client<br>
 	 * int fileID<br>
@@ -98,6 +54,50 @@ public enum MessageType {
 		}
 	},
 
+	/*
+	 * client specific messages
+	 */
+
+	/**
+	 * from master to clients
+	 */
+	CONNECTION_CLOSED,
+
+	/**
+	 * client to master<br>
+	 * String ip:port
+	 */
+	CLIENT_CONNECTION_CREATION,
+
+	/**
+	 * master to client
+	 */
+	CLIENT_CONNECTION_CONFIRMATION,
+
+	/**
+	 * client to master<br>
+	 * String ip:port
+	 */
+	CLIENT_CLOSES_CONNECTION,
+
+	/**
+	 * client to master<br>
+	 * String ip:port
+	 */
+	CLIENT_IS_ALIVE,
+
+	/**
+	 * client to master<br>
+	 * (multipart message)<br>
+	 * String ip:port<br>
+	 * String command<br>
+	 * byte numberOfArgs<br>
+	 * byte[] arg1<br>
+	 * ...<br>
+	 * byte[] arg_{numberOfArgs}
+	 */
+	CLIENT_COMMAND,
+
 	/**
 	 * master to client<br>
 	 * String message
@@ -121,7 +121,27 @@ public enum MessageType {
 	 * master to client<br>
 	 * String error message
 	 */
-	CLIENT_COMMAND_FAILED;
+	CLIENT_COMMAND_FAILED,
+
+	/*
+	 * slave specific messages
+	 */
+
+	/**
+	 * master to slave
+	 */
+	START_FILE_TRANSFER,
+
+	/**
+	 * slave to master<br>
+	 * short slaveID
+	 */
+	FILE_TRANSFER_COMPLETE {
+		@Override
+		public Class<? extends MessageListener> getListenerType() {
+			return FileChunkRequestListener.class;
+		}
+	};
 
 	public byte getValue() {
 		return (byte) ordinal();
