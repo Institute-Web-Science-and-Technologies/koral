@@ -17,15 +17,15 @@ public class MasterNetworkManager extends NetworkManager
 
 	@Override
 	public void sendFileChunk(int slaveID, FileChunk fileChunk) {
-		senders[slaveID].sendMore(
+		sendMore(slaveID,
 				new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() });
-		senders[slaveID].sendMore(
+		sendMore(slaveID,
 				ByteBuffer.allocate(4).putInt(fileChunk.getFileID()).array());
-		senders[slaveID].sendMore(ByteBuffer.allocate(8)
+		sendMore(slaveID, ByteBuffer.allocate(8)
 				.putLong(fileChunk.getSequenceNumber()).array());
-		senders[slaveID].sendMore(ByteBuffer.allocate(8)
+		sendMore(slaveID, ByteBuffer.allocate(8)
 				.putLong(fileChunk.getTotalNumberOfSequences()).array());
-		senders[slaveID].send(fileChunk.getContent());
+		send(slaveID, fileChunk.getContent());
 	}
 
 	@Override
@@ -33,7 +33,7 @@ public class MasterNetworkManager extends NetworkManager
 		byte[] message = ByteBuffer.allocate(9)
 				.put(MessageType.START_FILE_TRANSFER.getValue())
 				.putLong(totalNumberOfFileChunks).array();
-		senders[slaveID].send(message);
+		send(slaveID, message);
 	}
 
 }

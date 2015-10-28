@@ -25,7 +25,7 @@ public class SlaveNetworkManager extends NetworkManager
 		byte[] chunkID = ByteBuffer.allocate(8)
 				.putLong(chunk.getSequenceNumber()).array();
 		System.arraycopy(chunkID, 0, request, 5, chunkID.length);
-		send(clientID, request);
+		send(0, request);
 		chunk.setRequestTime(System.currentTimeMillis());
 	}
 
@@ -34,7 +34,7 @@ public class SlaveNetworkManager extends NetworkManager
 		byte[] message = ByteBuffer.allocate(3)
 				.put(MessageType.GRAPH_LOADING_COMPLETE.getValue())
 				.putShort((short) clientID).array();
-		senders[0].send(message);
+		send(0, message);
 	}
 
 	@Override
@@ -47,7 +47,7 @@ public class SlaveNetworkManager extends NetworkManager
 		byte[] messageB = ByteBuffer.allocate(2 + messageBytes.length)
 				.put(messageBytes[0]).putShort((short) slaveID)
 				.put(messageBytes, 1, messageBytes.length - 1).array();
-		senders[0].send(messageB);
+		send(0, messageB);
 	}
 
 }

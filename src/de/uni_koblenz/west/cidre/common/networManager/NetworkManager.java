@@ -18,7 +18,7 @@ public class NetworkManager implements Closeable {
 
 	private Socket receiver;
 
-	protected final Socket[] senders;
+	private final Socket[] senders;
 
 	private int currentID;
 
@@ -48,6 +48,13 @@ public class NetworkManager implements Closeable {
 
 	public int getCurrentID() {
 		return currentID;
+	}
+
+	public void sendMore(int receiver, byte[] message) {
+		Socket out = senders[receiver];
+		if (out != null) {
+			out.sendMore(message);
+		}
 	}
 
 	public void send(int receiver, byte[] message) {
