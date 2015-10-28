@@ -1,11 +1,15 @@
 package de.uni_koblenz.west.cidre.master;
 
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientMessageProcessor;
@@ -72,13 +76,59 @@ public class CidreMaster extends CidreSystem {
 		byte[] receive = getNetworkManager().receive();
 		if (receive != null) {
 			messageReceived = true;
-			// TODO
-			logger.info(new String(receive));
+			processMessage(receive);
 		}
 		if (!messageReceived) {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
+			}
+		}
+	}
+
+	private void processMessage(byte[] receivedMessage) {
+		if (receivedMessage == null || receivedMessage.length == 0) {
+			return;
+		}
+		MessageType messageType = null;
+		try {
+			messageType = MessageType.valueOf(receivedMessage[0]);
+			switch (messageType) {
+			case REQUEST_FILE_CHUNK:
+				byte[][] message = new byte[4][];
+				message[0] = new byte[] { receivedMessage[0] };
+				message[1] = new byte[2];
+				System.arraycopy(receivedMessage, 1, message[1], 0,
+						message[1].length);
+				message[2] = new byte[4];
+				System.arraycopy(receivedMessage, 3, message[2], 0,
+						message[2].length);
+				message[3] = new byte[8];
+				System.arraycopy(receivedMessage, 7, message[3], 0,
+						message[3].length);
+				short slaveID = ByteBuffer.wrap(message[1]).getShort();
+				notifyMessageListener(messageType.getListenerType(), slaveID,
+						message);
+				break;
+			default:
+				if (logger != null) {
+					logger.finer("Unknown message type received from slave: "
+							+ messageType.name());
+				}
+			}
+		} catch (IllegalArgumentException e) {
+			if (logger != null) {
+				logger.finer("Unknown message type: " + receivedMessage[0]);
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+		} catch (BufferUnderflowException | IndexOutOfBoundsException e) {
+			if (logger != null) {
+				logger.finer("Message of type " + messageType
+						+ " is too short with only " + receivedMessage.length
+						+ " received bytes.");
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
 			}
 		}
 	}

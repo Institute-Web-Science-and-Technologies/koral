@@ -1,5 +1,8 @@
 package de.uni_koblenz.west.cidre.common.messages;
 
+import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
+import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
+
 public enum MessageType {
 
 	/**
@@ -60,7 +63,12 @@ public enum MessageType {
 	 * long chunkID
 	 * </p>
 	 */
-	REQUEST_FILE_CHUNK,
+	REQUEST_FILE_CHUNK {
+		@Override
+		public Class<? extends MessageListener> getListenerType() {
+			return FileChunkRequestListener.class;
+		}
+	},
 
 	/**
 	 * <p>
@@ -82,7 +90,13 @@ public enum MessageType {
 	 * byte[] file chunk
 	 * </p>
 	 */
-	FILE_CHUNK,
+	FILE_CHUNK {
+		@Override
+		public Class<? extends MessageListener> getListenerType() {
+			// TODO Auto-generated method stub
+			return super.getListenerType();
+		}
+	},
 
 	/**
 	 * master to client<br>
@@ -111,6 +125,10 @@ public enum MessageType {
 
 	public byte getValue() {
 		return (byte) ordinal();
+	}
+
+	public Class<? extends MessageListener> getListenerType() {
+		return null;
 	}
 
 	public static MessageType valueOf(byte messagePrefix) {

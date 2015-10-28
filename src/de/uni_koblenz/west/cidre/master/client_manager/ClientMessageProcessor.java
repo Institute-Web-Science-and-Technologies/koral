@@ -207,10 +207,9 @@ public class ClientMessageProcessor
 				GraphLoaderTask loaderTask = new GraphLoaderTask(
 						clientID.intValue(), clientConnections,
 						master.getDictionary(), master.getStatistics(), tmpDir,
-						logger);
+						master, logger);
 				clientAddress2GraphLoaderTask.put(address, loaderTask);
-				loaderTask.loadGraph(arguments, numberOfChunks,
-						master.getFileSenderConnection());
+				loaderTask.loadGraph(arguments, numberOfChunks);
 				break;
 			case "drop":
 				processDropTables(clientID);

@@ -15,6 +15,9 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiverConnection;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 
+/**
+ * First slave has id 1!!
+ */
 public class NetworkManager
 		implements Closeable, FileSenderConnection, FileReceiverConnection {
 
@@ -82,6 +85,10 @@ public class NetworkManager
 		} else {
 			return null;
 		}
+	}
+
+	public int getNumberOfSlaves() {
+		return senders.length - 1;
 	}
 
 	@Override

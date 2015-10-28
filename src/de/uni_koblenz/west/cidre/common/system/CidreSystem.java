@@ -1,6 +1,10 @@
 package de.uni_koblenz.west.cidre.common.system;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,13 +20,17 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
+import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
+import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
 
-public abstract class CidreSystem extends Thread {
+public abstract class CidreSystem extends Thread implements MessageNotifier {
 
 	protected Logger logger;
 
 	private final NetworkManager networkManager;
+
+	private Map<Class<? extends MessageListener>, List<? extends MessageListener>[]> listeners;
 
 	public CidreSystem(Configuration conf, String[] currentAddress) {
 		// add shutdown hook that terminates everything
@@ -57,6 +65,8 @@ public abstract class CidreSystem extends Thread {
 		}
 
 		networkManager = new NetworkManager(conf, logger, currentAddress);
+
+		listeners = new HashMap<>();
 
 		if (logger != null) {
 			logger.info(getClass().getSimpleName() + " started");
@@ -93,6 +103,74 @@ public abstract class CidreSystem extends Thread {
 
 	protected abstract void runOneIteration();
 
+	@Override
+	@SuppressWarnings("unchecked")
+	public <V extends MessageListener> void registerMessageListener(
+			Class<V> listenerType, V listener) {
+		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
+		if (messageListeners == null) {
+			messageListeners = new List[networkManager.getNumberOfSlaves()];
+			listeners.put(listenerType, messageListeners);
+		}
+		int slaveID = listener.getSlaveID() - 1;
+		if (messageListeners[slaveID] == null) {
+			messageListeners[slaveID] = new LinkedList<>();
+		}
+		messageListeners[slaveID].add(listener);
+	}
+
+	@Override
+	public <V extends MessageListener> void notifyMessageListener(
+			Class<V> listenerType, int slaveID, byte[][] message) {
+		@SuppressWarnings("unchecked")
+		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
+		if (messageListeners == null) {
+			if (logger != null) {
+				logger.finer(
+						"No message listners of type " + listenerType.getName()
+								+ " registered. Discarding message.");
+			}
+			return;
+		}
+		slaveID--;
+		if (messageListeners[slaveID] == null) {
+			if (logger != null) {
+				logger.finer(
+						"No message listners of type " + listenerType.getName()
+								+ " registered for slave. Discarding message.");
+			}
+			return;
+		}
+		for (V listener : messageListeners[slaveID]) {
+			listener.processMessage(message);
+		}
+	}
+
+	@Override
+	public <V extends MessageListener> void unregisterMessageListener(
+			Class<V> listenerType, V listener) {
+		@SuppressWarnings("unchecked")
+		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
+		if (messageListeners == null) {
+			return;
+		}
+		int slaveID = listener.getSlaveID() - 1;
+		if (messageListeners[slaveID] == null) {
+			return;
+		}
+		messageListeners[slaveID].remove(listener);
+		if (messageListeners[slaveID].isEmpty()) {
+			messageListeners[slaveID] = null;
+		}
+		for (List<V> list : messageListeners) {
+			if (list != null) {
+				return;
+			}
+		}
+		// there are no registered listerners of this type any more
+		listeners.remove(listenerType);
+	}
+
 	public void shutDown() {
 		networkManager.close();
 		shutDownInternal();
@@ -101,6 +179,18 @@ public abstract class CidreSystem extends Thread {
 	protected abstract void shutDownInternal();
 
 	public void clear() {
+		for (List<? extends MessageListener>[] value : listeners.values()) {
+			if (value != null) {
+				for (List<? extends MessageListener> list : value) {
+					if (list != null) {
+						for (MessageListener listener : list) {
+							listener.close();
+						}
+					}
+				}
+			}
+		}
+		listeners = new HashMap<>();
 		clearInternal();
 	}
 

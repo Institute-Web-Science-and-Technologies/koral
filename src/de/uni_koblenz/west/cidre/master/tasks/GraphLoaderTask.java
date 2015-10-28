@@ -4,18 +4,23 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreatorFactory;
+import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
+import de.uni_koblenz.west.cidre.master.networkManager.impl.FileChunkRequestProcessor;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 public class GraphLoaderTask extends Thread implements Closeable {
@@ -40,22 +45,23 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	private FileReceiver fileReceiver;
 
-	private FileSenderConnection senderConnection;
-
 	private ClientConnectionKeepAliveTask keepAliveThread;
 
 	private boolean graphIsLoadingOrLoaded;
 
+	private final MessageNotifier messageNotifier;
+
 	public GraphLoaderTask(int clientID,
 			ClientConnectionManager clientConnections,
 			DictionaryEncoder dictionary, GraphStatistics statistics,
-			File tmpDir, Logger logger) {
+			File tmpDir, MessageNotifier messageNotifier, Logger logger) {
 		isDaemon();
 		graphIsLoadingOrLoaded = true;
 		clientId = clientID;
 		this.clientConnections = clientConnections;
 		this.dictionary = dictionary;
 		this.statistics = statistics;
+		this.messageNotifier = messageNotifier;
 		this.logger = logger;
 		workingDir = new File(tmpDir.getAbsolutePath() + File.separatorChar
 				+ "cidre_client_" + clientId);
@@ -82,8 +88,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		}
 	}
 
-	public void loadGraph(byte[][] args, int numberOfGraphChunks,
-			FileSenderConnection senderConnection) {
+	public void loadGraph(byte[][] args, int numberOfGraphChunks) {
 		if (args.length < 4) {
 			throw new IllegalArgumentException(
 					"Loading a graph requires at least 4 arguments, but received only "
@@ -94,7 +99,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		int replicationPathLength = ByteBuffer.wrap(args[1]).getInt();
 		int numberOfFiles = ByteBuffer.wrap(args[2]).getInt();
 		loadGraph(coverStrategy, replicationPathLength, numberOfGraphChunks,
-				numberOfFiles, getFileExtensions(args, 3), senderConnection);
+				numberOfFiles, getFileExtensions(args, 3));
 	}
 
 	private String[] getFileExtensions(byte[][] args, int startIndex) {
@@ -108,8 +113,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 	public void loadGraph(CoverStrategyType coverStrategy,
 			int replicationPathLength, int numberOfGraphChunks,
-			int numberOfFiles, String[] fileExtensions,
-			FileSenderConnection senderConnection) {
+			int numberOfFiles, String[] fileExtensions) {
 		if (logger != null) {
 			logger.finer("loadGraph(coverStrategy=" + coverStrategy.name()
 					+ ", replicationPathLength=" + replicationPathLength
@@ -121,7 +125,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		fileReceiver = new FileReceiver(workingDir, clientId, clientConnections,
 				numberOfFiles, fileExtensions, logger);
 		fileReceiver.requestFiles();
-		this.senderConnection = senderConnection;
 	}
 
 	public void receiveFileChunk(int fileID, long chunkID,
@@ -167,7 +170,44 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
 			File[] chunks = createGraphChunks();
 			File[] encodedFiles = encodeGraphFiles(chunks);
-			// TODO send encodedFiles to slaves
+
+			List<FileChunkRequestProcessor> fileSenders = new LinkedList<>();
+			for (int i = 0; i < encodedFiles.length; i++) {
+				File file = encodedFiles[i];
+				if (file == null) {
+					continue;
+				}
+				// slave ids start with 1!
+				FileChunkRequestProcessor sender = new FileChunkRequestProcessor(
+						i + 1);
+				messageNotifier.registerMessageListener(
+						FileChunkRequestListener.class, sender);
+				sender.sendFile(file);
+			}
+
+			while (!isInterrupted() && !fileSenders.isEmpty()) {
+				long currentTime = System.currentTimeMillis();
+				ListIterator<FileChunkRequestProcessor> iterator = fileSenders
+						.listIterator();
+				while (!isInterrupted() && iterator.hasNext()) {
+					FileChunkRequestProcessor sender = iterator.next();
+					if (sender.isFinished()) {
+						messageNotifier.unregisterMessageListener(
+								FileChunkRequestListener.class, sender);
+						sender.close();
+						iterator.remove();
+					}
+				}
+				long timeToSleep = 100
+						- (System.currentTimeMillis() - currentTime);
+				if (!isInterrupted() && timeToSleep > 0) {
+					try {
+						sleep(timeToSleep);
+					} catch (InterruptedException e) {
+						break;
+					}
+				}
+			}
 
 			keepAliveThread.interrupt();
 			clientConnections.send(clientId, new byte[] {
