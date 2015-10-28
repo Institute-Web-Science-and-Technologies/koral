@@ -78,7 +78,7 @@ public class CidreMaster extends CidreSystem {
 			messageReceived = true;
 			processMessage(receive);
 		}
-		if (!messageReceived) {
+		if (!isInterrupted() && !messageReceived) {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
