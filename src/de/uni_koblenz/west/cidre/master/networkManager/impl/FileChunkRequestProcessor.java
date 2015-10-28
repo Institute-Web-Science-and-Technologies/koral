@@ -24,7 +24,6 @@ public class FileChunkRequestProcessor implements FileChunkRequestListener {
 		this.slaveID = slaveID;
 		this.logger = logger;
 		isGraphLoadingComplete = false;
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
