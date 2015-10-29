@@ -310,6 +310,77 @@ public class Configuration implements Configurable {
 		this.statisticsCacheType = statisticsCacheType;
 	}
 
+	@Property(name = "tripleStoreStorageType", description = "Defines how the triple store is persisted:"
+			+ "\nMEMORY = triples are only stored in memory"
+			+ "\nMEMORY_MAPPED_FILE = triples are stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required."
+			+ "\nRANDOM_ACCESS_FILE = triples are is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.")
+	private MapDBStorageOptions tripleStoreStorageType = MapDBStorageOptions.MEMORY_MAPPED_FILE;
+
+	public MapDBStorageOptions getTripleStoreStorageType() {
+		return tripleStoreStorageType;
+	}
+
+	public void setTripleStoreStorageType(
+			MapDBStorageOptions tripleStoreStorageType) {
+		this.tripleStoreStorageType = tripleStoreStorageType;
+	}
+
+	@Property(name = "tripleStoreDir", description = "Defines a non-existing directory where the triples are stored.")
+	private String tripleStoreDir = "." + File.separatorChar + "tripleStore";
+
+	public String getTripleStoreDir() {
+		return tripleStoreDir;
+	}
+
+	public void setTripleStoreDir(String tripleStoreDir) {
+		this.tripleStoreDir = tripleStoreDir;
+	}
+
+	// @Property(name = "enableTransactionsForTripleStore", description = "If
+	// set
+	// to true, transactions are used. Transactions are only required if
+	// processing updates in future work.")
+	private boolean useTransactionsForTripleStore = false;
+
+	public boolean useTransactionsForTripleStore() {
+		return useTransactionsForTripleStore;
+	}
+
+	public void setUseTransactionsForTripleStore(
+			boolean useTransactionsForTripleStore) {
+		this.useTransactionsForTripleStore = useTransactionsForTripleStore;
+	}
+
+	@Property(name = "enableAsynchronousWritesForTripleStore", description = "If set to true, updates are written in a separate thread asynchronously.")
+	private boolean isTripleStoreAsynchronouslyWritten = true;
+
+	public boolean isTripleStoreAsynchronouslyWritten() {
+		return isTripleStoreAsynchronouslyWritten;
+	}
+
+	public void setTripleStoreAsynchronouslyWritten(
+			boolean isTripleStoreAsynchronouslyWritten) {
+		this.isTripleStoreAsynchronouslyWritten = isTripleStoreAsynchronouslyWritten;
+	}
+
+	@Property(name = "tripleStoreCacheType", description = "Defines how the instance cache works:"
+			+ "\nNONE = no instances are cached"
+			+ "\nHASH_TABLE = a cached instance is deleted, if a hash collision occurs"
+			+ "\nLEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size"
+			+ "\nHARD_REFERENCE = no instance is removed from the cache automatically"
+			+ "\nSOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full"
+			+ "\nWEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them")
+	private MapDBCacheOptions tripleStoreCacheType = MapDBCacheOptions.HASH_TABLE;
+
+	public MapDBCacheOptions getTripleStoreCacheType() {
+		return tripleStoreCacheType;
+	}
+
+	public void setTripleStoreCacheType(
+			MapDBCacheOptions tripleStoreCacheType) {
+		this.tripleStoreCacheType = tripleStoreCacheType;
+	}
+
 	/*
 	 * serialization specific code
 	 */

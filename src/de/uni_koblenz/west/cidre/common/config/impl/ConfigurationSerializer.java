@@ -100,4 +100,27 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
 		return conf.getStatisticsCacheType().name();
 	}
 
+	public String serializeTripleStoreStorageType(Configuration conf) {
+		return conf.getTripleStoreStorageType().name();
+	}
+
+	public String serializeTripleStoreDir(Configuration conf) {
+		return conf.getTripleStoreDir();
+	}
+
+	public String serializeEnableTransactionsForTripleStore(
+			Configuration conf) {
+		return new Boolean(conf.useTransactionsForTripleStore()).toString();
+	}
+
+	public String serializeEnableAsynchronousWritesForTripleStore(
+			Configuration conf) {
+		return new Boolean(conf.isTripleStoreAsynchronouslyWritten())
+				.toString();
+	}
+
+	public String serializeTripleStoreCacheType(Configuration conf) {
+		return conf.getTripleStoreCacheType().name();
+	}
+
 }

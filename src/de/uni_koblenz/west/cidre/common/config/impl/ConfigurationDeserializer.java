@@ -146,9 +146,9 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
 	}
 
 	public void deserializeStatisticsDir(Configuration conf,
-			String dictionaryDir) {
-		if (dictionaryDir != null && !dictionaryDir.isEmpty()) {
-			conf.setStatisticsDir(dictionaryDir);
+			String statisticsDir) {
+		if (statisticsDir != null && !statisticsDir.isEmpty()) {
+			conf.setStatisticsDir(statisticsDir);
 		}
 	}
 
@@ -173,6 +173,53 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
 		if (cacheType != null && !cacheType.isEmpty()) {
 			try {
 				conf.setStatisticsCacheType(
+						MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
+	}
+
+	public void deserializeTripleStoreStorageType(Configuration conf,
+			String storageType) {
+		if (storageType != null && !storageType.isEmpty()) {
+			try {
+				conf.setTripleStoreStorageType(
+						MapDBStorageOptions.valueOf(storageType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
+	}
+
+	public void deserializeTripleStoreDir(Configuration conf,
+			String tripleStoreDir) {
+		if (tripleStoreDir != null && !tripleStoreDir.isEmpty()) {
+			conf.setTripleStoreDir(tripleStoreDir);
+		}
+	}
+
+	public void deserializeEnableTransactionsForTripleStore(Configuration conf,
+			String enableTransactions) {
+		if (enableTransactions != null && !enableTransactions.isEmpty()) {
+			conf.setUseTransactionsForTripleStore(
+					Boolean.parseBoolean(enableTransactions));
+		}
+	}
+
+	public void deserializeEnableAsynchronousWritesForTripleStore(
+			Configuration conf, String writeAsynchronously) {
+		if (writeAsynchronously != null && !writeAsynchronously.isEmpty()) {
+			conf.setTripleStoreAsynchronouslyWritten(
+					Boolean.parseBoolean(writeAsynchronously));
+		}
+	}
+
+	public void deserializeTripleStoreCacheType(Configuration conf,
+			String cacheType) {
+		if (cacheType != null && !cacheType.isEmpty()) {
+			try {
+				conf.setTripleStoreCacheType(
 						MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
 			} catch (IllegalArgumentException e) {
 
