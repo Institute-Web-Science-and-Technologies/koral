@@ -23,7 +23,9 @@ def startSlave(remoteLogger=-1):
 
 @roles('slaves')
 def stopSlave():
-    run("kill -15 $(cat cidreSlave.pid)")
+    result = run("kill -15 $(cat cidreSlave.pid)")
+    if result.return_code != 0:
+        print result
     run("rm cidreSlave.pid")
 
 @roles('master','slaves')
