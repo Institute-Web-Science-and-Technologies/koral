@@ -124,11 +124,11 @@ public class CidreMaster extends CidreSystem {
 						message);
 				break;
 			case GRAPH_LOADING_FAILED:
-				message = new byte[2][];
+				message = new byte[3][];
 				message[0] = new byte[] { receivedMessage[0] };
 				message[1] = Arrays.copyOfRange(receivedMessage, 1, 3);
 				message[2] = Arrays.copyOfRange(receivedMessage, 3,
-						receivedMessage.length - 3);
+						receivedMessage.length);
 				slaveID = ByteBuffer.wrap(message[1]).getShort();
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);
