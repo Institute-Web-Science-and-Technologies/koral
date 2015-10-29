@@ -220,6 +220,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
 						break;
 					}
 				}
+				// TODO remove
+				if (logger != null) {
+					logger.info("" + fileSenders.size());
+				}
 			}
 
 			keepAliveThread.interrupt();
