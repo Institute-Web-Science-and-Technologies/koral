@@ -38,7 +38,7 @@ public class SlaveNetworkManager extends NetworkManager
 	public void sendFailNotification(int slaveID, String message) {
 		byte[] messageBytes = MessageUtils.createStringMessage(
 				MessageType.GRAPH_LOADING_FAILED,
-				"Graph loading faile on slave " + slaveID + ". Cause: "
+				"Graph loading failed on slave " + slaveID + ". Cause: "
 						+ message,
 				null);
 		byte[] messageB = ByteBuffer.allocate(2 + messageBytes.length)
