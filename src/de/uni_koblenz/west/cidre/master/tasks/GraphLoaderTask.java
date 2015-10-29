@@ -191,16 +191,13 @@ public class GraphLoaderTask extends Thread implements Closeable {
 				// slave ids start with 1!
 				FileChunkRequestProcessor sender = new FileChunkRequestProcessor(
 						i + 1, logger);
+				fileSenders.add(sender);
 				messageNotifier.registerMessageListener(
 						FileChunkRequestListener.class, sender);
 				sender.sendFile(file, fileSenderConnection);
 			}
 
 			while (!isInterrupted() && !fileSenders.isEmpty()) {
-				// TODO remove
-				if (logger != null) {
-					logger.info("" + fileSenders.size());
-				}
 				long currentTime = System.currentTimeMillis();
 				ListIterator<FileChunkRequestProcessor> iterator = fileSenders
 						.listIterator();
