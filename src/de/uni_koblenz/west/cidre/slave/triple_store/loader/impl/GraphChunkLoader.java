@@ -42,7 +42,7 @@ public class GraphChunkLoader implements GraphChunkListener {
 			workingDir.mkdirs();
 		}
 		receiver = new FileReceiver(workingDir, slaveID, connection, 1,
-				new String[] { ".enc.gz" }, logger);
+				new String[] { "enc.gz" }, logger);
 	}
 
 	@Override
@@ -135,7 +135,7 @@ public class GraphChunkLoader implements GraphChunkListener {
 		messageNotifier.unregisterMessageListener(GraphChunkListener.class,
 				this);
 		receiver.close();
-		// deleteDir(workingDir);
+		deleteDir(workingDir);
 	}
 
 	private void deleteDir(File workingDir) {
