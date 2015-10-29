@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.common.mapDB;
+package de.uni_koblenz.west.cidre.slave.triple_store.impl;
 
 import java.io.Closeable;
 import java.util.Iterator;
@@ -6,6 +6,9 @@ import java.util.NavigableSet;
 
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 
 public abstract class MultiMapMapDB<V>
 		implements Closeable, AutoCloseable, Iterable<V> {

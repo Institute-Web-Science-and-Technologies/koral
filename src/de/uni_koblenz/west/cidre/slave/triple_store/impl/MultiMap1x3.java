@@ -1,10 +1,13 @@
-package de.uni_koblenz.west.cidre.common.mapDB;
+package de.uni_koblenz.west.cidre.slave.triple_store.impl;
 
 import java.util.Iterator;
 import java.util.NavigableSet;
 
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.Fun;
+
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 
 public class MultiMap1x3 extends
 		MultiMapMapDB<Fun.Tuple2<Long, Fun.Tuple3<Long, Long, byte[]>>> {
