@@ -38,8 +38,14 @@ public class GraphChunkLoader implements GraphChunkListener {
 		this.connection = connection;
 		this.workingDir = workingDir;
 		this.messageNotifier = messageNotifier;
-		if (!workingDir.exists()) {
-			workingDir.mkdirs();
+		if (workingDir.exists()) {
+			deleteContent(workingDir);
+		} else {
+			if (!workingDir.mkdirs()) {
+				throw new RuntimeException(
+						"The working directory " + workingDir.getAbsolutePath()
+								+ " could not be created!");
+			}
 		}
 		receiver = new FileReceiver(workingDir, slaveID, connection, 1,
 				new String[] { "enc.gz" }, logger);
@@ -135,14 +141,14 @@ public class GraphChunkLoader implements GraphChunkListener {
 		messageNotifier.unregisterMessageListener(GraphChunkListener.class,
 				this);
 		receiver.close();
-		deleteDir(workingDir);
+		deleteContent(workingDir);
+		workingDir.delete();
 	}
 
-	private void deleteDir(File workingDir) {
+	private void deleteContent(File workingDir) {
 		for (File containedFile : workingDir.listFiles()) {
 			containedFile.delete();
 		}
-		workingDir.delete();
 	}
 
 }

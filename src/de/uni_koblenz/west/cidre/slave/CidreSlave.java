@@ -71,46 +71,56 @@ public class CidreSlave extends CidreSystem {
 		if (receivedMessage == null || receivedMessage.length == 0) {
 			return;
 		}
-		MessageType messageType = null;
 		try {
-			messageType = MessageType.valueOf(receivedMessage[0]);
-			int slaveID = getNetworkManager().getCurrentID();
-			switch (messageType) {
-			case START_FILE_TRANSFER:
-				byte[][] message = new byte[2][];
-				message[0] = new byte[] { receivedMessage[0] };
-				message[1] = new byte[8];
-				System.arraycopy(receivedMessage, 1, message[1], 0,
-						message[1].length);
-				File workingDir = new File(tmpDir.getAbsolutePath()
-						+ File.separatorChar + "graphLoader" + slaveID);
-				GraphChunkListener loader = new GraphChunkLoader(slaveID,
-						workingDir, (SlaveNetworkManager) getNetworkManager(),
-						tripleStore, this, logger);
-				registerMessageListener(GraphChunkListener.class, loader);
-				notifyMessageListener(messageType.getListenerType(), slaveID,
-						message);
-				break;
-			case FILE_CHUNK_RESPONSE:
-				receiveFileChunkResponse(receivedMessage, messageType, slaveID);
-				break;
-			default:
+			MessageType messageType = null;
+			try {
+				messageType = MessageType.valueOf(receivedMessage[0]);
+				int slaveID = getNetworkManager().getCurrentID();
+				switch (messageType) {
+				case START_FILE_TRANSFER:
+					byte[][] message = new byte[2][];
+					message[0] = new byte[] { receivedMessage[0] };
+					message[1] = new byte[8];
+					System.arraycopy(receivedMessage, 1, message[1], 0,
+							message[1].length);
+					File workingDir = new File(tmpDir.getAbsolutePath()
+							+ File.separatorChar + "graphLoader" + slaveID);
+					GraphChunkListener loader = new GraphChunkLoader(slaveID,
+							workingDir,
+							(SlaveNetworkManager) getNetworkManager(),
+							tripleStore, this, logger);
+					registerMessageListener(GraphChunkListener.class, loader);
+					notifyMessageListener(messageType.getListenerType(),
+							slaveID, message);
+					break;
+				case FILE_CHUNK_RESPONSE:
+					receiveFileChunkResponse(receivedMessage, messageType,
+							slaveID);
+					break;
+				default:
+					if (logger != null) {
+						logger.finer(
+								"Unknown message type received from slave: "
+										+ messageType.name());
+					}
+				}
+			} catch (IllegalArgumentException e) {
 				if (logger != null) {
-					logger.finer("Unknown message type received from slave: "
-							+ messageType.name());
+					logger.finer("Unknown message type: " + receivedMessage[0]);
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
+				}
+			} catch (BufferUnderflowException | IndexOutOfBoundsException e) {
+				if (logger != null) {
+					logger.finer("Message of type " + messageType
+							+ " is too short with only "
+							+ receivedMessage.length + " received bytes.");
+					logger.throwing(e.getStackTrace()[0].getClassName(),
+							e.getStackTrace()[0].getMethodName(), e);
 				}
 			}
-		} catch (IllegalArgumentException e) {
+		} catch (RuntimeException e) {
 			if (logger != null) {
-				logger.finer("Unknown message type: " + receivedMessage[0]);
-				logger.throwing(e.getStackTrace()[0].getClassName(),
-						e.getStackTrace()[0].getMethodName(), e);
-			}
-		} catch (BufferUnderflowException | IndexOutOfBoundsException e) {
-			if (logger != null) {
-				logger.finer("Message of type " + messageType
-						+ " is too short with only " + receivedMessage.length
-						+ " received bytes.");
 				logger.throwing(e.getStackTrace()[0].getClassName(),
 						e.getStackTrace()[0].getMethodName(), e);
 			}
