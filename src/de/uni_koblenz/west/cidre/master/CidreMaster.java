@@ -167,7 +167,6 @@ public class CidreMaster extends CidreSystem {
 		if (logger != null) {
 			logger.info("master cleared");
 		}
-		// TODO clear slaves
 	}
 
 	@Override
