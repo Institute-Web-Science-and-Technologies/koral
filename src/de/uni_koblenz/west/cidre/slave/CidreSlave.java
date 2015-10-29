@@ -77,6 +77,9 @@ public class CidreSlave extends CidreSystem {
 				messageType = MessageType.valueOf(receivedMessage[0]);
 				int slaveID = getNetworkManager().getCurrentID();
 				switch (messageType) {
+				case CLEAR:
+					clear();
+					break;
 				case START_FILE_TRANSFER:
 					byte[][] message = new byte[2][];
 					message[0] = new byte[] { receivedMessage[0] };
@@ -172,6 +175,10 @@ public class CidreSlave extends CidreSystem {
 	@Override
 	public void clearInternal() {
 		tripleStore.clear();
+		if (logger != null) {
+			logger.info("slave " + getNetworkManager().getCurrentID()
+					+ " cleared.");
+		}
 	}
 
 	public static void main(String[] args) {

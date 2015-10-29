@@ -158,10 +158,15 @@ public class CidreMaster extends CidreSystem {
 
 	@Override
 	public void clearInternal() {
+		getNetworkManager().broadcastToAllOtherSlaves(
+				new byte[] { MessageType.CLEAR.getValue() });
 		clientMessageProcessor.clear();
 		dictionary.clear();
 		statistics.clear();
 		graphHasBeenLoaded = false;
+		if (logger != null) {
+			logger.info("master cleared");
+		}
 		// TODO clear slaves
 	}
 

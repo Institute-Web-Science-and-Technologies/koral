@@ -159,7 +159,12 @@ public enum MessageType {
 		public Class<? extends MessageListener> getListenerType() {
 			return FileChunkRequestListener.class;
 		}
-	};
+	},
+
+	/**
+	 * master to slave
+	 */
+	CLEAR;
 
 	public byte getValue() {
 		return (byte) ordinal();
