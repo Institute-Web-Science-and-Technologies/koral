@@ -128,7 +128,7 @@ public class CidreMaster extends CidreSystem {
 				message[0] = new byte[] { receivedMessage[0] };
 				message[1] = Arrays.copyOfRange(receivedMessage, 1, 3);
 				message[2] = Arrays.copyOfRange(receivedMessage, 3,
-						receivedMessage.length);
+						receivedMessage.length - 3);
 				slaveID = ByteBuffer.wrap(message[1]).getShort();
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);
