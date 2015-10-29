@@ -126,11 +126,8 @@ public class GraphChunkLoader implements GraphChunkListener {
 	private void loadGraphChunk() {
 		// TODO Auto-generated method stub
 
-		// TODO remove
-		throw new RuntimeException("This is a test exception");
-
-		// connection.sendFinish(slaveID);
-		// close();
+		connection.sendFinish(slaveID);
+		close();
 	}
 
 	@Override
