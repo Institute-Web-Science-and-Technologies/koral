@@ -149,8 +149,10 @@ public class GraphChunkLoader implements GraphChunkListener {
 	}
 
 	private void deleteContent(File workingDir) {
-		for (File containedFile : workingDir.listFiles()) {
-			containedFile.delete();
+		if (workingDir.exists()) {
+			for (File containedFile : workingDir.listFiles()) {
+				containedFile.delete();
+			}
 		}
 	}
 
