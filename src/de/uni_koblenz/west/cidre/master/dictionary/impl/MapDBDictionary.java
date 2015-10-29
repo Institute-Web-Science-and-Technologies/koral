@@ -166,6 +166,11 @@ public class MapDBDictionary implements Dictionary {
 	}
 
 	@Override
+	public boolean isEmpty() {
+		return nextID == 0;
+	}
+
+	@Override
 	public void clear() {
 		if (encoder != null) {
 			encoder.clear();

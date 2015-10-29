@@ -39,7 +39,7 @@ public class CidreMaster extends CidreSystem {
 					(short) conf.getNumberOfSlaves(), logger);
 			clientMessageProcessor = new ClientMessageProcessor(conf,
 					clientConnections, this, logger);
-			graphHasBeenLoaded = false;
+			graphHasBeenLoaded = !dictionary.isEmpty();
 		} catch (Throwable t) {
 			if (logger != null) {
 				logger.throwing(t.getStackTrace()[0].getClassName(),

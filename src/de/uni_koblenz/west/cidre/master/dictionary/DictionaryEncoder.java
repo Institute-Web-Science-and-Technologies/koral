@@ -185,6 +185,10 @@ public class DictionaryEncoder implements Closeable {
 		return DeSerializer.deserializeNode(plainText);
 	}
 
+	public boolean isEmpty() {
+		return dictionary.isEmpty();
+	}
+
 	public void clear() {
 		dictionary.clear();
 	}

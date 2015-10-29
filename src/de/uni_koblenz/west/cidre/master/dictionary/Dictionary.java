@@ -42,6 +42,8 @@ public interface Dictionary extends Closeable {
 	 */
 	public String decode(long id);
 
+	public boolean isEmpty();
+
 	public void clear();
 
 	@Override
