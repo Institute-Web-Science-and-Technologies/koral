@@ -197,6 +197,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
 			}
 
 			while (!isInterrupted() && !fileSenders.isEmpty()) {
+				// TODO remove
+				if (logger != null) {
+					logger.info("" + fileSenders.size());
+				}
 				long currentTime = System.currentTimeMillis();
 				ListIterator<FileChunkRequestProcessor> iterator = fileSenders
 						.listIterator();
@@ -219,10 +223,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
 					} catch (InterruptedException e) {
 						break;
 					}
-				}
-				// TODO remove
-				if (logger != null) {
-					logger.info("" + fileSenders.size());
 				}
 			}
 
