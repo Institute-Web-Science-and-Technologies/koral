@@ -158,10 +158,12 @@ public class DictionaryEncoder implements Closeable {
 	}
 
 	private void deleteDirectory(File tmpDir) {
-		for (File file : tmpDir.listFiles()) {
-			file.delete();
+		if (tmpDir.exists()) {
+			for (File file : tmpDir.listFiles()) {
+				file.delete();
+			}
+			tmpDir.delete();
 		}
-		tmpDir.delete();
 	}
 
 	private long adjustOwner(MapDBMapWrapper<Long, Long> old2newId,
