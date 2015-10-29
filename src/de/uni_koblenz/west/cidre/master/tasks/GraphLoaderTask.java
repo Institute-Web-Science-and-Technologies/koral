@@ -83,10 +83,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
 	}
 
 	private void deleteContent(File dir) {
-		if (dir == null) {
+		if (!dir.exists()) {
 			// TODO remove
 			if (logger != null) {
-				logger.info("workingDir is null");
+				logger.info("workingDir does not exist");
 			}
 		}
 		for (File file : dir.listFiles()) {
