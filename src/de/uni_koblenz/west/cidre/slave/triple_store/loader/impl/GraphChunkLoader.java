@@ -135,7 +135,7 @@ public class GraphChunkLoader implements GraphChunkListener {
 		messageNotifier.unregisterMessageListener(GraphChunkListener.class,
 				this);
 		receiver.close();
-		deleteDir(workingDir);
+		// deleteDir(workingDir);
 	}
 
 	private void deleteDir(File workingDir) {
