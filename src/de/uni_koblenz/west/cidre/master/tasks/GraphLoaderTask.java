@@ -203,16 +203,30 @@ public class GraphLoaderTask extends Thread implements Closeable {
 				long currentTime = System.currentTimeMillis();
 				ListIterator<FileChunkRequestProcessor> iterator = fileSenders
 						.listIterator();
-				while (!isInterrupted() && iterator.hasNext()) {
-					FileChunkRequestProcessor sender = iterator.next();
-					if (sender.isFinished()) {
+				try {
+					while (!isInterrupted() && iterator.hasNext()) {
+						FileChunkRequestProcessor sender = iterator.next();
+						if (sender.isFinished()) {
+							messageNotifier.unregisterMessageListener(
+									FileChunkRequestListener.class, sender);
+							sender.close();
+							iterator.remove();
+						} else if (sender.isFailed()) {
+							throw new RuntimeException(
+									sender.getErrorMessage());
+						}
+					}
+				} catch (RuntimeException e) {
+					// clean up listeners
+					iterator = fileSenders.listIterator();
+					while (iterator.hasNext()) {
+						FileChunkRequestProcessor sender = iterator.next();
 						messageNotifier.unregisterMessageListener(
 								FileChunkRequestListener.class, sender);
 						sender.close();
 						iterator.remove();
-					} else if (sender.isFailed()) {
-						throw new RuntimeException(sender.getErrorMessage());
 					}
+					throw e;
 				}
 				long timeToSleep = 100
 						- (System.currentTimeMillis() - currentTime);
