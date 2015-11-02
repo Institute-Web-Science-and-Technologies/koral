@@ -2,9 +2,15 @@ package de.uni_koblenz.west.cidre.common.query;
 
 public class TriplePattern {
 
+	private final TriplePatternType type;
+
+	public TriplePattern() {
+		// TODO Auto-generated constructor stub
+		type = TriplePatternType.___;
+	}
+
 	public TriplePatternType getType() {
-		// TODO auto-generated method stub
-		return null;
+		return type;
 	}
 
 	public long getSubject() {

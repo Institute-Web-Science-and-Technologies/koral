@@ -33,7 +33,7 @@ public class CidreSlave extends CidreSystem {
 		if (!tmpDir.exists()) {
 			tmpDir.mkdirs();
 		}
-		tripleStore = new TripleStoreAccessor(logger);
+		tripleStore = new TripleStoreAccessor(conf, logger);
 	}
 
 	private static String[] getCurrentIP(Configuration conf)

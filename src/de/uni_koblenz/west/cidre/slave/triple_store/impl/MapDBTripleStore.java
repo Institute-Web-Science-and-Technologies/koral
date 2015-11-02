@@ -20,20 +20,21 @@ public class MapDBTripleStore implements TripleStore {
 	private final MultiMap pos;
 
 	public MapDBTripleStore(MapDBStorageOptions storageType,
-			File tripleStoreDir, boolean useTransactions,
+			String tripleStoreDir, boolean useTransactions,
 			boolean writeAsynchronously, MapDBCacheOptions cacheType) {
-		if (!tripleStoreDir.exists()) {
-			tripleStoreDir.mkdirs();
+		File dir = new File(tripleStoreDir);
+		if (!dir.exists()) {
+			dir.mkdirs();
 		}
 		spo = new MultiMap(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "spo",
-				useTransactions, writeAsynchronously, cacheType, "spo");
+				tripleStoreDir + File.separatorChar + "spo", useTransactions,
+				writeAsynchronously, cacheType, "spo");
 		osp = new MultiMap(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "osp",
-				useTransactions, writeAsynchronously, cacheType, "osp");
+				tripleStoreDir + File.separatorChar + "osp", useTransactions,
+				writeAsynchronously, cacheType, "osp");
 		pos = new MultiMap(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "pos",
-				useTransactions, writeAsynchronously, cacheType, "pos");
+				tripleStoreDir + File.separatorChar + "pos", useTransactions,
+				writeAsynchronously, cacheType, "pos");
 	}
 
 	@Override
