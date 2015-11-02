@@ -1,26 +1,23 @@
 package de.uni_koblenz.west.cidre.slave.triple_store.impl;
 
 import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.NavigableSet;
 
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStore;
 
 public class MapDBTripleStore implements TripleStore {
 
-	private final MultiMap1x3 s_po;
+	private final MultiMap spo;
 
-	private final MultiMap1x3 o_sp;
+	private final MultiMap osp;
 
-	private final MultiMap1x3 p_os;
-
-	private final MultiMap2x2 sp_o;
-
-	private final MultiMap2x2 os_p;
-
-	private final MultiMap2x2 po_s;
+	private final MultiMap pos;
 
 	public MapDBTripleStore(MapDBStorageOptions storageType,
 			File tripleStoreDir, boolean useTransactions,
@@ -28,61 +25,105 @@ public class MapDBTripleStore implements TripleStore {
 		if (!tripleStoreDir.exists()) {
 			tripleStoreDir.mkdirs();
 		}
-		s_po = new MultiMap1x3(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "s_po",
-				useTransactions, writeAsynchronously, cacheType, "s_po");
-		o_sp = new MultiMap1x3(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "o_sp",
-				useTransactions, writeAsynchronously, cacheType, "o_sp");
-		p_os = new MultiMap1x3(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "p_os",
-				useTransactions, writeAsynchronously, cacheType, "p_os");
-		sp_o = new MultiMap2x2(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "sp_o",
-				useTransactions, writeAsynchronously, cacheType, "sp_o");
-		os_p = new MultiMap2x2(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "os_p",
-				useTransactions, writeAsynchronously, cacheType, "os_p");
-		po_s = new MultiMap2x2(storageType,
-				tripleStoreDir.getAbsolutePath() + File.separatorChar + "po_s",
-				useTransactions, writeAsynchronously, cacheType, "po_s");
+		spo = new MultiMap(storageType,
+				tripleStoreDir.getAbsolutePath() + File.separatorChar + "spo",
+				useTransactions, writeAsynchronously, cacheType, "spo");
+		osp = new MultiMap(storageType,
+				tripleStoreDir.getAbsolutePath() + File.separatorChar + "osp",
+				useTransactions, writeAsynchronously, cacheType, "osp");
+		pos = new MultiMap(storageType,
+				tripleStoreDir.getAbsolutePath() + File.separatorChar + "pos",
+				useTransactions, writeAsynchronously, cacheType, "pos");
 	}
 
 	@Override
 	public void storeTriple(long subject, long property, long object,
 			byte[] containment) {
-		s_po.put(subject, property, object, containment);
-		sp_o.put(subject, property, object, containment);
-		o_sp.put(object, subject, property, containment);
-		os_p.put(object, subject, property, containment);
-		p_os.put(property, object, subject, containment);
-		po_s.put(property, object, subject, containment);
+		spo.put(ByteBuffer.allocate(3 * 8 + containment.length).putLong(subject)
+				.putLong(property).putLong(object).put(containment).array());
+		osp.put(ByteBuffer.allocate(3 * 8 + containment.length).putLong(object)
+				.putLong(subject).putLong(property).put(containment).array());
+		pos.put(ByteBuffer.allocate(3 * 8 + containment.length)
+				.putLong(property).putLong(object).putLong(subject)
+				.put(containment).array());
 	}
 
 	@Override
-	public Iterable<Mapping> lookup(TriplePattern triplePattern) {
-		// TODO Auto-generated method stub
-		return null;
+	public Iterable<Mapping> lookup(MappingRecycleCache cache,
+			TriplePattern triplePattern) {
+		byte[] queryPrefix = null;
+		NavigableSet<byte[]> matches = null;
+		IndexType indexType = null;
+		switch (triplePattern.getType()) {
+		case ___:
+			queryPrefix = new byte[0];
+			matches = spo.get(queryPrefix);
+			indexType = IndexType.SPO;
+			break;
+		case S__:
+			queryPrefix = ByteBuffer.allocate(8)
+					.putLong(triplePattern.getSubject()).array();
+			matches = spo.get(queryPrefix);
+			indexType = IndexType.SPO;
+			break;
+		case _P_:
+			queryPrefix = ByteBuffer.allocate(8)
+					.putLong(triplePattern.getProperty()).array();
+			matches = pos.get(queryPrefix);
+			indexType = IndexType.POS;
+			break;
+		case __O:
+			queryPrefix = ByteBuffer.allocate(8)
+					.putLong(triplePattern.getObject()).array();
+			matches = osp.get(queryPrefix);
+			indexType = IndexType.OSP;
+			break;
+		case SP_:
+			queryPrefix = ByteBuffer.allocate(16)
+					.putLong(triplePattern.getSubject())
+					.putLong(triplePattern.getProperty()).array();
+			matches = spo.get(queryPrefix);
+			indexType = IndexType.SPO;
+			break;
+		case S_O:
+			queryPrefix = ByteBuffer.allocate(16)
+					.putLong(triplePattern.getObject())
+					.putLong(triplePattern.getSubject()).array();
+			matches = osp.get(queryPrefix);
+			indexType = IndexType.OSP;
+			break;
+		case _PO:
+			queryPrefix = ByteBuffer.allocate(16)
+					.putLong(triplePattern.getProperty())
+					.putLong(triplePattern.getObject()).array();
+			matches = pos.get(queryPrefix);
+			indexType = IndexType.POS;
+			break;
+		case SPO:
+			queryPrefix = ByteBuffer.allocate(24)
+					.putLong(triplePattern.getSubject())
+					.putLong(triplePattern.getProperty())
+					.putLong(triplePattern.getObject()).array();
+			matches = spo.get(queryPrefix);
+			indexType = IndexType.SPO;
+			break;
+		}
+		return new MappingIteratorWrapper(cache, indexType, triplePattern,
+				matches.iterator());
 	}
 
 	@Override
 	public void clear() {
-		s_po.clear();
-		o_sp.clear();
-		p_os.clear();
-		sp_o.clear();
-		os_p.clear();
-		po_s.clear();
+		spo.clear();
+		osp.clear();
+		pos.clear();
 	}
 
 	@Override
 	public void close() {
-		s_po.close();
-		o_sp.close();
-		p_os.close();
-		sp_o.close();
-		os_p.close();
-		po_s.close();
+		spo.close();
+		osp.close();
+		pos.close();
 	}
 
 }
