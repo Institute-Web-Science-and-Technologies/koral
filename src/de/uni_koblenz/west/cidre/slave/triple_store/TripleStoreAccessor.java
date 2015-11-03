@@ -18,7 +18,6 @@ import de.uni_koblenz.west.cidre.slave.triple_store.impl.MapDBTripleStore;
 
 public class TripleStoreAccessor implements Closeable, AutoCloseable {
 
-	@SuppressWarnings("unused")
 	private final Logger logger;
 
 	private final MapDBTripleStore tripleStore;
@@ -34,6 +33,7 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
 	public void storeTriples(File file) {
 		try (DataInputStream in = new DataInputStream(new BufferedInputStream(
 				new GZIPInputStream(new FileInputStream(file))));) {
+			long alreadyLoadedTriples = 0;
 			while (true) {
 				long subject;
 				try {
@@ -47,6 +47,14 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
 				byte[] containment = new byte[length];
 				in.readFully(containment);
 				tripleStore.storeTriple(subject, property, object, containment);
+				alreadyLoadedTriples++;
+				if (logger != null && alreadyLoadedTriples % 10000 == 0) {
+					logger.finer("loaded " + alreadyLoadedTriples + " triples");
+				}
+			}
+			if (logger != null) {
+				logger.finer("finished loading of " + alreadyLoadedTriples
+						+ " triples from file " + file.getAbsolutePath());
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
