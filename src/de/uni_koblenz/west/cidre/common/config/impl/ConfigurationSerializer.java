@@ -123,4 +123,14 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
 		return conf.getTripleStoreCacheType().name();
 	}
 
+	public String serializeSizeOfMappingRecycleCache(Configuration conf) {
+		return new Integer(conf.getSizeOfMappingRecycleCache()).toString();
+	}
+
+	public String serializeUnbalanceThresholdForWorkerThreads(
+			Configuration conf) {
+		return new Double(conf.getUnbalanceThresholdForWorkerThreads())
+				.toString();
+	}
+
 }

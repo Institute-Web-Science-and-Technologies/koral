@@ -136,4 +136,14 @@ SOFT_REFERENCE = instances are removed from the cache by the garbage collector, 
 WEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them</description>
 		<value>HASH_TABLE</value>
 	</property>
+	<property>
+		<name>sizeOfMappingRecycleCache</name>
+		<description>In order to prevent a frequent garbage collection, Mapping objects are recycled. This option defines how many Mapping objects should be cached for reuse.</description>
+		<value>100000</value>
+	</property>
+	<property>
+		<name>unbalanceThresholdForWorkerThreads</name>
+		<description>This property defines how much the current workloads of the different WorkerThreads may differ, before the work is rebalanced.</description>
+		<value>0.1</value>
+	</property>
 </config>

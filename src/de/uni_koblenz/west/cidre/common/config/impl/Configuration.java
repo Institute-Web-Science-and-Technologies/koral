@@ -381,6 +381,30 @@ public class Configuration implements Configurable {
 		this.tripleStoreCacheType = tripleStoreCacheType;
 	}
 
+	@Property(name = "sizeOfMappingRecycleCache", description = "In order to prevent a frequent garbage collection, Mapping objects are recycled."
+			+ " This option defines how many Mapping objects should be cached for reuse.")
+	private int sizeOfMappingRecycleCache = 100_000;
+
+	public int getSizeOfMappingRecycleCache() {
+		return sizeOfMappingRecycleCache;
+	}
+
+	public void setSizeOfMappingRecycleCache(int sizeOfMappingRecycleCache) {
+		this.sizeOfMappingRecycleCache = sizeOfMappingRecycleCache;
+	}
+
+	@Property(name = "unbalanceThresholdForWorkerThreads", description = "This property defines how much the current workloads of the different WorkerThreads may differ, before the work is rebalanced.")
+	private double unbalanceThresholdForWorkerThreads = 0.1;
+
+	public double getUnbalanceThresholdForWorkerThreads() {
+		return unbalanceThresholdForWorkerThreads;
+	}
+
+	public void setUnbalanceThresholdForWorkerThreads(
+			double unbalanceThresholdForWorkerThreads) {
+		this.unbalanceThresholdForWorkerThreads = unbalanceThresholdForWorkerThreads;
+	}
+
 	/*
 	 * serialization specific code
 	 */

@@ -227,4 +227,15 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
 		}
 	}
 
+	public void deserializeSizeOfMappingRecycleCache(Configuration conf,
+			String size) {
+		conf.setSizeOfMappingRecycleCache(Integer.parseInt(size));
+	}
+
+	public void deserializeUnbalanceThresholdForWorkerThreads(
+			Configuration conf, String threshold) {
+		conf.setUnbalanceThresholdForWorkerThreads(
+				Double.parseDouble(threshold));
+	}
+
 }
