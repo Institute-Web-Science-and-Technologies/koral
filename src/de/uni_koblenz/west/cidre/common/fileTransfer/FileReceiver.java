@@ -69,10 +69,8 @@ public class FileReceiver implements Closeable {
 				logger.finest("Requesting file " + currentFile + ".");
 			}
 			try {
-				out = new BufferedOutputStream(new FileOutputStream(
-						new File(workingDir.getAbsolutePath()
-								+ File.separatorChar + currentFile + "."
-								+ fileExtensions[currentFile])));
+				out = new BufferedOutputStream(
+						new FileOutputStream(getFileWithID(currentFile)));
 			} catch (FileNotFoundException e) {
 				if (logger != null) {
 					logger.throwing(e.getStackTrace()[0].getClassName(),
@@ -81,6 +79,11 @@ public class FileReceiver implements Closeable {
 			}
 			requestNextFileChunk();
 		}
+	}
+
+	public File getFileWithID(int fileID) {
+		return new File(workingDir.getAbsolutePath() + File.separatorChar
+				+ fileID + "." + fileExtensions[fileID]);
 	}
 
 	private void requestNextFileChunk() {

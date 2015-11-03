@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
@@ -13,7 +15,7 @@ import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 
-public class GraphChunkLoader implements GraphChunkListener {
+public class GraphChunkLoader extends Thread implements GraphChunkListener {
 
 	private final Logger logger;
 
@@ -24,6 +26,8 @@ public class GraphChunkLoader implements GraphChunkListener {
 	private final FileReceiver receiver;
 
 	private final FileReceiverConnection connection;
+
+	private final Set<File> receivedGraphChunks;
 
 	private final TripleStoreAccessor tripleStore;
 
@@ -49,6 +53,7 @@ public class GraphChunkLoader implements GraphChunkListener {
 		}
 		receiver = new FileReceiver(workingDir, slaveID, connection, 1,
 				new String[] { "enc.gz" }, logger);
+		receivedGraphChunks = new HashSet<>();
 	}
 
 	@Override
@@ -78,9 +83,13 @@ public class GraphChunkLoader implements GraphChunkListener {
 					try {
 						receiver.receiveFileChunk(fileID, chunkID,
 								totalNumberOfChunks, chunkContent);
+						File graphChunk = receiver.getFileWithID(fileID);
+						if (!receivedGraphChunks.contains(graphChunk)) {
+							receivedGraphChunks.add(graphChunk);
+						}
 						if (receiver.isFinished()) {
 							receiver.close();
-							loadGraphChunk();
+							start();
 						}
 					} catch (IOException e) {
 						if (logger != null) {
@@ -123,10 +132,29 @@ public class GraphChunkLoader implements GraphChunkListener {
 		}
 	}
 
-	private void loadGraphChunk() {
-		// TODO Auto-generated method stub
+	@Override
+	public void run() {
+		try {
+			for (File graphChunk : receivedGraphChunks) {
+				if (graphChunk.exists()) {
+					tripleStore.storeTriples(graphChunk);
+				}
+				if (isInterrupted()) {
+					break;
+				}
+			}
+		} catch (RuntimeException e) {
+			if (logger != null) {
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			connection.sendFailNotification(slaveID, e.getMessage());
+			close();
+		}
 
-		connection.sendFinish(slaveID);
+		if (!isInterrupted()) {
+			connection.sendFinish(slaveID);
+		}
 		close();
 	}
 
@@ -137,7 +165,6 @@ public class GraphChunkLoader implements GraphChunkListener {
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
 		messageNotifier.unregisterMessageListener(GraphChunkListener.class,
 				this);
 		receiver.close();
