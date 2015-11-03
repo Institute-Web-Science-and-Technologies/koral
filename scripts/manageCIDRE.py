@@ -36,3 +36,6 @@ def clearCidre():
     statDir = run("java -cp cidre.jar de.uni_koblenz.west.cidre.common.config.utils.ConfigCLI cidreConfig.xml statisticsDir")
     if exists(statDir, use_sudo=True):
         sudo("rm -r " + statDir)
+    tripleDir = run("java -cp cidre.jar de.uni_koblenz.west.cidre.common.config.utils.ConfigCLI cidreConfig.xml tripleStoreDir")
+    if exists(tripleDir, use_sudo=True):
+        sudo("rm -r " + tripleDir)
