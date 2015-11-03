@@ -6,24 +6,30 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
+import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
 public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
 	private final Logger logger;
 
+	private final int id;
+
 	private final MessageNotifier messageNotifier;
 
-	private final int id;
+	private final MappingRecycleCache mappingCache;
 
 	private WorkerThread previous;
 
 	private WorkerThread next;
 
+	private final double unbalanceThreshold;
+
 	private final ConcurrentLinkedQueue<WorkerTask> tasks;
 
 	private long currentLoad;
 
-	public WorkerThread(int id, MessageNotifier messageNotifier,
+	public WorkerThread(int id, int sizeOfMappingRecycleCache,
+			double unbalanceThreshold, MessageNotifier messageNotifier,
 			Logger logger) {
 		this.logger = logger;
 		this.id = id;
@@ -31,6 +37,8 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		tasks = new ConcurrentLinkedQueue<>();
 		currentLoad = 0;
 		this.messageNotifier = messageNotifier;
+		mappingCache = new MappingRecycleCache(sizeOfMappingRecycleCache);
+		this.unbalanceThreshold = unbalanceThreshold;
 		// TODO Auto-generated constructor stub
 	}
 
@@ -57,7 +65,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	public void addWorkerTask(WorkerTask task) {
 		boolean wasEmpty = tasks.isEmpty();
 		tasks.offer(task);
-		// TODO task.setUp(recycleCache, logger);
+		task.setUp(mappingCache, logger);
 		// TODO handle messagePassing
 		if (wasEmpty) {
 			start();

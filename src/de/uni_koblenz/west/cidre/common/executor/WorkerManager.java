@@ -5,13 +5,15 @@ import java.util.NavigableSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+
 public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final Logger logger;
 
 	private final WorkerThread[] executors;
 
-	public WorkerManager(Logger logger) {
+	public WorkerManager(Configuration conf, Logger logger) {
 		this.logger = logger;
 		int availableCPUs = Runtime.getRuntime().availableProcessors() - 1;
 		if (availableCPUs < 1) {
@@ -20,7 +22,9 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		executors = new WorkerThread[availableCPUs];
 		for (int i = 0; i < executors.length; i++) {
 			// TODO handle message notification
-			executors[i] = new WorkerThread(i, null, logger);
+			executors[i] = new WorkerThread(i,
+					conf.getSizeOfMappingRecycleCache(),
+					conf.getUnbalanceThresholdForWorkerThreads(), null, logger);
 			if (i > 0) {
 				executors[i - 1].setNext(executors[i]);
 				executors[i].setPrevious(executors[i - 1]);
