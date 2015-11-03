@@ -3,6 +3,7 @@ package de.uni_koblenz.west.cidre.slave.triple_store;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,13 +34,20 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
 	public void storeTriples(File file) {
 		try (DataInputStream in = new DataInputStream(new BufferedInputStream(
 				new GZIPInputStream(new FileInputStream(file))));) {
-			long subject = in.readLong();
-			long property = in.readLong();
-			long object = in.readLong();
-			short length = in.readShort();
-			byte[] containment = new byte[length];
-			in.readFully(containment);
-			tripleStore.storeTriple(subject, property, object, containment);
+			while (true) {
+				long subject;
+				try {
+					subject = in.readLong();
+				} catch (EOFException e) {
+					break;
+				}
+				long property = in.readLong();
+				long object = in.readLong();
+				short length = in.readShort();
+				byte[] containment = new byte[length];
+				in.readFully(containment);
+				tripleStore.storeTriple(subject, property, object, containment);
+			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
