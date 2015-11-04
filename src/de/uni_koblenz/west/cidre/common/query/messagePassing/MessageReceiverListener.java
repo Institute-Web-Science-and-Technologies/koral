@@ -49,9 +49,9 @@ public class MessageReceiverListener implements MessageListener {
 					if (logger != null) {
 						long receiver = ByteBuffer.wrap(message, 3, 8)
 								.getLong();
-						logger.info(
-								"Discarding a query mapping batch because the receiving task "
-										+ receiver + " is not present.");
+						logger.info("Discarding a " + messageType.name()
+								+ " message because the receiving task "
+								+ receiver + " is not present.");
 					}
 				} else {
 					task.enqueueMessage(message);
