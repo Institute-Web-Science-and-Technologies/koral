@@ -20,7 +20,8 @@ public class WorkerTaskComparator implements Comparator<WorkerTask> {
 		} else if (diff > 0) {
 			return 1;
 		} else {
-			return o1.getID() - o2.getID();
+			diff = o1.getID() - o2.getID();
+			return diff == 0 ? 0 : diff < 0 ? -1 : 1;
 		}
 	}
 

@@ -11,12 +11,23 @@ public interface WorkerTask extends Closeable {
 	public boolean setUp(MappingRecycleCache recycleCache, Logger logger);
 
 	/**
+	 * <p>
+	 * The id consists of:
+	 * <ol>
+	 * <li>2 bytes computer id</li>
+	 * <li>4 bytes query id</li>
+	 * <li>2 bytes query node id</li>
+	 * </ol>
+	 * </p>
+	 * 
+	 * <p>
 	 * The ids of two {@link WorkerTask}s should only be equal, if
 	 * task1.equals(task2)==true
+	 * </p>
 	 * 
 	 * @return
 	 */
-	public int getID();
+	public long getID();
 
 	public long getEstimatedTaskLoad();
 
