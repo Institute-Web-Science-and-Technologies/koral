@@ -81,6 +81,11 @@ public class FileChunkRequestProcessor implements FileChunkRequestListener {
 		}
 	}
 
+	@Override
+	public void processMessage(byte[] message) {
+		throw new UnsupportedOperationException();
+	}
+
 	public boolean isFailed() {
 		return errorMessage != null;
 	}

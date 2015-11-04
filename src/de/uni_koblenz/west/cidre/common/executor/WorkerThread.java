@@ -9,8 +9,8 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
-import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
 
 public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
@@ -18,9 +18,9 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
 	private final int id;
 
-	private final MessageNotifier messageNotifier;
-
 	private final MappingRecycleCache mappingCache;
+
+	private final MessageReceiverListener receiver;
 
 	private WorkerThread previous;
 
@@ -33,17 +33,16 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	private long currentLoad;
 
 	public WorkerThread(int id, int sizeOfMappingRecycleCache,
-			double unbalanceThreshold, MessageNotifier messageNotifier,
+			double unbalanceThreshold, MessageReceiverListener receiver,
 			Logger logger) {
 		this.logger = logger;
 		this.id = id;
 		setName("WorkerThread " + id);
 		tasks = new ConcurrentLinkedQueue<>();
 		currentLoad = 0;
-		this.messageNotifier = messageNotifier;
 		mappingCache = new MappingRecycleCache(sizeOfMappingRecycleCache);
 		this.unbalanceThreshold = unbalanceThreshold;
-		// TODO Auto-generated constructor stub
+		this.receiver = receiver;
 	}
 
 	private WorkerThread getPrevious() {
@@ -66,9 +65,13 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		return currentLoad;
 	}
 
+	MessageReceiverListener getReceiver() {
+		return receiver;
+	}
+
 	public void addWorkerTask(WorkerTask task) {
 		task.setUp(mappingCache, logger);
-		// TODO handle messagePassing
+		receiver.register(task);
 		receiveTask(task);
 	}
 
@@ -101,7 +104,6 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 						logger.throwing(e.getStackTrace()[0].getClassName(),
 								e.getStackTrace()[0].getMethodName(), e);
 					}
-					// TODO remove message handling
 					removeTask(iterator, task);
 					// TODO handle failed query processing
 				}
@@ -125,6 +127,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	 */
 	private void removeTask(Iterator<WorkerTask> iterator, WorkerTask task) {
 		iterator.remove();
+		receiver.unregister(task);
 		task.close();
 	}
 
@@ -206,6 +209,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 			interrupt();
 		}
 		terminateTasks();
+		receiver.close();
 	}
 
 	private void terminateTasks() {

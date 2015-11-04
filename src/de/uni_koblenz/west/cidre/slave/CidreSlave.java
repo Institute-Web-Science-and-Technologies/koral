@@ -6,6 +6,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -13,6 +14,7 @@ import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.common.system.ConfigurationException;
 import de.uni_koblenz.west.cidre.slave.networkManager.SlaveNetworkManager;
@@ -99,6 +101,22 @@ public class CidreSlave extends CidreSystem {
 				case FILE_CHUNK_RESPONSE:
 					receiveFileChunkResponse(receivedMessage, messageType,
 							slaveID);
+					break;
+				case QUERY_CREATE:
+					// TODO implement
+					break;
+				case QUERY_START:
+					// TODO implement
+					break;
+				case QUERY_ABORTION:
+					// TODO implement
+					break;
+				case QUERY_MAPPING_BATCH:
+				case QUERY_TASK_FINISHED:
+					short senderID = ByteBuffer.wrap(receivedMessage, 1, 2)
+							.getShort();
+					notifyMessageListener(MessageReceiverListener.class,
+							senderID, receivedMessage);
 					break;
 				default:
 					if (logger != null) {

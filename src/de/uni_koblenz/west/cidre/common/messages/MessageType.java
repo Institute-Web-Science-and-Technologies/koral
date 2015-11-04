@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.cidre.common.messages;
 
 import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 
@@ -105,6 +106,12 @@ public enum MessageType {
 	MASTER_WORK_IN_PROGRESS,
 
 	/**
+	 * master to client<br>
+	 * String result mappings
+	 */
+	QUERY_RESULT,
+
+	/**
 	 * client to master<br>
 	 * String ip:port<br>
 	 * String "|" <br>
@@ -158,6 +165,69 @@ public enum MessageType {
 		@Override
 		public Class<? extends MessageListener> getListenerType() {
 			return FileChunkRequestListener.class;
+		}
+	},
+
+	/**
+	 * master to all slaves<br>
+	 * byte[] query tree serialization
+	 */
+	QUERY_CREATE,
+
+	/**
+	 * slave to master<br>
+	 * short slaveID<br>
+	 * long id of receiving query node
+	 */
+	QUERY_CREATED,
+
+	/**
+	 * master to all slaves<br>
+	 * int query id
+	 */
+	QUERY_START,
+
+	/**
+	 * master to all slaves<br>
+	 * int query id
+	 */
+	QUERY_ABORTION,
+
+	/**
+	 * slave to slave, slave to master<br>
+	 * short slaveID<br>
+	 * long receiving query task id<br>
+	 * byte[] mapping serialization
+	 */
+	QUERY_MAPPING_BATCH {
+		@Override
+		public Class<? extends MessageListener> getListenerType() {
+			return MessageReceiverListener.class;
+		}
+	},
+
+	/**
+	 * slave to slave, slave to master<br>
+	 * short slaveID<br>
+	 * long receiving query task id
+	 */
+	QUERY_TASK_FINISHED {
+		@Override
+		public Class<? extends MessageListener> getListenerType() {
+			return MessageReceiverListener.class;
+		}
+	},
+
+	/**
+	 * slave to master<br>
+	 * short slaveID<br>
+	 * long receiving query task id<br>
+	 * String error message
+	 */
+	QUERY_TASK_FAILED {
+		@Override
+		public Class<? extends MessageListener> getListenerType() {
+			return MessageReceiverListener.class;
 		}
 	},
 

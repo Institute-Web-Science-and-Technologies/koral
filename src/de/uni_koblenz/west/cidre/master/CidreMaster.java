@@ -11,6 +11,7 @@ import org.apache.commons.cli.ParseException;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientMessageProcessor;
@@ -132,6 +133,15 @@ public class CidreMaster extends CidreSystem {
 				slaveID = ByteBuffer.wrap(message[1]).getShort();
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);
+				break;
+			case QUERY_CREATED:
+			case QUERY_MAPPING_BATCH:
+			case QUERY_TASK_FINISHED:
+			case QUERY_TASK_FAILED:
+				short senderID = ByteBuffer.wrap(receivedMessage, 1, 2)
+						.getShort();
+				notifyMessageListener(MessageReceiverListener.class, senderID,
+						receivedMessage);
 				break;
 			default:
 				if (logger != null) {

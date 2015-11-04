@@ -6,15 +6,27 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
 
 public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final Logger logger;
 
+	private final MessageNotifier messageNotifier;
+
 	private final WorkerThread[] executors;
 
-	public WorkerManager(Configuration conf, Logger logger) {
+	// TODO query ids and query task ids have to start with 0! reuse query ids!
+
+	@SuppressWarnings("unchecked")
+	public WorkerManager(Configuration conf, MessageNotifier notifier,
+			Logger logger) {
 		this.logger = logger;
+		messageNotifier = notifier;
+		MessageReceiverListener receiver = new MessageReceiverListener(logger);
+		notifier.registerMessageListener(
+				(Class<MessageReceiverListener>) receiver.getClass(), receiver);
 		int availableCPUs = Runtime.getRuntime().availableProcessors() - 1;
 		if (availableCPUs < 1) {
 			availableCPUs = 1;
@@ -24,7 +36,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
 			// TODO handle message notification
 			executors[i] = new WorkerThread(i,
 					conf.getSizeOfMappingRecycleCache(),
-					conf.getUnbalanceThresholdForWorkerThreads(), null, logger);
+					conf.getUnbalanceThresholdForWorkerThreads(), receiver,
+					logger);
 			if (i > 0) {
 				executors[i - 1].setNext(executors[i]);
 				executors[i].setPrevious(executors[i - 1]);
@@ -59,7 +72,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		NavigableSet<WorkerTask> newWorkingSet = new TreeSet<>(
 				new WorkerTaskComparator(true));
 		for (WorkerTask task : workingSet) {
-			newWorkingSet.addAll(task.gerPrecedingTasks());
+			newWorkingSet.addAll(task.getPrecedingTasks());
 		}
 		assignTasks(estimatedWorkLoad, newWorkingSet);
 		// now assign current tasks to WorkerThreads
@@ -91,12 +104,20 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void close() {
+		MessageReceiverListener receiver = null;
 		for (WorkerThread executor : executors) {
 			if (executor != null) {
 				executor.close();
+				receiver = executor.getReceiver();
 			}
+		}
+		if (receiver != null) {
+			messageNotifier.unregisterMessageListener(
+					(Class<MessageReceiverListener>) receiver.getClass(),
+					receiver);
 		}
 	}
 

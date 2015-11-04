@@ -29,14 +29,30 @@ public interface WorkerTask extends Closeable {
 	 */
 	public long getID();
 
+	/**
+	 * @return id of the root node (i.e., the query coordinator node) of the
+	 *         query execution tree
+	 */
+	public long getRootID();
+
 	public long getEstimatedTaskLoad();
 
 	public long getCurrentTaskLoad();
 
-	public Set<WorkerTask> gerPrecedingTasks();
+	public Set<WorkerTask> getPrecedingTasks();
+
+	/**
+	 * Starts to emit results on the next {@link #execute()} call.
+	 */
+	public void start();
 
 	public boolean hasInput();
 
+	public void enqueueMessage(byte[] message);
+
+	/**
+	 * Results may only be emitted, it {@link #start()} was called.
+	 */
 	public void execute();
 
 	public boolean hasFinished();

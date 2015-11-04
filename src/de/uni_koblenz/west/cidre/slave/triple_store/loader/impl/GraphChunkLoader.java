@@ -133,6 +133,11 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 	}
 
 	@Override
+	public void processMessage(byte[] message) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public void run() {
 		try {
 			for (File graphChunk : receivedGraphChunks) {

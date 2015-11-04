@@ -18,6 +18,7 @@ import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
+import de.uni_koblenz.west.cidre.common.executor.WorkerManager;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
 import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
@@ -30,6 +31,11 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 
 	private final NetworkManager networkManager;
 
+	private final WorkerManager workerManager;
+
+	/**
+	 * Only listens on messages only from slaves! first slave has array index 0!
+	 */
 	private Map<Class<? extends MessageListener>, List<? extends MessageListener>[]> listeners;
 
 	public CidreSystem(Configuration conf, String[] currentAddress,
@@ -68,6 +74,8 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 		this.networkManager = networkManager;
 
 		listeners = new HashMap<>();
+
+		workerManager = new WorkerManager(conf, this, logger);
 
 		if (logger != null) {
 			logger.info(getClass().getSimpleName() + " started");
@@ -113,16 +121,54 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			messageListeners = new List[networkManager.getNumberOfSlaves()];
 			listeners.put(listenerType, messageListeners);
 		}
-		int slaveID = listener.getSlaveID() - 1;
-		if (messageListeners[slaveID] == null) {
-			messageListeners[slaveID] = new LinkedList<>();
+		int slaveID = listener.getSlaveID();
+		if (slaveID == Integer.MAX_VALUE) {
+			// register for listening on all slaves
+			for (int i = 0; i < messageListeners.length; i++) {
+				if (messageListeners[i] == null) {
+					messageListeners[i] = new LinkedList<>();
+				}
+				messageListeners[i].add(listener);
+			}
+		} else {
+			slaveID--;
+			if (messageListeners[slaveID] == null) {
+				messageListeners[slaveID] = new LinkedList<>();
+			}
+			messageListeners[slaveID].add(listener);
 		}
-		messageListeners[slaveID].add(listener);
 	}
 
 	@Override
 	public <V extends MessageListener> void notifyMessageListener(
 			Class<V> listenerType, int slaveID, byte[][] message) {
+		@SuppressWarnings("unchecked")
+		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
+		if (messageListeners == null) {
+			if (logger != null) {
+				logger.finer(
+						"No message listners of type " + listenerType.getName()
+								+ " registered. Discarding message.");
+			}
+			return;
+		}
+		slaveID--;
+		if (messageListeners[slaveID] == null) {
+			if (logger != null) {
+				logger.finer(
+						"No message listners of type " + listenerType.getName()
+								+ " registered for slave. Discarding message.");
+			}
+			return;
+		}
+		for (V listener : messageListeners[slaveID]) {
+			listener.processMessage(message);
+		}
+	}
+
+	@Override
+	public <V extends MessageListener> void notifyMessageListener(
+			Class<V> listenerType, int slaveID, byte[] message) {
 		@SuppressWarnings("unchecked")
 		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
 		if (messageListeners == null) {
@@ -155,26 +201,40 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 		if (messageListeners == null) {
 			return;
 		}
-		int slaveID = listener.getSlaveID() - 1;
-		if (messageListeners[slaveID] == null) {
-			return;
-		}
-		messageListeners[slaveID].remove(listener);
-		if (messageListeners[slaveID].isEmpty()) {
-			messageListeners[slaveID] = null;
+		int slaveID = listener.getSlaveID();
+		if (slaveID == Integer.MAX_VALUE) {
+			for (int i = 0; i < messageListeners.length; i++) {
+				if (messageListeners[i] == null) {
+					return;
+				}
+				messageListeners[i].remove(listener);
+				if (messageListeners[i].isEmpty()) {
+					messageListeners[i] = null;
+				}
+			}
+		} else {
+			slaveID--;
+			if (messageListeners[slaveID] == null) {
+				return;
+			}
+			messageListeners[slaveID].remove(listener);
+			if (messageListeners[slaveID].isEmpty()) {
+				messageListeners[slaveID] = null;
+			}
 		}
 		for (List<V> list : messageListeners) {
 			if (list != null) {
 				return;
 			}
 		}
-		// there are no registered listerners of this type any more
+		// there are no registered listeners of this type any more
 		listeners.remove(listenerType);
 	}
 
 	public void shutDown() {
-		networkManager.close();
 		shutDownInternal();
+		workerManager.close();
+		networkManager.close();
 	}
 
 	protected abstract void shutDownInternal();
