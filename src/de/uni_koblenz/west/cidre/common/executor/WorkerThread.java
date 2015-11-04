@@ -129,12 +129,12 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	}
 
 	private void rebalance() {
-		if (previous.id < next.id) {
-			rebalance(next);
-			rebalance(previous);
+		if (getPrevious().id < getNext().id) {
+			rebalance(getNext());
+			rebalance(getPrevious());
 		} else {
-			rebalance(previous);
-			rebalance(next);
+			rebalance(getPrevious());
+			rebalance(getNext());
 		}
 	}
 
