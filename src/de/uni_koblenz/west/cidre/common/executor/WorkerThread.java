@@ -1,7 +1,11 @@
 package de.uni_koblenz.west.cidre.common.executor;
 
 import java.io.Closeable;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NavigableSet;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
@@ -63,10 +67,14 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	}
 
 	public void addWorkerTask(WorkerTask task) {
-		boolean wasEmpty = tasks.isEmpty();
-		tasks.offer(task);
 		task.setUp(mappingCache, logger);
 		// TODO handle messagePassing
+		receiveTask(task);
+	}
+
+	private void receiveTask(WorkerTask task) {
+		boolean wasEmpty = tasks.isEmpty();
+		tasks.offer(task);
 		if (wasEmpty) {
 			start();
 		}
@@ -84,9 +92,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 						task.execute();
 					}
 					if (task.hasFinished()) {
-						// TODO remove message handling
-						iterator.remove();
-						task.close();
+						removeTask(iterator, task);
 					} else {
 						currentLoad += task.getCurrentTaskLoad();
 					}
@@ -96,8 +102,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 								e.getStackTrace()[0].getMethodName(), e);
 					}
 					// TODO remove message handling
-					iterator.remove();
-					task.close();
+					removeTask(iterator, task);
 					// TODO handle failed query processing
 				}
 			}
@@ -110,6 +115,17 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 				}
 			}
 		}
+	}
+
+	/**
+	 * <code>task = iterator.next()</code> has to be called in advance!
+	 * 
+	 * @param iterator
+	 * @param task
+	 */
+	private void removeTask(Iterator<WorkerTask> iterator, WorkerTask task) {
+		iterator.remove();
+		task.close();
 	}
 
 	private void rebalance() {
@@ -126,24 +142,80 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		if (id == other.id) {
 			return;
 		}
+		// only if this worker has more load then the other, tasks are shifted
 		synchronized (id > other.id ? this : other) {
 			synchronized (id > other.id ? other : this) {
 				// dead locks are avoided
+				long loadDiff = getCurrentLoad() - other.getCurrentLoad();
+				if (loadDiff <= Math
+						.ceil(unbalanceThreshold * getCurrentLoad())) {
+					// the worker threads are balanced or this worker has less
+					// work than the other
+					return;
+				}
+				Set<WorkerTask> tasksToShift = getTasksToShift(loadDiff / 2);
+				for (WorkerTask task : tasksToShift) {
+					tasks.remove(task);
+					currentLoad -= task.getCurrentTaskLoad();
+					other.receiveTask(task);
+				}
 			}
 		}
-		// TODO Auto-generated method stub
+	}
 
+	private Set<WorkerTask> getTasksToShift(long unbalancedLoad) {
+		if (unbalancedLoad <= 0 || !tasks.isEmpty()) {
+			return new HashSet<>();
+		}
+
+		// filter out useless tasks and sort tasks according to load
+		NavigableSet<WorkerTask> relevantTasks = new TreeSet<>(
+				new WorkerTaskComparator(true));
+		for (WorkerTask task : tasks) {
+			long load = task.getCurrentTaskLoad();
+			if (load == 0 || load > unbalancedLoad) {
+				continue;
+			}
+			relevantTasks.add(task);
+		}
+
+		// perform greedy algorithm to find minimal amount of tasks to shift to
+		// the other
+		Set<WorkerTask> tasksToShift = new HashSet<>();
+		long remainingLoad = unbalancedLoad;
+		for (WorkerTask task : relevantTasks.descendingSet()) {
+			long taskLoad = task.getCurrentTaskLoad();
+			if (taskLoad <= remainingLoad) {
+				tasksToShift.add(task);
+				remainingLoad -= taskLoad;
+				if (remainingLoad == 0) {
+					return tasksToShift;
+				}
+			}
+		}
+		return tasksToShift;
 	}
 
 	public void clear() {
-		// TODO Auto-generated method stub
-
+		terminateTasks();
 	}
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
+		if (isAlive()) {
+			interrupt();
+		}
+		terminateTasks();
+	}
 
+	private void terminateTasks() {
+		synchronized (this) {
+			Iterator<WorkerTask> iter = tasks.iterator();
+			while (iter.hasNext()) {
+				WorkerTask task = iter.next();
+				removeTask(iter, task);
+			}
+		}
 	}
 
 }

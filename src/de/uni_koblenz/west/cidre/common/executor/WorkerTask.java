@@ -30,8 +30,6 @@ public interface WorkerTask extends Closeable {
 
 	public boolean hasFinished();
 
-	public void clear();
-
 	@Override
 	public void close();
 

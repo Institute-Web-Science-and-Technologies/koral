@@ -44,7 +44,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 			workLoad[i] = executors[i].getCurrentLoad();
 		}
 		NavigableSet<WorkerTask> workingSet = new TreeSet<>(
-				new WorkerTaskComparator());
+				new WorkerTaskComparator(true));
 		workingSet.add(rootTask);
 		assignTasks(workLoad, workingSet);
 	}
@@ -57,7 +57,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		// process children first! i.e. proceeding tasks are finished before
 		// their succeeding tasks.
 		NavigableSet<WorkerTask> newWorkingSet = new TreeSet<>(
-				new WorkerTaskComparator());
+				new WorkerTaskComparator(true));
 		for (WorkerTask task : workingSet) {
 			newWorkingSet.addAll(task.gerPrecedingTasks());
 		}
