@@ -28,7 +28,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		this.logger = logger;
 		messageNotifier = notifier;
 		MessageReceiverListener receiver = new MessageReceiverListener(logger);
-		this.messageSender = new MessageSenderBuffer(messageSender, logger);
+		this.messageSender = new MessageSenderBuffer(conf.getNumberOfSlaves(),
+				conf.getMappingBundleSize(), messageSender, logger);
 		notifier.registerMessageListener(receiver.getClass(), receiver);
 		int availableCPUs = Runtime.getRuntime().availableProcessors() - 1;
 		if (availableCPUs < 1) {
@@ -54,7 +55,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	public void createQuery(byte[] receivedQUERY_CREATEMessage) {
 		// TODO Auto-generated method stub
-		messageSender.sendQueryCreated(0, receivedQUERY_CREATEMessage, 1);
+		// TODO messageSender.sendQueryCreated(0, receivedQUERY_CREATEMessage,
+		// 1);
 	}
 
 	private void initializeTaskTree(WorkerTask rootTask) {

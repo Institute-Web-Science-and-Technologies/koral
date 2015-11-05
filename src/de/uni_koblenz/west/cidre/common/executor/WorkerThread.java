@@ -129,6 +129,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 					}
 					removeTask(iterator, task);
 					messageSender.sendQueryTaskFailed(0, task.getID(),
+							task.getRootID(),
 							"Execution of task " + task + "failed. Cause:\n"
 									+ e.getClass().getName() + ": "
 									+ e.getMessage());

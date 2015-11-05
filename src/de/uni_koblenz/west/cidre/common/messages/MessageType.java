@@ -210,7 +210,7 @@ public enum MessageType {
 	/**
 	 * slave to slave, slave to master<br>
 	 * short slaveID<br>
-	 * long receiving query task id
+	 * long id of finished query task
 	 */
 	QUERY_TASK_FINISHED {
 		@Override

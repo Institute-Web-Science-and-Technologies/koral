@@ -47,6 +47,7 @@ public class NetworkManager implements Closeable, MessageSender {
 		}
 	}
 
+	@Override
 	public int getCurrentID() {
 		return currentID;
 	}
@@ -58,6 +59,7 @@ public class NetworkManager implements Closeable, MessageSender {
 		}
 	}
 
+	@Override
 	public void send(int receiver, byte[] message) {
 		Socket out = senders[receiver];
 		if (out != null) {
@@ -65,10 +67,25 @@ public class NetworkManager implements Closeable, MessageSender {
 		}
 	}
 
-	public void broadcastToAllOtherSlaves(byte[] message) {
-		for (int i = 1; i < senders.length; i++) {
-			if (i == currentID) {
-				// do not broadcast a message to oneself
+	public void sendToAll(byte[] message) {
+		sendToAll(message, Integer.MIN_VALUE, false);
+	}
+
+	@Override
+	public void sendToAllSlaves(byte[] message) {
+		sendToAll(message, Integer.MIN_VALUE, true);
+	}
+
+	@Override
+	public void sendToAllOtherSlaves(byte[] message) {
+		sendToAll(message, currentID, true);
+	}
+
+	private void sendToAll(byte[] message, int excludedSlave,
+			boolean excludeMaster) {
+		for (int i = excludeMaster ? 1 : 0; i < senders.length; i++) {
+			if (i == excludedSlave) {
+				// do not broadcast a message to excluded slave
 				continue;
 			}
 			Socket out = senders[i];

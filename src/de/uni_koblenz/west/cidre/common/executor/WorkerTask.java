@@ -41,6 +41,8 @@ public interface WorkerTask extends Closeable {
 
 	public long getCurrentTaskLoad();
 
+	public WorkerTask getParentTask();
+
 	public Set<WorkerTask> getPrecedingTasks();
 
 	/**

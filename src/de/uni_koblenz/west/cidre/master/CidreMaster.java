@@ -168,8 +168,8 @@ public class CidreMaster extends CidreSystem {
 
 	@Override
 	public void clearInternal() {
-		getNetworkManager().broadcastToAllOtherSlaves(
-				new byte[] { MessageType.CLEAR.getValue() });
+		getNetworkManager()
+				.sendToAllSlaves(new byte[] { MessageType.CLEAR.getValue() });
 		clientMessageProcessor.clear();
 		dictionary.clear();
 		statistics.clear();
