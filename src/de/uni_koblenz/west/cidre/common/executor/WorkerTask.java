@@ -5,10 +5,12 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSenderBuffer;
 
 public interface WorkerTask extends Closeable {
 
-	public boolean setUp(MappingRecycleCache recycleCache, Logger logger);
+	public boolean setUp(MessageSenderBuffer messageSender,
+			MappingRecycleCache recycleCache, Logger logger);
 
 	/**
 	 * <p>
@@ -59,5 +61,8 @@ public interface WorkerTask extends Closeable {
 
 	@Override
 	public void close();
+
+	@Override
+	public String toString();
 
 }

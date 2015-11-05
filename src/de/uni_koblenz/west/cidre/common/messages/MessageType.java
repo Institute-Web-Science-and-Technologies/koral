@@ -170,6 +170,7 @@ public enum MessageType {
 
 	/**
 	 * master to all slaves<br>
+	 * int query id<br>
 	 * byte[] query tree serialization
 	 */
 	QUERY_CREATE,

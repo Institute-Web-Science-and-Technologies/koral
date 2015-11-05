@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSenderBuffer;
 
 public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
@@ -19,6 +20,8 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	private final int id;
 
 	private final MappingRecycleCache mappingCache;
+
+	private final MessageSenderBuffer messageSender;
 
 	private final MessageReceiverListener receiver;
 
@@ -34,7 +37,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
 	public WorkerThread(int id, int sizeOfMappingRecycleCache,
 			double unbalanceThreshold, MessageReceiverListener receiver,
-			Logger logger) {
+			MessageSenderBuffer messageSender, Logger logger) {
 		this.logger = logger;
 		this.id = id;
 		setName("WorkerThread " + id);
@@ -43,6 +46,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		mappingCache = new MappingRecycleCache(sizeOfMappingRecycleCache);
 		this.unbalanceThreshold = unbalanceThreshold;
 		this.receiver = receiver;
+		this.messageSender = messageSender;
 	}
 
 	private WorkerThread getPrevious() {
@@ -70,7 +74,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	}
 
 	public void addWorkerTask(WorkerTask task) {
-		task.setUp(mappingCache, logger);
+		task.setUp(messageSender, mappingCache, logger);
 		receiver.register(task);
 		receiveTask(task);
 	}
@@ -124,7 +128,10 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 								e.getStackTrace()[0].getMethodName(), e);
 					}
 					removeTask(iterator, task);
-					// TODO handle failed query processing
+					messageSender.sendQueryTaskFailed(0, task.getID(),
+							"Execution of task " + task + "failed. Cause:\n"
+									+ e.getClass().getName() + ": "
+									+ e.getMessage());
 				}
 			}
 			this.currentLoad = currentLoad;
@@ -219,6 +226,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	}
 
 	public void clear() {
+		messageSender.clear();
 		terminateTasks();
 	}
 
@@ -227,6 +235,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		if (isAlive()) {
 			interrupt();
 		}
+		messageSender.close();
 		terminateTasks();
 		receiver.close();
 	}

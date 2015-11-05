@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSender;
+import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSenderBuffer;
 
 public class WorkerManager implements Closeable, AutoCloseable {
 
@@ -15,15 +17,18 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final MessageNotifier messageNotifier;
 
+	private final MessageSenderBuffer messageSender;
+
 	private final WorkerThread[] workers;
 
 	// TODO query ids and query task ids have to start with 0! reuse query ids!
 
 	public WorkerManager(Configuration conf, MessageNotifier notifier,
-			Logger logger) {
+			MessageSender messageSender, Logger logger) {
 		this.logger = logger;
 		messageNotifier = notifier;
 		MessageReceiverListener receiver = new MessageReceiverListener(logger);
+		this.messageSender = new MessageSenderBuffer(messageSender, logger);
 		notifier.registerMessageListener(receiver.getClass(), receiver);
 		int availableCPUs = Runtime.getRuntime().availableProcessors() - 1;
 		if (availableCPUs < 1) {
@@ -31,11 +36,10 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		}
 		workers = new WorkerThread[availableCPUs];
 		for (int i = 0; i < workers.length; i++) {
-			// TODO handle message notification
 			workers[i] = new WorkerThread(i,
 					conf.getSizeOfMappingRecycleCache(),
 					conf.getUnbalanceThresholdForWorkerThreads(), receiver,
-					logger);
+					this.messageSender, logger);
 			if (i > 0) {
 				workers[i - 1].setNext(workers[i]);
 				workers[i].setPrevious(workers[i - 1]);
@@ -48,9 +52,9 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		}
 	}
 
-	public void createQuery(byte[] receivedMessage) {
+	public void createQuery(byte[] receivedQUERY_CREATEMessage) {
 		// TODO Auto-generated method stub
-		// TODO send QUERY_CREATED
+		messageSender.sendQueryCreated(0, receivedQUERY_CREATEMessage, 1);
 	}
 
 	private void initializeTaskTree(WorkerTask rootTask) {
