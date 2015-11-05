@@ -2,6 +2,8 @@ package de.uni_koblenz.west.cidre.common.query.messagePassing;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
@@ -209,10 +211,40 @@ public class MessageReceiverListener implements MessageListener {
 		}
 	}
 
-	private synchronized void executeCommandOnAll(byte[] array,
-			int firstIDOfQueryID, int command) {
-		// TODO Auto-generated method stub
+	public synchronized Set<WorkerTask> getAllTasksOfQuery(byte[] array,
+			int firstIndexOfQueryID) {
+		Set<WorkerTask> result = new HashSet<>();
+		int dim1Index = array[firstIndexOfQueryID + 0] < 0
+				? 256 + array[firstIndexOfQueryID + 0]
+				: array[firstIndexOfQueryID + 0];
+		int dim2Index = array[firstIndexOfQueryID + 1] < 0
+				? 256 + array[firstIndexOfQueryID + 1]
+				: array[firstIndexOfQueryID + 1];
+		int dim3Index = array[firstIndexOfQueryID + 2] < 0
+				? 256 + array[firstIndexOfQueryID + 2]
+				: array[firstIndexOfQueryID + 2];
+		int dim4Index = array[firstIndexOfQueryID + 3] < 0
+				? 256 + array[firstIndexOfQueryID + 3]
+				: array[firstIndexOfQueryID + 3];
 
+		if (taskRegistry[dim1Index] == null
+				|| taskRegistry[dim1Index][dim2Index] == null
+				|| taskRegistry[dim1Index][dim2Index][dim3Index] == null
+				|| taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index] == null) {
+			return result;
+		}
+
+		for (int dim5Index = 0; dim5Index <= taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index].length; dim5Index++) {
+			if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index] != null) {
+				for (int dim6Index = 0; dim6Index <= taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index].length; dim6Index++) {
+					if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index] != null) {
+						result.add(
+								taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index]);
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 	private synchronized void unregisterTask(byte[] id, WorkerTask task) {

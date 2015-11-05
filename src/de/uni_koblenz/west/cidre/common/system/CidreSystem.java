@@ -84,6 +84,10 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 		return networkManager;
 	}
 
+	protected WorkerManager getWorkerManager() {
+		return workerManager;
+	}
+
 	@Override
 	public void run() {
 		try {
@@ -132,6 +136,13 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 		}
 	}
 
+	/**
+	 * 
+	 * @param listener
+	 * @param messageListeners
+	 * @param slaveIndex
+	 *            first slave has index 0!
+	 */
 	private void putListener(MessageListener listener,
 			MessageListener[][] messageListeners, int slaveIndex) {
 		if (messageListeners[slaveIndex] == null) {
@@ -243,6 +254,13 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 		listeners.remove(listenerType);
 	}
 
+	/**
+	 * 
+	 * @param listener
+	 * @param messageListeners
+	 * @param slaveIndex
+	 *            first slave has index 0!
+	 */
 	private void removeListener(MessageListener listener,
 			MessageListener[][] messageListeners, int slaveIndex) {
 		boolean containsElement = false;

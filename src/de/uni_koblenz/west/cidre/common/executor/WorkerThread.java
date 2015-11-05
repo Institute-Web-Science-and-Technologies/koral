@@ -83,6 +83,25 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		}
 	}
 
+	public void startQuery(byte[] receivedMessage) {
+		for (WorkerTask task : receiver.getAllTasksOfQuery(receivedMessage,
+				1)) {
+			task.start();
+		}
+	}
+
+	public void abortQuery(byte[] receivedMessage) {
+		Set<WorkerTask> queryTasks = receiver
+				.getAllTasksOfQuery(receivedMessage, 1);
+		Iterator<WorkerTask> iterator = tasks.iterator();
+		while (iterator.hasNext()) {
+			WorkerTask task = iterator.next();
+			if (queryTasks.contains(task)) {
+				removeTask(iterator, task);
+			}
+		}
+	}
+
 	@Override
 	public void run() {
 		while (!isInterrupted()) {

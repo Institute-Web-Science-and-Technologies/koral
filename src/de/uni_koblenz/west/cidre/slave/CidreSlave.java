@@ -103,13 +103,13 @@ public class CidreSlave extends CidreSystem {
 							slaveID);
 					break;
 				case QUERY_CREATE:
-					// TODO implement
+					getWorkerManager().createQuery(receivedMessage);
 					break;
 				case QUERY_START:
-					// TODO implement
+					getWorkerManager().startQuery(receivedMessage);
 					break;
 				case QUERY_ABORTION:
-					// TODO implement
+					getWorkerManager().abortQuery(receivedMessage);
 					break;
 				case QUERY_MAPPING_BATCH:
 				case QUERY_TASK_FINISHED:

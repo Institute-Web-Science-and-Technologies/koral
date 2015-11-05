@@ -15,46 +15,49 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final MessageNotifier messageNotifier;
 
-	private final WorkerThread[] executors;
+	private final WorkerThread[] workers;
 
 	// TODO query ids and query task ids have to start with 0! reuse query ids!
 
-	@SuppressWarnings("unchecked")
 	public WorkerManager(Configuration conf, MessageNotifier notifier,
 			Logger logger) {
 		this.logger = logger;
 		messageNotifier = notifier;
 		MessageReceiverListener receiver = new MessageReceiverListener(logger);
-		notifier.registerMessageListener(
-				(Class<MessageReceiverListener>) receiver.getClass(), receiver);
+		notifier.registerMessageListener(receiver.getClass(), receiver);
 		int availableCPUs = Runtime.getRuntime().availableProcessors() - 1;
 		if (availableCPUs < 1) {
 			availableCPUs = 1;
 		}
-		executors = new WorkerThread[availableCPUs];
-		for (int i = 0; i < executors.length; i++) {
+		workers = new WorkerThread[availableCPUs];
+		for (int i = 0; i < workers.length; i++) {
 			// TODO handle message notification
-			executors[i] = new WorkerThread(i,
+			workers[i] = new WorkerThread(i,
 					conf.getSizeOfMappingRecycleCache(),
 					conf.getUnbalanceThresholdForWorkerThreads(), receiver,
 					logger);
 			if (i > 0) {
-				executors[i - 1].setNext(executors[i]);
-				executors[i].setPrevious(executors[i - 1]);
+				workers[i - 1].setNext(workers[i]);
+				workers[i].setPrevious(workers[i - 1]);
 			}
 		}
-		executors[executors.length - 1].setNext(executors[0]);
-		executors[0].setPrevious(executors[executors.length - 1]);
+		workers[workers.length - 1].setNext(workers[0]);
+		workers[0].setPrevious(workers[workers.length - 1]);
 		if (this.logger != null) {
 			this.logger.info(availableCPUs + " executor threads started");
 		}
 	}
 
-	public void startTaskTree(WorkerTask rootTask) {
+	public void createQuery(byte[] receivedMessage) {
+		// TODO Auto-generated method stub
+		// TODO send QUERY_CREATED
+	}
+
+	private void initializeTaskTree(WorkerTask rootTask) {
 		// initialize current work load of WorkerThreads
-		long[] workLoad = new long[executors.length];
-		for (int i = 0; i < executors.length; i++) {
-			workLoad[i] = executors[i].getCurrentLoad();
+		long[] workLoad = new long[workers.length];
+		for (int i = 0; i < workers.length; i++) {
+			workLoad[i] = workers[i].getCurrentLoad();
 		}
 		NavigableSet<WorkerTask> workingSet = new TreeSet<>(
 				new WorkerTaskComparator(true));
@@ -78,7 +81,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		// now assign current tasks to WorkerThreads
 		for (WorkerTask task : workingSet.descendingSet()) {
 			int workerWithMinimalWorkload = findMinimal(estimatedWorkLoad);
-			executors[workerWithMinimalWorkload].addWorkerTask(task);
+			workers[workerWithMinimalWorkload].addWorkerTask(task);
 			estimatedWorkLoad[workerWithMinimalWorkload] += task
 					.getEstimatedTaskLoad();
 		}
@@ -96,27 +99,37 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		return currentMin;
 	}
 
+	public void startQuery(byte[] receivedMessage) {
+		for (WorkerThread worker : workers) {
+			worker.startQuery(receivedMessage);
+		}
+	}
+
+	public void abortQuery(byte[] receivedMessage) {
+		for (WorkerThread worker : workers) {
+			worker.abortQuery(receivedMessage);
+		}
+	}
+
 	public void clear() {
-		for (WorkerThread executor : executors) {
+		for (WorkerThread executor : workers) {
 			if (executor != null) {
 				executor.clear();
 			}
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void close() {
 		MessageReceiverListener receiver = null;
-		for (WorkerThread executor : executors) {
+		for (WorkerThread executor : workers) {
 			if (executor != null) {
 				executor.close();
 				receiver = executor.getReceiver();
 			}
 		}
 		if (receiver != null) {
-			messageNotifier.unregisterMessageListener(
-					(Class<MessageReceiverListener>) receiver.getClass(),
+			messageNotifier.unregisterMessageListener(receiver.getClass(),
 					receiver);
 		}
 	}
