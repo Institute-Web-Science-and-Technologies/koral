@@ -133,4 +133,8 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
 				.toString();
 	}
 
+	public String serializeMappingBundleSize(Configuration conf) {
+		return new Integer(conf.getMappingBundleSize()).toString();
+	}
+
 }

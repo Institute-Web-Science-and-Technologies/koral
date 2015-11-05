@@ -405,6 +405,17 @@ public class Configuration implements Configurable {
 		this.unbalanceThresholdForWorkerThreads = unbalanceThresholdForWorkerThreads;
 	}
 
+	@Property(name = "mappingBundleSize", description = "Before mappings are sent to another computer, they are bundled into one message. This number defines how many mappings are bundeled.")
+	private int mappingBundleSize = 100;
+
+	public int getMappingBundleSize() {
+		return mappingBundleSize;
+	}
+
+	public void setMappingBundleSize(int mappingBundleSize) {
+		this.mappingBundleSize = mappingBundleSize;
+	}
+
 	/*
 	 * serialization specific code
 	 */

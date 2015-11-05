@@ -238,4 +238,8 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
 				Double.parseDouble(threshold));
 	}
 
+	public void deserializeMappingBundleSize(Configuration conf, String size) {
+		conf.setMappingBundleSize(Integer.parseInt(size));
+	}
+
 }

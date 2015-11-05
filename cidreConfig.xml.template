@@ -146,4 +146,9 @@ WEAK_REFERENCE = instances are removed from the cache by the garbage collector, 
 		<description>This property defines how much the current workloads of the different WorkerThreads may differ, before the work is rebalanced.</description>
 		<value>0.1</value>
 	</property>
+	<property>
+		<name>mappingBundleSize</name>
+		<description>Before mappings are sent to another computer, they are bundled into one message. This number defines how many mappings are bundeled.</description>
+		<value>100</value>
+	</property>
 </config>
