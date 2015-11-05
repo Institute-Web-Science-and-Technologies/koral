@@ -2,8 +2,6 @@ package de.uni_koblenz.west.cidre.common.system;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,7 +34,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 	/**
 	 * Only listens on messages only from slaves! first slave has array index 0!
 	 */
-	private Map<Class<? extends MessageListener>, List<? extends MessageListener>[]> listeners;
+	private Map<Class<? extends MessageListener>, MessageListener[][]> listeners;
 
 	public CidreSystem(Configuration conf, String[] currentAddress,
 			NetworkManager networkManager) {
@@ -113,37 +111,54 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 	protected abstract void runOneIteration();
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public <V extends MessageListener> void registerMessageListener(
-			Class<V> listenerType, V listener) {
-		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
+	public void registerMessageListener(
+			Class<? extends MessageListener> listenerType,
+			MessageListener listener) {
+		MessageListener[][] messageListeners = listeners.get(listenerType);
 		if (messageListeners == null) {
-			messageListeners = new List[networkManager.getNumberOfSlaves()];
+			messageListeners = new MessageListener[networkManager
+					.getNumberOfSlaves()][];
 			listeners.put(listenerType, messageListeners);
 		}
 		int slaveID = listener.getSlaveID();
 		if (slaveID == Integer.MAX_VALUE) {
 			// register for listening on all slaves
 			for (int i = 0; i < messageListeners.length; i++) {
-				if (messageListeners[i] == null) {
-					messageListeners[i] = new LinkedList<>();
-				}
-				messageListeners[i].add(listener);
+				putListener(listener, messageListeners, i);
 			}
 		} else {
 			slaveID--;
-			if (messageListeners[slaveID] == null) {
-				messageListeners[slaveID] = new LinkedList<>();
-			}
-			messageListeners[slaveID].add(listener);
+			putListener(listener, messageListeners, slaveID);
 		}
 	}
 
+	private void putListener(MessageListener listener,
+			MessageListener[][] messageListeners, int slaveIndex) {
+		if (messageListeners[slaveIndex] == null) {
+			messageListeners[slaveIndex] = new MessageListener[1];
+		}
+		// find first free index
+		int insertIndex = 0;
+		while (insertIndex < messageListeners[slaveIndex].length
+				&& messageListeners[slaveIndex][insertIndex] != null) {
+			insertIndex++;
+		}
+		if (insertIndex == messageListeners[slaveIndex].length) {
+			// extend array
+			MessageListener[] newArray = new MessageListener[messageListeners[slaveIndex].length
+					+ 1];
+			System.arraycopy(messageListeners[slaveIndex], 0, newArray, 0,
+					messageListeners[slaveIndex].length);
+			messageListeners[slaveIndex] = newArray;
+		}
+		messageListeners[slaveIndex][insertIndex] = listener;
+	}
+
 	@Override
-	public <V extends MessageListener> void notifyMessageListener(
-			Class<V> listenerType, int slaveID, byte[][] message) {
-		@SuppressWarnings("unchecked")
-		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
+	public void notifyMessageListener(
+			Class<? extends MessageListener> listenerType, int slaveID,
+			byte[][] message) {
+		MessageListener[][] messageListeners = listeners.get(listenerType);
 		if (messageListeners == null) {
 			if (logger != null) {
 				logger.finer(
@@ -161,16 +176,18 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			}
 			return;
 		}
-		for (V listener : messageListeners[slaveID]) {
-			listener.processMessage(message);
+		for (MessageListener listener : messageListeners[slaveID]) {
+			if (listener != null) {
+				listener.processMessage(message);
+			}
 		}
 	}
 
 	@Override
-	public <V extends MessageListener> void notifyMessageListener(
-			Class<V> listenerType, int slaveID, byte[] message) {
-		@SuppressWarnings("unchecked")
-		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
+	public void notifyMessageListener(
+			Class<? extends MessageListener> listenerType, int slaveID,
+			byte[] message) {
+		MessageListener[][] messageListeners = listeners.get(listenerType);
 		if (messageListeners == null) {
 			if (logger != null) {
 				logger.finer(
@@ -188,28 +205,26 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			}
 			return;
 		}
-		for (V listener : messageListeners[slaveID]) {
-			listener.processMessage(message);
+		for (MessageListener listener : messageListeners[slaveID]) {
+			if (listener != null) {
+				listener.processMessage(message);
+			}
 		}
 	}
 
 	@Override
-	public <V extends MessageListener> void unregisterMessageListener(
-			Class<V> listenerType, V listener) {
-		@SuppressWarnings("unchecked")
-		List<V>[] messageListeners = (List<V>[]) listeners.get(listenerType);
+	public void unregisterMessageListener(
+			Class<? extends MessageListener> listenerType,
+			MessageListener listener) {
+		MessageListener[][] messageListeners = listeners.get(listenerType);
 		if (messageListeners == null) {
 			return;
 		}
 		int slaveID = listener.getSlaveID();
 		if (slaveID == Integer.MAX_VALUE) {
 			for (int i = 0; i < messageListeners.length; i++) {
-				if (messageListeners[i] == null) {
-					return;
-				}
-				messageListeners[i].remove(listener);
-				if (messageListeners[i].isEmpty()) {
-					messageListeners[i] = null;
+				if (messageListeners[i] != null) {
+					removeListener(listener, messageListeners, i);
 				}
 			}
 		} else {
@@ -217,18 +232,29 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			if (messageListeners[slaveID] == null) {
 				return;
 			}
-			messageListeners[slaveID].remove(listener);
-			if (messageListeners[slaveID].isEmpty()) {
-				messageListeners[slaveID] = null;
-			}
+			removeListener(listener, messageListeners, slaveID);
 		}
-		for (List<V> list : messageListeners) {
+		for (MessageListener[] list : messageListeners) {
 			if (list != null) {
 				return;
 			}
 		}
 		// there are no registered listeners of this type any more
 		listeners.remove(listenerType);
+	}
+
+	private void removeListener(MessageListener listener,
+			MessageListener[][] messageListeners, int slaveIndex) {
+		boolean containsElement = false;
+		for (int i = 0; i < messageListeners[slaveIndex].length; i++) {
+			if (messageListeners[slaveIndex][i] == listener) {
+				messageListeners[slaveIndex][i] = null;
+			}
+			containsElement |= messageListeners[slaveIndex][i] != null;
+		}
+		if (!containsElement) {
+			messageListeners[slaveIndex] = null;
+		}
 	}
 
 	public void shutDown() {
@@ -240,12 +266,14 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 	protected abstract void shutDownInternal();
 
 	public void clear() {
-		for (List<? extends MessageListener>[] value : listeners.values()) {
+		for (MessageListener[][] value : listeners.values()) {
 			if (value != null) {
-				for (List<? extends MessageListener> list : value) {
+				for (MessageListener[] list : value) {
 					if (list != null) {
 						for (MessageListener listener : list) {
-							listener.close();
+							if (listener != null) {
+								listener.close();
+							}
 						}
 					}
 				}
