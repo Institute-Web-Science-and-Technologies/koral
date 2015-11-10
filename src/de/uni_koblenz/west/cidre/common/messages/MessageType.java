@@ -197,8 +197,8 @@ public enum MessageType {
 	/**
 	 * slave to slave, slave to master<br>
 	 * short slaveID<br>
-	 * long receiving query task id<br>
-	 * byte[] (8 byte sender, mapping serialization)+
+	 * byte[] (8 byte receiving query task id, 8 byte sender task id, 1 byte
+	 * message type, mapping serialization)+
 	 */
 	QUERY_MAPPING_BATCH {
 		@Override

@@ -16,12 +16,31 @@ public class Mapping {
 
 	}
 
+	public void updateReceiver(long receiverTaskID) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void updateSender(long senderTaskID) {
+		// TODO Auto-generated method stub
+
+	}
+
 	public byte[] getByteArray() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public int getFirstIndexInByteArray() {
+	/**
+	 * @return index which represents the receiver task id of this individual
+	 *         mapping
+	 */
+	public int getFirstIndexOfMappingInByteArray() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public int getLengthOfMappingInByteArray() {
 		// TODO Auto-generated method stub
 		return 0;
 	}

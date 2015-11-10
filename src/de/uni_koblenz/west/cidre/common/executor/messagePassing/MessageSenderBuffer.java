@@ -18,8 +18,6 @@ public class MessageSenderBuffer {
 
 	private final Mapping[][] mappingBuffer;
 
-	private final long[][] receiverBuffer;
-
 	private final int[] nextIndex;
 
 	public MessageSenderBuffer(int numberOfSlaves, int bundleSize,
@@ -29,7 +27,6 @@ public class MessageSenderBuffer {
 		this.messageSender = messageSender;
 		this.localMessageReceiver = localMessageReceiver;
 		mappingBuffer = new Mapping[numberOfSlaves + 1][bundleSize];
-		receiverBuffer = new long[numberOfSlaves + 1][bundleSize];
 		nextIndex = new int[numberOfSlaves + 1];
 	}
 
@@ -41,13 +38,13 @@ public class MessageSenderBuffer {
 		messageSender.sendToAllSlaves(message.array());
 	}
 
-	public void sendQueryCreated(int receiver, long coordinatorID) {
+	public void sendQueryCreated(int receivingComputer, long coordinatorID) {
 		ByteBuffer message = ByteBuffer
 				.allocate(Byte.BYTES + Short.BYTES + Long.BYTES);
 		message.put(MessageType.QUERY_CREATED.getValue())
 				.putShort((short) messageSender.getCurrentID())
 				.putLong(coordinatorID);
-		messageSender.send(receiver, message.array());
+		messageSender.send(receivingComputer, message.array());
 	}
 
 	public void sendQueryStart(int queryID) {
@@ -58,12 +55,15 @@ public class MessageSenderBuffer {
 
 	public void sendQueryMapping(Mapping mapping, long senderTaskID,
 			long receiverTaskID, MappingRecycleCache mappingCache) {
+		mapping.updateReceiver(receiverTaskID);
+		mapping.updateSender(senderTaskID);
 		int receivingComputer = getComputerID(receiverTaskID);
 		if (receivingComputer == messageSender.getCurrentID()) {
 			// the receiver is on this computer
 			localMessageReceiver.receiveLocalMessage(senderTaskID,
 					receiverTaskID, mapping.getByteArray(),
-					mapping.getFirstIndexInByteArray());
+					mapping.getFirstIndexOfMappingInByteArray());
+			mappingCache.releaseMapping(mapping);
 		} else {
 			enqueue(receivingComputer, mapping, receiverTaskID, mappingCache);
 		}
@@ -107,29 +107,57 @@ public class MessageSenderBuffer {
 		}
 	}
 
-	private void sendBufferedMessages(int receiver,
+	private void sendBufferedMessages(int receivingComputer,
 			MappingRecycleCache mappingCache) {
-		synchronized (mappingBuffer[receiver]) {
-			// TODO if receiver is another computer
-			mappingCache.releaseMapping(null);
-			// TODO Auto-generated method stub
+		ByteBuffer buffer = null;
+		synchronized (mappingBuffer[receivingComputer]) {
+			// determine size of message
+			int sizeOfMessage = Byte.BYTES + Short.BYTES;
+			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
+				Mapping mapping = mappingBuffer[receivingComputer][i];
+				sizeOfMessage += mapping.getLengthOfMappingInByteArray();
+			}
+			// create message
+			buffer = ByteBuffer.allocate(sizeOfMessage);
+			buffer.put(MessageType.QUERY_MAPPING_BATCH.getValue())
+					.putShort((short) messageSender.getCurrentID());
+			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
+				Mapping mapping = mappingBuffer[receivingComputer][i];
+				buffer.put(mapping.getByteArray(),
+						mapping.getFirstIndexOfMappingInByteArray(),
+						mapping.getLengthOfMappingInByteArray());
+				mappingCache.releaseMapping(mapping);
+				mappingBuffer[receivingComputer][i] = null;
+			}
+			nextIndex[receivingComputer] = 0;
+		}
+		// send message
+		if (buffer != null) {
+			messageSender.send(receivingComputer, buffer.array());
 		}
 	}
 
 	private void enqueue(int receivingComputer, Mapping mapping,
 			long receiverTaskID, MappingRecycleCache mappingCache) {
-		if (isBufferFull(receivingComputer)) {
-			sendBufferedMessages(receivingComputer, mappingCache);
-		}
-		// TODO Auto-generated method stub
-		if (isBufferFull(receivingComputer)) {
-			sendBufferedMessages(receivingComputer, mappingCache);
+		synchronized (mappingBuffer[receivingComputer]) {
+			if (isBufferFull(receivingComputer)) {
+				sendBufferedMessages(receivingComputer, mappingCache);
+			}
+			mappingBuffer[receivingComputer][nextIndex[receivingComputer]++] = mapping;
+			if (isBufferFull(receivingComputer)) {
+				sendBufferedMessages(receivingComputer, mappingCache);
+			}
 		}
 	}
 
+	/**
+	 * Only call it within a synchronized block!
+	 * 
+	 * @param receivingComputer
+	 * @return
+	 */
 	private boolean isBufferFull(int receivingComputer) {
-		// TODO Auto-generated method stub
-		return false;
+		return nextIndex[receivingComputer] == mappingBuffer[receivingComputer].length;
 	}
 
 	public void sendQueryTaskFailed(int receiver, long controllerID,

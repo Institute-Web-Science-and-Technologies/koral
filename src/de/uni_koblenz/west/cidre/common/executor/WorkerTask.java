@@ -54,7 +54,8 @@ public interface WorkerTask extends Closeable {
 
 	public boolean hasInput();
 
-	public void enqueueMessage(long sender, byte[] message, int offset);
+	// TODO only enqueue individual mappings!
+	public void enqueueMessage(long sender, byte[] message, int firstIndex);
 
 	/**
 	 * Results may only be emitted, it {@link #start()} was called.

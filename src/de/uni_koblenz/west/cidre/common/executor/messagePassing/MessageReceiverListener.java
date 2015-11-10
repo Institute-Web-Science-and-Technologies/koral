@@ -95,7 +95,7 @@ public class MessageReceiverListener implements MessageListener {
 								+ receiver + " is not present.");
 			}
 		} else {
-			task.enqueueMessage(sender, message, 0);
+			task.enqueueMessage(sender, message, startIndexInMessage);
 		}
 	}
 
@@ -110,7 +110,7 @@ public class MessageReceiverListener implements MessageListener {
 
 	private synchronized void registerTask(byte[] id, WorkerTask task) {
 		// first dimension
-		int dim1Index = id[2] < 0 ? 256 + id[2] : id[2];
+		int dim1Index = id[2] & 0x00_00_00_ff;
 		if (taskRegistry == null) {
 			taskRegistry = new WorkerTask[dim1Index + 1][][][][][];
 		} else if (taskRegistry.length <= dim1Index) {
@@ -122,7 +122,7 @@ public class MessageReceiverListener implements MessageListener {
 		}
 
 		// second dimension
-		int dim2Index = id[3] < 0 ? 256 + id[3] : id[3];
+		int dim2Index = id[3] & 0x00_00_00_ff;
 		if (taskRegistry[dim1Index] == null) {
 			taskRegistry[dim1Index] = new WorkerTask[dim2Index + 1][][][][];
 		} else if (taskRegistry[dim1Index].length <= dim2Index) {
@@ -134,7 +134,7 @@ public class MessageReceiverListener implements MessageListener {
 		}
 
 		// third dimension
-		int dim3Index = id[4] < 0 ? 256 + id[4] : id[4];
+		int dim3Index = id[4] & 0x00_00_00_ff;
 		if (taskRegistry[dim1Index][dim2Index] == null) {
 			taskRegistry[dim1Index][dim2Index] = new WorkerTask[dim3Index
 					+ 1][][][];
@@ -146,7 +146,7 @@ public class MessageReceiverListener implements MessageListener {
 		}
 
 		// fourth dimension
-		int dim4Index = id[5] < 0 ? 256 + id[5] : id[5];
+		int dim4Index = id[5] & 0x00_00_00_ff;
 		if (taskRegistry[dim1Index][dim2Index][dim3Index] == null) {
 			taskRegistry[dim1Index][dim2Index][dim3Index] = new WorkerTask[dim4Index
 					+ 1][][];
@@ -159,7 +159,7 @@ public class MessageReceiverListener implements MessageListener {
 		}
 
 		// fifth dimension
-		int dim5Index = id[6] < 0 ? 256 + id[6] : id[6];
+		int dim5Index = id[6] & 0x00_00_00_ff;
 		if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index] == null) {
 			taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index] = new WorkerTask[dim5Index
 					+ 1][];
@@ -173,7 +173,7 @@ public class MessageReceiverListener implements MessageListener {
 		}
 
 		// sixth dimension
-		int dim6Index = id[7] < 0 ? 256 + id[7] : id[7];
+		int dim6Index = id[7] & 0x00_00_00_ff;
 		if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index] == null) {
 			taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index] = new WorkerTask[dim6Index
 					+ 1];
@@ -196,24 +196,12 @@ public class MessageReceiverListener implements MessageListener {
 	}
 
 	private WorkerTask getTask(byte[] array, int firstIndexOfReceiverID) {
-		int dim1Index = array[firstIndexOfReceiverID + 2] < 0
-				? 256 + array[firstIndexOfReceiverID + 2]
-				: array[firstIndexOfReceiverID + 2];
-		int dim2Index = array[firstIndexOfReceiverID + 3] < 0
-				? 256 + array[firstIndexOfReceiverID + 3]
-				: array[firstIndexOfReceiverID + 3];
-		int dim3Index = array[firstIndexOfReceiverID + 4] < 0
-				? 256 + array[firstIndexOfReceiverID + 4]
-				: array[firstIndexOfReceiverID + 4];
-		int dim4Index = array[firstIndexOfReceiverID + 5] < 0
-				? 256 + array[firstIndexOfReceiverID + 5]
-				: array[firstIndexOfReceiverID + 5];
-		int dim5Index = array[firstIndexOfReceiverID + 6] < 0
-				? 256 + array[firstIndexOfReceiverID + 6]
-				: array[firstIndexOfReceiverID + 6];
-		int dim6Index = array[firstIndexOfReceiverID + 7] < 0
-				? 256 + array[firstIndexOfReceiverID + 7]
-				: array[firstIndexOfReceiverID + 7];
+		int dim1Index = array[firstIndexOfReceiverID + 2] & 0x00_00_00_ff;
+		int dim2Index = array[firstIndexOfReceiverID + 3] & 0x00_00_00_ff;
+		int dim3Index = array[firstIndexOfReceiverID + 4] & 0x00_00_00_ff;
+		int dim4Index = array[firstIndexOfReceiverID + 5] & 0x00_00_00_ff;
+		int dim5Index = array[firstIndexOfReceiverID + 6] & 0x00_00_00_ff;
+		int dim6Index = array[firstIndexOfReceiverID + 7] & 0x00_00_00_ff;
 
 		return getTask(dim1Index, dim2Index, dim3Index, dim4Index, dim5Index,
 				dim6Index);
@@ -247,18 +235,10 @@ public class MessageReceiverListener implements MessageListener {
 	public synchronized Set<WorkerTask> getAllTasksOfQuery(byte[] array,
 			int firstIndexOfQueryID) {
 		Set<WorkerTask> result = new HashSet<>();
-		int dim1Index = array[firstIndexOfQueryID + 0] < 0
-				? 256 + array[firstIndexOfQueryID + 0]
-				: array[firstIndexOfQueryID + 0];
-		int dim2Index = array[firstIndexOfQueryID + 1] < 0
-				? 256 + array[firstIndexOfQueryID + 1]
-				: array[firstIndexOfQueryID + 1];
-		int dim3Index = array[firstIndexOfQueryID + 2] < 0
-				? 256 + array[firstIndexOfQueryID + 2]
-				: array[firstIndexOfQueryID + 2];
-		int dim4Index = array[firstIndexOfQueryID + 3] < 0
-				? 256 + array[firstIndexOfQueryID + 3]
-				: array[firstIndexOfQueryID + 3];
+		int dim1Index = array[firstIndexOfQueryID + 0] & 0x00_00_00_ff;
+		int dim2Index = array[firstIndexOfQueryID + 1] & 0x00_00_00_ff;
+		int dim3Index = array[firstIndexOfQueryID + 2] & 0x00_00_00_ff;
+		int dim4Index = array[firstIndexOfQueryID + 3] & 0x00_00_00_ff;
 
 		if (taskRegistry[dim1Index] == null
 				|| taskRegistry[dim1Index][dim2Index] == null
@@ -281,12 +261,12 @@ public class MessageReceiverListener implements MessageListener {
 	}
 
 	private synchronized void unregisterTask(byte[] id, WorkerTask task) {
-		int dim1Index = id[2] < 0 ? 256 + id[2] : id[2];
-		int dim2Index = id[3] < 0 ? 256 + id[3] : id[3];
-		int dim3Index = id[4] < 0 ? 256 + id[4] : id[4];
-		int dim4Index = id[5] < 0 ? 256 + id[5] : id[5];
-		int dim5Index = id[6] < 0 ? 256 + id[6] : id[6];
-		int dim6Index = id[7] < 0 ? 256 + id[7] : id[7];
+		int dim1Index = id[2] & 0x00_00_00_ff;
+		int dim2Index = id[3] & 0x00_00_00_ff;
+		int dim3Index = id[4] & 0x00_00_00_ff;
+		int dim4Index = id[5] & 0x00_00_00_ff;
+		int dim5Index = id[6] & 0x00_00_00_ff;
+		int dim6Index = id[7] & 0x00_00_00_ff;
 
 		if (taskRegistry[dim1Index] == null
 				|| taskRegistry[dim1Index][dim2Index] == null
