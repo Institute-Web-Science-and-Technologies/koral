@@ -6,7 +6,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -17,6 +16,7 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverL
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.common.system.ConfigurationException;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.slave.networkManager.SlaveNetworkManager;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
@@ -113,8 +113,8 @@ public class CidreSlave extends CidreSystem {
 					break;
 				case QUERY_MAPPING_BATCH:
 				case QUERY_TASK_FINISHED:
-					short senderID = ByteBuffer.wrap(receivedMessage, 1, 2)
-							.getShort();
+					short senderID = NumberConversion
+							.bytes2short(receivedMessage, 1);
 					notifyMessageListener(MessageReceiverListener.class,
 							senderID, receivedMessage);
 					break;

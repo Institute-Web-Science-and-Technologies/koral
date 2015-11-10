@@ -7,7 +7,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.util.Enumeration;
 
 import org.zeromq.ZContext;
@@ -20,6 +19,7 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 public class ClientConnection implements Closeable, FileSenderConnection {
 
@@ -172,12 +172,12 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			outSocket.sendMore(
 					new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() });
 			outSocket.sendMore(clientAddress);
-			outSocket.sendMore(ByteBuffer.allocate(4)
-					.putInt(fileChunk.getFileID()).array());
-			outSocket.sendMore(ByteBuffer.allocate(8)
-					.putLong(fileChunk.getSequenceNumber()).array());
-			outSocket.sendMore(ByteBuffer.allocate(8)
-					.putLong(fileChunk.getTotalNumberOfSequences()).array());
+			outSocket.sendMore(
+					NumberConversion.int2bytes(fileChunk.getFileID()));
+			outSocket.sendMore(
+					NumberConversion.long2bytes(fileChunk.getSequenceNumber()));
+			outSocket.sendMore(NumberConversion
+					.long2bytes(fileChunk.getTotalNumberOfSequences()));
 			outSocket.send(fileChunk.getContent());
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);

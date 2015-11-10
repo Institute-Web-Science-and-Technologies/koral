@@ -7,6 +7,7 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileChunk;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 public class MasterNetworkManager extends NetworkManager
 		implements FileSenderConnection {
@@ -19,18 +20,17 @@ public class MasterNetworkManager extends NetworkManager
 	public void sendFileChunk(int slaveID, FileChunk fileChunk) {
 		sendMore(slaveID,
 				new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() });
+		sendMore(slaveID, NumberConversion.int2bytes(fileChunk.getFileID()));
 		sendMore(slaveID,
-				ByteBuffer.allocate(4).putInt(fileChunk.getFileID()).array());
-		sendMore(slaveID, ByteBuffer.allocate(8)
-				.putLong(fileChunk.getSequenceNumber()).array());
-		sendMore(slaveID, ByteBuffer.allocate(8)
-				.putLong(fileChunk.getTotalNumberOfSequences()).array());
+				NumberConversion.long2bytes(fileChunk.getSequenceNumber()));
+		sendMore(slaveID, NumberConversion
+				.long2bytes(fileChunk.getTotalNumberOfSequences()));
 		send(slaveID, fileChunk.getContent());
 	}
 
 	@Override
 	public void sendFileLength(int slaveID, long totalNumberOfFileChunks) {
-		byte[] message = ByteBuffer.allocate(9)
+		byte[] message = ByteBuffer.allocate(Byte.BYTES + Long.BYTES)
 				.put(MessageType.START_FILE_TRANSFER.getValue())
 				.putLong(totalNumberOfFileChunks).array();
 		send(slaveID, message);

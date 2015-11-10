@@ -3,56 +3,58 @@ package de.uni_koblenz.west.cidre.slave.triple_store.impl;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+
 public enum IndexType {
 
 	SPO {
 		@Override
 		public long getSubject(byte[] triple) {
-			return ByteBuffer.wrap(triple, 0, 8).getLong();
+			return NumberConversion.bytes2long(triple, 0);
 		}
 
 		@Override
 		public long getProperty(byte[] triple) {
-			return ByteBuffer.wrap(triple, 8, 16).getLong();
+			return NumberConversion.bytes2long(triple, 8);
 		}
 
 		@Override
 		public long getObject(byte[] triple) {
-			return ByteBuffer.wrap(triple, 16, 24).getLong();
+			return NumberConversion.bytes2long(triple, 16);
 		}
 	},
 
 	OSP {
 		@Override
 		public long getSubject(byte[] triple) {
-			return ByteBuffer.wrap(triple, 8, 16).getLong();
+			return NumberConversion.bytes2long(triple, 8);
 		}
 
 		@Override
 		public long getProperty(byte[] triple) {
-			return ByteBuffer.wrap(triple, 16, 24).getLong();
+			return NumberConversion.bytes2long(triple, 16);
 		}
 
 		@Override
 		public long getObject(byte[] triple) {
-			return ByteBuffer.wrap(triple, 0, 8).getLong();
+			return NumberConversion.bytes2long(triple, 0);
 		}
 	},
 
 	POS {
 		@Override
 		public long getSubject(byte[] triple) {
-			return ByteBuffer.wrap(triple, 16, 24).getLong();
+			return NumberConversion.bytes2long(triple, 16);
 		}
 
 		@Override
 		public long getProperty(byte[] triple) {
-			return ByteBuffer.wrap(triple, 0, 8).getLong();
+			return NumberConversion.bytes2long(triple, 0);
 		}
 
 		@Override
 		public long getObject(byte[] triple) {
-			return ByteBuffer.wrap(triple, 8, 16).getLong();
+			return NumberConversion.bytes2long(triple, 8);
 		}
 	};
 

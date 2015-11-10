@@ -2,7 +2,6 @@ package de.uni_koblenz.west.cidre.client;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -23,6 +22,7 @@ import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
 public class CidreClient {
@@ -46,10 +46,9 @@ public class CidreClient {
 		}
 		byte[][] args = new byte[4 + files.size()][];
 		args[0] = new byte[] { (byte) (args.length - 1) };
-		args[1] = ByteBuffer.allocate(4).putInt(graphCover.ordinal()).array();
-		args[2] = ByteBuffer.allocate(4).putInt(nHopReplicationPathLength)
-				.array();
-		args[3] = ByteBuffer.allocate(4).putInt(files.size()).array();
+		args[1] = NumberConversion.int2bytes(graphCover.ordinal());
+		args[2] = NumberConversion.int2bytes(nHopReplicationPathLength);
+		args[3] = NumberConversion.int2bytes(files.size());
 		fillWithFileEndings(args, 4, files);
 		connection.sendCommand("load", args);
 
@@ -58,8 +57,8 @@ public class CidreClient {
 			while (response != null) {
 				MessageType mtype = MessageType.valueOf(response[0][0]);
 				if (mtype == MessageType.FILE_CHUNK_REQUEST) {
-					int fileID = ByteBuffer.wrap(response[0], 1, 4).getInt();
-					long chunkID = ByteBuffer.wrap(response[0], 5, 8).getLong();
+					int fileID = NumberConversion.bytes2int(response[0], 1);
+					long chunkID = NumberConversion.bytes2long(response[0], 5);
 					FileChunk fileChunk = sender.sendFileChunk(0, fileID,
 							chunkID);
 					// some output for user

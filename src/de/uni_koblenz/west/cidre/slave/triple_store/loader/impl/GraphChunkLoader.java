@@ -3,7 +3,6 @@ package de.uni_koblenz.west.cidre.slave.triple_store.loader.impl;
 import java.io.File;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -12,6 +11,7 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiverConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 
@@ -67,8 +67,8 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 				mType = MessageType.valueOf(message[0][0]);
 				switch (mType) {
 				case START_FILE_TRANSFER:
-					long totalNumberOfChunks = ByteBuffer.wrap(message[1])
-							.getLong();
+					long totalNumberOfChunks = NumberConversion
+							.bytes2long(message[1]);
 					if (totalNumberOfChunks < FileReceiver.NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS) {
 						receiver.adjustMaximalNumberOfParallelRequests(
 								(int) totalNumberOfChunks);
@@ -76,9 +76,10 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 					receiver.requestFiles();
 					break;
 				case FILE_CHUNK_RESPONSE:
-					int fileID = ByteBuffer.wrap(message[1]).getInt();
-					long chunkID = ByteBuffer.wrap(message[2]).getLong();
-					totalNumberOfChunks = ByteBuffer.wrap(message[3]).getLong();
+					int fileID = NumberConversion.bytes2int(message[1]);
+					long chunkID = NumberConversion.bytes2long(message[2]);
+					totalNumberOfChunks = NumberConversion
+							.bytes2long(message[3]);
 					byte[] chunkContent = message[4];
 					try {
 						receiver.receiveFileChunk(fileID, chunkID,

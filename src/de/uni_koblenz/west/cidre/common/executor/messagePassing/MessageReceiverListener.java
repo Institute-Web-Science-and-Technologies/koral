@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * query ID and node ID should start with 0!
@@ -45,18 +46,20 @@ public class MessageReceiverListener implements MessageListener {
 			messageType = MessageType.valueOf(message[0]);
 			switch (messageType) {
 			case QUERY_MAPPING_BATCH:
+				// TODO implement as done by sender
+				break;
 			case QUERY_TASK_FINISHED:
 				WorkerTask task = getTask(message, 3);
 				if (task == null) {
 					if (logger != null) {
-						long receiver = ByteBuffer.wrap(message, 3, 8)
-								.getLong();
+						long receiver = NumberConversion.bytes2long(message, 3);
 						logger.info("Discarding a " + messageType.name()
 								+ " message because the receiving task "
 								+ receiver + " is not present.");
 					}
 				} else {
-					task.enqueueMessage(message);
+					task.enqueueMessage(NumberConversion.bytes2long(message,
+							message.length - Long.BYTES), message, 0);
 				}
 				break;
 			default:
@@ -82,8 +85,22 @@ public class MessageReceiverListener implements MessageListener {
 		}
 	}
 
+	public void receiveLocalMessage(long sender, long receiver, byte[] message,
+			int startIndexInMessage) {
+		WorkerTask task = getTask(receiver);
+		if (task == null) {
+			if (logger != null) {
+				logger.info(
+						"Discarding a local message because the receiving task "
+								+ receiver + " is not present.");
+			}
+		} else {
+			task.enqueueMessage(sender, message, 0);
+		}
+	}
+
 	public void unregister(WorkerTask task) {
-		byte[] id = ByteBuffer.allocate(8).putLong(task.getID()).array();
+		byte[] id = NumberConversion.long2bytes(task.getID());
 		unregisterTask(id, task);
 	}
 
@@ -178,8 +195,7 @@ public class MessageReceiverListener implements MessageListener {
 		}
 	}
 
-	private synchronized WorkerTask getTask(byte[] array,
-			int firstIndexOfReceiverID) {
+	private WorkerTask getTask(byte[] array, int firstIndexOfReceiverID) {
 		int dim1Index = array[firstIndexOfReceiverID + 2] < 0
 				? 256 + array[firstIndexOfReceiverID + 2]
 				: array[firstIndexOfReceiverID + 2];
@@ -199,6 +215,23 @@ public class MessageReceiverListener implements MessageListener {
 				? 256 + array[firstIndexOfReceiverID + 7]
 				: array[firstIndexOfReceiverID + 7];
 
+		return getTask(dim1Index, dim2Index, dim3Index, dim4Index, dim5Index,
+				dim6Index);
+	}
+
+	private WorkerTask getTask(long receiver) {
+		int dim1Index = (int) ((receiver << (2 * 8)) >>> (7 * 8));
+		int dim2Index = (int) ((receiver << (3 * 8)) >>> (7 * 8));
+		int dim3Index = (int) ((receiver << (4 * 8)) >>> (7 * 8));
+		int dim4Index = (int) ((receiver << (5 * 8)) >>> (7 * 8));
+		int dim5Index = (int) ((receiver << (6 * 8)) >>> (7 * 8));
+		int dim6Index = (int) ((receiver << (7 * 8)) >>> (7 * 8));
+		return getTask(dim1Index, dim2Index, dim3Index, dim4Index, dim5Index,
+				dim6Index);
+	}
+
+	private synchronized WorkerTask getTask(int dim1Index, int dim2Index,
+			int dim3Index, int dim4Index, int dim5Index, int dim6Index) {
 		if (taskRegistry[dim1Index] == null
 				|| taskRegistry[dim1Index][dim2Index] == null
 				|| taskRegistry[dim1Index][dim2Index][dim3Index] == null

@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.BitSet;
@@ -21,6 +20,7 @@ import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sparql.core.Quad;
 
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
@@ -116,9 +116,14 @@ public class HashCoverCreator implements GraphCoverCreator {
 		}
 		int result = 0;
 		for (int i = 0; i < hash.length; i += 4) {
-			result ^= ByteBuffer
-					.wrap(hash, i, i + 4 < hash.length ? 4 : hash.length - i)
-					.getInt();
+			if (i + 3 < hash.length) {
+				result ^= NumberConversion.bytes2int(hash, i);
+			} else {
+				while (i < hash.length) {
+					result ^= hash[i];
+					i++;
+				}
+			}
 		}
 		return result;
 	}

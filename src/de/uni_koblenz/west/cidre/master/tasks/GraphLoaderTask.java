@@ -3,7 +3,6 @@ package de.uni_koblenz.west.cidre.master.tasks;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -14,6 +13,7 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
@@ -103,10 +103,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
 					"Loading a graph requires at least 4 arguments, but received only "
 							+ args.length + " arguments.");
 		}
-		CoverStrategyType coverStrategy = CoverStrategyType.values()[ByteBuffer
-				.wrap(args[0]).getInt()];
-		int replicationPathLength = ByteBuffer.wrap(args[1]).getInt();
-		int numberOfFiles = ByteBuffer.wrap(args[2]).getInt();
+		CoverStrategyType coverStrategy = CoverStrategyType
+				.values()[NumberConversion.bytes2int(args[0])];
+		int replicationPathLength = NumberConversion.bytes2int(args[1]);
+		int numberOfFiles = NumberConversion.bytes2int(args[2]);
 		loadGraph(coverStrategy, replicationPathLength, numberOfGraphChunks,
 				numberOfFiles, getFileExtensions(args, 3),
 				fileSenderConnection);

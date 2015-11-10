@@ -198,7 +198,7 @@ public enum MessageType {
 	 * slave to slave, slave to master<br>
 	 * short slaveID<br>
 	 * long receiving query task id<br>
-	 * byte[] mapping serialization
+	 * byte[] (8 byte sender, mapping serialization)+
 	 */
 	QUERY_MAPPING_BATCH {
 		@Override
@@ -208,9 +208,18 @@ public enum MessageType {
 	},
 
 	/**
-	 * slave to slave, slave to master<br>
+	 * <p>
+	 * slave to master<br>
+	 * short slaveID<br>
+	 * long id of coordinator task<br>
+	 * long id of finished query task
+	 * </p>
+	 * 
+	 * <p>
+	 * slave to slave<br>
 	 * short slaveID<br>
 	 * long id of finished query task
+	 * </p>
 	 */
 	QUERY_TASK_FINISHED {
 		@Override
@@ -223,7 +232,7 @@ public enum MessageType {
 	 * slave to master<br>
 	 * short slaveID<br>
 	 * long receiving query task id<br>
-	 * String error message
+	 * byte[] error message
 	 */
 	QUERY_TASK_FAILED {
 		@Override

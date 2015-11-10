@@ -128,14 +128,15 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 								e.getStackTrace()[0].getMethodName(), e);
 					}
 					removeTask(iterator, task);
-					messageSender.sendQueryTaskFailed(0, task.getID(),
-							task.getRootID(),
+					messageSender.sendQueryTaskFailed(0,
+							task.getCoordinatorID(),
 							"Execution of task " + task + "failed. Cause:\n"
 									+ e.getClass().getName() + ": "
 									+ e.getMessage());
 				}
 			}
 			this.currentLoad = currentLoad;
+			messageSender.sendAllBufferedMessages(mappingCache);
 			rebalance();
 			if (tasks.isEmpty()) {
 				try {
@@ -236,7 +237,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		if (isAlive()) {
 			interrupt();
 		}
-		messageSender.close();
+		messageSender.close(mappingCache);
 		terminateTasks();
 		receiver.close();
 	}

@@ -2,7 +2,6 @@ package de.uni_koblenz.west.cidre.master.client_manager;
 
 import java.io.Closeable;
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,6 +11,7 @@ import java.util.regex.Pattern;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.CidreMaster;
 import de.uni_koblenz.west.cidre.master.tasks.GraphLoaderTask;
 
@@ -279,7 +279,7 @@ public class ClientMessageProcessor
 			}
 			return;
 		}
-		int fileID = ByteBuffer.wrap(buffer).getInt();
+		int fileID = NumberConversion.bytes2int(buffer);
 
 		buffer = clientConnections.receive(true);
 		if (buffer == null) {
@@ -289,7 +289,7 @@ public class ClientMessageProcessor
 			}
 			return;
 		}
-		long chunkID = ByteBuffer.wrap(buffer).getLong();
+		long chunkID = NumberConversion.bytes2long(buffer);
 
 		buffer = clientConnections.receive(true);
 		if (buffer == null || buffer.length != 8) {
@@ -299,7 +299,7 @@ public class ClientMessageProcessor
 			}
 			return;
 		}
-		long totalNumberOfChunks = ByteBuffer.wrap(buffer).getLong();
+		long totalNumberOfChunks = NumberConversion.bytes2long(buffer);
 
 		buffer = clientConnections.receive(true);
 		if (buffer == null) {

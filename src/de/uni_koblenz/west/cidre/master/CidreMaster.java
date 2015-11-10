@@ -1,7 +1,6 @@
 package de.uni_koblenz.west.cidre.master;
 
 import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
@@ -13,6 +12,7 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverL
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientMessageProcessor;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
@@ -110,7 +110,7 @@ public class CidreMaster extends CidreSystem {
 				message[3] = new byte[8];
 				System.arraycopy(receivedMessage, 7, message[3], 0,
 						message[3].length);
-				short slaveID = ByteBuffer.wrap(message[1]).getShort();
+				short slaveID = NumberConversion.bytes2short(message[1]);
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);
 				break;
@@ -120,7 +120,7 @@ public class CidreMaster extends CidreSystem {
 				message[1] = new byte[2];
 				System.arraycopy(receivedMessage, 1, message[1], 0,
 						message[1].length);
-				slaveID = ByteBuffer.wrap(message[1]).getShort();
+				slaveID = NumberConversion.bytes2short(message[1]);
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);
 				break;
@@ -130,7 +130,7 @@ public class CidreMaster extends CidreSystem {
 				message[1] = Arrays.copyOfRange(receivedMessage, 1, 3);
 				message[2] = Arrays.copyOfRange(receivedMessage, 3,
 						receivedMessage.length);
-				slaveID = ByteBuffer.wrap(message[1]).getShort();
+				slaveID = NumberConversion.bytes2short(message[1]);
 				notifyMessageListener(messageType.getListenerType(), slaveID,
 						message);
 				break;
@@ -138,8 +138,8 @@ public class CidreMaster extends CidreSystem {
 			case QUERY_MAPPING_BATCH:
 			case QUERY_TASK_FINISHED:
 			case QUERY_TASK_FAILED:
-				short senderID = ByteBuffer.wrap(receivedMessage, 1, 2)
-						.getShort();
+				short senderID = NumberConversion.bytes2short(receivedMessage,
+						1);
 				notifyMessageListener(MessageReceiverListener.class, senderID,
 						receivedMessage);
 				break;

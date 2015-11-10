@@ -1,7 +1,6 @@
 package de.uni_koblenz.west.cidre.master.client_manager;
 
 import java.io.Closeable;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +16,7 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileChunk;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiverConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 public class ClientConnectionManager
 		implements Closeable, FileReceiverConnection {
@@ -160,13 +160,10 @@ public class ClientConnectionManager
 
 	@Override
 	public void requestFileChunk(int clientID, int fileID, FileChunk chunk) {
-		byte[] request = new byte[1 + 4 + 8];
+		byte[] request = new byte[Byte.BYTES + Integer.BYTES + Long.BYTES];
 		request[0] = MessageType.FILE_CHUNK_REQUEST.getValue();
-		byte[] fileIDBytes = ByteBuffer.allocate(4).putInt(fileID).array();
-		System.arraycopy(fileIDBytes, 0, request, 1, fileIDBytes.length);
-		byte[] chunkID = ByteBuffer.allocate(8)
-				.putLong(chunk.getSequenceNumber()).array();
-		System.arraycopy(chunkID, 0, request, 5, chunkID.length);
+		NumberConversion.int2bytes(fileID, request, 1);
+		NumberConversion.long2bytes(chunk.getSequenceNumber(), request, 5);
 		send(clientID, request);
 		chunk.setRequestTime(System.currentTimeMillis());
 	}

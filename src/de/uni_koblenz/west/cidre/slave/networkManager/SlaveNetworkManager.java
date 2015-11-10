@@ -18,7 +18,8 @@ public class SlaveNetworkManager extends NetworkManager
 
 	@Override
 	public void requestFileChunk(int clientID, int fileID, FileChunk chunk) {
-		byte[] request = ByteBuffer.allocate(1 + 2 + 4 + 8)
+		byte[] request = ByteBuffer
+				.allocate(Byte.BYTES + Short.BYTES + Integer.BYTES + Long.BYTES)
 				.put(MessageType.FILE_CHUNK_REQUEST.getValue())
 				.putShort((short) clientID).putInt(fileID)
 				.putLong(chunk.getSequenceNumber()).array();
@@ -28,7 +29,7 @@ public class SlaveNetworkManager extends NetworkManager
 
 	@Override
 	public void sendFinish(int clientID) {
-		byte[] message = ByteBuffer.allocate(3)
+		byte[] message = ByteBuffer.allocate(Byte.BYTES + Short.BYTES)
 				.put(MessageType.GRAPH_LOADING_COMPLETE.getValue())
 				.putShort((short) clientID).array();
 		send(0, message);
@@ -41,7 +42,8 @@ public class SlaveNetworkManager extends NetworkManager
 				"Graph loading failed on slave " + slaveID + ". Cause: "
 						+ message,
 				null);
-		byte[] messageB = ByteBuffer.allocate(2 + messageBytes.length)
+		byte[] messageB = ByteBuffer
+				.allocate(Byte.BYTES + Short.BYTES + messageBytes.length - 1)
 				.put(messageBytes[0]).putShort((short) slaveID)
 				.put(messageBytes, 1, messageBytes.length - 1).array();
 		send(0, messageB);

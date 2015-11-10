@@ -2,13 +2,13 @@ package de.uni_koblenz.west.cidre.master.networkManager.impl;
 
 import java.io.File;
 import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSender;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
 
 public class FileChunkRequestProcessor implements FileChunkRequestListener {
@@ -52,13 +52,13 @@ public class FileChunkRequestProcessor implements FileChunkRequestListener {
 				isGraphLoadingComplete = true;
 				break;
 			case FILE_CHUNK_REQUEST:
-				short slaveID = ByteBuffer.wrap(message[1]).getShort();
-				int fileID = ByteBuffer.wrap(message[2]).getInt();
-				long chunkID = ByteBuffer.wrap(message[3]).getLong();
+				short slaveID = NumberConversion.bytes2short(message[1]);
+				int fileID = NumberConversion.bytes2int(message[2]);
+				long chunkID = NumberConversion.bytes2long(message[3]);
 				fileSender.sendFileChunk(slaveID, fileID, chunkID);
 				break;
 			case GRAPH_LOADING_FAILED:
-				slaveID = ByteBuffer.wrap(message[1]).getShort();
+				slaveID = NumberConversion.bytes2short(message[1]);
 				errorMessage = MessageUtils.convertToString(message[2], null);
 				break;
 			default:

@@ -16,4 +16,14 @@ public class Mapping {
 
 	}
 
+	public byte[] getByteArray() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public int getFirstIndexInByteArray() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }

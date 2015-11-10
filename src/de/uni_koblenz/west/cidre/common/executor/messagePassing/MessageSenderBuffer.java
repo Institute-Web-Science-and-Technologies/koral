@@ -1,6 +1,6 @@
 package de.uni_koblenz.west.cidre.common.executor.messagePassing;
 
-import java.io.Closeable;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
@@ -8,112 +8,170 @@ import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
-public class MessageSenderBuffer implements Closeable {
+public class MessageSenderBuffer {
 
 	private final Logger logger;
 
 	private final MessageSender messageSender;
 
-	private final Mapping[][] buffer;
+	private final MessageReceiverListener localMessageReceiver;
+
+	private final Mapping[][] mappingBuffer;
+
+	private final long[][] receiverBuffer;
 
 	private final int[] nextIndex;
 
 	public MessageSenderBuffer(int numberOfSlaves, int bundleSize,
-			MessageSender messageSender, Logger logger) {
+			MessageSender messageSender,
+			MessageReceiverListener localMessageReceiver, Logger logger) {
 		this.logger = logger;
 		this.messageSender = messageSender;
-		buffer = new Mapping[numberOfSlaves + 1][bundleSize];
+		this.localMessageReceiver = localMessageReceiver;
+		mappingBuffer = new Mapping[numberOfSlaves + 1][bundleSize];
+		receiverBuffer = new long[numberOfSlaves + 1][bundleSize];
 		nextIndex = new int[numberOfSlaves + 1];
 	}
 
 	public void sendQueryCreate(int queryId, byte[] queryTree) {
-		ByteBuffer message = ByteBuffer.allocate(queryTree.length + 5);
+		ByteBuffer message = ByteBuffer
+				.allocate(Byte.BYTES + Integer.BYTES + queryTree.length);
 		message.put(MessageType.QUERY_CREATE.getValue()).putInt(queryId)
 				.put(queryTree);
 		messageSender.sendToAllSlaves(message.array());
 	}
 
-	public void sendQueryCreated(int receiver, long rootTaskID) {
-		ByteBuffer message = ByteBuffer.allocate(11);
+	public void sendQueryCreated(int receiver, long coordinatorID) {
+		ByteBuffer message = ByteBuffer
+				.allocate(Byte.BYTES + Short.BYTES + Long.BYTES);
 		message.put(MessageType.QUERY_CREATED.getValue())
 				.putShort((short) messageSender.getCurrentID())
-				.putLong(rootTaskID);
+				.putLong(coordinatorID);
 		messageSender.send(receiver, message.array());
 	}
 
 	public void sendQueryStart(int queryID) {
-		ByteBuffer message = ByteBuffer.allocate(5);
+		ByteBuffer message = ByteBuffer.allocate(Byte.BYTES + Integer.BYTES);
 		message.put(MessageType.QUERY_CREATE.getValue()).putInt(queryID);
 		messageSender.sendToAllSlaves(message.array());
 	}
 
-	public void sendQueryMapping(Mapping mapping, byte[] receiverTaskID,
-			int receiverTaskIDOffset, MappingRecycleCache mappingCache) {
-
-		// TODO if receiver is another computer
-		mappingCache.releaseMapping(mapping);
+	public void sendQueryMapping(Mapping mapping, long senderTaskID,
+			long receiverTaskID, MappingRecycleCache mappingCache) {
+		int receivingComputer = getComputerID(receiverTaskID);
+		if (receivingComputer == messageSender.getCurrentID()) {
+			// the receiver is on this computer
+			localMessageReceiver.receiveLocalMessage(senderTaskID,
+					receiverTaskID, mapping.getByteArray(),
+					mapping.getFirstIndexInByteArray());
+		} else {
+			enqueue(receivingComputer, mapping, receiverTaskID, mappingCache);
+		}
 	}
 
 	/**
 	 * Broadcasts the finish message to all instances of this query task on the
-	 * other computers. If the parent task is the root task, it is also sent to
-	 * the root
+	 * other computers. If it is the root, the coordinator is informed
+	 * additionally.
 	 * 
 	 * @param finishedTaskID
-	 * @param parentTaskID
-	 * @param rootID
+	 * @param isRoot
+	 * @param coordinatorID
 	 */
-	public void sendQueryTaskFinished(long finishedTaskID, long parentTaskID,
-			long rootID) {
-		sendAllBufferedMessages();
-		ByteBuffer message = ByteBuffer.allocate(11);
+	public void sendQueryTaskFinished(long finishedTaskID, boolean isRoot,
+			long coordinatorID, MappingRecycleCache mappingCache) {
+		sendAllBufferedMessages(mappingCache);
+		ByteBuffer message = ByteBuffer
+				.allocate(Byte.BYTES + Short.BYTES + Long.BYTES);
 		message.put(MessageType.QUERY_TASK_FINISHED.getValue())
 				.putShort((short) messageSender.getCurrentID())
 				.putLong(finishedTaskID);
 		messageSender.sendToAllOtherSlaves(message.array());
-		if (parentTaskID == rootID) {
-			messageSender.send(getComputerID(rootID), message.array());
+		if (isRoot) {
+			message = ByteBuffer.allocate(
+					Byte.BYTES + Short.BYTES + Long.BYTES + Long.BYTES);
+			message.put(MessageType.QUERY_TASK_FINISHED.getValue())
+					.putShort((short) messageSender.getCurrentID())
+					.putLong(coordinatorID).putLong(finishedTaskID);
+			messageSender.send(getComputerID(coordinatorID), message.array());
 		}
 	}
 
 	private int getComputerID(long taskID) {
-		return (int) (taskID >>> 6 * 8);
+		return (int) (taskID >>> 6 * Byte.BYTES);
 	}
 
-	public void sendAllBufferedMessages() {
-		// TODO Auto-generated method stub
-
+	public void sendAllBufferedMessages(MappingRecycleCache mappingCache) {
+		for (int i = 0; i < mappingBuffer.length; i++) {
+			sendBufferedMessages(i, mappingCache);
+		}
 	}
 
-	private void sendBufferedMessages(int receiver) {
-		synchronized (buffer[receiver]) {
+	private void sendBufferedMessages(int receiver,
+			MappingRecycleCache mappingCache) {
+		synchronized (mappingBuffer[receiver]) {
+			// TODO if receiver is another computer
+			mappingCache.releaseMapping(null);
 			// TODO Auto-generated method stub
 		}
 	}
 
-	public void sendQueryTaskFailed(int receiver, long failedTaskId,
-			long rootID, String message) {
+	private void enqueue(int receivingComputer, Mapping mapping,
+			long receiverTaskID, MappingRecycleCache mappingCache) {
+		if (isBufferFull(receivingComputer)) {
+			sendBufferedMessages(receivingComputer, mappingCache);
+		}
 		// TODO Auto-generated method stub
+		if (isBufferFull(receivingComputer)) {
+			sendBufferedMessages(receivingComputer, mappingCache);
+		}
+	}
 
+	private boolean isBufferFull(int receivingComputer) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public void sendQueryTaskFailed(int receiver, long controllerID,
+			String message) {
+		byte[] messageBytes = null;
+		try {
+			messageBytes = message.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			if (logger != null) {
+				logger.finer(
+						"Error during conversion of error message during query execution:");
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			messageBytes = new byte[0];
+		}
+		ByteBuffer messageBB = ByteBuffer.allocate(
+				Byte.BYTES + Short.BYTES + Long.BYTES + messageBytes.length);
+		messageBB.put(MessageType.QUERY_TASK_FAILED.getValue())
+				.putShort((short) messageSender.getCurrentID())
+				.putLong(controllerID).put(messageBytes);
+		messageSender.send(receiver, messageBB.array());
 	}
 
 	public void sendQueryAbortion(int queryID) {
-		// TODO Auto-generated method stub
+		ByteBuffer message = ByteBuffer.allocate(Byte.BYTES + Integer.BYTES);
+		message.put(MessageType.QUERY_ABORTION.getValue()).putInt(queryID);
+		messageSender.sendToAllSlaves(message.array());
 	}
 
 	public void clear() {
-		int bufferSize = buffer[0].length;
-		for (int i = 0; i < buffer.length; i++) {
-			synchronized (buffer[i]) {
-				buffer[i] = new Mapping[bufferSize];
+		int bufferSize = mappingBuffer[0].length;
+		for (int i = 0; i < mappingBuffer.length; i++) {
+			synchronized (mappingBuffer[i]) {
+				mappingBuffer[i] = new Mapping[bufferSize];
 				nextIndex[i] = 0;
 			}
 		}
 	}
 
-	@Override
-	public void close() {
-		sendAllBufferedMessages();
+	public void close(MappingRecycleCache mappingCache) {
+		sendAllBufferedMessages(mappingCache);
 	}
 
 }

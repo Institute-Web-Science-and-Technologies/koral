@@ -9,6 +9,9 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
 public interface WorkerTask extends Closeable {
 
+	// TODO query coordinator is a WorkerTask but not part of the query
+	// execution tree
+
 	public boolean setUp(MessageSenderBuffer messageSender,
 			MappingRecycleCache recycleCache, Logger logger);
 
@@ -34,7 +37,7 @@ public interface WorkerTask extends Closeable {
 	/**
 	 * @return id of the query coordinator node of the query execution tree
 	 */
-	public long getRootID();
+	public long getCoordinatorID();
 
 	public long getEstimatedTaskLoad();
 
@@ -51,7 +54,7 @@ public interface WorkerTask extends Closeable {
 
 	public boolean hasInput();
 
-	public void enqueueMessage(byte[] message);
+	public void enqueueMessage(long sender, byte[] message, int offset);
 
 	/**
 	 * Results may only be emitted, it {@link #start()} was called.
