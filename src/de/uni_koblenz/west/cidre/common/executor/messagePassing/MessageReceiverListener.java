@@ -46,8 +46,30 @@ public class MessageReceiverListener implements MessageListener {
 			messageType = MessageType.valueOf(message[0]);
 			switch (messageType) {
 			case QUERY_MAPPING_BATCH:
-				// TODO only enqueue individual mappings!
-				// TODO implement as done by sender
+				int currentIndex = 3;
+				while (currentIndex < message.length) {
+					short numberOfVariables = NumberConversion
+							.bytes2short(message, currentIndex + Byte.BYTES);
+					long sender = NumberConversion.bytes2long(message,
+							currentIndex + Byte.BYTES + Short.BYTES
+									+ Long.BYTES);
+					WorkerTask task = getTask(message,
+							currentIndex + Byte.BYTES + Short.BYTES);
+					if (task == null) {
+						if (logger != null) {
+							long receiver = NumberConversion.bytes2long(message,
+									currentIndex + Byte.BYTES + Short.BYTES);
+							logger.info(
+									"Discarding a mapping because the receiving task "
+											+ receiver + " is not present.");
+							// TODO failure handling
+						}
+					} else {
+						task.enqueueMessage(sender, message, currentIndex);
+					}
+					currentIndex += Byte.BYTES + Short.BYTES + Long.BYTES
+							+ Long.BYTES + numberOfVariables * Long.BYTES;
+				}
 				break;
 			case QUERY_TASK_FINISHED:
 				WorkerTask task = getTask(message, 3);
@@ -57,6 +79,7 @@ public class MessageReceiverListener implements MessageListener {
 						logger.info("Discarding a " + messageType.name()
 								+ " message because the receiving task "
 								+ receiver + " is not present.");
+						// TODO failure handling
 					}
 				} else {
 					task.enqueueMessage(NumberConversion.bytes2long(message,

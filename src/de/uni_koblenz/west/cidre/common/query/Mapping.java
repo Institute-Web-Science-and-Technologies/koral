@@ -26,6 +26,10 @@ public class Mapping {
 
 	}
 
+	public short getNumberOfVariables() {
+		return (short) ((getLengthOfMappingInByteArray()) / Long.BYTES - 2);
+	}
+
 	public byte[] getByteArray() {
 		// TODO Auto-generated method stub
 		return null;

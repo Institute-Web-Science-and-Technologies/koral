@@ -111,12 +111,16 @@ public class MessageSenderBuffer {
 			MappingRecycleCache mappingCache) {
 		ByteBuffer buffer = null;
 		synchronized (mappingBuffer[receivingComputer]) {
+			if (nextIndex[receivingComputer] == 0) {
+				// the buffer is empty
+				return;
+			}
 			// determine size of message
 			int sizeOfMessage = Byte.BYTES + Short.BYTES;
 			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
 				Mapping mapping = mappingBuffer[receivingComputer][i];
 				sizeOfMessage += mapping.getLengthOfMappingInByteArray()
-						+ Byte.BYTES;
+						+ Byte.BYTES + Short.BYTES;
 			}
 			// create message
 			buffer = ByteBuffer.allocate(sizeOfMessage);
@@ -125,6 +129,7 @@ public class MessageSenderBuffer {
 			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
 				Mapping mapping = mappingBuffer[receivingComputer][i];
 				buffer.put(MessageType.QUERY_MAPPING_BATCH.getValue());
+				buffer.putShort(mapping.getNumberOfVariables());
 				buffer.put(mapping.getByteArray(),
 						mapping.getFirstIndexOfMappingInByteArray(),
 						mapping.getLengthOfMappingInByteArray());
