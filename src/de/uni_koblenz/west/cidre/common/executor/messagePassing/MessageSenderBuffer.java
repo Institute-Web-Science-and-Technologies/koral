@@ -115,7 +115,8 @@ public class MessageSenderBuffer {
 			int sizeOfMessage = Byte.BYTES + Short.BYTES;
 			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
 				Mapping mapping = mappingBuffer[receivingComputer][i];
-				sizeOfMessage += mapping.getLengthOfMappingInByteArray();
+				sizeOfMessage += mapping.getLengthOfMappingInByteArray()
+						+ Byte.BYTES;
 			}
 			// create message
 			buffer = ByteBuffer.allocate(sizeOfMessage);
@@ -123,6 +124,7 @@ public class MessageSenderBuffer {
 					.putShort((short) messageSender.getCurrentID());
 			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
 				Mapping mapping = mappingBuffer[receivingComputer][i];
+				buffer.put(MessageType.QUERY_MAPPING_BATCH.getValue());
 				buffer.put(mapping.getByteArray(),
 						mapping.getFirstIndexOfMappingInByteArray(),
 						mapping.getLengthOfMappingInByteArray());

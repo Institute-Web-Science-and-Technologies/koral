@@ -32,8 +32,8 @@ public class Mapping {
 	}
 
 	/**
-	 * @return index which represents the receiver task id of this individual
-	 *         mapping
+	 * @return index which represents the first byte of the receiver task id of
+	 *         this individual mapping
 	 */
 	public int getFirstIndexOfMappingInByteArray() {
 		// TODO Auto-generated method stub

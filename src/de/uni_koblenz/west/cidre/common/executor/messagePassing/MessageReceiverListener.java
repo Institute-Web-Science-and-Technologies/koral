@@ -46,6 +46,7 @@ public class MessageReceiverListener implements MessageListener {
 			messageType = MessageType.valueOf(message[0]);
 			switch (messageType) {
 			case QUERY_MAPPING_BATCH:
+				// TODO only enqueue individual mappings!
 				// TODO implement as done by sender
 				break;
 			case QUERY_TASK_FINISHED:
