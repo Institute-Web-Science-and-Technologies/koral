@@ -9,9 +9,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSenderBuffer;
 
 public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 

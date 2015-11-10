@@ -13,8 +13,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.common.system.ConfigurationException;
 import de.uni_koblenz.west.cidre.slave.networkManager.SlaveNetworkManager;

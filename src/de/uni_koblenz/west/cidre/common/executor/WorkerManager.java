@@ -6,10 +6,10 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSender;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSenderBuffer;
 
 public class WorkerManager implements Closeable, AutoCloseable {
 

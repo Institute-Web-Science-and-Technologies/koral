@@ -8,7 +8,7 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSender;
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
 
 /**
  * First slave has id 1!!

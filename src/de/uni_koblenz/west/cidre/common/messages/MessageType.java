@@ -1,7 +1,7 @@
 package de.uni_koblenz.west.cidre.common.messages;
 
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 

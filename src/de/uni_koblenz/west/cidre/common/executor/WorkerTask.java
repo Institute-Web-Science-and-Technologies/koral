@@ -4,8 +4,8 @@ import java.io.Closeable;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.query.messagePassing.MessageSenderBuffer;
 
 public interface WorkerTask extends Closeable {
 
@@ -32,8 +32,7 @@ public interface WorkerTask extends Closeable {
 	public long getID();
 
 	/**
-	 * @return id of the root node (i.e., the query coordinator node) of the
-	 *         query execution tree
+	 * @return id of the query coordinator node of the query execution tree
 	 */
 	public long getRootID();
 

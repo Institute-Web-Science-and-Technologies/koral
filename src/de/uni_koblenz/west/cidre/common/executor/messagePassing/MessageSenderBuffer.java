@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.common.query.messagePassing;
+package de.uni_koblenz.west.cidre.common.executor.messagePassing;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
