@@ -62,7 +62,6 @@ public class MessageReceiverListener implements MessageListener {
 							logger.info(
 									"Discarding a mapping because the receiving task "
 											+ receiver + " is not present.");
-							// TODO failure handling
 						}
 					} else {
 						task.enqueueMessage(sender, message, currentIndex);
@@ -79,7 +78,6 @@ public class MessageReceiverListener implements MessageListener {
 						logger.info("Discarding a " + messageType.name()
 								+ " message because the receiving task "
 								+ receiver + " is not present.");
-						// TODO failure handling
 					}
 				} else {
 					task.enqueueMessage(NumberConversion.bytes2long(message,
