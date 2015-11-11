@@ -8,6 +8,30 @@ import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
+/**
+ * <p>
+ * This class provides methods to send all required messages during query
+ * processing. In the case of sent mappings, it first checks, if the receiver is
+ * on the same computer. If so, the message is directly forwarded to the
+ * receiver without sending it over the network. Otherwise, it is sent to the
+ * remote receiver.
+ * </p>
+ * 
+ * <p>
+ * Since there are many small mappings to be sent during the query processing,
+ * they are bundled into one large message. These bundles are sent whenever
+ * <ul>
+ * <li>{@link #close(MappingRecycleCache)} is called,</li>
+ * <li>{@link #sendAllBufferedMessages(MappingRecycleCache)} is called,</li>
+ * <li>{@link #sendQueryTaskFinished(long, boolean, long, MappingRecycleCache)}
+ * is called or</li>
+ * <li>the mapping buffer reaches its configured maximum limit.</li>
+ * </ul>
+ * </p>
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MessageSenderBuffer {
 
 	private final Logger logger;

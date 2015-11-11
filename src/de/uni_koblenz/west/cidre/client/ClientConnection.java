@@ -21,6 +21,13 @@ import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
+/**
+ * Establishes a connection with CIDRE master and provides methods to send
+ * messages to the master or receive responses from it.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class ClientConnection implements Closeable, FileSenderConnection {
 
 	private final ZContext context;

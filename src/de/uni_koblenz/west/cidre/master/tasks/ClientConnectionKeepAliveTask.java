@@ -4,6 +4,12 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 
+/**
+ * Thread that sends keep alive messages to a client.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class ClientConnectionKeepAliveTask extends Thread {
 
 	private final ClientConnectionManager clientConnections;

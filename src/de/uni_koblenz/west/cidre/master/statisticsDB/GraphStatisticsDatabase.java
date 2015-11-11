@@ -2,6 +2,13 @@ package de.uni_koblenz.west.cidre.master.statisticsDB;
 
 import java.io.Closeable;
 
+/**
+ * Methods required by {@link GraphStatistics} to persist the statistical
+ * information.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public interface GraphStatisticsDatabase extends Closeable {
 
 	public void incrementSubjectCount(long subject, int chunk);

@@ -40,6 +40,13 @@ import org.apache.jena.sparql.algebra.op.OpTopN;
 import org.apache.jena.sparql.algebra.op.OpTriple;
 import org.apache.jena.sparql.algebra.op.OpUnion;
 
+/**
+ * Checks whether the query only consists of the supported operations and
+ * transforms it into the CIDRE-specific query execution tree.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class SparqlParser implements OpVisitor {
 
 	public void parse(String queryString) {

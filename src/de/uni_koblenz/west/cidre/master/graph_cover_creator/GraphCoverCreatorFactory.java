@@ -4,6 +4,13 @@ import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HashCoverCreator;
 
+/**
+ * Returns the {@link GraphCoverCreator} instance according to the
+ * {@link CoverStrategyType}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class GraphCoverCreatorFactory {
 
 	public static GraphCoverCreator getGraphCoverCreator(

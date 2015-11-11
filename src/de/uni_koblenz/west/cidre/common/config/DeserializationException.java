@@ -1,5 +1,11 @@
 package de.uni_koblenz.west.cidre.common.config;
 
+/**
+ * Exception thrown when the deserialization of the configuration fails.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class DeserializationException extends RuntimeException {
 
 	private static final long serialVersionUID = 7961496401353020402L;

@@ -7,6 +7,12 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
+/**
+ * Formats log messages in a CSV format.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class CSVFormatter extends SimpleFormatter {
 
 	private final String separator;

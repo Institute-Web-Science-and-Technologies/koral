@@ -2,6 +2,13 @@ package de.uni_koblenz.west.cidre.common.executor;
 
 import java.util.Comparator;
 
+/**
+ * This {@link Comparator} is used to sort the {@link WorkerTask}s of one
+ * {@link WorkerThread} according to its workload during the rescheduling step.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class WorkerTaskComparator implements Comparator<WorkerTask> {
 
 	private final boolean useEstimation;

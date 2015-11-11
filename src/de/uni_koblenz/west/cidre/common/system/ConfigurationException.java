@@ -1,5 +1,11 @@
 package de.uni_koblenz.west.cidre.common.system;
 
+/**
+ * Exception thrown when a CIDRE component has a erroneous configuration.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class ConfigurationException extends Exception {
 
 	private static final long serialVersionUID = 3087580307699520271L;

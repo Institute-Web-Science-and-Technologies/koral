@@ -9,6 +9,14 @@ import org.mapdb.BTreeMap;
 import org.mapdb.DB.BTreeMapMaker;
 import org.mapdb.Serializer;
 
+/**
+ * A wrapper for B-tree maps of MapDB.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class BTreeMapWrapper<K, V> extends MapDBMapWrapper<K, V> {
 
 	private final BTreeMap<K, V> map;

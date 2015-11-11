@@ -2,6 +2,12 @@ package de.uni_koblenz.west.cidre.common.mapDB;
 
 import org.mapdb.DBMaker;
 
+/**
+ * Options to configure the used instance cache of MapDB.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public enum MapDBCacheOptions {
 
 	NONE {

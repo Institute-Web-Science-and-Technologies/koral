@@ -9,12 +9,20 @@ import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiverConnection;
+import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
-import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import de.uni_koblenz.west.cidre.master.CidreMaster;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 
+/**
+ * Requests the corresponding graph chunk from {@link CidreMaster}. If the chunk
+ * is received completely, it is loaded into the local triple store.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class GraphChunkLoader extends Thread implements GraphChunkListener {
 
 	private final Logger logger;

@@ -10,7 +10,14 @@ import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
+import de.uni_koblenz.west.cidre.slave.CidreSlave;
 
+/**
+ * Sends the requested file chunks to the requesting {@link CidreSlave}s.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class FileChunkRequestProcessor implements FileChunkRequestListener {
 
 	private final Logger logger;

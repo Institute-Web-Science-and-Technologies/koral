@@ -17,6 +17,12 @@ import javax.xml.stream.events.XMLEvent;
 import de.uni_koblenz.west.cidre.common.config.Configurable;
 import de.uni_koblenz.west.cidre.common.config.DeserializationException;
 
+/**
+ * Loads an XML configuration file into a {@link Configurable} instance.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class XMLDeserializer {
 
 	public Configurable deserialize(

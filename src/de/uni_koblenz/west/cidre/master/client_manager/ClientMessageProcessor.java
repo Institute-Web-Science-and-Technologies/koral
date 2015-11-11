@@ -15,6 +15,12 @@ import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.CidreMaster;
 import de.uni_koblenz.west.cidre.master.tasks.GraphLoaderTask;
 
+/**
+ * Processes messages received from a client.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class ClientMessageProcessor
 		implements Closeable, ClosedConnectionListener {
 

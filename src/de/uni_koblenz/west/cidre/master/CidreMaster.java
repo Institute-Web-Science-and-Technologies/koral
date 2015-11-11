@@ -19,6 +19,12 @@ import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.networkManager.MasterNetworkManager;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
+/**
+ * The CIDRE master implementation.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class CidreMaster extends CidreSystem {
 
 	private final ClientMessageProcessor clientMessageProcessor;

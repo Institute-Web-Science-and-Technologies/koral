@@ -13,6 +13,16 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverL
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
+/**
+ * Executes all registered {@link WorkerTask}s in iterations. During one
+ * iteration {@link WorkerTask#execute()} is called once for each
+ * {@link WorkerTask}. At the end of each iteration it forces to send all
+ * buffered mappings and tries to reschedule tasks with its neighbors in order
+ * to achieve a balanced workload during runtime.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
 	private final Logger logger;
@@ -38,6 +48,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	public WorkerThread(int id, int sizeOfMappingRecycleCache,
 			double unbalanceThreshold, MessageReceiverListener receiver,
 			MessageSenderBuffer messageSender, Logger logger) {
+		setDaemon(true);
 		this.logger = logger;
 		this.id = id;
 		setName("WorkerThread " + id);

@@ -2,6 +2,12 @@ package de.uni_koblenz.west.cidre.common.networManager;
 
 import org.zeromq.ZContext;
 
+/**
+ * This factory ensures that the {@link ZContext} is terminated properly.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class NetworkContextFactory {
 
 	private static ZContext mainContext;

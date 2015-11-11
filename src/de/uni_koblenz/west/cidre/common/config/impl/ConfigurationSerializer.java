@@ -2,6 +2,14 @@ package de.uni_koblenz.west.cidre.common.config.impl;
 
 import de.uni_koblenz.west.cidre.common.config.ConfigurableSerializer;
 
+/**
+ * Provides methods to convert the field values of {@link Configuration} to the
+ * property values in the configuration file.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
+
 public class ConfigurationSerializer implements ConfigurableSerializer {
 
 	public String serializeMaster(Configuration conf) {

@@ -19,6 +19,12 @@ import de.uni_koblenz.west.cidre.common.config.Configurable;
 import de.uni_koblenz.west.cidre.common.config.Property;
 import de.uni_koblenz.west.cidre.common.config.SerializationException;
 
+/**
+ * Serializes a {@link Configurable} instance to an XML configuration file.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class XMLSerializer {
 
 	public void serialize(Configurable conf, String fileName) {

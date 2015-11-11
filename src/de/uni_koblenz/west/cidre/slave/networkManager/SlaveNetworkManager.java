@@ -8,7 +8,14 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiverConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
+import de.uni_koblenz.west.cidre.slave.CidreSlave;
 
+/**
+ * Implementation of network manager methods specific for {@link CidreSlave}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class SlaveNetworkManager extends NetworkManager
 		implements FileReceiverConnection {
 

@@ -1,5 +1,11 @@
 package de.uni_koblenz.west.cidre.common.utils;
 
+/**
+ * Converts primitive numerical values into a byte array and back again.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class NumberConversion {
 
 	public static long bytes2long(byte[] bytes) {

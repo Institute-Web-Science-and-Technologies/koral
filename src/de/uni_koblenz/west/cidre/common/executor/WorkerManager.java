@@ -9,8 +9,18 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
-import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
+import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 
+/**
+ * This class manages the different {@link WorkerThread}s, i.e., starting and
+ * stopping the threads as well as starting and stopping the {@link WorkerTask}
+ * of a query. When a new query is started it is also responsible for the
+ * initial scheduling of the corresponding {@link WorkerTask}s among all
+ * {@link WorkerThread}s.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final Logger logger;

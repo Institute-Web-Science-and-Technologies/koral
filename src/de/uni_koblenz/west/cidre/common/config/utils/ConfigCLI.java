@@ -8,6 +8,13 @@ import de.uni_koblenz.west.cidre.common.config.Configurable;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
 
+/**
+ * Command line tool that allows reading one property from the configuration
+ * file. Useful if paths are required in bash scripts.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class ConfigCLI {
 
 	public static void main(String[] args) {

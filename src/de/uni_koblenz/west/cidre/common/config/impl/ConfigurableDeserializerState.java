@@ -11,6 +11,13 @@ import javax.xml.stream.events.XMLEvent;
 import de.uni_koblenz.west.cidre.common.config.Configurable;
 import de.uni_koblenz.west.cidre.common.config.Property;
 
+/**
+ * Implements a final state machine to load the configuration file into a
+ * {@link Configuration} instance.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 enum ConfigurableDeserializerState {
 	STARTED {
 		@Override

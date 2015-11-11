@@ -28,7 +28,23 @@ import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 
 /**
- * Triple Nodes are encoded using {@link DeSerializer}
+ * <p>
+ * This class encodes the created graph chunks. Thereby, it informs the
+ * {@link GraphStatistics} component about the frequency of seen resources in
+ * the chunks and to determine the ownership of each resource. Additionally, it
+ * provides the functionality to decode the resources later on again.
+ * </p>
+ * 
+ * <p>
+ * {@link Dictionary} is used internally.
+ * </p>
+ * 
+ * <p>
+ * Resources are encoded using {@link DeSerializer}.
+ * </p>
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
  */
 public class DictionaryEncoder implements Closeable {
 

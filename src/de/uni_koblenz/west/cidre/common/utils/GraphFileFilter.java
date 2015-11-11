@@ -6,6 +6,13 @@ import java.io.FileFilter;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 
+/**
+ * Filters all files in a directory, whether they contain a loadable graph or
+ * not.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class GraphFileFilter implements FileFilter {
 
 	@Override

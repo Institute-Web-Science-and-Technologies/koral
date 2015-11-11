@@ -3,6 +3,12 @@ package de.uni_koblenz.west.cidre.common.messages;
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Logger;
 
+/**
+ * Provides utitlity methods to create messages.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MessageUtils {
 
 	public static byte[] createStringMessage(MessageType messageType,

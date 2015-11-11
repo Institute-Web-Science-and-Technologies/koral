@@ -16,6 +16,13 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.slave.triple_store.impl.MapDBTripleStore;
 
+/**
+ * Provides access to the local triple store. I.e., methods to store all triples
+ * of a graph file and methods to lookup triples again.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class TripleStoreAccessor implements Closeable, AutoCloseable {
 
 	private final Logger logger;

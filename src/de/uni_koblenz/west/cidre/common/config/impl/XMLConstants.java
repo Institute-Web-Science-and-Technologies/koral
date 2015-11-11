@@ -1,5 +1,11 @@
 package de.uni_koblenz.west.cidre.common.config.impl;
 
+/**
+ * Defines the XML tag names in the configuration file.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 class XMLConstants {
 
 	static String CONFIG_ELEMENT = "config";

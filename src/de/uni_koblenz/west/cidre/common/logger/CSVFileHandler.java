@@ -11,6 +11,12 @@ import java.util.logging.LogRecord;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 
+/**
+ * Writes log messages to a local CSV file.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class CSVFileHandler extends Handler {
 
 	private final BufferedWriter out;

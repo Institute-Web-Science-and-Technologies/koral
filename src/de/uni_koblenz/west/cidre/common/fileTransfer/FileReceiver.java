@@ -10,6 +10,17 @@ import java.io.OutputStream;
 import java.util.PriorityQueue;
 import java.util.logging.Logger;
 
+/**
+ * Requests file chunks from {@link FileSender}. At most
+ * {@link #NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS} file chunks are requested
+ * in parallel. If a requested file chunk is not received within
+ * {@link #FILE_CHUNK_REQUEST_TIMEOUT} seconds, it is requested again. If
+ * several files should be received, it only requests file chunks of the next
+ * file, if the current file is received completely.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class FileReceiver implements Closeable {
 
 	public static final int NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS = 200;

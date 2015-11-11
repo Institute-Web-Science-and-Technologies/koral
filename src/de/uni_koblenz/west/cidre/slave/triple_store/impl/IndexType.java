@@ -5,6 +5,13 @@ import java.util.BitSet;
 
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
+/**
+ * Provides methods to extract the subject, property or object of the byte array
+ * stored in the the different triple indices.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public enum IndexType {
 
 	SPO {

@@ -25,6 +25,12 @@ import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 
+/**
+ * Creates a hash cover based on the subject of the triples.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class HashCoverCreator implements GraphCoverCreator {
 
 	private final Logger logger;

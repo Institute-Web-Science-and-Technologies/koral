@@ -20,8 +20,13 @@ import org.apache.jena.riot.lang.PipedTriplesStream;
 import org.apache.jena.sparql.core.Quad;
 
 /**
- * Blank nodes get an id unique to the computer on which the graph file is read
- * first.
+ * Iterates over all triples contained in one graph file or in any graph file
+ * contained in a folder. Blank nodes get an id unique to the computer on which
+ * the graph file is read first. (Probably, blank nodes with the same label in
+ * different files will receive different ids.)
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
  */
 public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 		Closeable, AutoCloseable {

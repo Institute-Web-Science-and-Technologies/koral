@@ -19,10 +19,18 @@ import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
 import de.uni_koblenz.west.cidre.common.executor.WorkerManager;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
-import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
-import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
+import de.uni_koblenz.west.cidre.common.messages.MessageListener;
+import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
 
+/**
+ * This class abstracts the functionality that is the same for the CIDRE master
+ * and any slave, for instance, the message passing facility or the clean shut
+ * down.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public abstract class CidreSystem extends Thread implements MessageNotifier {
 
 	protected Logger logger;

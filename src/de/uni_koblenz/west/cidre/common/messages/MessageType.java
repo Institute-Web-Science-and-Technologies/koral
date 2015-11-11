@@ -1,10 +1,18 @@
 package de.uni_koblenz.west.cidre.common.messages;
 
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
-import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 
+/**
+ * Defines the different types of messages sent between the components of CIDRE
+ * and between the client and CIDRE master. These constants are used to identify
+ * the type of the received binary message. Additionally, it defines the type of
+ * {@link MessageListener} that is the receiver of a specific message type.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public enum MessageType {
 
 	/**

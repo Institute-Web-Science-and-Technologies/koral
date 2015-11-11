@@ -11,7 +11,13 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
 
 /**
- * First slave has id 1!!
+ * Creates connections between the CIDRE components, i.e, master and slaves.
+ * Furthermore, it allows sending messages to specific component. Therefore, the
+ * master has the id 0 and the slaves ids &gt;=1. Additionally it provides
+ * methods for receiving messages.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
  */
 public class NetworkManager implements Closeable, MessageSender {
 

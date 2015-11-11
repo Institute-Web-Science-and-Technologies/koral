@@ -17,6 +17,13 @@ import org.zeromq.ZMQ.Socket;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
 
+/**
+ * Command line tool that prints the logging messages received from each CIDRE
+ * master and slave to the console.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class JeromqLoggerReceiver extends Thread {
 
 	private final ZContext context;

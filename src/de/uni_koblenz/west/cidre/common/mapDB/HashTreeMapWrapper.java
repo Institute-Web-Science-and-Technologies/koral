@@ -8,6 +8,14 @@ import org.mapdb.DB.HTreeMapMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 
+/**
+ * A wrapper for hash tree maps of MapDB.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class HashTreeMapWrapper<K, V> extends MapDBMapWrapper<K, V> {
 
 	private final HTreeMap<K, V> map;

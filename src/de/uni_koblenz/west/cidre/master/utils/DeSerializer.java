@@ -10,6 +10,13 @@ import org.apache.jena.riot.tokens.Token;
 import org.apache.jena.riot.tokens.Tokenizer;
 import org.apache.jena.riot.tokens.TokenizerFactory;
 
+/**
+ * Provides convenient methods to serialize {@link Node}s and {@link BitSet}s as
+ * {@link String}s and to deserialize them again.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class DeSerializer {
 
 	public static String serializeNode(Node node) {

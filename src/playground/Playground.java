@@ -27,6 +27,12 @@ import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.cidre.slave.triple_store.impl.MappingIteratorWrapper;
 
+/**
+ * A class to test source code. Not used within CIDRE.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class Playground {
 
 	public static void main(String[] args) {

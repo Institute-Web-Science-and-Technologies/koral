@@ -8,6 +8,13 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 
+/**
+ * Provides methods to convert the property values in the configuration file to
+ * the field values of {@link Configuration}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class ConfigurationDeserializer implements ConfigurableDeserializer {
 
 	public void deserializeMaster(Configuration conf, String master) {

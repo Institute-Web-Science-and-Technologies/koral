@@ -1,5 +1,12 @@
 package de.uni_koblenz.west.cidre.common.fileTransfer;
 
+/**
+ * Wraps one chunk of a file. Two chunks are ordered according to their position
+ * in the file.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class FileChunk implements Comparable<FileChunk> {
 
 	private final int fileID;

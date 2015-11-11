@@ -8,6 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.PriorityQueue;
 
+/**
+ * Reads a specific chunk from a file, if it is not cached.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class FileSetChunkReader implements AutoCloseable, Closeable {
 
 	private final static int CHUNK_SIZE = 8192;

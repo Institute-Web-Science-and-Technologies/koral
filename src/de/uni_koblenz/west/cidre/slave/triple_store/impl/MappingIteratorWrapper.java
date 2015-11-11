@@ -6,6 +6,14 @@ import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 
+/**
+ * Index look ups in the indices of {@link MapDBTripleStore} would result in
+ * Iterators over byte array representation of matching triples. This wrapper
+ * converts the returned byte arrays into the corresponding {@link Mapping}s.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MappingIteratorWrapper
 		implements Iterable<Mapping>, Iterator<Mapping> {
 

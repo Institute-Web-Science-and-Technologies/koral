@@ -5,8 +5,16 @@ import java.util.BitSet;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.statisticsDB.impl.MapDBGraphStatisticsDatabase;
 
+/**
+ * Stores statistical information about the occurrence of resources in the
+ * different graph chunks. It receives its data from {@link DictionaryEncoder}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class GraphStatistics implements Closeable {
 
 	@SuppressWarnings("unused")

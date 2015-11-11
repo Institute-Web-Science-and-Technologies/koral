@@ -11,6 +11,12 @@ import org.apache.commons.cli.ParseException;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.config.impl.XMLSerializer;
 
+/**
+ * A command line tool to create a configuration file with the default settings.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class DefaultConfigurationCreator {
 
 	public static void main(String[] args) {

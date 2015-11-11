@@ -35,6 +35,12 @@ import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
+/**
+ * API and command line interface to interact with CIDRE master.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class CidreClient {
 
 	private final ClientConnection connection;

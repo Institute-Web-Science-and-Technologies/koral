@@ -4,6 +4,12 @@ import java.io.File;
 
 import org.mapdb.DBMaker;
 
+/**
+ * Configures the persistence of MapDB.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public enum MapDBStorageOptions {
 
 	RANDOM_ACCESS_FILE {

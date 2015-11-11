@@ -5,6 +5,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Reads the requested file chunk from disk (if it is not cached) and sends it
+ * to the requesting {@link FileReceiver}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class FileSender implements Closeable, AutoCloseable {
 
 	private final List<File> files;

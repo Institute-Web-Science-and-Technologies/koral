@@ -14,6 +14,12 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBMapWrapper;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.master.dictionary.Dictionary;
 
+/**
+ * Implements {@link Dictionary} with MapDB.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MapDBDictionary implements Dictionary {
 
 	private final MapDBMapWrapper<String, Long> encoder;

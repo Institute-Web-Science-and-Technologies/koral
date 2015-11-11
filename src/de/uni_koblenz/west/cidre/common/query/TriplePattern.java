@@ -1,5 +1,11 @@
 package de.uni_koblenz.west.cidre.common.query;
 
+/**
+ * Represents a triple pattern in SPARQL.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class TriplePattern {
 
 	private final TriplePatternType type;

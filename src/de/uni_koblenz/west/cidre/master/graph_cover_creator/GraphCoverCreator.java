@@ -4,6 +4,12 @@ import java.io.File;
 
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 
+/**
+ * Methods required by all supported graph cover strategies.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public interface GraphCoverCreator {
 
 	/**

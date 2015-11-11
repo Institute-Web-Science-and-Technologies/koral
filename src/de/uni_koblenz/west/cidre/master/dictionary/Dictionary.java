@@ -2,6 +2,12 @@ package de.uni_koblenz.west.cidre.master.dictionary;
 
 import java.io.Closeable;
 
+/**
+ * Declares all methods required by {@link DictionaryEncoder}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public interface Dictionary extends Closeable {
 
 	/**

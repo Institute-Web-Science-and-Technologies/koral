@@ -5,6 +5,13 @@ import de.uni_koblenz.west.cidre.common.logger.receiver.JeromqLoggerReceiver;
 import de.uni_koblenz.west.cidre.master.CidreMaster;
 import de.uni_koblenz.west.cidre.slave.CidreSlave;
 
+/**
+ * Provides a unique command line user interface to start any component of
+ * CIDRE.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class CIDRE {
 
 	public static void main(String[] args) {

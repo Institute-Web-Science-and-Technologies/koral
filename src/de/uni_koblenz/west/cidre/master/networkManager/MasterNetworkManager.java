@@ -8,7 +8,14 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import de.uni_koblenz.west.cidre.master.CidreMaster;
 
+/**
+ * Implementation of network manager methods specific for {@link CidreMaster}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MasterNetworkManager extends NetworkManager
 		implements FileSenderConnection {
 

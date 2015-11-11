@@ -12,6 +12,13 @@ import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStore;
 
+/**
+ * A MapDB implementation of the local triple store. Each triple is stored in
+ * the SPO, OSP, and POS index. Each index is realized by a {@link MultiMap}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MapDBTripleStore implements TripleStore {
 
 	private final MultiMap spo;

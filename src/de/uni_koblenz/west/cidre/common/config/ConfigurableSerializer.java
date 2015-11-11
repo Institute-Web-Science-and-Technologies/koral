@@ -7,6 +7,9 @@ package de.uni_koblenz.west.cidre.common.config;
  * Where <code>&lt;nameOfProperty&gt;</code> is the value of the corresponding
  * {@link Property#name()} field starting with a capital letter and
  * <code>V extends {@link Configurable}</code>.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
  */
 public interface ConfigurableSerializer {
 

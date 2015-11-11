@@ -10,9 +10,9 @@ import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
+import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
-import de.uni_koblenz.west.cidre.common.networManager.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
@@ -23,7 +23,21 @@ import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreatorFac
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
 import de.uni_koblenz.west.cidre.master.networkManager.impl.FileChunkRequestProcessor;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
+import de.uni_koblenz.west.cidre.slave.CidreSlave;
 
+/**
+ * Thread that is used to load a graph, i.e.,
+ * <ol>
+ * <li>Requesting graph files from client.</li>
+ * <li>Creating the requested graph cover.</li>
+ * <li>Encoding the graph chunks and collecting statistical information.</li>
+ * <li>Sending encoded graph chunks to the {@link CidreSlave}s.</li>
+ * <li>Waiting for loading finished messages off all {@link CidreSlave}s.</li>
+ * </ol>
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class GraphLoaderTask extends Thread implements Closeable {
 
 	private final Logger logger;

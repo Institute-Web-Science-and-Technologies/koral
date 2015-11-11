@@ -7,6 +7,13 @@ import java.util.logging.Logger;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
+/**
+ * This interface declares all methods required to execute a task in the
+ * execution framework of CIDRE.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public interface WorkerTask extends Closeable {
 
 	// TODO query coordinator is a WorkerTask but not part of the query

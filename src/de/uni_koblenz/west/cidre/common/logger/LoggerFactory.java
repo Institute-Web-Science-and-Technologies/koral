@@ -6,6 +6,13 @@ import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 
+/**
+ * Factory class that creates and configures {@link Logger}s according to the
+ * required needs.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class LoggerFactory {
 
 	public static Logger getJeromqLogger(Configuration conf,

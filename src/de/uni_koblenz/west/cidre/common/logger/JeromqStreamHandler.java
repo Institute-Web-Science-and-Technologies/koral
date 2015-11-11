@@ -9,8 +9,15 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.logger.receiver.JeromqLoggerReceiver;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
 
+/**
+ * Sends log messages to {@link JeromqLoggerReceiver}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class JeromqStreamHandler extends Handler {
 
 	public static String DEFAULT_PORT = "4712";

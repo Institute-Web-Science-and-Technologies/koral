@@ -3,16 +3,56 @@ package de.uni_koblenz.west.cidre.common.executor.messagePassing;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
+import de.uni_koblenz.west.cidre.common.messages.MessageListener;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
-import de.uni_koblenz.west.cidre.common.networManager.MessageListener;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
- * query ID and node ID should start with 0!
+ * <p>
+ * All messages related to query processing received by CIDRE master or a slave
+ * are propagated to this class. According to the receiver task id of the
+ * message, the message is put in the input message queue of the corresponding
+ * {@link WorkerTask}.
+ * </p>
+ * 
+ * <p>
+ * This class maintains pointers to all {@link WorkerTask} that are currently
+ * registered. Since a huge amount of messages in a high frequency is expected,
+ * the access to the {@link WorkerTask}s should be very fast. The usage of a
+ * {@link Map} is not possible, since the receiver task ids would have to be
+ * packed into an array or a {@link Long} instances that would be thrown away
+ * after the lookup.
+ * </p>
+ * 
+ * <p>
+ * The receiver task id has the following structure:
+ * <ul>
+ * <li>2 bytes identifying the computer on which the task is executed</li>
+ * <li>4 bytes identifying the query to which the task belongs</li>
+ * <li>2 bytes identifying the task of this query</li>
+ * </ul>
+ * </p>
+ * 
+ * <p>
+ * With the knowledge about the receiver task id structure, the
+ * {@link WorkerTask}s can be efficiently accessed by an six dimensional array.
+ * Each dimension stands for one of the third till eighth byte of the id. In
+ * order to access the correct index the bytes have to be interpreted unsigned.
+ * </p>
+ * 
+ * <p>
+ * To avoid an excessive waste of memory, this implementation requires that the
+ * query and task ids start with 0 and are reused as soon as the query is
+ * finished.
+ * </p>
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
  */
 public class MessageReceiverListener implements MessageListener {
 

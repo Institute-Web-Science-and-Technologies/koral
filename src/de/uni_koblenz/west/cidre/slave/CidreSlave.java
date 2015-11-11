@@ -22,6 +22,12 @@ import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.impl.GraphChunkLoader;
 
+/**
+ * The implementation of the CIDRE slaves.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class CidreSlave extends CidreSystem {
 
 	private final File tmpDir;

@@ -2,6 +2,23 @@ package de.uni_koblenz.west.cidre.common.query;
 
 import java.util.BitSet;
 
+/**
+ * <p>
+ * In order to prevent the garbage collector to be executed frequently, this
+ * class is used to create and release {@link Mapping} instances. A new
+ * {@link Mapping} instance is only created if no previously released instance
+ * is cached. In order to prevent the memory to be flooded by unused
+ * {@link Mapping} instances, the number of cached instances is limited.
+ * </p>
+ * 
+ * <p>
+ * WARNING: This class is not thread safe in order to avoid synchronization
+ * overhead!
+ * </p>
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MappingRecycleCache {
 
 	private final Mapping[] stack;

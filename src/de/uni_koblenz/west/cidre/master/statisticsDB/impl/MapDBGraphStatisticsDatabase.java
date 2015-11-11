@@ -21,6 +21,12 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBMapWrapper;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatisticsDatabase;
 
+/**
+ * A MapDB implementation of {@link GraphStatisticsDatabase}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
 	private final File persistenceFile;

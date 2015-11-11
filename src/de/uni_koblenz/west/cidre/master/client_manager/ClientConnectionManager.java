@@ -18,6 +18,14 @@ import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
+/**
+ * Creates, maintains and closes connections with clients. Additionally, it
+ * provides methods for sending messages to a specific client or receiving
+ * messages from them.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class ClientConnectionManager
 		implements Closeable, FileReceiverConnection {
 

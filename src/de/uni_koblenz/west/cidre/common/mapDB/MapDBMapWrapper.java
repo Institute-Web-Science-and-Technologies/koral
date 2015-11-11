@@ -6,6 +6,15 @@ import java.util.concurrent.ConcurrentMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
+/**
+ * This class wraps MapDB maps so that the CIDRE components become less
+ * dependent on the used storage technology.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ * @param <K>
+ * @param <V>
+ */
 public abstract class MapDBMapWrapper<K, V>
 		implements Closeable, AutoCloseable, ConcurrentMap<K, V> {
 

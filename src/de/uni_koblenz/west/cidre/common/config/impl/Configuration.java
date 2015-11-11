@@ -13,6 +13,13 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 
+/**
+ * Contains all configuration options for CIDRE. Options that are serialized in
+ * the configuration file are annotated with {@link Property}.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class Configuration implements Configurable {
 
 	private static final String DEFAULT_PORT = "4710";

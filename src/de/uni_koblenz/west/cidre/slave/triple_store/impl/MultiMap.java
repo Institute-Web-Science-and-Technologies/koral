@@ -17,6 +17,12 @@ import org.mapdb.Fun;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 
+/**
+ * A MapDB implementation of a multi map.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class MultiMap implements Closeable, AutoCloseable, Iterable<byte[]> {
 
 	private final DB database;
