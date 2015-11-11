@@ -1,7 +1,15 @@
 package de.uni_koblenz.west.cidre.client;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -13,6 +21,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.jena.query.QueryFactory;
 import org.apache.jena.util.FileUtils;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
@@ -21,6 +30,7 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileSender;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.query.execution_tree.SparqlParser;
 import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
@@ -134,6 +144,66 @@ public class CidreClient {
 			} catch (UnsupportedEncodingException e) {
 				throw new RuntimeException(e);
 			}
+		}
+	}
+
+	public File processQueryFromFile(String queryFile, String outputFile)
+			throws UnsupportedEncodingException, FileNotFoundException,
+			IOException {
+		return processQueryFromFile(new File(queryFile), outputFile);
+	}
+
+	public File processQueryFromFile(File queryFile, String outputFile)
+			throws UnsupportedEncodingException, FileNotFoundException,
+			IOException {
+		return processQuery(readQueryFromFile(queryFile), outputFile);
+	}
+
+	public File processQuery(String query, String outputFile)
+			throws UnsupportedEncodingException, FileNotFoundException,
+			IOException {
+		File output = new File(outputFile);
+		try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
+				new FileOutputStream(output), "UTF-8"));) {
+			processQuery(query, bw);
+		}
+		return output;
+	}
+
+	public void processQueryFromFile(String queryFile, Writer outputWriter)
+			throws FileNotFoundException, IOException {
+		processQueryFromFile(new File(queryFile), outputWriter);
+	}
+
+	public void processQueryFromFile(File queryFile, Writer outputWriter)
+			throws FileNotFoundException, IOException {
+		processQueryFromFile(readQueryFromFile(queryFile), outputWriter);
+	}
+
+	public void processQuery(String query, Writer outputWriter) {
+		String queryString = checkSyntax(query);
+		// TODO implement
+	}
+
+	private String checkSyntax(String query) {
+		SparqlParser parser = new SparqlParser();
+		parser.parse(query);
+		return QueryFactory.create(query).serialize();
+	}
+
+	private String readQueryFromFile(File queryFile)
+			throws FileNotFoundException, IOException {
+		try (BufferedReader br = new BufferedReader(
+				new FileReader(queryFile));) {
+			StringBuilder sb = new StringBuilder();
+			String delim = "";
+			for (String line = br.readLine(); line != null; line = br
+					.readLine()) {
+				sb.append(delim);
+				sb.append(line);
+				delim = "\n";
+			}
+			return sb.toString();
 		}
 	}
 
@@ -272,6 +342,9 @@ public class CidreClient {
 			case "load":
 				loadGraph(client, args);
 				break;
+			case "query":
+				queryGraph(client, args);
+				break;
 			case "drop":
 				dropDatabase(client, args);
 				break;
@@ -307,6 +380,60 @@ public class CidreClient {
 				inputPaths.toArray(new String[inputPaths.size()]));
 	}
 
+	private static void queryGraph(CidreClient client, String[] args)
+			throws ParseException {
+		Options options = createQueryOptions();
+		CommandLineParser parser = new DefaultParser();
+		CommandLine commandLine = parser.parse(options, args);
+
+		try {
+			if (commandLine.hasOption("q")) {
+				if (commandLine.hasOption("o")) {
+					File outputFile = new File(commandLine.getOptionValue("o"));
+					System.out.println("Output written to "
+							+ outputFile.getAbsolutePath());
+					client.processQueryFromFile(commandLine.getOptionValue("q"),
+							outputFile.getAbsolutePath());
+				} else {
+					System.out.println("Output written to console.");
+					try (OutputStreamWriter writer = new OutputStreamWriter(
+							System.out);) {
+						client.processQueryFromFile(
+								commandLine.getOptionValue("q"), writer);
+					}
+				}
+			} else {
+				List<String> inputQuery = commandLine.getArgList();
+				if (inputQuery.isEmpty()) {
+					throw new ParseException(
+							"Please define the query to be requested.");
+				}
+				StringBuilder sb = new StringBuilder();
+				String delim = "";
+				for (String string : inputQuery) {
+					sb.append(delim);
+					sb.append(string);
+					delim = " ";
+				}
+				if (commandLine.hasOption("o")) {
+					File outputFile = new File(commandLine.getOptionValue("o"));
+					System.out.println("Output written to "
+							+ outputFile.getAbsolutePath());
+					client.processQuery(sb.toString(),
+							outputFile.getAbsolutePath());
+				} else {
+					System.out.println("Output written to console.");
+					try (OutputStreamWriter writer = new OutputStreamWriter(
+							System.out);) {
+						client.processQuery(sb.toString(), writer);
+					}
+				}
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private static void dropDatabase(CidreClient client, String[] args) {
 		client.dropDatabase();
 	}
@@ -333,6 +460,23 @@ public class CidreClient {
 		Options options = new Options();
 		options.addOption(coverStrategy);
 		options.addOption(nHopReplication);
+		return options;
+	}
+
+	private static Options createQueryOptions() {
+		Option output = Option.builder("o").longOpt("output").hasArg()
+				.argName("outputFile")
+				.desc("The CSV file where the output is stored. If no file is given, the output is written to command line.")
+				.required(false).build();
+
+		Option queryFile = Option.builder("q").longOpt("querFile").hasArg()
+				.argName("SPARQLQueryFile")
+				.desc("A file with the single SPARQL query that should be executed.")
+				.required(false).build();
+
+		Options options = new Options();
+		options.addOption(output);
+		options.addOption(queryFile);
 		return options;
 	}
 
@@ -363,6 +507,7 @@ public class CidreClient {
 		case "exit":
 		case "quit":
 		case "load":
+		case "query":
 		case "drop":
 			return true;
 		default:
@@ -409,6 +554,10 @@ public class CidreClient {
 		formatter.printHelp(
 				"load -c <graphCoverStrategy> [-n <pathLength>] <fileOrFolder>...",
 				createLoadOptions());
+		formatter.printHelp(
+				"query [-o <outputFile>] <SPARQL query>\n"
+						+ "query [-o <outputFile>] -q <SPARQLQueryFile>",
+				createQueryOptions());
 		System.out.println(
 				"drop\tdeletes the database and its content. All running tasks, e.g., executed queries are terminated.");
 	}
