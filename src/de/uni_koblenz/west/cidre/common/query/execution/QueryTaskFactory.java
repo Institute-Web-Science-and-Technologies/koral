@@ -29,7 +29,7 @@ public class QueryTaskFactory {
 }
 
 /**
- * Delete this. Only used for testing implementation until QueryTasks are
+ * TODO Delete this. Only used for testing implementation until QueryTasks are
  * implemented.
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
