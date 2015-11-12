@@ -1,5 +1,12 @@
 package de.uni_koblenz.west.cidre.common.query.execution_tree;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
+
+import org.apache.jena.graph.Triple;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.sparql.algebra.Algebra;
@@ -40,6 +47,9 @@ import org.apache.jena.sparql.algebra.op.OpTopN;
 import org.apache.jena.sparql.algebra.op.OpTriple;
 import org.apache.jena.sparql.algebra.op.OpUnion;
 
+import de.uni_koblenz.west.cidre.common.query.execution.QueryTask;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryTaskFactory;
+
 /**
  * Checks whether the query only consists of the supported operations and
  * transforms it into the CIDRE-specific query execution tree.
@@ -49,216 +59,332 @@ import org.apache.jena.sparql.algebra.op.OpUnion;
  */
 public class SparqlParser implements OpVisitor {
 
-	public void parse(String queryString) {
+	private QueryExecutionTreeType treeType;
+
+	private final Deque<QueryTask> stack;
+
+	public SparqlParser() {
+		stack = new ArrayDeque<>();
+	}
+
+	/*
+	 * http://www.w3.org/TR/sparql11-query/#sparqlDefinition
+	 * https://jena.apache.org/documentation/query/algebra.html
+	 * https://jena.apache.org/documentation/notes/sse.html
+	 */
+
+	public QueryTask parse(String queryString,
+			QueryExecutionTreeType treeType) {
+		this.treeType = treeType;
 		Query queryObject = QueryFactory.create(queryString);
+		if (!queryObject.isSelectType()) {
+			throw new UnsupportedOperationException(
+					"Currently, CIDRE only supports SELECT queries, but your query is\n"
+							+ queryObject.serialize());
+		}
 		Op op = Algebra.compile(queryObject);
 		op.visit(this);
-		// TODO Auto-generated method stub
-
+		assert stack.size() == 1;
+		return stack.pop();
 	}
 
 	@Override
 	public void visit(OpBGP opBGP) {
-		// TODO Auto-generated method stub
+		Iterator<Triple> tripleIter = opBGP.getPattern().getList().iterator();
+		int numberOfTriplePattern = 0;
+		while (tripleIter.hasNext()) {
+			Triple triple = tripleIter.next();
+			visit(triple);
+			numberOfTriplePattern++;
+			switch (treeType) {
+			case LEFT_LINEAR:
+				if (numberOfTriplePattern > 1) {
+					QueryTask left = stack.pop();
+					QueryTask right = stack.pop();
+					QueryTask join = QueryTaskFactory
+							.createTriplePatternJoin(left, right);
+					stack.push(join);
+				}
+				break;
+			case RIGHT_LINEAR:
+				if (!tripleIter.hasNext()) {
+					for (int i = 1; i < numberOfTriplePattern; i++) {
+						QueryTask right = stack.pop();
+						QueryTask left = stack.pop();
+						QueryTask join = QueryTaskFactory
+								.createTriplePatternJoin(left, right);
+						stack.push(join);
+					}
+				}
+				break;
+			case BUSHY:
+				if (!tripleIter.hasNext()) {
+					createBushyTree(numberOfTriplePattern);
+				}
+				break;
+			}
+		}
+	}
 
+	private void createBushyTree(int numberOfTriplePattern) {
+		Queue<QueryTask> workingQueue = new LinkedList<>();
+		for (int i = 0; i < numberOfTriplePattern; i++) {
+			((LinkedList<QueryTask>) workingQueue).addFirst(stack.pop());
+		}
+		Queue<QueryTask> nextWorkingQueue = new LinkedList<>();
+		while (!workingQueue.isEmpty()) {
+			QueryTask leftChild = workingQueue.poll();
+			if (workingQueue.isEmpty()) {
+				nextWorkingQueue.offer(leftChild);
+			} else {
+				QueryTask rightChild = workingQueue.poll();
+				QueryTask join = QueryTaskFactory
+						.createTriplePatternJoin(leftChild, rightChild);
+				nextWorkingQueue.offer(join);
+			}
+			if (workingQueue.isEmpty() && nextWorkingQueue.size() > 1) {
+				workingQueue = nextWorkingQueue;
+				nextWorkingQueue = new LinkedList<>();
+			}
+		}
+		stack.push(nextWorkingQueue.poll());
+	}
+
+	public void visit(Triple triple) {
+		QueryTask task = QueryTaskFactory.createTriplePatternMatch(triple);
+		stack.push(task);
 	}
 
 	@Override
 	public void visit(OpQuadPattern quadPattern) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support quad patterns. Cause:\n"
+						+ quadPattern.toString());
 	}
 
 	@Override
 	public void visit(OpQuadBlock quadBlock) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support quad blocks. Cause:\n"
+						+ quadBlock.toString());
 	}
 
 	@Override
 	public void visit(OpTriple opTriple) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support triple. Cause:\n"
+						+ opTriple.toString());
 	}
 
 	@Override
 	public void visit(OpQuad opQuad) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support quad. Cause:\n"
+						+ opQuad.toString());
 	}
 
 	@Override
 	public void visit(OpPath opPath) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support path. Cause:\n"
+						+ opPath.toString());
 	}
 
 	@Override
 	public void visit(OpTable opTable) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support table. Cause:\n"
+						+ opTable.toString());
 	}
 
 	@Override
 	public void visit(OpNull opNull) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support null. Cause:\n"
+						+ opNull.toString());
 	}
 
 	@Override
 	public void visit(OpProcedure opProc) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support proc. Cause:\n"
+						+ opProc.toString());
 	}
 
 	@Override
 	public void visit(OpPropFunc opPropFunc) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support prop func. Cause:\n"
+						+ opPropFunc.toString());
 	}
 
 	@Override
 	public void visit(OpFilter opFilter) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support filter. Cause:\n"
+						+ opFilter.toString());
 	}
 
 	@Override
 	public void visit(OpGraph opGraph) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support graph. Cause:\n"
+						+ opGraph.toString());
 	}
 
 	@Override
 	public void visit(OpService opService) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support service. Cause:\n"
+						+ opService.toString());
 	}
 
 	@Override
 	public void visit(OpDatasetNames dsNames) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support dsNames. Cause:\n"
+						+ dsNames.toString());
 	}
 
 	@Override
 	public void visit(OpLabel opLabel) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support label. Cause:\n"
+						+ opLabel.toString());
 	}
 
 	@Override
 	public void visit(OpAssign opAssign) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support assign. Cause:\n"
+						+ opAssign.toString());
 	}
 
 	@Override
 	public void visit(OpExtend opExtend) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support extend. Cause:\n"
+						+ opExtend.toString());
 	}
 
 	@Override
 	public void visit(OpJoin opJoin) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support join. Cause:\n"
+						+ opJoin.toString());
 	}
 
 	@Override
 	public void visit(OpLeftJoin opLeftJoin) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support left join. Cause:\n"
+						+ opLeftJoin.toString());
 	}
 
 	@Override
 	public void visit(OpUnion opUnion) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support union. Cause:\n"
+						+ opUnion.toString());
 	}
 
 	@Override
 	public void visit(OpDiff opDiff) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support diff. Cause:\n"
+						+ opDiff.toString());
 	}
 
 	@Override
 	public void visit(OpMinus opMinus) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support minus. Cause:\n"
+						+ opMinus.toString());
 	}
 
 	@Override
 	public void visit(OpConditional opCondition) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support conditional. Cause:\n"
+						+ opCondition.toString());
 	}
 
 	@Override
 	public void visit(OpSequence opSequence) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support sequence. Cause:\n"
+						+ opSequence.toString());
 	}
 
 	@Override
 	public void visit(OpDisjunction opDisjunction) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support disjunction. Cause:\n"
+						+ opDisjunction.toString());
 	}
 
 	@Override
 	public void visit(OpExt opExt) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support ext. Cause:\n"
+						+ opExt.toString());
 	}
 
 	@Override
 	public void visit(OpList opList) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support list. Cause:\n"
+						+ opList.toString());
 	}
 
 	@Override
 	public void visit(OpOrder opOrder) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support order. Cause:\n"
+						+ opOrder.toString());
 	}
 
 	@Override
 	public void visit(OpProject opProject) {
-		// TODO Auto-generated method stub
-
+		opProject.getSubOp().visit(this);
+		QueryTask subTask = stack.pop();
+		QueryTask projection = QueryTaskFactory.createProjection(subTask);
+		stack.push(projection);
 	}
 
 	@Override
 	public void visit(OpReduced opReduced) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support reduced. Cause:\n"
+						+ opReduced.toString());
 	}
 
 	@Override
 	public void visit(OpDistinct opDistinct) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support distinct. Cause:\n"
+						+ opDistinct.toString());
 	}
 
 	@Override
 	public void visit(OpSlice opSlice) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support slice. Cause:\n"
+						+ opSlice.toString());
 	}
 
 	@Override
 	public void visit(OpGroup opGroup) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support group. Cause:\n"
+						+ opGroup.toString());
 	}
 
 	@Override
 	public void visit(OpTopN opTop) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException(
+				"Currently, CIDRE does not support top. Cause:\n"
+						+ opTop.toString());
 	}
 
 }
