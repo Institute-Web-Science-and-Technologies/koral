@@ -8,4 +8,6 @@ package de.uni_koblenz.west.cidre.common.query.execution;
  */
 public interface QueryTask {
 
+	public String[] getResultVariables();
+
 }

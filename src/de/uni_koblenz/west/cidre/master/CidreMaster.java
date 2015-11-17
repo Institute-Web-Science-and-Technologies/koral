@@ -8,6 +8,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
@@ -70,6 +71,10 @@ public class CidreMaster extends CidreSystem {
 
 	public FileSenderConnection getFileSenderConnection() {
 		return (MasterNetworkManager) super.getNetworkManager();
+	}
+
+	public void executeTask(WorkerTask rootTask) {
+		getWorkerManager().addTask(rootTask);
 	}
 
 	// TODO before sending to sparql reqester replace urn:blankNode: by _: for

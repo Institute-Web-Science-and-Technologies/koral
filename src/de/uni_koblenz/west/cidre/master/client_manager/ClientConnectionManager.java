@@ -67,8 +67,8 @@ public class ClientConnectionManager
 		listeners = new HashSet<>();
 	}
 
-	public void addClosedConnectionListener(
-			ClientMessageProcessor clientMessageProcessor) {
+	public void registerClosedConnectionListener(
+			ClosedConnectionListener clientMessageProcessor) {
 		listeners.add(clientMessageProcessor);
 	}
 

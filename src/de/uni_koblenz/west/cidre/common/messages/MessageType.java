@@ -101,9 +101,9 @@ public enum MessageType {
 	 * String ip:port<br>
 	 * String command<br>
 	 * byte numberOfArgs<br>
-	 * byte[] arg1<br>
+	 * byte[] arg<sub>1</sub><br>
 	 * ...<br>
-	 * byte[] arg_{numberOfArgs}
+	 * byte[] arg<sub>numberOfArgs</sub>
 	 */
 	CLIENT_COMMAND,
 

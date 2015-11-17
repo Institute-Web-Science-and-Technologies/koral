@@ -11,7 +11,9 @@ import java.util.regex.Pattern;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionCoordinator;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import de.uni_koblenz.west.cidre.common.utils.ReusableIDGenerator;
 import de.uni_koblenz.west.cidre.master.CidreMaster;
 import de.uni_koblenz.west.cidre.master.tasks.GraphLoaderTask;
 
@@ -38,6 +40,10 @@ public class ClientMessageProcessor
 
 	private final int numberOfChunks;
 
+	private final ReusableIDGenerator queryIdGenerator;
+
+	private final Map<String, QueryExecutionCoordinator> clientAddress2queryExecutionCoordinator;
+
 	public ClientMessageProcessor(Configuration conf,
 			ClientConnectionManager clientConnections, CidreMaster master,
 			Logger logger) {
@@ -52,7 +58,9 @@ public class ClientMessageProcessor
 		}
 		clientAddress2Id = new HashMap<>();
 		clientAddress2GraphLoaderTask = new HashMap<>();
-		this.clientConnections.addClosedConnectionListener(this);
+		clientAddress2queryExecutionCoordinator = new HashMap<>();
+		queryIdGenerator = new ReusableIDGenerator();
+		this.clientConnections.registerClosedConnectionListener(this);
 	}
 
 	/**
@@ -105,7 +113,7 @@ public class ClientMessageProcessor
 	}
 
 	private void processCreateConnection(byte[] message) {
-		String address = MessageUtils.extreactMessageString(message, logger);
+		String address = MessageUtils.extractMessageString(message, logger);
 		if (logger != null) {
 			logger.finer(
 					"client " + address + " tries to establish a connection");
@@ -118,10 +126,7 @@ public class ClientMessageProcessor
 
 	private void processKeepAlive(byte[] message) {
 		String address;
-		address = MessageUtils.extreactMessageString(message, logger);
-		// if (logger != null) {
-		// logger.finest("received keep alive from client " + address);
-		// }
+		address = MessageUtils.extractMessageString(message, logger);
 		Integer cID = clientAddress2Id.get(address);
 		if (cID != null) {
 			clientConnections.updateTimerFor(cID.intValue());
@@ -218,6 +223,26 @@ public class ClientMessageProcessor
 				loaderTask.loadGraph(arguments, numberOfChunks,
 						master.getFileSenderConnection());
 				break;
+			case "query":
+				if (!graphHasBeenLoaded) {
+					String errorMessage = "There is no graph loaded that could be queried.";
+					if (logger != null) {
+						logger.finer(errorMessage);
+					}
+					clientConnections.send(clientID,
+							MessageUtils.createStringMessage(
+									MessageType.CLIENT_COMMAND_FAILED,
+									errorMessage, logger));
+					break;
+				}
+				QueryExecutionCoordinator coordinator = new QueryExecutionCoordinator(
+						queryIdGenerator.getNextId(), clientID.intValue(),
+						clientConnections, master.getDictionary(),
+						master.getStatistics(), logger);
+				clientAddress2queryExecutionCoordinator.put(address,
+						coordinator);
+				master.executeTask(coordinator);
+				break;
 			case "drop":
 				processDropTables(clientID);
 				break;
@@ -246,7 +271,7 @@ public class ClientMessageProcessor
 							+ e.getClass().getName() + ": " + e.getMessage(),
 					logger));
 			// remove started graph loader tasks
-			if (command.equals("load")) {
+			if (command.equals("load") || command.equals("query")) {
 				terminateTask(address);
 			}
 		}
@@ -323,9 +348,6 @@ public class ClientMessageProcessor
 			}
 			return;
 		}
-		// if (logger != null) {
-		// logger.finest("received file chunk from client " + address);
-		// }
 		Integer clientID = clientAddress2Id.get(address);
 		if (clientID == null) {
 			if (logger != null) {
@@ -347,7 +369,7 @@ public class ClientMessageProcessor
 	}
 
 	private void processAbortCommand(byte[] message) {
-		String abortionContext = MessageUtils.extreactMessageString(message,
+		String abortionContext = MessageUtils.extractMessageString(message,
 				logger);
 		String[] parts = abortionContext.split(Pattern.quote("|"));
 		if (logger != null) {
@@ -355,6 +377,9 @@ public class ClientMessageProcessor
 		}
 		switch (parts[1].toLowerCase()) {
 		case "load":
+			terminateTask(parts[0]);
+			break;
+		case "query":
 			terminateTask(parts[0]);
 			break;
 		default:
@@ -375,15 +400,23 @@ public class ClientMessageProcessor
 				clientAddress2GraphLoaderTask.remove(address);
 			}
 		}
+		QueryExecutionCoordinator query = clientAddress2queryExecutionCoordinator
+				.get(address);
+		if (query != null) {
+			query.close();
+			queryIdGenerator.release(query.getQueryId());
+		}
+		clientAddress2GraphLoaderTask.remove(address);
 	}
 
 	private void processCloseConnection(byte[] message) {
 		String address;
 		Integer cID;
-		address = MessageUtils.extreactMessageString(message, logger);
+		address = MessageUtils.extractMessageString(message, logger);
 		if (logger != null) {
 			logger.finer("client " + address + " has closed connection");
 		}
+		terminateTask(address);
 		cID = clientAddress2Id.get(address);
 		if (cID != null) {
 			clientConnections.closeConnection(cID.intValue());
@@ -395,12 +428,23 @@ public class ClientMessageProcessor
 
 	@Override
 	public void close() {
+		stopAllQueries();
 		stopAllGraphLoaderTasks();
 		clientConnections.close();
 	}
 
 	public void clear() {
+		stopAllQueries();
 		stopAllGraphLoaderTasks();
+	}
+
+	private void stopAllQueries() {
+		for (QueryExecutionCoordinator task : clientAddress2queryExecutionCoordinator
+				.values()) {
+			if (task != null) {
+				task.close();
+			}
+		}
 	}
 
 	private void stopAllGraphLoaderTasks() {

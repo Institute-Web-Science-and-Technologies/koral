@@ -63,6 +63,10 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		}
 	}
 
+	public void addTask(WorkerTask rootTask) {
+		initializeTaskTree(rootTask);
+	}
+
 	public void createQuery(byte[] receivedQUERY_CREATEMessage) {
 		// TODO Auto-generated method stub
 		// TODO create query coordinator task

@@ -29,7 +29,7 @@ public class MessageUtils {
 		}
 	}
 
-	public static String extreactMessageString(byte[] message, Logger logger) {
+	public static String extractMessageString(byte[] message, Logger logger) {
 		byte[] content = new byte[message.length - 1];
 		System.arraycopy(message, 1, content, 0, content.length);
 		return convertToString(content, logger);

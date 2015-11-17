@@ -37,4 +37,10 @@ public class QueryTaskFactory {
  */
 class DummyTask implements QueryTask {
 
+	@Override
+	public String[] getResultVariables() {
+		// TODO Auto-generated method stub
+		return new String[0];
+	}
+
 }

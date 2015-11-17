@@ -30,6 +30,7 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileSender;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryTask;
 import de.uni_koblenz.west.cidre.common.query.execution_tree.QueryExecutionTreeType;
 import de.uni_koblenz.west.cidre.common.query.execution_tree.SparqlParser;
 import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
@@ -96,7 +97,7 @@ public class CidreClient {
 				} else if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
 					if (response[0].length > 1) {
 						System.out.println(MessageUtils
-								.extreactMessageString(response[0], null));
+								.extractMessageString(response[0], null));
 					}
 				} else {
 					processCommandResponse("loading of a graph", response);
@@ -193,15 +194,59 @@ public class CidreClient {
 	}
 
 	public void processQuery(String query, Writer outputWriter,
-			QueryExecutionTreeType treeType) {
-		String queryString = checkSyntax(query, treeType);
-		// TODO implement
+			QueryExecutionTreeType treeType) throws IOException {
+		// check syntax
+		SparqlParser parser = new SparqlParser();
+		QueryTask task = parser.parse(query, treeType);
+		String queryString = QueryFactory.create(query).serialize();
+		String[] vars = task.getResultVariables();
+
+		try {
+			// send query
+			byte[][] args = new byte[3][];
+			args[0] = new byte[] { (byte) (args.length - 1) };
+			args[1] = NumberConversion.int2bytes(treeType.ordinal());
+			args[2] = queryString.getBytes("UTF-8");
+			connection.sendCommand("query", args);
+
+			// receive response
+			try {
+				byte[][] response = connection.getResponse();
+				outputHeaders(vars, outputWriter);
+				while (response != null) {
+					MessageType mtype = MessageType.valueOf(response[0][0]);
+					if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
+						if (response[0].length > 1) {
+							System.out.println(MessageUtils
+									.extractMessageString(response[0], null));
+						}
+					} else if (mtype == MessageType.QUERY_RESULT) {
+						outputWriter.write("\n");
+						outputWriter.write(MessageUtils
+								.convertToString(response[0], null));
+					} else {
+						processCommandResponse("dropping database", response);
+						break;
+					}
+					response = connection.getResponse();
+				}
+			} catch (Throwable e) {
+				connection.sendCommandAbortion("query");
+				throw e;
+			}
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
-	private String checkSyntax(String query, QueryExecutionTreeType treeType) {
-		SparqlParser parser = new SparqlParser();
-		parser.parse(query, treeType);
-		return QueryFactory.create(query).serialize();
+	private void outputHeaders(String[] vars, Writer outputWriter)
+			throws IOException {
+		String delim = "";
+		for (String var : vars) {
+			outputWriter.write(delim);
+			outputWriter.write(var);
+			delim = "\t";
+		}
 	}
 
 	private String readQueryFromFile(File queryFile)
@@ -228,7 +273,7 @@ public class CidreClient {
 			if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
 				if (response[0].length > 1) {
 					System.out.println(MessageUtils
-							.extreactMessageString(response[0], null));
+							.extractMessageString(response[0], null));
 				}
 			} else {
 				processCommandResponse("dropping database", response);
