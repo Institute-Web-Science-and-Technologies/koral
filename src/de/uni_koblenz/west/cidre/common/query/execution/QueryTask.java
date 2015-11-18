@@ -10,4 +10,6 @@ public interface QueryTask {
 
 	public String[] getResultVariables();
 
+	public String getFirstJoinVar();
+
 }

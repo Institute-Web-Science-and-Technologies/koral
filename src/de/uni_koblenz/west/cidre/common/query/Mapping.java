@@ -32,6 +32,9 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuf
  */
 public class Mapping {
 
+	// TODO (1 byte message type, 2 byte number of variables, 8 byte receiving
+	// query task id, 8 byte sender task id, mapping serialization)
+
 	Mapping() {
 	}
 
@@ -70,6 +73,11 @@ public class Mapping {
 	}
 
 	public int getLengthOfMappingInByteArray() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public long getValue(String firstJoinVar) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

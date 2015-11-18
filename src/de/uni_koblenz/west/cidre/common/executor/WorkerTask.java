@@ -19,7 +19,7 @@ public interface WorkerTask extends Closeable {
 	// TODO query coordinator is a WorkerTask but not part of the query
 	// execution tree
 
-	public boolean setUp(MessageSenderBuffer messageSender,
+	public void setUp(MessageSenderBuffer messageSender,
 			MappingRecycleCache recycleCache, Logger logger);
 
 	/**

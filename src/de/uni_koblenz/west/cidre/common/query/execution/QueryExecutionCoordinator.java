@@ -33,10 +33,9 @@ public class QueryExecutionCoordinator implements WorkerTask, Closeable {
 	}
 
 	@Override
-	public boolean setUp(MessageSenderBuffer messageSender,
+	public void setUp(MessageSenderBuffer messageSender,
 			MappingRecycleCache recycleCache, Logger logger) {
 		// TODO Auto-generated method stub
-		return false;
 	}
 
 	@Override
@@ -89,6 +88,7 @@ public class QueryExecutionCoordinator implements WorkerTask, Closeable {
 
 	@Override
 	public void enqueueMessage(long sender, byte[] message, int firstIndex) {
+		// receives message of finished root tasks!!!
 		// TODO Auto-generated method stub
 
 	}

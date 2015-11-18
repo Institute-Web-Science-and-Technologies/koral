@@ -43,4 +43,10 @@ class DummyTask implements QueryTask {
 		return new String[0];
 	}
 
+	@Override
+	public String getFirstJoinVar() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
