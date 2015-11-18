@@ -21,6 +21,9 @@ public class QueryExecutionCoordinator implements WorkerTask, Closeable {
 
 	private final Logger logger;
 
+	// TODO before sending to sparql reqester replace urn:blankNode: by _: for
+	// proper blank node syntax
+
 	public QueryExecutionCoordinator(int queryID, int clientID,
 			ClientConnectionManager clientConnections,
 			DictionaryEncoder dictionary, GraphStatistics statistics,

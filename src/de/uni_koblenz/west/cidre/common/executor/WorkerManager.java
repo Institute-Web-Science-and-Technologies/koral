@@ -31,8 +31,6 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final WorkerThread[] workers;
 
-	// TODO query ids and query task ids have to start with 0! reuse query ids!
-
 	public WorkerManager(Configuration conf, MessageNotifier notifier,
 			MessageSender messageSender, Logger logger) {
 		this.logger = logger;

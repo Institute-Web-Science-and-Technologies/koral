@@ -77,9 +77,6 @@ public class CidreMaster extends CidreSystem {
 		getWorkerManager().addTask(rootTask);
 	}
 
-	// TODO before sending to sparql reqester replace urn:blankNode: by _: for
-	// proper blank node syntax
-
 	@Override
 	public void runOneIteration() {
 		boolean messageReceived = false;

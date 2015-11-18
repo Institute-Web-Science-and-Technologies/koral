@@ -18,8 +18,8 @@ public class ReusableIDGenerator {
 	private long[] ids;
 
 	public int getNextId() {
-		if (ids == null) {
-			ids = new long[] { MAX_NUMBER_OF_IDS, 0 };
+		if (ids == null || ids.length == 0) {
+			ids = new long[] { 0, 0 };
 		}
 		int firstFreeID = 0;
 		if (ids[0] > 0) {
@@ -71,13 +71,85 @@ public class ReusableIDGenerator {
 	}
 
 	public void release(int queryId) {
-		// TODO Auto-generated method stub
-
+		if (ids == null || ids.length == 0) {
+			return;
+		}
+		long longQueryId = queryId & 0x00_00_00_00_ff_ff_ff_ffl;
+		// find index to whom's block the queryId belong
+		long firstIdOfBlock = 0;
+		int indexOfBlock;
+		for (indexOfBlock = 0; indexOfBlock < ids.length && firstIdOfBlock
+				+ ids[indexOfBlock] - 1 < longQueryId; indexOfBlock++) {
+			firstIdOfBlock += ids[indexOfBlock];
+		}
+		if (indexOfBlock > ids.length) {
+			// queryId is larger than the largest queryId stored in the id array
+			return;
+		} else if (indexOfBlock % 2 == 0) {
+			// queryId resides in an free block
+			return;
+		} else {
+			// queryId is marked as used, yet
+			assert ids[indexOfBlock] > 0;
+			if (ids[indexOfBlock] == 1) {
+				// the query id is the last in a used block
+				long[] newIds = new long[ids.length - 2];
+				if (indexOfBlock == ids.length - 1) {
+					// [...,f1,u,f2,1] has to be changed to [...,f1,u]
+					System.arraycopy(ids, 0, newIds, 0, newIds.length);
+				} else {
+					// [...,f1,1,f2,u,...] has to be changed to
+					// [...,f1+1+f2,u,...]
+					for (int oldI = 0, newI = 0; oldI < ids.length; oldI++, newI++) {
+						if (oldI == indexOfBlock) {
+							newIds[newI - 1] += 1 + ids[oldI + 1];
+							newI--;
+							oldI++;
+						} else {
+							newIds[newI] = ids[oldI];
+						}
+					}
+				}
+				ids = newIds;
+			} else if (longQueryId == firstIdOfBlock) {
+				// the query id is the first of a used block>1
+				// [...,f,u,...] has to be changed to [...,f+1,u-1,...]
+				ids[indexOfBlock - 1]++;
+				ids[indexOfBlock]--;
+			} else if (longQueryId == firstIdOfBlock + ids[indexOfBlock] - 1) {
+				// the query id is the last of a used block>1
+				// [...,f,u] has to be changed to [...,f,u-1]
+				ids[indexOfBlock]--;
+				if (indexOfBlock < ids.length - 1) {
+					// [...,f1,u,f2,...] has to be changed to
+					// [...,f1,u-1,f2+1,...]
+					ids[indexOfBlock + 1]++;
+				}
+			} else {
+				// the query id is in the middle of a used block
+				// [...,f1,u,f2,...] has to be changed to
+				// [...,f1,un1,1,un2,f2,...]
+				// with u=un1+1+un2
+				long[] newIds = new long[ids.length + 2];
+				for (int oldI = 0, newI = 0; oldI < ids.length; oldI++, newI++) {
+					if (oldI == indexOfBlock) {
+						newIds[newI] = longQueryId - firstIdOfBlock;
+						newIds[newI + 1] = 1;
+						newIds[newI + 2] = firstIdOfBlock + ids[oldI] - 1
+								- longQueryId;
+						newI += 2;
+					} else {
+						newIds[newI] = ids[oldI];
+					}
+				}
+				ids = newIds;
+			}
+		}
 	}
 
 	@Override
 	public String toString() {
-		return Arrays.toString(ids);
+		return ids == null ? "[]" : Arrays.toString(ids);
 	}
 
 }
