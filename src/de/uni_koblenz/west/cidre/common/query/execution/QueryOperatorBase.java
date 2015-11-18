@@ -208,7 +208,7 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 	 *         <code>child</code>. If no {@link Mapping} has been received, yet,
 	 *         <code>null</code> is returned.
 	 */
-	protected Mapping receiveMapping(int child) {
+	protected Mapping consumeMapping(int child) {
 		return inputQueues[child].dequeue(recycleCache);
 	}
 
