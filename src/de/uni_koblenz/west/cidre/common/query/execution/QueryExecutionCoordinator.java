@@ -168,11 +168,11 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		if (!hasFinished()) {
 			sendMessageToClient(MessageUtils.createStringMessage(
 					MessageType.CLIENT_COMMAND_FAILED,
-					"The query has been closed befor it was finished.",
+					"The query has been closed before it was finished.",
 					logger));
 			if (logger != null) {
 				logger.finer("Query " + getQueryId()
-						+ " has been closed befor it was finished.");
+						+ " has been closed before it was finished.");
 			}
 		}
 		closeInternal();
