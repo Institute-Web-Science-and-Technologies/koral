@@ -240,9 +240,10 @@ public class ClientMessageProcessor
 				}
 				QueryExecutionCoordinator coordinator = new QueryExecutionCoordinator(
 						master.getComputerId(), queryIdGenerator.getNextId(),
-						master.getNumberOfSlaves(), mappingReceiverQueueSize, tmpDir,
-						clientID.intValue(), clientConnections,
+						master.getNumberOfSlaves(), mappingReceiverQueueSize,
+						tmpDir, clientID.intValue(), clientConnections,
 						master.getDictionary(), master.getStatistics(), logger);
+				coordinator.processQueryRequest(arguments);
 				clientAddress2queryExecutionCoordinator.put(address,
 						coordinator);
 				master.executeTask(coordinator);

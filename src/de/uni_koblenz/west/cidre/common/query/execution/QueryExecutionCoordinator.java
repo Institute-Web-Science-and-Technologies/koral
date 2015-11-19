@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
+import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
@@ -27,6 +29,13 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		super(computerID, queryID, (short) 0, Integer.MAX_VALUE, numberOfSlaves,
 				cacheSize, cacheDir);
 		// TODO Auto-generated constructor stub
+	}
+
+	public void processQueryRequest(byte[][] arguments) {
+		int queryTypeOctal = NumberConversion.bytes2int(arguments[0]);
+		String queryString = MessageUtils.convertToString(arguments[1], logger);
+		// TODO Auto-generated method stub
+
 	}
 
 	public int getQueryId() {
