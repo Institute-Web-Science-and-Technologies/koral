@@ -66,7 +66,8 @@ public abstract class WorkerTaskBase implements WorkerTask {
 			}
 			inputQueues = newInputQueues;
 		}
-		inputQueues[0] = new CachedFileReceiverQueue(cacheSize, cacheDirectory);
+		inputQueues[inputQueues.length - 1] = new CachedFileReceiverQueue(
+				cacheSize, cacheDirectory, inputQueues.length - 1);
 	}
 
 	@Override
@@ -109,7 +110,7 @@ public abstract class WorkerTaskBase implements WorkerTask {
 			children = newChildren;
 			id = children.length - 1;
 		}
-		children[0] = child;
+		children[id] = child;
 		addInputQueue();
 		return id;
 	}
