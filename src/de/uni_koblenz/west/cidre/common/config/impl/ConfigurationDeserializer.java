@@ -249,4 +249,8 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
 		conf.setMappingBundleSize(Integer.parseInt(size));
 	}
 
+	public void deserializeReceiverQueueSize(Configuration conf, String size) {
+		conf.setReceiverQueueSize(Integer.parseInt(size));
+	}
+
 }

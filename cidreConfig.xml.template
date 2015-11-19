@@ -151,4 +151,9 @@ WEAK_REFERENCE = instances are removed from the cache by the garbage collector, 
 		<description>Before mappings are sent to another computer, they are bundled into one message. This number defines how many mappings are bundeled.</description>
 		<value>100</value>
 	</property>
+	<property>
+		<name>receiverQueueSize</name>
+		<description>Defines how many mappings should be stored in memory for each mapping receiver queue of each query operator</description>
+		<value>1000</value>
+	</property>
 </config>

@@ -145,4 +145,8 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
 		return new Integer(conf.getMappingBundleSize()).toString();
 	}
 
+	public String serializeReceiverQueueSize(Configuration conf) {
+		return new Integer(conf.getReceiverQueueSize()).toString();
+	}
+
 }

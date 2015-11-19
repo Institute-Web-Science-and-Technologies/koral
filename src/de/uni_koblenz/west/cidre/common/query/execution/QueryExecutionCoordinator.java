@@ -1,12 +1,9 @@
 package de.uni_koblenz.west.cidre.common.query.execution;
 
-import java.io.Closeable;
-import java.util.Set;
+import java.io.File;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
-import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
-import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
@@ -17,43 +14,28 @@ import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class QueryExecutionCoordinator implements WorkerTask, Closeable {
-
-	private final Logger logger;
+public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	// TODO before sending to sparql reqester replace urn:blankNode: by _: for
 	// proper blank node syntax
 
-	public QueryExecutionCoordinator(int queryID, int clientID,
+	public QueryExecutionCoordinator(short computerID, int queryID,
+			int numberOfSlaves, int cacheSize, File cacheDir, int clientID,
 			ClientConnectionManager clientConnections,
 			DictionaryEncoder dictionary, GraphStatistics statistics,
 			Logger logger) {
-		this.logger = logger;
+		super(computerID, queryID, (short) 0, Integer.MAX_VALUE, numberOfSlaves,
+				cacheSize, cacheDir);
 		// TODO Auto-generated constructor stub
 	}
 
-	@Override
-	public void setUp(MessageSenderBuffer messageSender,
-			MappingRecycleCache recycleCache, Logger logger) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public long getID() {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getQueryId() {
+		return (int) ((getID() & 0x00_00_ff_ff_ff_ff_00_00l) >>> Short.SIZE);
 	}
 
 	@Override
 	public long getCoordinatorID() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public long getEstimatedTaskLoad() {
-		// TODO Auto-generated method stub
-		return 0;
+		return getID();
 	}
 
 	@Override
@@ -64,56 +46,39 @@ public class QueryExecutionCoordinator implements WorkerTask, Closeable {
 
 	@Override
 	public WorkerTask getParentTask() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Set<WorkerTask> getPrecedingTasks() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void start() {
+	protected void handleMappingReception(long sender, byte[] message,
+			int firstIndex) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public boolean hasInput() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void enqueueMessage(long sender, byte[] message, int firstIndex) {
-		// receives message of finished root tasks!!!
+	protected void executePreStartStep() {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void execute() {
+	protected void executeOperationStep() {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public boolean hasFinished() {
+	protected boolean isFinishedInternal() {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public void close() {
+		super.close();
 		// TODO Auto-generated method stub
 
-	}
-
-	public int getQueryId() {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 }

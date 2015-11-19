@@ -174,6 +174,14 @@ public class CidreMaster extends CidreSystem {
 		}
 	}
 
+	public short getComputerId() {
+		return (short) getNetworkManager().getCurrentID();
+	}
+
+	public int getNumberOfSlaves() {
+		return getNetworkManager().getNumberOfSlaves();
+	}
+
 	@Override
 	public void clearInternal() {
 		getNetworkManager()

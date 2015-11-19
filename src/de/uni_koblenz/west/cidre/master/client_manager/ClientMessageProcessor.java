@@ -44,6 +44,8 @@ public class ClientMessageProcessor
 
 	private final Map<String, QueryExecutionCoordinator> clientAddress2queryExecutionCoordinator;
 
+	private final int mappingReceiverQueueSize;
+
 	public ClientMessageProcessor(Configuration conf,
 			ClientConnectionManager clientConnections, CidreMaster master,
 			Logger logger) {
@@ -61,6 +63,7 @@ public class ClientMessageProcessor
 		clientAddress2queryExecutionCoordinator = new HashMap<>();
 		queryIdGenerator = new ReusableIDGenerator();
 		this.clientConnections.registerClosedConnectionListener(this);
+		mappingReceiverQueueSize = conf.getReceiverQueueSize();
 	}
 
 	/**
@@ -236,9 +239,10 @@ public class ClientMessageProcessor
 					break;
 				}
 				QueryExecutionCoordinator coordinator = new QueryExecutionCoordinator(
-						queryIdGenerator.getNextId(), clientID.intValue(),
-						clientConnections, master.getDictionary(),
-						master.getStatistics(), logger);
+						master.getComputerId(), queryIdGenerator.getNextId(),
+						master.getNumberOfSlaves(), mappingReceiverQueueSize, tmpDir,
+						clientID.intValue(), clientConnections,
+						master.getDictionary(), master.getStatistics(), logger);
 				clientAddress2queryExecutionCoordinator.put(address,
 						coordinator);
 				master.executeTask(coordinator);

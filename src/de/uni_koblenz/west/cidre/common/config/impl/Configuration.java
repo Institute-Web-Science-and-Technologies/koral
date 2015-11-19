@@ -423,6 +423,17 @@ public class Configuration implements Configurable {
 		this.mappingBundleSize = mappingBundleSize;
 	}
 
+	@Property(name = "receiverQueueSize", description = "Defines how many mappings should be stored in memory for each mapping receiver queue of each query operator")
+	private int receiverQueueSize = 1000;
+
+	public int getReceiverQueueSize() {
+		return receiverQueueSize;
+	}
+
+	public void setReceiverQueueSize(int receiverQueueSize) {
+		this.receiverQueueSize = receiverQueueSize;
+	}
+
 	/*
 	 * serialization specific code
 	 */
