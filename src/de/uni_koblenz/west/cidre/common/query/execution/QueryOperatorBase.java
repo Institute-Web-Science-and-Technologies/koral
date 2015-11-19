@@ -1,8 +1,6 @@
 package de.uni_koblenz.west.cidre.common.query.execution;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
@@ -30,11 +28,9 @@ public abstract class QueryOperatorBase extends WorkerTaskBase
 
 	private final long estimatedWorkLoad;
 
-	private QueryOperatorState state;
-
 	private QueryOperatorBase parent;
 
-	private WorkerTask[] children;
+	private QueryOperatorState state;
 
 	private int numberOfMissingFinishedMessages;
 
@@ -89,32 +85,6 @@ public abstract class QueryOperatorBase extends WorkerTaskBase
 		return parent;
 	}
 
-	public int addChildTask(WorkerTask child) {
-		int id = 0;
-		if (children == null || children.length == 0) {
-			children = new WorkerTask[1];
-		} else {
-			WorkerTask[] newChildren = new WorkerTask[children.length + 1];
-			for (int i = 0; i < children.length; i++) {
-				newChildren[i] = children[i];
-			}
-			children = newChildren;
-			id = children.length - 1;
-		}
-		children[0] = child;
-		addInputQueue();
-		return id;
-	}
-
-	@Override
-	public Set<WorkerTask> getPrecedingTasks() {
-		Set<WorkerTask> precedingTasks = new HashSet<>();
-		for (WorkerTask child : children) {
-			precedingTasks.add(child);
-		}
-		return precedingTasks;
-	}
-
 	@Override
 	public void start() {
 		if (state != QueryOperatorState.CREATED) {
@@ -135,12 +105,7 @@ public abstract class QueryOperatorBase extends WorkerTaskBase
 		case QUERY_MAPPING_BATCH:
 			long taskId = (sender & 0x00_00_ff_ff_ff_ff_ff_ffl)
 					| (getID() & 0xff_ff_00_00_00_00_00_00l);
-			int childIndex = -1;
-			for (childIndex = 0; childIndex < children.length; childIndex++) {
-				if (children[childIndex].getID() == taskId) {
-					break;
-				}
-			}
+			int childIndex = getIndexOfChild(taskId);
 			enqueuMessage(childIndex, message, firstIndex);
 			break;
 		default:
@@ -181,17 +146,6 @@ public abstract class QueryOperatorBase extends WorkerTaskBase
 	}
 
 	/**
-	 * Called by subclasses of {@link QueryOperatorBase}.
-	 * 
-	 * @param child
-	 * @return <code>true</code> if all {@link Mapping}s of <code>child</code>
-	 *         have been processed and the child operation is finished.
-	 */
-	protected boolean hasChildFinished(int child) {
-		return isInputQueueEmpty(child) && children[child].hasFinished();
-	}
-
-	/**
 	 * Called by subclasses of {@link QueryOperatorBase}.<br>
 	 * Sends <code>mapping</code> to the {@link #parent} operator. If this is
 	 * the root operator, it sends the mapping to the query coordinator.
@@ -213,12 +167,8 @@ public abstract class QueryOperatorBase extends WorkerTaskBase
 	}
 
 	private boolean isFinishedLocally() {
-		for (WorkerTask child : children) {
-			if (!child.hasFinished()) {
-				return false;
-			}
-		}
-		return numberOfMissingFinishedMessages == 0 && isFinishedInternal();
+		return numberOfMissingFinishedMessages == 0 && areAllChildrenFinished()
+				&& isFinishedInternal();
 	}
 
 	/**

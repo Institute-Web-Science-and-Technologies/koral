@@ -1,11 +1,14 @@
 package de.uni_koblenz.west.cidre.common.executor;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.utils.CachedFileReceiverQueue;
 
 /**
@@ -25,6 +28,8 @@ public abstract class WorkerTaskBase implements WorkerTask {
 	private final int cacheSize;
 
 	private final File cacheDirectory;
+
+	private WorkerTask[] children;
 
 	public WorkerTaskBase(long id, int cacheSize, File cacheDirectory) {
 		this.id = id;
@@ -80,6 +85,61 @@ public abstract class WorkerTaskBase implements WorkerTask {
 
 	protected boolean isInputQueueEmpty(int inputQueueIndex) {
 		return inputQueues[inputQueueIndex].isEmpty();
+	}
+
+	public int addChildTask(WorkerTask child) {
+		int id = 0;
+		if (children == null || children.length == 0) {
+			children = new WorkerTask[1];
+		} else {
+			WorkerTask[] newChildren = new WorkerTask[children.length + 1];
+			for (int i = 0; i < children.length; i++) {
+				newChildren[i] = children[i];
+			}
+			children = newChildren;
+			id = children.length - 1;
+		}
+		children[0] = child;
+		addInputQueue();
+		return id;
+	}
+
+	@Override
+	public Set<WorkerTask> getPrecedingTasks() {
+		Set<WorkerTask> precedingTasks = new HashSet<>();
+		for (WorkerTask child : children) {
+			precedingTasks.add(child);
+		}
+		return precedingTasks;
+	}
+
+	protected int getIndexOfChild(long childId) {
+		for (int childIndex = 0; childIndex < children.length; childIndex++) {
+			if (children[childIndex].getID() == childId) {
+				return childIndex;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Called by subclasses of {@link QueryOperatorBase}.
+	 * 
+	 * @param child
+	 * @return <code>true</code> if all {@link Mapping}s of <code>child</code>
+	 *         have been processed and the child operation is finished.
+	 */
+	protected boolean hasChildFinished(int child) {
+		return isInputQueueEmpty(child) && children[child].hasFinished();
+	}
+
+	protected boolean areAllChildrenFinished() {
+		for (WorkerTask child : children) {
+			if (!child.hasFinished()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override
