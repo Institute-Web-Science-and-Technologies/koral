@@ -4,6 +4,7 @@ import java.io.File;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
 /**
  * This is the base implementation of {@link WorkerTask} that is common for all
@@ -68,6 +69,11 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	protected void executePreStartStep() {
 	}
 
+	protected void executeFinalStep(MappingRecycleCache recycleCache) {
+		messageSender.sendQueryTaskFinished(getID(), getParentTask() == null,
+				getCoordinatorID(), recycleCache);
+	}
+
 	/**
 	 * Called by subclasses of {@link QueryOperatorBase}.<br>
 	 * Sends <code>mapping</code> to the {@link #parent} operator. If this is
@@ -76,8 +82,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	 * @param mapping
 	 */
 	protected void emitMapping(Mapping mapping) {
-		sendMapping(mapping, getParentTask() == null ? getCoordinatorID()
-				: adjustOwner(mapping));
+		messageSender.sendQueryMapping(mapping, getID(), getParentTask() == null
+				? getCoordinatorID() : adjustOwner(mapping), recycleCache);
 	}
 
 	private long adjustOwner(Mapping mapping) {

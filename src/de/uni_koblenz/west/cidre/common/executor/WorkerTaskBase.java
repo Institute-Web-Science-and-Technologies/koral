@@ -41,7 +41,7 @@ public abstract class WorkerTaskBase implements WorkerTask {
 		this.id = id;
 		this.cacheSize = cacheSize;
 		this.cacheDirectory = new File(cacheDirectory.getAbsolutePath()
-				+ File.separatorChar + "operator_" + this.id);
+				+ File.separatorChar + "workerTask_" + this.id);
 	}
 
 	@Override

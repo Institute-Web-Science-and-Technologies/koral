@@ -17,9 +17,9 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
  */
 public abstract class QueryTaskBase extends WorkerTaskBase {
 
-	private MessageSenderBuffer messageSender;
+	protected MappingRecycleCache recycleCache;
 
-	private MappingRecycleCache recycleCache;
+	protected MessageSenderBuffer messageSender;
 
 	private final long estimatedWorkLoad;
 
@@ -48,8 +48,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	public void setUp(MessageSenderBuffer messageSender,
 			MappingRecycleCache recycleCache, Logger logger) {
 		super.setUp(messageSender, recycleCache, logger);
-		this.messageSender = messageSender;
 		this.recycleCache = recycleCache;
+		this.messageSender = messageSender;
 	}
 
 	@Override
@@ -94,9 +94,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 			if (isFinishedLocally()) {
 				numberOfMissingFinishedMessages--;
 				state = QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH;
-				messageSender.sendQueryTaskFinished(getID(),
-						getParentTask() == null, getCoordinatorID(),
-						recycleCache);
+				executeFinalStep();
 			}
 		} else if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
 			if (numberOfMissingFinishedMessages == 0) {
@@ -109,6 +107,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
 	protected abstract void executeOperationStep();
 
+	protected abstract void executeFinalStep();
+
 	/**
 	 * Called by subclasses of {@link QueryOperatorBase}.
 	 * 
@@ -119,11 +119,6 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	 */
 	protected Mapping consumeMapping(int child) {
 		return consumeMapping(child, recycleCache);
-	}
-
-	protected void sendMapping(Mapping mapping, long receiverId) {
-		messageSender.sendQueryMapping(mapping, getID(), receiverId,
-				recycleCache);
 	}
 
 	private boolean isFinishedLocally() {
@@ -141,6 +136,10 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	@Override
 	public boolean hasFinished() {
 		return state == QueryTaskState.FINISHED;
+	}
+
+	public boolean isAborted() {
+		return state == QueryTaskState.ABORTED;
 	}
 
 	@Override
