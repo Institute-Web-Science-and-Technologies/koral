@@ -6,11 +6,11 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
+import de.uni_koblenz.west.cidre.common.executor.WorkerTaskBase;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.utils.CachedFileReceiverQueue;
 
 /**
  * This is the base implementation of {@link WorkerTask} that is common for all
@@ -19,15 +19,12 @@ import de.uni_koblenz.west.cidre.common.utils.CachedFileReceiverQueue;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
-
-	protected Logger logger;
+public abstract class QueryOperatorBase extends WorkerTaskBase
+		implements QueryTask {
 
 	private MessageSenderBuffer messageSender;
 
 	private MappingRecycleCache recycleCache;
-
-	private final long id;
 
 	private final long coordinatorId;
 
@@ -39,13 +36,7 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 
 	private WorkerTask[] children;
 
-	private CachedFileReceiverQueue[] inputQueues;
-
 	private int numberOfMissingFinishedMessages;
-
-	private final int cacheSize;
-
-	private final File cacheDirectory;
 
 	public QueryOperatorBase(short slaveId, int queryId, short taskId,
 			long coordinatorId, long estimatedWorkLoad, int numberOfSlaves,
@@ -59,27 +50,19 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 	public QueryOperatorBase(long id, long coordinatorId,
 			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
 			File cacheDirectory) {
-		this.id = id;
+		super(id, cacheSize, cacheDirectory);
 		this.coordinatorId = coordinatorId;
 		this.estimatedWorkLoad = estimatedWorkLoad;
 		numberOfMissingFinishedMessages = numberOfSlaves;
-		this.cacheSize = cacheSize;
-		this.cacheDirectory = new File(cacheDirectory.getAbsolutePath()
-				+ File.separatorChar + "operator_" + this.id);
 		state = QueryOperatorState.CREATED;
 	}
 
 	@Override
 	public void setUp(MessageSenderBuffer messageSender,
 			MappingRecycleCache recycleCache, Logger logger) {
-		this.logger = logger;
+		super.setUp(messageSender, recycleCache, logger);
 		this.messageSender = messageSender;
 		this.recycleCache = recycleCache;
-	}
-
-	@Override
-	public long getID() {
-		return id;
 	}
 
 	@Override
@@ -110,21 +93,16 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 		int id = 0;
 		if (children == null || children.length == 0) {
 			children = new WorkerTask[1];
-			inputQueues = new CachedFileReceiverQueue[1];
 		} else {
 			WorkerTask[] newChildren = new WorkerTask[children.length + 1];
-			CachedFileReceiverQueue[] newInputQueues = new CachedFileReceiverQueue[inputQueues.length
-					+ 1];
 			for (int i = 0; i < children.length; i++) {
 				newChildren[i] = children[i];
-				newInputQueues[i] = inputQueues[i];
 			}
 			children = newChildren;
-			inputQueues = newInputQueues;
 			id = children.length - 1;
 		}
 		children[0] = child;
-		inputQueues[0] = new CachedFileReceiverQueue(cacheSize, cacheDirectory);
+		addInputQueue();
 		return id;
 	}
 
@@ -148,16 +126,6 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 	}
 
 	@Override
-	public boolean hasInput() {
-		for (CachedFileReceiverQueue queue : inputQueues) {
-			if (!queue.isEmpty()) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
 	public void enqueueMessage(long sender, byte[] message, int firstIndex) {
 		MessageType mType = MessageType.valueOf(message[firstIndex]);
 		switch (mType) {
@@ -173,7 +141,7 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 					break;
 				}
 			}
-			inputQueues[childIndex].enqueue(message, firstIndex);
+			enqueuMessage(childIndex, message, firstIndex);
 			break;
 		default:
 			throw new RuntimeException("Unsupported message type " + mType);
@@ -209,7 +177,7 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 	 *         <code>null</code> is returned.
 	 */
 	protected Mapping consumeMapping(int child) {
-		return inputQueues[child].dequeue(recycleCache);
+		return consumeMapping(child, recycleCache);
 	}
 
 	/**
@@ -220,7 +188,7 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 	 *         have been processed and the child operation is finished.
 	 */
 	protected boolean hasChildFinished(int child) {
-		return inputQueues[child].isEmpty() && children[child].hasFinished();
+		return isInputQueueEmpty(child) && children[child].hasFinished();
 	}
 
 	/**
@@ -267,9 +235,7 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 
 	@Override
 	public void close() {
-		for (CachedFileReceiverQueue queue : inputQueues) {
-			queue.close();
-		}
+		super.close();
 		if (state != QueryOperatorState.FINISHED) {
 			state = QueryOperatorState.ABORTED;
 		}
@@ -277,15 +243,5 @@ public abstract class QueryOperatorBase implements WorkerTask, QueryTask {
 	}
 
 	protected abstract void closeInternal();
-
-	@Override
-	public String toString() {
-		return getClass().getName() + "[id=" + id + "(slave="
-				+ (id >>> (Integer.SIZE + Short.SIZE)) + " query="
-				+ ((id << Short.SIZE) >>> (Short.SIZE + Short.SIZE)) + " task="
-				+ ((id << (Short.SIZE + Integer.SIZE)) >>> (Short.SIZE
-						+ Integer.SIZE))
-				+ ")]";
-	}
 
 }
