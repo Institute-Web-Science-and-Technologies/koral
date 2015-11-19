@@ -47,7 +47,7 @@ import org.apache.jena.sparql.algebra.op.OpTopN;
 import org.apache.jena.sparql.algebra.op.OpTriple;
 import org.apache.jena.sparql.algebra.op.OpUnion;
 
-import de.uni_koblenz.west.cidre.common.query.execution.QueryTask;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryTaskFactory;
 
 /**
@@ -61,7 +61,7 @@ public class SparqlParser implements OpVisitor {
 
 	private QueryExecutionTreeType treeType;
 
-	private final Deque<QueryTask> stack;
+	private final Deque<QueryOperatorTask> stack;
 
 	public SparqlParser() {
 		stack = new ArrayDeque<>();
@@ -73,7 +73,7 @@ public class SparqlParser implements OpVisitor {
 	 * https://jena.apache.org/documentation/notes/sse.html
 	 */
 
-	public QueryTask parse(String queryString,
+	public QueryOperatorTask parse(String queryString,
 			QueryExecutionTreeType treeType) {
 		this.treeType = treeType;
 		Query queryObject = QueryFactory.create(queryString);
@@ -99,9 +99,9 @@ public class SparqlParser implements OpVisitor {
 			switch (treeType) {
 			case LEFT_LINEAR:
 				if (numberOfTriplePattern > 1) {
-					QueryTask left = stack.pop();
-					QueryTask right = stack.pop();
-					QueryTask join = QueryTaskFactory
+					QueryOperatorTask left = stack.pop();
+					QueryOperatorTask right = stack.pop();
+					QueryOperatorTask join = QueryTaskFactory
 							.createTriplePatternJoin(left, right);
 					stack.push(join);
 				}
@@ -109,9 +109,9 @@ public class SparqlParser implements OpVisitor {
 			case RIGHT_LINEAR:
 				if (!tripleIter.hasNext()) {
 					for (int i = 1; i < numberOfTriplePattern; i++) {
-						QueryTask right = stack.pop();
-						QueryTask left = stack.pop();
-						QueryTask join = QueryTaskFactory
+						QueryOperatorTask right = stack.pop();
+						QueryOperatorTask left = stack.pop();
+						QueryOperatorTask join = QueryTaskFactory
 								.createTriplePatternJoin(left, right);
 						stack.push(join);
 					}
@@ -127,18 +127,18 @@ public class SparqlParser implements OpVisitor {
 	}
 
 	private void createBushyTree(int numberOfTriplePattern) {
-		Queue<QueryTask> workingQueue = new LinkedList<>();
+		Queue<QueryOperatorTask> workingQueue = new LinkedList<>();
 		for (int i = 0; i < numberOfTriplePattern; i++) {
-			((LinkedList<QueryTask>) workingQueue).addFirst(stack.pop());
+			((LinkedList<QueryOperatorTask>) workingQueue).addFirst(stack.pop());
 		}
-		Queue<QueryTask> nextWorkingQueue = new LinkedList<>();
+		Queue<QueryOperatorTask> nextWorkingQueue = new LinkedList<>();
 		while (!workingQueue.isEmpty()) {
-			QueryTask leftChild = workingQueue.poll();
+			QueryOperatorTask leftChild = workingQueue.poll();
 			if (workingQueue.isEmpty()) {
 				nextWorkingQueue.offer(leftChild);
 			} else {
-				QueryTask rightChild = workingQueue.poll();
-				QueryTask join = QueryTaskFactory
+				QueryOperatorTask rightChild = workingQueue.poll();
+				QueryOperatorTask join = QueryTaskFactory
 						.createTriplePatternJoin(leftChild, rightChild);
 				nextWorkingQueue.offer(join);
 			}
@@ -151,7 +151,7 @@ public class SparqlParser implements OpVisitor {
 	}
 
 	public void visit(Triple triple) {
-		QueryTask task = QueryTaskFactory.createTriplePatternMatch(triple);
+		QueryOperatorTask task = QueryTaskFactory.createTriplePatternMatch(triple);
 		stack.push(task);
 	}
 
@@ -347,8 +347,8 @@ public class SparqlParser implements OpVisitor {
 	@Override
 	public void visit(OpProject opProject) {
 		opProject.getSubOp().visit(this);
-		QueryTask subTask = stack.pop();
-		QueryTask projection = QueryTaskFactory.createProjection(subTask);
+		QueryOperatorTask subTask = stack.pop();
+		QueryOperatorTask projection = QueryTaskFactory.createProjection(subTask);
 		stack.push(projection);
 	}
 

@@ -6,7 +6,7 @@ package de.uni_koblenz.west.cidre.common.query.execution;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public interface QueryTask {
+public interface QueryOperatorTask {
 
 	public String[] getResultVariables();
 

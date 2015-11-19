@@ -10,18 +10,18 @@ import org.apache.jena.graph.Triple;
  */
 public class QueryTaskFactory {
 
-	public static QueryTask createTriplePatternMatch(Triple triple) {
+	public static QueryOperatorTask createTriplePatternMatch(Triple triple) {
 		// TODO Auto-generated method stub
 		return new DummyTask();
 	}
 
-	public static QueryTask createTriplePatternJoin(QueryTask left,
-			QueryTask right) {
+	public static QueryOperatorTask createTriplePatternJoin(QueryOperatorTask left,
+			QueryOperatorTask right) {
 		// TODO Auto-generated method stub
 		return new DummyTask();
 	}
 
-	public static QueryTask createProjection(QueryTask subTask) {
+	public static QueryOperatorTask createProjection(QueryOperatorTask subTask) {
 		// TODO Auto-generated method stub
 		return new DummyTask();
 	}
@@ -35,7 +35,7 @@ public class QueryTaskFactory {
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-class DummyTask implements QueryTask {
+class DummyTask implements QueryOperatorTask {
 
 	@Override
 	public String[] getResultVariables() {

@@ -30,7 +30,7 @@ import de.uni_koblenz.west.cidre.common.fileTransfer.FileSender;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
-import de.uni_koblenz.west.cidre.common.query.execution.QueryTask;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution_tree.QueryExecutionTreeType;
 import de.uni_koblenz.west.cidre.common.query.execution_tree.SparqlParser;
 import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
@@ -197,7 +197,7 @@ public class CidreClient {
 			QueryExecutionTreeType treeType) throws IOException {
 		// check syntax
 		SparqlParser parser = new SparqlParser();
-		QueryTask task = parser.parse(query, treeType);
+		QueryOperatorTask task = parser.parse(query, treeType);
 		String queryString = QueryFactory.create(query).serialize();
 		String[] vars = task.getResultVariables();
 

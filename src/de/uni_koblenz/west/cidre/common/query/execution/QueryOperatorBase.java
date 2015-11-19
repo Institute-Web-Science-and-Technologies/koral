@@ -18,7 +18,7 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
  *
  */
 public abstract class QueryOperatorBase extends WorkerTaskBase
-		implements QueryTask {
+		implements QueryOperatorTask {
 
 	private MessageSenderBuffer messageSender;
 
@@ -161,7 +161,7 @@ public abstract class QueryOperatorBase extends WorkerTaskBase
 		assert getParentTask() != null;
 		long parentID = getParentTask().getID() & 0x00_00_FF_FF_FF_FF_FF_FFl;
 		long joinVarValue = mapping
-				.getValue(((QueryTask) getParentTask()).getFirstJoinVar())
+				.getValue(((QueryOperatorTask) getParentTask()).getFirstJoinVar())
 				& 0xFF_FF_00_00_00_00_00_00l;
 		return parentID | joinVarValue;
 	}
