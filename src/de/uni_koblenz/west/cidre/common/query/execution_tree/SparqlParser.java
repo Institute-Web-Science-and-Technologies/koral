@@ -48,7 +48,7 @@ import org.apache.jena.sparql.algebra.op.OpTriple;
 import org.apache.jena.sparql.algebra.op.OpUnion;
 
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
-import de.uni_koblenz.west.cidre.common.query.execution.QueryTaskFactory;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTaskFactory;
 
 /**
  * Checks whether the query only consists of the supported operations and
@@ -101,7 +101,7 @@ public class SparqlParser implements OpVisitor {
 				if (numberOfTriplePattern > 1) {
 					QueryOperatorTask left = stack.pop();
 					QueryOperatorTask right = stack.pop();
-					QueryOperatorTask join = QueryTaskFactory
+					QueryOperatorTask join = QueryOperatorTaskFactory
 							.createTriplePatternJoin(left, right);
 					stack.push(join);
 				}
@@ -111,7 +111,7 @@ public class SparqlParser implements OpVisitor {
 					for (int i = 1; i < numberOfTriplePattern; i++) {
 						QueryOperatorTask right = stack.pop();
 						QueryOperatorTask left = stack.pop();
-						QueryOperatorTask join = QueryTaskFactory
+						QueryOperatorTask join = QueryOperatorTaskFactory
 								.createTriplePatternJoin(left, right);
 						stack.push(join);
 					}
@@ -138,7 +138,7 @@ public class SparqlParser implements OpVisitor {
 				nextWorkingQueue.offer(leftChild);
 			} else {
 				QueryOperatorTask rightChild = workingQueue.poll();
-				QueryOperatorTask join = QueryTaskFactory
+				QueryOperatorTask join = QueryOperatorTaskFactory
 						.createTriplePatternJoin(leftChild, rightChild);
 				nextWorkingQueue.offer(join);
 			}
@@ -151,7 +151,7 @@ public class SparqlParser implements OpVisitor {
 	}
 
 	public void visit(Triple triple) {
-		QueryOperatorTask task = QueryTaskFactory.createTriplePatternMatch(triple);
+		QueryOperatorTask task = QueryOperatorTaskFactory.createTriplePatternMatch(triple);
 		stack.push(task);
 	}
 
@@ -348,7 +348,7 @@ public class SparqlParser implements OpVisitor {
 	public void visit(OpProject opProject) {
 		opProject.getSubOp().visit(this);
 		QueryOperatorTask subTask = stack.pop();
-		QueryOperatorTask projection = QueryTaskFactory.createProjection(subTask);
+		QueryOperatorTask projection = QueryOperatorTaskFactory.createProjection(subTask);
 		stack.push(projection);
 	}
 

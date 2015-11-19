@@ -8,7 +8,7 @@ import org.apache.jena.graph.Triple;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class QueryTaskFactory {
+public class QueryOperatorTaskFactory {
 
 	public static QueryOperatorTask createTriplePatternMatch(Triple triple) {
 		// TODO Auto-generated method stub
