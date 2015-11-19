@@ -28,6 +28,10 @@ public class CachedFileReceiverQueue implements Closeable {
 
 	private final int[][] firstIndexCache;
 
+	private final int nextWriteIndex;
+
+	private final int nextReadIndex;
+
 	private final File fileBuffer1;
 
 	private OutputStream fileOutput1;
@@ -39,6 +43,10 @@ public class CachedFileReceiverQueue implements Closeable {
 	private OutputStream fileOutput2;
 
 	private InputStream fileInput2;
+
+	private long size;
+
+	private QueueStatus status;
 
 	// TODO queues have to be synchronized
 
@@ -52,6 +60,8 @@ public class CachedFileReceiverQueue implements Closeable {
 		}
 		messageCache = new byte[numberOfRows][][];
 		firstIndexCache = new int[numberOfRows][];
+		nextReadIndex = -1;
+		nextWriteIndex = 0;
 		if (!this.cacheDirectory.exists()) {
 			this.cacheDirectory.mkdirs();
 		}
@@ -59,47 +69,80 @@ public class CachedFileReceiverQueue implements Closeable {
 				+ File.separatorChar + "queue" + queueId + "buffer1");
 		fileBuffer2 = new File(this.cacheDirectory.getAbsolutePath()
 				+ File.separatorChar + "queue" + queueId + "buffer2");
+		status = QueueStatus.MEMORY_MEMORY;
+		size = 0;
 		// TODO Auto-generated constructor stub
 	}
 
 	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
+		return size == 0;
 	}
 
 	public long size() {
-		// TODO Auto-generated method stub
-		return 0;
+		return size;
+	}
+
+	private boolean isMemoryFull() {
+		synchronized (messageCache) {
+			return unsynch_isMemorFull();
+		}
+	}
+
+	private boolean unsynch_isMemorFull() {
+		if (nextReadIndex == -1 || nextReadIndex == 0) {
+			return nextWriteIndex == maxCacheSize;
+		} else {
+			return nextWriteIndex == nextReadIndex;
+		}
+	}
+
+	private void enqueueInMemory() {
+		synchronized (messageCache) {
+			if (status == QueueStatus.CLOSED) {
+				throw new IllegalStateException(
+						"Queue has already been closed.");
+			}
+			// TODO check state change at the end!
+		}
 	}
 
 	public void enqueue(byte[] message, int firstIndex) {
+		size++;
 		// TODO Auto-generated method stub
 
 	}
 
 	public Mapping dequeue(MappingRecycleCache recycleCache) {
 		// TODO Auto-generated method stub
+		size--;
 		return null;
 	}
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
-		try {
-			if (fileInput1 != null) {
-				fileInput1.close();
-			} else if (fileOutput1 != null) {
-				fileOutput1.close();
+		synchronized (messageCache) {
+			synchronized (fileBuffer1) {
+				synchronized (fileBuffer2) {
+					status = QueueStatus.CLOSED;
+					try {
+						if (fileInput1 != null) {
+							fileInput1.close();
+						} else if (fileOutput1 != null) {
+							fileOutput1.close();
+						}
+						if (fileInput2 != null) {
+							fileInput2.close();
+						} else if (fileOutput2 != null) {
+							fileOutput2.close();
+						}
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					} finally {
+						deleteCacheDirectory();
+					}
+				}
 			}
-			if (fileInput2 != null) {
-				fileInput2.close();
-			} else if (fileOutput2 != null) {
-				fileOutput2.close();
-			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
 		}
-		deleteCacheDirectory();
 	}
 
 	private void deleteCacheDirectory() {
@@ -109,6 +152,59 @@ public class CachedFileReceiverQueue implements Closeable {
 		fileBuffer1.delete();
 		fileBuffer2.delete();
 		cacheDirectory.delete();
+	}
+
+	/**
+	 * Defines the state of this queue. Each states consist of two letters:
+	 * <ol>
+	 * <li>the cache written to</li>
+	 * <li>the cache read from</li>
+	 * </ol>
+	 * 
+	 * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+	 *
+	 */
+	enum QueueStatus {
+
+		/**
+		 * memory is full =&gt; FILE1_MEMORY
+		 */
+		MEMORY_MEMORY,
+
+		/**
+		 * memory is empty =&gt; MEMORY_FILE1
+		 */
+		FILE1_MEMORY,
+
+		/**
+		 * file1 is empty =&gt; MEMORY_MEMORY <br>
+		 * memory is full =&gt; FILE2_FILE1
+		 */
+		MEMORY_FILE1,
+
+		/**
+		 * file1 is empty =&gt; FILE2_MEMORY
+		 */
+		FILE2_FILE1,
+
+		/**
+		 * memory is empty =&gt; MEMORY_FILE2
+		 */
+		FILE2_MEMORY,
+
+		/**
+		 * file2 is empty =&gt; MEMORY_MEMORY<br>
+		 * memory is full =&gt; FILE1_FILE2
+		 */
+		MEMORY_FILE2,
+
+		/**
+		 * file2 is empty =&gt; FILE1_MEMORY
+		 */
+		FILE1_FILE2,
+
+		CLOSED;
+
 	}
 
 }
