@@ -1,0 +1,154 @@
+package de.uni_koblenz.west.cidre.common.query.execution;
+
+import java.io.File;
+import java.util.logging.Logger;
+
+import de.uni_koblenz.west.cidre.common.executor.WorkerTaskBase;
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+
+/**
+ * Common superclass for query cordinator and all query operations.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
+public abstract class QueryTaskBase extends WorkerTaskBase {
+
+	private MessageSenderBuffer messageSender;
+
+	private MappingRecycleCache recycleCache;
+
+	private final long estimatedWorkLoad;
+
+	private QueryTaskState state;
+
+	private int numberOfMissingFinishedMessages;
+
+	public QueryTaskBase(short slaveId, int queryId, short taskId,
+			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
+			File cacheDirectory) {
+		this((((((long) slaveId) << Integer.SIZE)
+				| (queryId & 0x00_00_00_00_ff_ff_ff_ffl)) << Short.SIZE)
+				| (taskId & 0x00_00_00_00_00_00_ff_ffl), estimatedWorkLoad,
+				numberOfSlaves, cacheSize, cacheDirectory);
+	}
+
+	public QueryTaskBase(long id, long estimatedWorkLoad, int numberOfSlaves,
+			int cacheSize, File cacheDirectory) {
+		super(id, cacheSize, cacheDirectory);
+		this.estimatedWorkLoad = estimatedWorkLoad;
+		numberOfMissingFinishedMessages = numberOfSlaves;
+		state = QueryTaskState.CREATED;
+	}
+
+	@Override
+	public void setUp(MessageSenderBuffer messageSender,
+			MappingRecycleCache recycleCache, Logger logger) {
+		super.setUp(messageSender, recycleCache, logger);
+		this.messageSender = messageSender;
+		this.recycleCache = recycleCache;
+	}
+
+	@Override
+	public long getEstimatedTaskLoad() {
+		return estimatedWorkLoad;
+	}
+
+	@Override
+	public void start() {
+		if (state != QueryTaskState.CREATED) {
+			throw new IllegalStateException(
+					"The query task could not be started, becaue it is in state "
+							+ state.name() + ".");
+		}
+		state = QueryTaskState.STARTED;
+	}
+
+	@Override
+	public void enqueueMessage(long sender, byte[] message, int firstIndex) {
+		MessageType mType = MessageType.valueOf(message[firstIndex]);
+		switch (mType) {
+		case QUERY_TASK_FINISHED:
+			numberOfMissingFinishedMessages--;
+			break;
+		case QUERY_MAPPING_BATCH:
+			handleMappingReception(sender, message, firstIndex);
+			break;
+		default:
+			throw new RuntimeException("Unsupported message type " + mType);
+		}
+	}
+
+	protected abstract void handleMappingReception(long sender, byte[] message,
+			int firstIndex);
+
+	@Override
+	public void execute() {
+		if (state == QueryTaskState.CREATED) {
+			executePreStartStep();
+		} else if (state == QueryTaskState.STARTED) {
+			executeOperationStep();
+			if (isFinishedLocally()) {
+				numberOfMissingFinishedMessages--;
+				state = QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH;
+				messageSender.sendQueryTaskFinished(getID(),
+						getParentTask() == null, getCoordinatorID(),
+						recycleCache);
+			}
+		} else if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
+			if (numberOfMissingFinishedMessages == 0) {
+				state = QueryTaskState.FINISHED;
+			}
+		}
+	}
+
+	protected abstract void executePreStartStep();
+
+	protected abstract void executeOperationStep();
+
+	/**
+	 * Called by subclasses of {@link QueryOperatorBase}.
+	 * 
+	 * @param child
+	 * @return the first unprocessed received {@link Mapping} of child operator
+	 *         <code>child</code>. If no {@link Mapping} has been received, yet,
+	 *         <code>null</code> is returned.
+	 */
+	protected Mapping consumeMapping(int child) {
+		return consumeMapping(child, recycleCache);
+	}
+
+	protected void sendMapping(Mapping mapping, long receiverId) {
+		messageSender.sendQueryMapping(mapping, getID(), receiverId,
+				recycleCache);
+	}
+
+	private boolean isFinishedLocally() {
+		return numberOfMissingFinishedMessages == 0 && areAllChildrenFinished()
+				&& isFinishedInternal();
+	}
+
+	/**
+	 * @return true, if the current subclass has nothing to do any more (the
+	 *         input queues and finish notifications are already checked in
+	 *         {@link QueryOperatorBase}).
+	 */
+	protected abstract boolean isFinishedInternal();
+
+	@Override
+	public boolean hasFinished() {
+		return state == QueryTaskState.FINISHED;
+	}
+
+	@Override
+	public void close() {
+		super.close();
+		if (state != QueryTaskState.FINISHED) {
+			state = QueryTaskState.ABORTED;
+		}
+	}
+
+}

@@ -6,7 +6,7 @@ package de.uni_koblenz.west.cidre.common.query.execution;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public enum QueryOperatorState {
+public enum QueryTaskState {
 
 	CREATED, STARTED, WAITING_FOR_OTHERS_TO_FINISH, FINISHED, ABORTED;
 
