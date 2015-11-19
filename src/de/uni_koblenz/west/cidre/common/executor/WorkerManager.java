@@ -10,6 +10,7 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverL
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * This class manages the different {@link WorkerThread}s, i.e., starting and
@@ -70,6 +71,10 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		// TODO create query coordinator task
 		// TODO messageSender.sendQueryCreated(0, receivedQUERY_CREATEMessage,
 		// 1);
+
+		if (logger != null) {
+			logger.finer("Query " + " created.");
+		}
 	}
 
 	private void initializeTaskTree(WorkerTask rootTask) {
@@ -122,11 +127,21 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		for (WorkerThread worker : workers) {
 			worker.startQuery(receivedMessage);
 		}
+		if (logger != null) {
+			logger.finer(
+					"Query " + NumberConversion.bytes2int(receivedMessage, 1)
+							+ " started.");
+		}
 	}
 
 	public void abortQuery(byte[] receivedMessage) {
 		for (WorkerThread worker : workers) {
 			worker.abortQuery(receivedMessage);
+		}
+		if (logger != null) {
+			logger.finer(
+					"Query " + NumberConversion.bytes2int(receivedMessage, 1)
+							+ " aborted.");
 		}
 	}
 

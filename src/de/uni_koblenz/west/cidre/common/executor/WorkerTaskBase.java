@@ -79,6 +79,10 @@ public abstract class WorkerTaskBase implements WorkerTask {
 		return false;
 	}
 
+	protected long getSizeOfInputQueue(int inputQueueIndex) {
+		return inputQueues[inputQueueIndex].size();
+	}
+
 	protected void enqueuMessage(int inputQueueIndex, byte[] message,
 			int firstIndex) {
 		inputQueues[inputQueueIndex].enqueue(message, firstIndex);

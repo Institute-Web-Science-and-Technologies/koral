@@ -77,7 +77,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	public long getCurrentTaskLoad() {
-		return currentTaskLoad;
+		long inputSize = getSizeOfInputQueue(0);
+		return inputSize < 10 ? 10 : inputSize;
 	}
 
 	@Override
@@ -92,13 +93,21 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		case QUERY_CREATED:
 			numberOfMissingQueryCreatedMessages--;
 			if (numberOfMissingQueryCreatedMessages == 0) {
+				start();
 				messageSender.sendQueryStart(getQueryId());
 				sendMessageToClient(MessageUtils.createStringMessage(
 						MessageType.MASTER_WORK_IN_PROGRESS,
 						"Query execution is started.", logger));
+				if (logger != null) {
+					logger.finer("Query " + getQueryId()
+							+ " has been created on all slaves. Start of execution.");
+				}
 			}
 			break;
 		case QUERY_TASK_FAILED:
+			if (logger != null) {
+				logger.finer("Query " + getQueryId() + " failed.");
+			}
 			message[0] = MessageType.CLIENT_COMMAND_FAILED.getValue();
 			sendMessageToClient(message);
 			closeInternal();
@@ -161,6 +170,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 					MessageType.CLIENT_COMMAND_FAILED,
 					"The query has been closed befor it was finished.",
 					logger));
+			if (logger != null) {
+				logger.finer("Query " + getQueryId()
+						+ " has been closed befor it was finished.");
+			}
 		}
 		closeInternal();
 	}

@@ -21,14 +21,19 @@ public class CachedFileReceiverQueue implements Closeable {
 		// TODO Auto-generated constructor stub
 	}
 
-	public void enqueue(byte[] message, int firstIndex) {
-		// TODO Auto-generated method stub
-
-	}
-
 	public boolean isEmpty() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	public long size() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public void enqueue(byte[] message, int firstIndex) {
+		// TODO Auto-generated method stub
+
 	}
 
 	public Mapping dequeue(MappingRecycleCache recycleCache) {
