@@ -93,7 +93,9 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			numberOfMissingQueryCreatedMessages--;
 			if (numberOfMissingQueryCreatedMessages == 0) {
 				messageSender.sendQueryStart(getQueryId());
-				lastContactWithClient = System.currentTimeMillis();
+				sendMessageToClient(MessageUtils.createStringMessage(
+						MessageType.MASTER_WORK_IN_PROGRESS,
+						"Query execution is started.", logger));
 			}
 			break;
 		case QUERY_TASK_FAILED:
