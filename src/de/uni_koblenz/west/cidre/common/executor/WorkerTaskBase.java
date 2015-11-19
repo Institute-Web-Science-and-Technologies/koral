@@ -12,7 +12,13 @@ import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.utils.CachedFileReceiverQueue;
 
 /**
- * 
+ * A base implementation of the {@link WorkerTask}. It implements the following
+ * features:
+ * <ul>
+ * <li>a unique id</li>
+ * <li>handling of child tasks</li>
+ * <li>providing an arbitrary number of input queues for incoming messages</li>
+ * <ul>
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
