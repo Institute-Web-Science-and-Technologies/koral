@@ -32,8 +32,8 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuf
  */
 public class Mapping {
 
-	// TODO (1 byte message type, 2 byte number of variables, 8 byte receiving
-	// query task id, 8 byte sender task id, mapping serialization)
+	// TODO (1 byte message type, 8 byte receiving query task id, 8 byte sender
+	// task id, 4 byte length of mapping serialization, mapping serialization)
 
 	Mapping() {
 	}
@@ -54,18 +54,13 @@ public class Mapping {
 
 	}
 
-	public short getNumberOfVariables() {
-		return (short) ((getLengthOfMappingInByteArray()) / Long.BYTES - 2);
-	}
-
 	public byte[] getByteArray() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	/**
-	 * @return index which represents the first byte of the receiver task id of
-	 *         this individual mapping
+	 * @return index which represents the message type of this {@link Mapping}
 	 */
 	public int getFirstIndexOfMappingInByteArray() {
 		// TODO Auto-generated method stub

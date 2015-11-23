@@ -61,7 +61,8 @@ public interface WorkerTask extends Closeable {
 
 	public boolean hasInput();
 
-	public void enqueueMessage(long sender, byte[] message, int firstIndex);
+	public void enqueueMessage(long sender, byte[] message, int firstIndex,
+			int lengthOfMessage);
 
 	/**
 	 * Results may only be emitted, it {@link #start()} was called.

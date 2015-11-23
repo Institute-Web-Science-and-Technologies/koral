@@ -68,14 +68,15 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	}
 
 	@Override
-	public void enqueueMessage(long sender, byte[] message, int firstIndex) {
+	public void enqueueMessage(long sender, byte[] message, int firstIndex,
+			int messageLength) {
 		MessageType mType = MessageType.valueOf(message[firstIndex]);
 		switch (mType) {
 		case QUERY_TASK_FINISHED:
 			numberOfMissingFinishedMessages--;
 			break;
 		case QUERY_MAPPING_BATCH:
-			handleMappingReception(sender, message, firstIndex);
+			handleMappingReception(sender, message, firstIndex, messageLength);
 			break;
 		default:
 			throw new RuntimeException("Unsupported message type " + mType);
@@ -83,7 +84,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	}
 
 	protected abstract void handleMappingReception(long sender, byte[] message,
-			int firstIndex);
+			int firstIndex, int length);
 
 	@Override
 	public void execute() {

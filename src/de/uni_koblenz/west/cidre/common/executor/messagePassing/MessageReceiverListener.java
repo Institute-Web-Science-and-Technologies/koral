@@ -86,28 +86,28 @@ public class MessageReceiverListener implements MessageListener {
 			messageType = MessageType.valueOf(message[0]);
 			switch (messageType) {
 			case QUERY_MAPPING_BATCH:
-				int currentIndex = 3;
+				int currentIndex = Byte.BYTES + Short.BYTES;
 				while (currentIndex < message.length) {
-					short numberOfVariables = NumberConversion
-							.bytes2short(message, currentIndex + Byte.BYTES);
-					long sender = NumberConversion.bytes2long(message,
-							currentIndex + Byte.BYTES + Short.BYTES
+					int lengthOfMapping = NumberConversion.bytes2int(message,
+							currentIndex + Byte.BYTES + Long.BYTES
 									+ Long.BYTES);
+					long sender = NumberConversion.bytes2long(message,
+							currentIndex + Byte.BYTES + Long.BYTES);
 					WorkerTask task = getTask(message,
-							currentIndex + Byte.BYTES + Short.BYTES);
+							currentIndex + Byte.BYTES);
 					if (task == null) {
 						if (logger != null) {
 							long receiver = NumberConversion.bytes2long(message,
-									currentIndex + Byte.BYTES + Short.BYTES);
+									currentIndex + Byte.BYTES);
 							logger.info(
 									"Discarding a mapping because the receiving task "
 											+ receiver + " is not present.");
 						}
 					} else {
-						task.enqueueMessage(sender, message, currentIndex);
+						task.enqueueMessage(sender, message, currentIndex,
+								lengthOfMapping);
 					}
-					currentIndex += Byte.BYTES + Short.BYTES + Long.BYTES
-							+ Long.BYTES + numberOfVariables * Long.BYTES;
+					currentIndex += lengthOfMapping;
 				}
 				break;
 			case QUERY_TASK_FINISHED:
@@ -120,8 +120,10 @@ public class MessageReceiverListener implements MessageListener {
 								+ receiver + " is not present.");
 					}
 				} else {
-					task.enqueueMessage(NumberConversion.bytes2long(message,
-							message.length - Long.BYTES), message, 0);
+					task.enqueueMessage(
+							NumberConversion.bytes2long(message,
+									message.length - Long.BYTES),
+							message, 0, message.length);
 				}
 				break;
 			default:
@@ -148,7 +150,7 @@ public class MessageReceiverListener implements MessageListener {
 	}
 
 	public void receiveLocalMessage(long sender, long receiver, byte[] message,
-			int startIndexInMessage) {
+			int startIndexInMessage, int lengthOfMessage) {
 		WorkerTask task = getTask(receiver);
 		if (task == null) {
 			if (logger != null) {
@@ -157,7 +159,8 @@ public class MessageReceiverListener implements MessageListener {
 								+ receiver + " is not present.");
 			}
 		} else {
-			task.enqueueMessage(sender, message, startIndexInMessage);
+			task.enqueueMessage(sender, message, startIndexInMessage,
+					lengthOfMessage);
 		}
 	}
 

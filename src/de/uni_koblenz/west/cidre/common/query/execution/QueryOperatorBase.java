@@ -58,11 +58,11 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 
 	@Override
 	protected void handleMappingReception(long sender, byte[] message,
-			int firstIndex) {
+			int firstIndex, int length) {
 		long taskId = (sender & 0x00_00_ff_ff_ff_ff_ff_ffl)
 				| (getID() & 0xff_ff_00_00_00_00_00_00l);
 		int childIndex = getIndexOfChild(taskId);
-		enqueuMessage(childIndex, message, firstIndex);
+		enqueuMessageInternal(childIndex, message, firstIndex, length);
 	}
 
 	@Override

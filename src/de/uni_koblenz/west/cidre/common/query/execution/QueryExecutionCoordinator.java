@@ -87,7 +87,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	}
 
 	@Override
-	public void enqueueMessage(long sender, byte[] message, int firstIndex) {
+	public void enqueueMessage(long sender, byte[] message, int firstIndex,
+			int messageLength) {
 		MessageType mType = MessageType.valueOf(message[firstIndex]);
 		switch (mType) {
 		case QUERY_CREATED:
@@ -113,14 +114,14 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			closeInternal();
 			break;
 		default:
-			super.enqueueMessage(sender, message, firstIndex);
+			super.enqueueMessage(sender, message, firstIndex, messageLength);
 		}
 	}
 
 	@Override
 	protected void handleMappingReception(long sender, byte[] message,
-			int firstIndex) {
-		enqueuMessage(0, message, firstIndex);
+			int firstIndex, int length) {
+		enqueuMessageInternal(0, message, firstIndex, length);
 	}
 
 	@Override

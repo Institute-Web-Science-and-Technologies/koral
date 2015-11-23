@@ -86,7 +86,8 @@ public class MessageSenderBuffer {
 			// the receiver is on this computer
 			localMessageReceiver.receiveLocalMessage(senderTaskID,
 					receiverTaskID, mapping.getByteArray(),
-					mapping.getFirstIndexOfMappingInByteArray());
+					mapping.getFirstIndexOfMappingInByteArray(),
+					mapping.getLengthOfMappingInByteArray());
 			mappingCache.releaseMapping(mapping);
 		} else {
 			enqueue(receivingComputer, mapping, receiverTaskID, mappingCache);
@@ -143,8 +144,7 @@ public class MessageSenderBuffer {
 			int sizeOfMessage = Byte.BYTES + Short.BYTES;
 			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
 				Mapping mapping = mappingBuffer[receivingComputer][i];
-				sizeOfMessage += mapping.getLengthOfMappingInByteArray()
-						+ Byte.BYTES + Short.BYTES;
+				sizeOfMessage += mapping.getLengthOfMappingInByteArray();
 			}
 			// create message
 			buffer = ByteBuffer.allocate(sizeOfMessage);
@@ -153,10 +153,11 @@ public class MessageSenderBuffer {
 			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
 				Mapping mapping = mappingBuffer[receivingComputer][i];
 				buffer.put(MessageType.QUERY_MAPPING_BATCH.getValue());
-				buffer.putShort(mapping.getNumberOfVariables());
+				buffer.putInt(mapping.getLengthOfMappingInByteArray());
 				buffer.put(mapping.getByteArray(),
 						mapping.getFirstIndexOfMappingInByteArray(),
-						mapping.getLengthOfMappingInByteArray());
+						mapping.getLengthOfMappingInByteArray() - Byte.BYTES
+								- Integer.BYTES);
 				mappingCache.releaseMapping(mapping);
 				mappingBuffer[receivingComputer][i] = null;
 			}

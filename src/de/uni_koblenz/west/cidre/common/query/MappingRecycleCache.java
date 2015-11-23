@@ -61,6 +61,12 @@ public class MappingRecycleCache {
 		return result;
 	}
 
+	public Mapping createMapping(byte[] byteArrayWithMapping,
+			int firstIndexOfMappingInArray, int lengthOfMapping) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	public void releaseMapping(Mapping mapping) {
 		if (!isFull()) {
 			push(mapping);
