@@ -77,22 +77,54 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	/**
 	 * Called by subclasses of {@link QueryOperatorBase}.<br>
 	 * Sends <code>mapping</code> to the {@link #parent} operator. If this is
-	 * the root operator, it sends the mapping to the query coordinator.
+	 * the root operator, it sends the mapping to the query coordinator. See
+	 * definition of target' function (definition 31).
 	 * 
 	 * @param mapping
 	 */
 	protected void emitMapping(Mapping mapping) {
-		messageSender.sendQueryMapping(mapping, getID(), getParentTask() == null
-				? getCoordinatorID() : adjustOwner(mapping), recycleCache);
-	}
-
-	private long adjustOwner(Mapping mapping) {
-		assert getParentTask() != null;
-		long parentID = getParentTask().getID() & 0x00_00_FF_FF_FF_FF_FF_FFl;
-		long joinVarValue = mapping.getValue(
-				((QueryOperatorTask) getParentTask()).getFirstJoinVar())
-				& 0xFF_FF_00_00_00_00_00_00l;
-		return parentID | joinVarValue;
+		if (getParentTask() == null) {
+			messageSender.sendQueryMapping(mapping, getID(), getCoordinatorID(),
+					recycleCache);
+		} else {
+			short thisComputerID = (short) (getID() >>> Short.BYTES
+					+ Integer.BYTES);
+			long parentBaseID = getParentTask().getID()
+					& 0x00_00_FF_FF_FF_FF_FF_FFl;
+			if (mapping.isEmptyMapping()) {
+				if (mapping
+						.getIdOfFirstComputerKnowingThisMapping() == thisComputerID) {
+					// the first computer who knows this empty mapping, forwards
+					// it to all parent tasks
+					messageSender.sendQueryMappingToAll(mapping, getID(),
+							parentBaseID, recycleCache);
+				}
+			} else {
+				long ownerLong = mapping
+						.getValue(((QueryOperatorTask) getParentTask())
+								.getFirstJoinVar())
+						& 0xFF_FF_00_00_00_00_00_00l;
+				int owner = (int) (ownerLong >>> (Short.BYTES + Integer.BYTES));
+				if (mapping.isKnownByComputer(owner)) {
+					if (mapping
+							.isKnownByComputer((int) (getID() >>> (Short.BYTES
+									+ Integer.BYTES)))) {
+						// the owner also knows a replicate of this mapping,
+						// forward it to parent task on this computer
+						messageSender.sendQueryMapping(mapping, getID(),
+								getParentTask().getID(), recycleCache);
+					}
+				} else {
+					if (mapping
+							.getIdOfFirstComputerKnowingThisMapping() == thisComputerID) {
+						// first knowing computer sends mapping to owner which
+						// is a remote computer
+						messageSender.sendQueryMapping(mapping, getID(),
+								parentBaseID | ownerLong, recycleCache);
+					}
+				}
+			}
+		}
 	}
 
 	@Override

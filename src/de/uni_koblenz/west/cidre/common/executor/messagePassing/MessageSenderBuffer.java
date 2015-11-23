@@ -94,6 +94,26 @@ public class MessageSenderBuffer {
 		}
 	}
 
+	public void sendQueryMappingToAll(Mapping mapping, long senderTaskID,
+			long receiverTaskID, MappingRecycleCache mappingCache) {
+		receiverTaskID &= 0x00_00_ff_ff_ff_ff_ff_ffl;
+		mapping.updateSender(senderTaskID);
+		for (int i = 1; i < mappingBuffer.length; i++) {
+			long receiver = ((long) i) << (Short.SIZE + Integer.SIZE);
+			receiver |= receiverTaskID;
+			mapping.updateReceiver(receiver);
+			if (i == messageSender.getCurrentID()) {
+				localMessageReceiver.receiveLocalMessage(senderTaskID, receiver,
+						mapping.getByteArray(),
+						mapping.getFirstIndexOfMappingInByteArray(),
+						mapping.getLengthOfMappingInByteArray());
+			} else {
+				enqueue(i, mapping, receiver, mappingCache);
+			}
+		}
+		mappingCache.releaseMapping(mapping);
+	}
+
 	/**
 	 * Broadcasts the finish message to all instances of this query task on the
 	 * other computers. If it is the root, the coordinator is informed

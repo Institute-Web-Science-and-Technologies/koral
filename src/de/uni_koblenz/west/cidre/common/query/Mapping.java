@@ -77,4 +77,19 @@ public class Mapping {
 		return 0;
 	}
 
+	public boolean isEmptyMapping() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public short getIdOfFirstComputerKnowingThisMapping() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public boolean isKnownByComputer(int owner) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }
