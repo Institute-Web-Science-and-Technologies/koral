@@ -53,8 +53,6 @@ public class CachedFileReceiverQueue implements Closeable {
 
 	private QueueStatus status;
 
-	// TODO queues have to be synchronized
-
 	public CachedFileReceiverQueue(int maxCacheSize, File cacheDirectory,
 			int queueId) {
 		this.maxCacheSize = maxCacheSize;
@@ -73,7 +71,6 @@ public class CachedFileReceiverQueue implements Closeable {
 				+ File.separatorChar + "queue" + queueId + "buffer2");
 		status = QueueStatus.MEMORY_MEMORY;
 		size = 0;
-		// TODO Auto-generated constructor stub
 	}
 
 	public synchronized boolean isEmpty() {
@@ -218,16 +215,21 @@ public class CachedFileReceiverQueue implements Closeable {
 					"Illegal attempt to read from file1 while being in state "
 							+ status.name());
 		}
-		if (fileInput1 == null) {
-			fileInput1 = new DataInputStream(
-					new BufferedInputStream(new FileInputStream(fileBuffer1)));
-		}
 		try {
+			if (!fileBuffer1.exists()) {
+				throw new EOFException();
+			}
+			if (fileInput1 == null) {
+				fileInput1 = new DataInputStream(new BufferedInputStream(
+						new FileInputStream(fileBuffer1)));
+			}
 			return dequeueFromFile(fileInput1, recycleCache);
 		} catch (EOFException e) {
 			// the file is empty
-			fileInput1.close();
-			fileInput1 = null;
+			if (fileInput1 != null) {
+				fileInput1.close();
+				fileInput1 = null;
+			}
 			switch (status) {
 			case MEMORY_FILE1:
 				status = QueueStatus.MEMORY_MEMORY;
@@ -248,16 +250,21 @@ public class CachedFileReceiverQueue implements Closeable {
 					"Illegal attempt to read from file2 while being in state "
 							+ status.name());
 		}
-		if (fileInput2 == null) {
-			fileInput2 = new DataInputStream(
-					new BufferedInputStream(new FileInputStream(fileBuffer2)));
-		}
 		try {
+			if (!fileBuffer2.exists()) {
+				throw new EOFException();
+			}
+			if (fileInput2 == null) {
+				fileInput2 = new DataInputStream(new BufferedInputStream(
+						new FileInputStream(fileBuffer2)));
+			}
 			return dequeueFromFile(fileInput2, recycleCache);
 		} catch (EOFException e) {
 			// the file is empty
-			fileInput2.close();
-			fileInput2 = null;
+			if (fileInput2 != null) {
+				fileInput2.close();
+				fileInput2 = null;
+			}
 			switch (status) {
 			case MEMORY_FILE2:
 				status = QueueStatus.MEMORY_MEMORY;
