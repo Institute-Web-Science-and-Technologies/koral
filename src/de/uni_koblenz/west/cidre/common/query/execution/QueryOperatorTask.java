@@ -8,8 +8,8 @@ package de.uni_koblenz.west.cidre.common.query.execution;
  */
 public interface QueryOperatorTask {
 
-	public String[] getResultVariables();
+	public long[] getResultVariables();
 
-	public String getFirstJoinVar();
+	public long getFirstJoinVar();
 
 }

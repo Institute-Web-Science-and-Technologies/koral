@@ -44,6 +44,12 @@ public class Mapping {
 
 	}
 
+	public void set(byte[] byteArrayWithMapping, int firstIndexOfMappingInArray,
+			int lengthOfMapping) {
+		// TODO Auto-generated method stub
+
+	}
+
 	public void updateReceiver(long receiverTaskID) {
 		// TODO Auto-generated method stub
 
@@ -72,7 +78,7 @@ public class Mapping {
 		return 0;
 	}
 
-	public long getValue(String firstJoinVar) {
+	public long getValue(long var) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

@@ -1,6 +1,10 @@
-package de.uni_koblenz.west.cidre.common.query.execution;
+package de.uni_koblenz.west.cidre.common.query.execution.operators;
 
 import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.algebra.op.OpProject;
+
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
+import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
 
 /**
  * Provides methods to create the query execution tree.
@@ -10,18 +14,20 @@ import org.apache.jena.graph.Triple;
  */
 public class QueryOperatorTaskFactory {
 
-	public static QueryOperatorTask createTriplePatternMatch(Triple triple) {
+	public static QueryOperatorTask createTriplePatternMatch(Triple triple,
+			VariableDictionary dictionary) {
 		// TODO Auto-generated method stub
 		return new DummyTask();
 	}
 
-	public static QueryOperatorTask createTriplePatternJoin(QueryOperatorTask left,
-			QueryOperatorTask right) {
+	public static QueryOperatorTask createTriplePatternJoin(
+			QueryOperatorTask left, QueryOperatorTask right) {
 		// TODO Auto-generated method stub
 		return new DummyTask();
 	}
 
-	public static QueryOperatorTask createProjection(QueryOperatorTask subTask) {
+	public static QueryOperatorTask createProjection(OpProject opProject,
+			QueryOperatorTask subTask, VariableDictionary dictionary) {
 		// TODO Auto-generated method stub
 		return new DummyTask();
 	}
@@ -38,15 +44,15 @@ public class QueryOperatorTaskFactory {
 class DummyTask implements QueryOperatorTask {
 
 	@Override
-	public String[] getResultVariables() {
+	public long[] getResultVariables() {
 		// TODO Auto-generated method stub
-		return new String[0];
+		return new long[0];
 	}
 
 	@Override
-	public String getFirstJoinVar() {
+	public long getFirstJoinVar() {
 		// TODO Auto-generated method stub
-		return null;
+		return 0l;
 	}
 
 }

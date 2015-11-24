@@ -51,20 +51,27 @@ public class MappingRecycleCache {
 
 	public Mapping createMapping(long subject, long property, long object,
 			TriplePattern pattern, BitSet containment) {
-		Mapping result = null;
-		if (isEmpty()) {
-			result = new Mapping();
-		} else {
-			result = pop();
-		}
+		Mapping result = getMapping();
 		result.set(subject, property, object, pattern, containment);
 		return result;
 	}
 
 	public Mapping createMapping(byte[] byteArrayWithMapping,
 			int firstIndexOfMappingInArray, int lengthOfMapping) {
-		// TODO Auto-generated method stub
-		return null;
+		Mapping result = getMapping();
+		result.set(byteArrayWithMapping, firstIndexOfMappingInArray,
+				lengthOfMapping);
+		return result;
+	}
+
+	private Mapping getMapping() {
+		Mapping result;
+		if (isEmpty()) {
+			result = new Mapping();
+		} else {
+			result = pop();
+		}
+		return result;
 	}
 
 	public void releaseMapping(Mapping mapping) {

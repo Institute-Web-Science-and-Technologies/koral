@@ -31,8 +31,9 @@ import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
-import de.uni_koblenz.west.cidre.common.query.execution_tree.QueryExecutionTreeType;
-import de.uni_koblenz.west.cidre.common.query.execution_tree.SparqlParser;
+import de.uni_koblenz.west.cidre.common.query.parser.QueryExecutionTreeType;
+import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
+import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
 import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
@@ -196,10 +197,11 @@ public class CidreClient {
 	public void processQuery(String query, Writer outputWriter,
 			QueryExecutionTreeType treeType) throws IOException {
 		// check syntax
+		VariableDictionary dictionary = new VariableDictionary();
 		SparqlParser parser = new SparqlParser();
-		QueryOperatorTask task = parser.parse(query, treeType);
+		QueryOperatorTask task = parser.parse(query, treeType, dictionary);
 		String queryString = QueryFactory.create(query).serialize();
-		String[] vars = task.getResultVariables();
+		String[] vars = dictionary.decode(task.getResultVariables());
 
 		try {
 			// send query

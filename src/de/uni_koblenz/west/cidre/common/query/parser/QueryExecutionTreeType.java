@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.common.query.execution_tree;
+package de.uni_koblenz.west.cidre.common.query.parser;
 
 /**
  * Defines the order in which the triple patterns of a BGP should be joined.
