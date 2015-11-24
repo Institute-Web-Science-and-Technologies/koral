@@ -119,6 +119,11 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	}
 
 	@Override
+	protected void handleFinishNotification(long sender, Object object,
+			int firstIndex, int messageLength) {
+	}
+
+	@Override
 	protected void handleMappingReception(long sender, byte[] message,
 			int firstIndex, int length) {
 		enqueuMessageInternal(0, message, firstIndex, length);

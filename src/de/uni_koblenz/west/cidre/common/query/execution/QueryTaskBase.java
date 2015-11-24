@@ -74,6 +74,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 		switch (mType) {
 		case QUERY_TASK_FINISHED:
 			numberOfMissingFinishedMessages--;
+			handleFinishNotification(sender, message, firstIndex,
+					messageLength);
 			break;
 		case QUERY_MAPPING_BATCH:
 			handleMappingReception(sender, message, firstIndex, messageLength);
@@ -82,6 +84,9 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 			throw new RuntimeException("Unsupported message type " + mType);
 		}
 	}
+
+	protected abstract void handleFinishNotification(long sender, Object object,
+			int firstIndex, int messageLength);
 
 	protected abstract void handleMappingReception(long sender, byte[] message,
 			int firstIndex, int length);

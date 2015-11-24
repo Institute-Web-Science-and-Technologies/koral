@@ -65,6 +65,11 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	}
 
 	@Override
+	protected void handleFinishNotification(long sender, Object object,
+			int firstIndex, int messageLength) {
+	}
+
+	@Override
 	protected void handleMappingReception(long sender, byte[] message,
 			int firstIndex, int length) {
 		long taskId = (sender & 0x00_00_ff_ff_ff_ff_ff_ffl)
