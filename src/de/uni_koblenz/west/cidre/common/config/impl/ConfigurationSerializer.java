@@ -149,4 +149,16 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
 		return new Integer(conf.getReceiverQueueSize()).toString();
 	}
 
+	public String serializeMappingsPerOperationRound(Configuration conf) {
+		return new Integer(conf.getMaxEmittedMappingsPerRound()).toString();
+	}
+
+	public String serializeMaxInMemoryMappings(Configuration conf) {
+		return new Integer(conf.getMaxInMemoryMappingsDuringJoin()).toString();
+	}
+
+	public String serializeNumberOfHashBuckets(Configuration conf) {
+		return new Integer(conf.getNumberOfHashBuckets()).toString();
+	}
+
 }

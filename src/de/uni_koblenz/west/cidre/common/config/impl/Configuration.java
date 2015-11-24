@@ -434,6 +434,41 @@ public class Configuration implements Configurable {
 		this.receiverQueueSize = receiverQueueSize;
 	}
 
+	@Property(name = "mappingsPerOperationRound", description = "Defines the maximum amount of mappings that are emitted by a query operation before the scheduler executes the next operation.")
+	private int maxEmittedMappingsPerRound = 100;
+
+	public int getMaxEmittedMappingsPerRound() {
+		return maxEmittedMappingsPerRound;
+	}
+
+	public void setMaxEmittedMappingsPerRound(int maxEmittedMappingsPerRound) {
+		this.maxEmittedMappingsPerRound = maxEmittedMappingsPerRound;
+	}
+
+	@Property(name = "maxInMemoryMappings", description = "Defines the maximum amount of mappings that are kept in memory during the triple pattern join operation."
+			+ " If more mappings are stored, they are written to disk.")
+	private int maxInMemoryMappingsDuringJoin = 1024;
+
+	public int getMaxInMemoryMappingsDuringJoin() {
+		return maxInMemoryMappingsDuringJoin;
+	}
+
+	public void setMaxInMemoryMappingsDuringJoin(
+			int maxInMemoryMappingsDuringJoin) {
+		this.maxInMemoryMappingsDuringJoin = maxInMemoryMappingsDuringJoin;
+	}
+
+	@Property(name = "numberOfHashBuckets", description = "Defines the the number of hash buckets used during the triple pattern join operation.")
+	private int numberOfHashBuckets = 16;
+
+	public int getNumberOfHashBuckets() {
+		return numberOfHashBuckets;
+	}
+
+	public void setNumberOfHashBuckets(int numberOfHashBuckets) {
+		this.numberOfHashBuckets = numberOfHashBuckets;
+	}
+
 	/*
 	 * serialization specific code
 	 */

@@ -253,4 +253,19 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
 		conf.setReceiverQueueSize(Integer.parseInt(size));
 	}
 
+	public void deserializeMappingsPerOperationRound(Configuration conf,
+			String mappingsPerRound) {
+		conf.setMaxEmittedMappingsPerRound(Integer.parseInt(mappingsPerRound));
+	}
+
+	public void deserializeMaxInMemoryMappings(Configuration conf,
+			String inMemoryMappings) {
+		conf.setMaxInMemoryMappingsDuringJoin(Integer.parseInt(inMemoryMappings));
+	}
+
+	public void deserializeNumberOfHashBuckets(Configuration conf,
+			String numberOfHashBuckets) {
+		conf.setNumberOfHashBuckets(Integer.parseInt(numberOfHashBuckets));
+	}
+
 }

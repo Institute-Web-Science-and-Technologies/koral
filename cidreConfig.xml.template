@@ -156,4 +156,19 @@ WEAK_REFERENCE = instances are removed from the cache by the garbage collector, 
 		<description>Defines how many mappings should be stored in memory for each mapping receiver queue of each query operator</description>
 		<value>1000</value>
 	</property>
+	<property>
+		<name>mappingsPerOperationRound</name>
+		<description>Defines the maximum amount of mappings that are emitted by a query operation before the scheduler executes the next operation.</description>
+		<value>100</value>
+	</property>
+	<property>
+		<name>maxInMemoryMappings</name>
+		<description>Defines the maximum amount of mappings that are kept in memory during the triple pattern join operation. If more mappings are stored, they are written to disk.</description>
+		<value>1024</value>
+	</property>
+	<property>
+		<name>numberOfHashBuckets</name>
+		<description>Defines the the number of hash buckets used during the triple pattern join operation.</description>
+		<value>16</value>
+	</property>
 </config>
