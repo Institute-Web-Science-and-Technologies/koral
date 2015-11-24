@@ -16,9 +16,6 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
  */
 public interface WorkerTask extends Closeable {
 
-	// TODO query coordinator is a WorkerTask but not part of the query
-	// execution tree
-
 	public void setUp(MessageSenderBuffer messageSender,
 			MappingRecycleCache recycleCache, Logger logger);
 
