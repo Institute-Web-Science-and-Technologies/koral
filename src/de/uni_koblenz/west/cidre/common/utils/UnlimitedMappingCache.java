@@ -16,6 +16,13 @@ import java.util.NoSuchElementException;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
+/**
+ * Stores mappings in memory until limit is reached. Thereafter, mappings are
+ * stored on disk.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class UnlimitedMappingCache
 		implements Closeable, Iterable<Mapping>, Iterator<Mapping> {
 

@@ -5,6 +5,12 @@ import java.io.File;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 
+/**
+ * Performs the projection operation.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class ProjectionOperator extends QueryOperatorBase {
 
 	private final long[] resultVars;

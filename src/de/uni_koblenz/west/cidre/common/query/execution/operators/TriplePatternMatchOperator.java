@@ -8,6 +8,12 @@ import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
+/**
+ * Performs the match of a triple pattern.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class TriplePatternMatchOperator extends QueryOperatorBase {
 
 	private final TriplePattern pattern;

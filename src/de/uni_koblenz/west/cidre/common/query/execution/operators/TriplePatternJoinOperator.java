@@ -4,8 +4,14 @@ import java.io.File;
 import java.util.Arrays;
 
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
-import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingCache;
+import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
 
+/**
+ * Performs the join operation of mappings as a hash join.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private long[] resultVars;
@@ -14,11 +20,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private final int numberOfHashBuckets;
 
-	private final int numberOfInMemoryMappingsPerCache;
+	private final int numberOfInMemoryMappingsPerSet;
 
-	private final UnlimitedMappingCache[][] joinVarsIndex2leftHashCache;
+	private final UnlimitedMappingHashSet[] joinVarsIndex2leftHashSet;
 
-	private final UnlimitedMappingCache[][] joinVarsIndex2rightHashCache;
+	private final UnlimitedMappingHashSet[] joinVarsIndex2rightHashSet;
 
 	public TriplePatternJoinOperator(long id, long coordinatorId,
 			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
@@ -37,9 +43,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		if (number <= 0) {
 			number = 1;
 		}
-		numberOfInMemoryMappingsPerCache = number;
-		joinVarsIndex2leftHashCache = new UnlimitedMappingCache[joinVars.length][];
-		joinVarsIndex2rightHashCache = new UnlimitedMappingCache[joinVars.length][];
+		numberOfInMemoryMappingsPerSet = number;
+		joinVarsIndex2leftHashSet = new UnlimitedMappingHashSet[joinVars.length];
+		joinVarsIndex2rightHashSet = new UnlimitedMappingHashSet[joinVars.length];
 	}
 
 	public TriplePatternJoinOperator(short slaveId, int queryId, short taskId,
@@ -55,14 +61,13 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		this.numberOfHashBuckets = numberOfHashBuckets;
 		computeVars(leftChild.getResultVariables(),
 				rightChild.getResultVariables());
-		int number = maxInMemoryMappings
-				/ (joinVars.length * this.numberOfHashBuckets);
+		int number = maxInMemoryMappings / joinVars.length;
 		if (number <= 0) {
 			number = 1;
 		}
-		numberOfInMemoryMappingsPerCache = number;
-		joinVarsIndex2leftHashCache = new UnlimitedMappingCache[joinVars.length][];
-		joinVarsIndex2rightHashCache = new UnlimitedMappingCache[joinVars.length][];
+		numberOfInMemoryMappingsPerSet = number;
+		joinVarsIndex2leftHashSet = new UnlimitedMappingHashSet[joinVars.length];
+		joinVarsIndex2rightHashSet = new UnlimitedMappingHashSet[joinVars.length];
 	}
 
 	private void computeVars(long[] leftVars, long[] rightVars) {
@@ -95,6 +100,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		}
 	}
 
+	// TODO handle cartesian product
+
 	@Override
 	public long[] getResultVariables() {
 		return resultVars;
@@ -118,14 +125,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	protected void handleFinishNotification(long sender, Object object,
-			int firstIndex, int messageLength) {
-		// TODO Auto-generated method stub
-		super.handleFinishNotification(sender, object, firstIndex,
-				messageLength);
-	}
-
-	@Override
 	protected boolean isFinishedInternal() {
 		// TODO Auto-generated method stub
 		return false;
@@ -139,8 +138,15 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	@Override
 	protected void closeInternal() {
-		// TODO Auto-generated method stub
-
+		closeCaches(joinVarsIndex2leftHashSet);
+		closeCaches(joinVarsIndex2rightHashSet);
 	}
 
+	private void closeCaches(UnlimitedMappingHashSet[] sets) {
+		for (UnlimitedMappingHashSet set : sets) {
+			if (set != null) {
+				set.close();
+			}
+		}
+	}
 }
