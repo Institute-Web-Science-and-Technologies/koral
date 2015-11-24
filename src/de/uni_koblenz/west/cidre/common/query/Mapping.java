@@ -98,4 +98,9 @@ public class Mapping {
 		return false;
 	}
 
+	public Mapping setVars(long[] resultVars, Mapping mapping) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

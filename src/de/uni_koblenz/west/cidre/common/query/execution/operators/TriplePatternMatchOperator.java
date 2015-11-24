@@ -19,9 +19,9 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	public TriplePatternMatchOperator(long id, long coordinatorId,
 			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
 			File cacheDirectory, TriplePattern pattern,
-			TripleStoreAccessor tripleStore) {
+			int emittedMappingsPerRound, TripleStoreAccessor tripleStore) {
 		super(id, coordinatorId, estimatedWorkLoad, numberOfSlaves, cacheSize,
-				cacheDirectory);
+				cacheDirectory, emittedMappingsPerRound);
 		this.pattern = pattern;
 		this.tripleStore = tripleStore;
 	}
@@ -29,9 +29,10 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	public TriplePatternMatchOperator(short slaveId, int queryId, short taskId,
 			long coordinatorId, long estimatedWorkLoad, int numberOfSlaves,
 			int cacheSize, File cacheDirectory, TriplePattern pattern,
-			TripleStoreAccessor tripleStore) {
+			int emittedMappingsPerRound, TripleStoreAccessor tripleStore) {
 		super(slaveId, queryId, taskId, coordinatorId, estimatedWorkLoad,
-				numberOfSlaves, cacheSize, cacheDirectory);
+				numberOfSlaves, cacheSize, cacheDirectory,
+				emittedMappingsPerRound);
 		this.pattern = pattern;
 		this.tripleStore = tripleStore;
 	}
@@ -55,11 +56,12 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
 	@Override
 	public long getCurrentTaskLoad() {
-		if (iterator == null) {
+		if (iterator == null || tripleStore == null
+				|| getEstimatedTaskLoad() == 0 || !iterator.hasNext()) {
 			return 0;
+		} else {
+			return getEmittedMappingsPerRound();
 		}
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 	@Override
@@ -68,14 +70,16 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
 	@Override
 	protected void executeOperationStep() {
-		if (getEstimatedTaskLoad() == 0) {
+		if (getEstimatedTaskLoad() == 0 || tripleStore == null) {
 			return;
 		}
 		if (iterator == null) {
 			iterator = tripleStore.lookup(recycleCache, pattern).iterator();
-			// TODO Auto-generated method stub
 		}
-
+		for (int i = 0; i < getEmittedMappingsPerRound()
+				&& iterator.hasNext(); i++) {
+			emitMapping(iterator.next());
+		}
 	}
 
 	@Override
@@ -84,7 +88,7 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
 	@Override
 	protected boolean isFinishedInternal() {
-		return getEstimatedTaskLoad() == 0
+		return getEstimatedTaskLoad() == 0 || tripleStore == null
 				|| (iterator != null && !iterator.hasNext());
 	}
 

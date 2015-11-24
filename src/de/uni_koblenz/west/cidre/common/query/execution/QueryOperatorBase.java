@@ -20,26 +20,34 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 
 	private QueryOperatorBase parent;
 
+	private final int emittedMappingsPerRound;
+
 	public QueryOperatorBase(short slaveId, int queryId, short taskId,
 			long coordinatorId, long estimatedWorkLoad, int numberOfSlaves,
-			int cacheSize, File cacheDirectory) {
+			int cacheSize, File cacheDirectory, int emittedMappingsPerRound) {
 		super((((((long) slaveId) << Integer.SIZE)
 				| (queryId & 0x00_00_00_00_ff_ff_ff_ffl)) << Short.SIZE)
 				| (taskId & 0x00_00_00_00_00_00_ff_ffl), estimatedWorkLoad,
 				numberOfSlaves, cacheSize, cacheDirectory);
 		this.coordinatorId = coordinatorId;
+		this.emittedMappingsPerRound = emittedMappingsPerRound;
 	}
 
 	public QueryOperatorBase(long id, long coordinatorId,
 			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
-			File cacheDirectory) {
+			File cacheDirectory, int emittedMappingsPerRound) {
 		super(id, estimatedWorkLoad, numberOfSlaves, cacheSize, cacheDirectory);
 		this.coordinatorId = coordinatorId;
+		this.emittedMappingsPerRound = emittedMappingsPerRound;
 	}
 
 	@Override
 	public long getCoordinatorID() {
 		return coordinatorId;
+	}
+
+	protected int getEmittedMappingsPerRound() {
+		return emittedMappingsPerRound;
 	}
 
 	public void setParentTask(WorkerTask parent) {

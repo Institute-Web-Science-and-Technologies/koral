@@ -80,4 +80,10 @@ public class MappingRecycleCache {
 		}
 	}
 
+	public Mapping getMappingWithRestrictedVariables(Mapping mapping,
+			long[] selectedVars) {
+		Mapping result = getMapping();
+		return result.setVars(selectedVars, mapping);
+	}
+
 }
