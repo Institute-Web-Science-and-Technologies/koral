@@ -98,19 +98,28 @@ public class MessageSenderBuffer {
 			long receiverTaskID, MappingRecycleCache mappingCache) {
 		receiverTaskID &= 0x00_00_ff_ff_ff_ff_ff_ffl;
 		mapping.updateSender(senderTaskID);
+		// send to all remote receivers
 		for (int i = 1; i < mappingBuffer.length; i++) {
 			long receiver = ((long) i) << (Short.SIZE + Integer.SIZE);
 			receiver |= receiverTaskID;
 			mapping.updateReceiver(receiver);
 			if (i == messageSender.getCurrentID()) {
-				localMessageReceiver.receiveLocalMessage(senderTaskID, receiver,
-						mapping.getByteArray(),
-						mapping.getFirstIndexOfMappingInByteArray(),
-						mapping.getLengthOfMappingInByteArray());
+				continue;
 			} else {
 				enqueue(i, mapping, receiver, mappingCache);
 			}
 		}
+		// send to local receiver (byte array is potentially reused=>receiver
+		// entry in array must be correct)
+		long receiver = ((long) messageSender.getCurrentID()) << (Short.SIZE
+				+ Integer.SIZE);
+		receiver |= receiverTaskID;
+		mapping.updateReceiver(receiver);
+		localMessageReceiver.receiveLocalMessage(senderTaskID, receiver,
+				mapping.getByteArray(),
+				mapping.getFirstIndexOfMappingInByteArray(),
+				mapping.getLengthOfMappingInByteArray());
+		// release mapping
 		mappingCache.releaseMapping(mapping);
 	}
 
