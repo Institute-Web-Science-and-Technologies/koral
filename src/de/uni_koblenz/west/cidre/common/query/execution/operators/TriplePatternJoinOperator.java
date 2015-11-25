@@ -137,7 +137,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	@Override
 	public long getFirstJoinVar() {
-		return joinVars.length == 0 ? getResultVariables()[0] : joinVars[0];
+		return joinVars.length == 0 ? -1 : joinVars[0];
 	}
 
 	@Override
@@ -184,17 +184,20 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						}
 					} else {
 						Mapping mapping = consumeMapping(0);
-						leftHashSet.add(mapping, getFirstJoinVar());
+						long[] mappingVars = ((QueryOperatorBase) getChildTask(
+								0)).getResultVariables();
+						long[] rightVars = ((QueryOperatorBase) getChildTask(1))
+								.getResultVariables();
+						leftHashSet.add(mapping, getFirstJoinVar(),
+								mappingVars);
 						iterator = new JoinIterator(recycleCache, joinVars,
-								mapping,
-								((QueryOperatorBase) getChildTask(0))
-										.getResultVariables(),
+								mapping, mappingVars,
 								joinType == JoinType.CARTESIAN_PRODUCT
 										? rightHashSet.iterator()
 										: rightHashSet.getMatchCandidates(
-												mapping, getFirstJoinVar()),
-								((QueryOperatorBase) getChildTask(1))
-										.getResultVariables());
+												mapping, getFirstJoinVar(),
+												rightVars),
+								rightVars);
 					}
 				} else {
 					if (isInputQueueEmpty(1)) {
@@ -208,17 +211,20 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						}
 					} else {
 						Mapping mapping = consumeMapping(1);
-						rightHashSet.add(mapping, getFirstJoinVar());
+						long[] mappingVars = ((QueryOperatorBase) getChildTask(
+								1)).getResultVariables();
+						long[] leftVars = ((QueryOperatorBase) getChildTask(0))
+								.getResultVariables();
+						rightHashSet.add(mapping, getFirstJoinVar(),
+								mappingVars);
 						iterator = new JoinIterator(recycleCache, joinVars,
-								mapping,
-								((QueryOperatorBase) getChildTask(1))
-										.getResultVariables(),
+								mapping, mappingVars,
 								joinType == JoinType.CARTESIAN_PRODUCT
 										? rightHashSet.iterator()
 										: rightHashSet.getMatchCandidates(
-												mapping, getFirstJoinVar()),
-								((QueryOperatorBase) getChildTask(0))
-										.getResultVariables());
+												mapping, getFirstJoinVar(),
+												leftVars),
+								leftVars);
 					}
 				}
 				i--;
@@ -244,7 +250,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				// the right child has finished successfully
 				Mapping mapping = consumeMapping(1);
 				if (mapping != null) {
-					rightHashSet.add(mapping, getFirstJoinVar());
+					long[] rightVars = ((QueryOperatorBase) getChildTask(1))
+							.getResultVariables();
+					rightHashSet.add(mapping, getFirstJoinVar(), rightVars);
 				}
 			} else {
 				// no match for the right expression could be found
@@ -269,7 +277,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				// the left child has finished successfully
 				Mapping mapping = consumeMapping(0);
 				if (mapping != null) {
-					leftHashSet.add(mapping, getFirstJoinVar());
+					long[] leftVars = ((QueryOperatorBase) getChildTask(0))
+							.getResultVariables();
+					leftHashSet.add(mapping, getFirstJoinVar(), leftVars);
 				}
 			} else {
 				// no match for the left expression could be found

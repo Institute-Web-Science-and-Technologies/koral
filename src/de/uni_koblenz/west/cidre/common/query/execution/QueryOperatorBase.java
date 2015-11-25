@@ -114,30 +114,41 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 							parentBaseID, recycleCache);
 				}
 			} else {
-				long ownerLong = mapping
-						.getValue(((QueryOperatorTask) getParentTask())
-								.getFirstJoinVar())
-						& 0xFF_FF_00_00_00_00_00_00l;
-				int owner = (int) (ownerLong >>> (Short.BYTES + Integer.BYTES));
-				if (mapping.isKnownByComputer(owner)) {
-					if (mapping
-							.isKnownByComputer((int) (getID() >>> (Short.BYTES
-									+ Integer.BYTES)))) {
-						// the owner also knows a replicate of this mapping,
-						// forward it to parent task on this computer
-						messageSender.sendQueryMapping(mapping, getID(),
-								getParentTask().getID(), recycleCache);
-					}
+				long firstJoinVar = ((QueryOperatorTask) getParentTask())
+						.getFirstJoinVar();
+				if (firstJoinVar == -1) {
+					// parent task has no join variables
+					// send to computer with smallest id
+					messageSender.sendQueryMapping(mapping, getID(),
+							parentBaseID | 0x00_01_00_00_00_00_00_00l,
+							recycleCache);
 				} else {
-					if (mapping
-							.getIdOfFirstComputerKnowingThisMapping() == thisComputerID) {
-						// first knowing computer sends mapping to owner which
-						// is a remote computer
-						mapping.updateContainment(
-								(int) (getID() >>> (Short.SIZE + Integer.SIZE)),
-								owner);
-						messageSender.sendQueryMapping(mapping, getID(),
-								parentBaseID | ownerLong, recycleCache);
+					long ownerLong = mapping.getValue(firstJoinVar,
+							getResultVariables()) & 0xFF_FF_00_00_00_00_00_00l;
+					int owner = (int) (ownerLong >>> (Short.BYTES
+							+ Integer.BYTES));
+					if (mapping.isKnownByComputer(owner)) {
+						if (mapping.isKnownByComputer(
+								(int) (getID() >>> (Short.BYTES
+										+ Integer.BYTES)))) {
+							// the owner also knows a replicate of this mapping,
+							// forward it to parent task on this computer
+							messageSender.sendQueryMapping(mapping, getID(),
+									getParentTask().getID(), recycleCache);
+						}
+					} else {
+						if (mapping
+								.getIdOfFirstComputerKnowingThisMapping() == thisComputerID) {
+							// first knowing computer sends mapping to owner
+							// which
+							// is a remote computer
+							mapping.updateContainment(
+									(int) (getID() >>> (Short.SIZE
+											+ Integer.SIZE)),
+									owner);
+							messageSender.sendQueryMapping(mapping, getID(),
+									parentBaseID | ownerLong, recycleCache);
+						}
 					}
 				}
 			}

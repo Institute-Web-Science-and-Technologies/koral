@@ -53,7 +53,8 @@ public class JoinIterator implements Iterator<Mapping> {
 	private Mapping getNext() {
 		while (joinCandidates.hasNext()) {
 			Mapping joinCandidate = joinCandidates.next();
-			if (areJoinVarValuesEqual(joiningMapping, joinCandidate)) {
+			if (areJoinVarValuesEqual(joiningMapping, varsOfJoiningMapping,
+					joinCandidate, varsOfJoinCandidates)) {
 				return recycleCache.mergeMappings(joiningMapping,
 						varsOfJoiningMapping, joinCandidate,
 						varsOfJoinCandidates);
@@ -62,9 +63,11 @@ public class JoinIterator implements Iterator<Mapping> {
 		return null;
 	}
 
-	private boolean areJoinVarValuesEqual(Mapping mapping1, Mapping mapping2) {
+	private boolean areJoinVarValuesEqual(Mapping mapping1, long[] vars1,
+			Mapping mapping2, long[] vars2) {
 		for (long var : joinVars) {
-			if (mapping1.getValue(var) != mapping2.getValue(var)) {
+			if (mapping1.getValue(var, vars1) != mapping2.getValue(var,
+					vars2)) {
 				return false;
 			}
 		}

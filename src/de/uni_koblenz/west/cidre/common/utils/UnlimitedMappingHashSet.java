@@ -58,14 +58,14 @@ public class UnlimitedMappingHashSet
 		return size;
 	}
 
-	private int getBucketIndex(Mapping mapping, long joinVar) {
+	private int getBucketIndex(Mapping mapping, long joinVar, long[] vars) {
 		return mapping.isEmptyMapping() ? 0
-				: ((int) mapping.getValue(joinVar)) % buckets.length;
+				: ((int) mapping.getValue(joinVar, vars)) % buckets.length;
 	}
 
-	public void add(Mapping mapping, long joinVar) {
+	public void add(Mapping mapping, long joinVar, long[] vars) {
 		size++;
-		int bucketIndex = getBucketIndex(mapping, joinVar);
+		int bucketIndex = getBucketIndex(mapping, joinVar, vars);
 		if (buckets[bucketIndex] == null) {
 			buckets[bucketIndex] = new UnlimitedMappingCache(
 					mappingLimitPerCache, cacheDirectory, recycleCache,
@@ -74,8 +74,9 @@ public class UnlimitedMappingHashSet
 		buckets[bucketIndex].append(mapping);
 	}
 
-	public Iterator<Mapping> getMatchCandidates(Mapping mapping, long joinVar) {
-		int bucketIndex = getBucketIndex(mapping, joinVar);
+	public Iterator<Mapping> getMatchCandidates(Mapping mapping, long joinVar,
+			long[] vars) {
+		int bucketIndex = getBucketIndex(mapping, joinVar, vars);
 		if (buckets[bucketIndex] != null) {
 			return buckets[bucketIndex].iterator();
 		} else {

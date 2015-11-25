@@ -108,7 +108,14 @@ public class Mapping {
 		return length;
 	}
 
-	public long getValue(long var) {
+	/**
+	 * if var = -1 the value of the first variable is returned
+	 * 
+	 * @param var
+	 * @param vars
+	 * @return
+	 */
+	public long getValue(long var, long[] vars) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
