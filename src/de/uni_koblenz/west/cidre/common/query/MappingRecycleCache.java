@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.cidre.common.query;
 
-import java.util.BitSet;
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import de.uni_koblenz.west.cidre.slave.triple_store.impl.IndexType;
 
 /**
  * <p>
@@ -21,11 +23,18 @@ import java.util.BitSet;
  */
 public class MappingRecycleCache {
 
+	private final int containmentSize;
+
 	private final Mapping[] stack;
 
 	private int nextFreeIndex;
 
-	public MappingRecycleCache(int size) {
+	public MappingRecycleCache(int size, int numberOfSlaves) {
+		int containmentSize = numberOfSlaves / Byte.SIZE;
+		if (numberOfSlaves % Byte.SIZE != 0) {
+			containmentSize += 1;
+		}
+		this.containmentSize = containmentSize;
 		stack = new Mapping[size];
 		nextFreeIndex = 0;
 	}
@@ -49,11 +58,37 @@ public class MappingRecycleCache {
 		return mapping;
 	}
 
-	public Mapping createMapping(long subject, long property, long object,
-			TriplePattern pattern, BitSet containment) {
-		Mapping result = getMapping();
-		result.set(subject, property, object, pattern, containment);
-		return result;
+	public Mapping createMapping(TriplePattern pattern, IndexType indexType,
+			byte[] triple) {
+		byte[] newMapping = new byte[Byte.BYTES + Long.BYTES + Long.BYTES
+				+ Integer.BYTES + Long.BYTES * pattern.getVariables().length
+				+ containmentSize];
+		newMapping[0] = MessageType.QUERY_MAPPING_BATCH.getValue();
+		NumberConversion.int2bytes(newMapping.length, newMapping,
+				Byte.BYTES + Long.BYTES + Long.BYTES);
+		// set matched variables
+		int insertionIndex = Byte.BYTES + Long.BYTES + Long.BYTES
+				+ Integer.BYTES;
+		if (pattern.isSubjectVariable()) {
+			NumberConversion.long2bytes(indexType.getSubject(triple),
+					newMapping, insertionIndex);
+			insertionIndex += Long.BYTES;
+		}
+		if (pattern.isPropertyVariable()) {
+			NumberConversion.long2bytes(indexType.getProperty(triple),
+					newMapping, insertionIndex);
+			insertionIndex += Long.BYTES;
+		}
+		if (pattern.isObjectVariable()) {
+			NumberConversion.long2bytes(indexType.getObject(triple), newMapping,
+					insertionIndex);
+			insertionIndex += Long.BYTES;
+		}
+		if (insertionIndex < triple.length) {
+			System.arraycopy(triple, 3 * Long.BYTES, newMapping, insertionIndex,
+					triple.length - 3 * Long.BYTES);
+		}
+		return createMapping(newMapping, 0, newMapping.length);
 	}
 
 	public Mapping createMapping(byte[] byteArrayWithMapping,
@@ -64,10 +99,16 @@ public class MappingRecycleCache {
 		return result;
 	}
 
+	public Mapping cloneMapping(Mapping mapping) {
+		return createMapping(mapping.getByteArray(),
+				mapping.getFirstIndexOfMappingInByteArray(),
+				mapping.getLengthOfMappingInByteArray());
+	}
+
 	private Mapping getMapping() {
 		Mapping result;
 		if (isEmpty()) {
-			result = new Mapping();
+			result = new Mapping(containmentSize);
 		} else {
 			result = pop();
 		}
@@ -81,14 +122,17 @@ public class MappingRecycleCache {
 	}
 
 	public Mapping getMappingWithRestrictedVariables(Mapping mapping,
-			long[] selectedVars) {
+			long[] vars, long[] selectedVars) {
 		Mapping result = getMapping();
-		return result.restrictMapping(selectedVars, mapping);
+		result.restrictMapping(selectedVars, mapping, vars);
+		return result;
 	}
 
-	public Mapping mergeMappings(Mapping mapping1, Mapping mapping2) {
+	public Mapping mergeMappings(Mapping mapping1, long[] vars1,
+			Mapping mapping2, long[] vars2) {
 		Mapping result = getMapping();
-		return result.joinMappings(mapping1, mapping2);
+		result.joinMappings(mapping1, vars1, mapping2, vars2);
+		return result;
 	}
 
 }

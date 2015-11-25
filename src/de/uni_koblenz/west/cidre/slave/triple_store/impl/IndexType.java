@@ -29,6 +29,11 @@ public enum IndexType {
 		public long getObject(byte[] triple) {
 			return NumberConversion.bytes2long(triple, 16);
 		}
+
+		@Override
+		public byte[] getSPOCArray(byte[] triple) {
+			return triple;
+		}
 	},
 
 	OSP {
@@ -45,6 +50,22 @@ public enum IndexType {
 		@Override
 		public long getObject(byte[] triple) {
 			return NumberConversion.bytes2long(triple, 0);
+		}
+
+		@Override
+		public byte[] getSPOCArray(byte[] triple) {
+			byte[] result = new byte[triple.length];
+			System.arraycopy(triple, 1 * Long.BYTES, result, 0 * Long.BYTES,
+					Long.BYTES);
+			System.arraycopy(triple, 2 * Long.BYTES, result, 1 * Long.BYTES,
+					Long.BYTES);
+			System.arraycopy(triple, 0 * Long.BYTES, result, 2 * Long.BYTES,
+					Long.BYTES);
+			if (triple.length > 3 * Long.BYTES) {
+				System.arraycopy(triple, 3 * Long.BYTES, result, 3 * Long.BYTES,
+						triple.length - 3 * Long.BYTES);
+			}
+			return result;
 		}
 	},
 
@@ -63,6 +84,22 @@ public enum IndexType {
 		public long getObject(byte[] triple) {
 			return NumberConversion.bytes2long(triple, 8);
 		}
+
+		@Override
+		public byte[] getSPOCArray(byte[] triple) {
+			byte[] result = new byte[triple.length];
+			System.arraycopy(triple, 2 * Long.BYTES, result, 0 * Long.BYTES,
+					Long.BYTES);
+			System.arraycopy(triple, 0 * Long.BYTES, result, 1 * Long.BYTES,
+					Long.BYTES);
+			System.arraycopy(triple, 1 * Long.BYTES, result, 2 * Long.BYTES,
+					Long.BYTES);
+			if (triple.length > 3 * Long.BYTES) {
+				System.arraycopy(triple, 3 * Long.BYTES, result, 3 * Long.BYTES,
+						triple.length - 3 * Long.BYTES);
+			}
+			return result;
+		}
 	};
 
 	public abstract long getSubject(byte[] triple);
@@ -74,5 +111,7 @@ public enum IndexType {
 	public BitSet getContainment(byte[] triple) {
 		return BitSet.valueOf(ByteBuffer.wrap(triple, 24, triple.length - 24));
 	}
+
+	public abstract byte[] getSPOCArray(byte[] triple);
 
 }

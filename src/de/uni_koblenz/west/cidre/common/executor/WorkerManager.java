@@ -33,7 +33,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 	private final WorkerThread[] workers;
 
 	public WorkerManager(Configuration conf, MessageNotifier notifier,
-			MessageSender messageSender, Logger logger) {
+			MessageSender messageSender, int numberOfSlaves, Logger logger) {
 		this.logger = logger;
 		messageNotifier = notifier;
 		MessageReceiverListener receiver = new MessageReceiverListener(logger);
@@ -49,7 +49,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 			workers[i] = new WorkerThread(i,
 					conf.getSizeOfMappingRecycleCache(),
 					conf.getUnbalanceThresholdForWorkerThreads(), receiver,
-					this.messageSender, logger);
+					this.messageSender, numberOfSlaves, logger);
 			if (i > 0) {
 				workers[i - 1].setNext(workers[i]);
 				workers[i].setPrevious(workers[i - 1]);

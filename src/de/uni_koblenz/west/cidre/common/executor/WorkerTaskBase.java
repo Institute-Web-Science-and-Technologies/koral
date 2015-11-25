@@ -133,6 +133,10 @@ public abstract class WorkerTaskBase implements WorkerTask {
 		return -1;
 	}
 
+	protected WorkerTask getChildTask(int i) {
+		return children[i];
+	}
+
 	/**
 	 * Called by subclasses of {@link QueryOperatorBase}.
 	 * 

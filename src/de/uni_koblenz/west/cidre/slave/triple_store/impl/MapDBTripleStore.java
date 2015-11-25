@@ -120,7 +120,7 @@ public class MapDBTripleStore implements TripleStore {
 			indexType = IndexType.SPO;
 			break;
 		}
-		return new MappingIteratorWrapper(cache, indexType, triplePattern,
+		return new MappingIteratorWrapper(cache, triplePattern, indexType,
 				matches.iterator());
 	}
 

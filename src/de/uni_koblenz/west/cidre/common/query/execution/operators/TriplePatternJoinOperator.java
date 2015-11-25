@@ -187,10 +187,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						leftHashSet.add(mapping, getFirstJoinVar());
 						iterator = new JoinIterator(recycleCache, joinVars,
 								mapping,
+								((QueryOperatorBase) getChildTask(0))
+										.getResultVariables(),
 								joinType == JoinType.CARTESIAN_PRODUCT
 										? rightHashSet.iterator()
 										: rightHashSet.getMatchCandidates(
-												mapping, getFirstJoinVar()));
+												mapping, getFirstJoinVar()),
+								((QueryOperatorBase) getChildTask(1))
+										.getResultVariables());
 					}
 				} else {
 					if (isInputQueueEmpty(1)) {
@@ -207,10 +211,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						rightHashSet.add(mapping, getFirstJoinVar());
 						iterator = new JoinIterator(recycleCache, joinVars,
 								mapping,
+								((QueryOperatorBase) getChildTask(1))
+										.getResultVariables(),
 								joinType == JoinType.CARTESIAN_PRODUCT
-										? leftHashSet.iterator()
-										: leftHashSet.getMatchCandidates(
-												mapping, getFirstJoinVar()));
+										? rightHashSet.iterator()
+										: rightHashSet.getMatchCandidates(
+												mapping, getFirstJoinVar()),
+								((QueryOperatorBase) getChildTask(0))
+										.getResultVariables());
 					}
 				}
 				i--;
@@ -242,7 +250,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				// no match for the right expression could be found
 				// discard all mappings received from left child
 				while (!isInputQueueEmpty(0)) {
-					consumeMapping(0);
+					Mapping mapping = consumeMapping(0);
+					recycleCache.releaseMapping(mapping);
 				}
 			}
 		} else {
@@ -266,7 +275,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				// no match for the left expression could be found
 				// discard all mappings received from right child
 				while (!isInputQueueEmpty(1)) {
-					consumeMapping(1);
+					Mapping mapping = consumeMapping(1);
+					recycleCache.releaseMapping(mapping);
 				}
 			}
 		} else {

@@ -1,9 +1,8 @@
 package de.uni_koblenz.west.cidre.common.query;
 
-import java.util.BitSet;
-
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * <p>
@@ -32,50 +31,81 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuf
  */
 public class Mapping {
 
-	// TODO (1 byte message type, 8 byte receiving query task id, 8 byte sender
-	// task id, 4 byte length of mapping serialization, mapping serialization)
+	private final int containmentSize;
 
-	Mapping() {
+	/**
+	 * This array consists of:
+	 * <ol>
+	 * <li>1 byte message type</li>
+	 * <li>8 byte receiving query task id</li>
+	 * <li>8 byte sender task id</li>
+	 * <li>4 byte length of mapping serialization</li>
+	 * <li>mapping serialization
+	 * <ol>
+	 * <li>8*#vars bytes of mapping</li>
+	 * <li>{@link #containmentSize} bytes of containment serialization</li>
+	 * </ol>
+	 * </li>
+	 * </ol>
+	 */
+	private byte[] byteArray;
+
+	private int firstIndex;
+
+	private int length;
+
+	Mapping(int containmentSize) {
+		this.containmentSize = containmentSize;
 	}
 
-	void set(long subject, long property, long object, TriplePattern pattern,
-			BitSet containment) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void set(byte[] byteArrayWithMapping, int firstIndexOfMappingInArray,
+	void set(byte[] byteArrayWithMapping, int firstIndexOfMappingInArray,
 			int lengthOfMapping) {
-		// TODO Auto-generated method stub
-
+		byteArray = byteArrayWithMapping;
+		firstIndex = firstIndexOfMappingInArray;
+		length = lengthOfMapping;
 	}
 
 	public void updateReceiver(long receiverTaskID) {
-		// TODO Auto-generated method stub
-
+		NumberConversion.long2bytes(receiverTaskID, byteArray, Byte.BYTES);
 	}
 
 	public void updateSender(long senderTaskID) {
-		// TODO Auto-generated method stub
+		NumberConversion.long2bytes(senderTaskID, byteArray,
+				Byte.BYTES + Long.BYTES);
+	}
 
+	public void setContainmentToAll() {
+		// TODO Auto-generated method stub
+	}
+
+	public void updateContainment(int currentContainingComputer,
+			int nextContainingComputer) {
+		// TODO Auto-generated method stub
+	}
+
+	public void restrictMapping(long[] resultVars, Mapping mapping,
+			long[] vars) {
+		// TODO Auto-generated method stub
+	}
+
+	public void joinMappings(Mapping mapping1, long[] vars1, Mapping mapping2,
+			long[] vars2) {
+		// TODO Auto-generated method stub
 	}
 
 	public byte[] getByteArray() {
-		// TODO Auto-generated method stub
-		return null;
+		return byteArray;
 	}
 
 	/**
 	 * @return index which represents the message type of this {@link Mapping}
 	 */
 	public int getFirstIndexOfMappingInByteArray() {
-		// TODO Auto-generated method stub
-		return 0;
+		return firstIndex;
 	}
 
 	public int getLengthOfMappingInByteArray() {
-		// TODO Auto-generated method stub
-		return 0;
+		return length;
 	}
 
 	public long getValue(long var) {
@@ -84,8 +114,8 @@ public class Mapping {
 	}
 
 	public boolean isEmptyMapping() {
-		// TODO Auto-generated method stub
-		return false;
+		return byteArray.length == Byte.BYTES + Long.BYTES + Long.BYTES
+				+ Integer.BYTES + containmentSize;
 	}
 
 	public short getIdOfFirstComputerKnowingThisMapping() {
@@ -93,19 +123,9 @@ public class Mapping {
 		return 0;
 	}
 
-	public boolean isKnownByComputer(int owner) {
+	public boolean isKnownByComputer(int computerId) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	public Mapping restrictMapping(long[] resultVars, Mapping mapping) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Mapping joinMappings(Mapping mapping1, Mapping mapping2) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

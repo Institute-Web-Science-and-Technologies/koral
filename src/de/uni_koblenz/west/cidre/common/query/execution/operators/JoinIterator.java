@@ -14,17 +14,24 @@ public class JoinIterator implements Iterator<Mapping> {
 
 	private final Mapping joiningMapping;
 
+	private final long[] varsOfJoiningMapping;
+
 	private final Iterator<Mapping> joinCandidates;
+
+	private final long[] varsOfJoinCandidates;
 
 	private Mapping next;
 
 	public JoinIterator(MappingRecycleCache recycleCache, long[] joinVars,
-			Mapping joiningMapping, Iterator<Mapping> joinCandidates) {
+			Mapping joiningMapping, long[] varsOfJoiningMapping,
+			Iterator<Mapping> joinCandidates, long[] varsOfJoinCandidates) {
 		super();
 		this.recycleCache = recycleCache;
 		this.joinVars = joinVars;
 		this.joiningMapping = joiningMapping;
+		this.varsOfJoiningMapping = varsOfJoiningMapping;
 		this.joinCandidates = joinCandidates;
+		this.varsOfJoinCandidates = varsOfJoinCandidates;
 		next = getNext();
 	}
 
@@ -48,7 +55,8 @@ public class JoinIterator implements Iterator<Mapping> {
 			Mapping joinCandidate = joinCandidates.next();
 			if (areJoinVarValuesEqual(joiningMapping, joinCandidate)) {
 				return recycleCache.mergeMappings(joiningMapping,
-						joinCandidate);
+						varsOfJoiningMapping, joinCandidate,
+						varsOfJoinCandidates);
 			}
 		}
 		return null;

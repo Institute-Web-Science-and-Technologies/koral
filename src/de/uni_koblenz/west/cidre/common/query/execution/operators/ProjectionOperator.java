@@ -67,9 +67,12 @@ public class ProjectionOperator extends QueryOperatorBase {
 				&& !isInputQueueEmpty(0); i++) {
 			Mapping mapping = consumeMapping(0);
 			if (mapping != null) {
-				mapping = recycleCache
-						.getMappingWithRestrictedVariables(mapping, resultVars);
-				emitMapping(mapping);
+				Mapping result = recycleCache.getMappingWithRestrictedVariables(
+						mapping, ((QueryOperatorBase) getChildTask(0))
+								.getResultVariables(),
+						resultVars);
+				emitMapping(result);
+				recycleCache.releaseMapping(mapping);
 			}
 		}
 	}

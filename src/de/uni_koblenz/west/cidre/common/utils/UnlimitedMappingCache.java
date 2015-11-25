@@ -147,6 +147,14 @@ public class UnlimitedMappingCache
 
 	@Override
 	public void close() {
+		next = null;
+		for (int i = 0; i < cache.length; i++) {
+			Mapping mapping = cache[i];
+			if (mapping != null) {
+				recycleCache.releaseMapping(mapping);
+				cache[i] = null;
+			}
+		}
 		try {
 			if (fileOutput != null) {
 				fileOutput.close();
@@ -162,6 +170,8 @@ public class UnlimitedMappingCache
 		if (diskCacheFile.getParentFile() != null) {
 			diskCacheFile.getParentFile().delete();
 		}
+		nextReadIndex = 0;
+		nextWriteIndex = 0;
 	}
 
 }

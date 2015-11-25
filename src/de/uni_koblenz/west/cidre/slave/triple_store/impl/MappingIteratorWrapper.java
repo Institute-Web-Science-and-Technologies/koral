@@ -19,17 +19,17 @@ public class MappingIteratorWrapper
 
 	private final MappingRecycleCache cache;
 
-	private final IndexType indexType;
-
 	private final TriplePattern pattern;
+
+	private final IndexType indexType;
 
 	private final Iterator<byte[]> iter;
 
 	public MappingIteratorWrapper(MappingRecycleCache cache,
-			IndexType indexType, TriplePattern pattern, Iterator<byte[]> iter) {
+			TriplePattern pattern, IndexType indexType, Iterator<byte[]> iter) {
 		this.cache = cache;
-		this.indexType = indexType;
 		this.pattern = pattern;
+		this.indexType = indexType;
 		this.iter = iter;
 	}
 
@@ -41,9 +41,7 @@ public class MappingIteratorWrapper
 	@Override
 	public Mapping next() {
 		byte[] triple = iter.next();
-		return cache.createMapping(indexType.getSubject(triple),
-				indexType.getProperty(triple), indexType.getObject(triple),
-				pattern, indexType.getContainment(triple));
+		return cache.createMapping(pattern, indexType, triple);
 	}
 
 	@Override

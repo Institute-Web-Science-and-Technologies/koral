@@ -14,7 +14,7 @@ import de.uni_koblenz.west.cidre.common.utils.CachedFileReceiverQueue;
 public class Playground {
 
 	public static void main(String[] args) {
-		MappingRecycleCache recycleCache = new MappingRecycleCache(100);
+		MappingRecycleCache recycleCache = new MappingRecycleCache(100, 0);
 		CachedFileReceiverQueue queue = new CachedFileReceiverQueue(3,
 				new File("/home/danijank/Downloads/test"), 0);
 		enqueue(queue, 1);

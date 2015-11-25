@@ -109,6 +109,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 						.getIdOfFirstComputerKnowingThisMapping() == thisComputerID) {
 					// the first computer who knows this empty mapping, forwards
 					// it to all parent tasks
+					mapping.setContainmentToAll();
 					messageSender.sendQueryMappingToAll(mapping, getID(),
 							parentBaseID, recycleCache);
 				}
@@ -132,6 +133,9 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 							.getIdOfFirstComputerKnowingThisMapping() == thisComputerID) {
 						// first knowing computer sends mapping to owner which
 						// is a remote computer
+						mapping.updateContainment(
+								(int) (getID() >>> (Short.SIZE + Integer.SIZE)),
+								owner);
 						messageSender.sendQueryMapping(mapping, getID(),
 								parentBaseID | ownerLong, recycleCache);
 					}

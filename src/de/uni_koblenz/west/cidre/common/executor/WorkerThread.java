@@ -47,14 +47,16 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
 	public WorkerThread(int id, int sizeOfMappingRecycleCache,
 			double unbalanceThreshold, MessageReceiverListener receiver,
-			MessageSenderBuffer messageSender, Logger logger) {
+			MessageSenderBuffer messageSender, int numberOfSlaves,
+			Logger logger) {
 		setDaemon(true);
 		this.logger = logger;
 		this.id = id;
 		setName("WorkerThread " + id);
 		tasks = new ConcurrentLinkedQueue<>();
 		currentLoad = 0;
-		mappingCache = new MappingRecycleCache(sizeOfMappingRecycleCache);
+		mappingCache = new MappingRecycleCache(sizeOfMappingRecycleCache,
+				numberOfSlaves);
 		this.unbalanceThreshold = unbalanceThreshold;
 		this.receiver = receiver;
 		this.messageSender = messageSender;
