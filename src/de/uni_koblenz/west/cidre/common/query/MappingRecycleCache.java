@@ -83,7 +83,12 @@ public class MappingRecycleCache {
 	public Mapping getMappingWithRestrictedVariables(Mapping mapping,
 			long[] selectedVars) {
 		Mapping result = getMapping();
-		return result.setVars(selectedVars, mapping);
+		return result.restrictMapping(selectedVars, mapping);
+	}
+
+	public Mapping mergeMappings(Mapping mapping1, Mapping mapping2) {
+		Mapping result = getMapping();
+		return result.joinMappings(mapping1, mapping2);
 	}
 
 }

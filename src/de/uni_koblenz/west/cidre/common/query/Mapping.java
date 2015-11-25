@@ -98,7 +98,12 @@ public class Mapping {
 		return false;
 	}
 
-	public Mapping setVars(long[] resultVars, Mapping mapping) {
+	public Mapping restrictMapping(long[] resultVars, Mapping mapping) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Mapping joinMappings(Mapping mapping1, Mapping mapping2) {
 		// TODO Auto-generated method stub
 		return null;
 	}

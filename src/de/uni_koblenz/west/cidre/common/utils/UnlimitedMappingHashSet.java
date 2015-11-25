@@ -15,7 +15,8 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class UnlimitedMappingHashSet implements Closeable {
+public class UnlimitedMappingHashSet
+		implements Closeable, Iterator<Mapping>, Iterable<Mapping> {
 
 	private final UnlimitedMappingCache[] buckets;
 
@@ -26,6 +27,12 @@ public class UnlimitedMappingHashSet implements Closeable {
 	private final MappingRecycleCache recycleCache;
 
 	private final String uniqueFileNameSuffix;
+
+	private long size;
+
+	private Iterator<Mapping> next;
+
+	private int nextIteratedBucket;
 
 	public UnlimitedMappingHashSet(int inMemoryMappingLimit,
 			int numberOfHashBuckets, File cacheDirectory,
@@ -40,13 +47,24 @@ public class UnlimitedMappingHashSet implements Closeable {
 		this.cacheDirectory = cacheDirectory;
 		this.recycleCache = recycleCache;
 		this.uniqueFileNameSuffix = uniqueFileNameSuffix;
+		size = 0;
+	}
+
+	public boolean isEmpty() {
+		return size() > 0;
+	}
+
+	public long size() {
+		return size;
 	}
 
 	private int getBucketIndex(Mapping mapping, long joinVar) {
-		return ((int) mapping.getValue(joinVar)) % buckets.length;
+		return mapping.isEmptyMapping() ? 0
+				: ((int) mapping.getValue(joinVar)) % buckets.length;
 	}
 
 	public void add(Mapping mapping, long joinVar) {
+		size++;
 		int bucketIndex = getBucketIndex(mapping, joinVar);
 		if (buckets[bucketIndex] == null) {
 			buckets[bucketIndex] = new UnlimitedMappingCache(
@@ -74,6 +92,64 @@ public class UnlimitedMappingHashSet implements Closeable {
 				}
 			};
 		}
+	}
+
+	@Override
+	public Iterator<Mapping> iterator() {
+		nextIteratedBucket = 0;
+		next = getNext();
+		if (next != null) {
+			return this;
+		} else {
+			return new Iterator<Mapping>() {
+
+				@Override
+				public Mapping next() {
+					throw new NoSuchElementException();
+				}
+
+				@Override
+				public boolean hasNext() {
+					return false;
+				}
+			};
+		}
+	}
+
+	@Override
+	public boolean hasNext() {
+		return next != null && next.hasNext();
+	}
+
+	@Override
+	public Mapping next() {
+		if (next == null) {
+			throw new NoSuchElementException();
+		} else {
+			Mapping n = next.next();
+			if (!next.hasNext()) {
+				next = getNext();
+			}
+			return n;
+		}
+	}
+
+	private Iterator<Mapping> getNext() {
+		Iterator<Mapping> next = null;
+		for (; nextIteratedBucket < buckets.length; nextIteratedBucket++) {
+			if (buckets[nextIteratedBucket] == null) {
+				continue;
+			} else {
+				next = buckets[nextIteratedBucket].iterator();
+				if (next.hasNext()) {
+					nextIteratedBucket++;
+					break;
+				} else {
+					next = null;
+				}
+			}
+		}
+		return next;
 	}
 
 	@Override
