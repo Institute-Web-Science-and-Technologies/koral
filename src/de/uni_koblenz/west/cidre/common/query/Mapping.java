@@ -56,18 +56,6 @@ public class Mapping {
 
 	private int length;
 
-	private String getTaskIdString(int startIndex) {
-		return NumberConversion.bytes2long(byteArray, startIndex)
-				+ " (computer="
-				+ NumberConversion.bytes2short(byteArray, startIndex)
-				+ ",query="
-				+ NumberConversion.bytes2int(byteArray,
-						startIndex + Short.BYTES)
-				+ ",task=" + NumberConversion.bytes2short(byteArray,
-						startIndex + Short.BYTES + Integer.BYTES)
-				+ ")";
-	}
-
 	Mapping(int numberOfSlaves) {
 		this.numberOfSlaves = numberOfSlaves;
 	}
@@ -100,46 +88,49 @@ public class Mapping {
 	}
 
 	public void updateReceiver(long receiverTaskID) {
-		NumberConversion.long2bytes(receiverTaskID, byteArray, Byte.BYTES);
+		NumberConversion.long2bytes(receiverTaskID, byteArray,
+				firstIndex + Byte.BYTES);
 	}
 
 	public void updateSender(long senderTaskID) {
 		NumberConversion.long2bytes(senderTaskID, byteArray,
-				Byte.BYTES + Long.BYTES);
+				firstIndex + Byte.BYTES + Long.BYTES);
 	}
 
 	public void setContainmentToAll() {
 		int sizeOfContainment = getNumberOfContainmentBytes();
 		if (numberOfSlaves % Byte.SIZE == 0) {
 			for (int i = 0; i < sizeOfContainment; i++) {
-				byteArray[length - sizeOfContainment + i] = (byte) 0xff;
+				byteArray[firstIndex + length - sizeOfContainment
+						+ i] = (byte) 0xff;
 			}
 		} else {
 			for (int i = 0; i < sizeOfContainment - 1; i++) {
-				byteArray[length - sizeOfContainment + i] = (byte) 0xff;
+				byteArray[firstIndex + length - sizeOfContainment
+						+ i] = (byte) 0xff;
 			}
 			int remainingComputers = numberOfSlaves % Byte.SIZE;
 			switch (remainingComputers) {
 			case 1:
-				byteArray[length - 1] = (byte) 0x80;
+				byteArray[firstIndex + length - 1] = (byte) 0x80;
 				break;
 			case 2:
-				byteArray[length - 1] = (byte) 0xc0;
+				byteArray[firstIndex + length - 1] = (byte) 0xc0;
 				break;
 			case 3:
-				byteArray[length - 1] = (byte) 0xe0;
+				byteArray[firstIndex + length - 1] = (byte) 0xe0;
 				break;
 			case 4:
-				byteArray[length - 1] = (byte) 0xf0;
+				byteArray[firstIndex + length - 1] = (byte) 0xf0;
 				break;
 			case 5:
-				byteArray[length - 1] = (byte) 0xf8;
+				byteArray[firstIndex + length - 1] = (byte) 0xf8;
 				break;
 			case 6:
-				byteArray[length - 1] = (byte) 0xfc;
+				byteArray[firstIndex + length - 1] = (byte) 0xfc;
 				break;
 			case 7:
-				byteArray[length - 1] = (byte) 0xfe;
+				byteArray[firstIndex + length - 1] = (byte) 0xfe;
 				break;
 			}
 		}
@@ -161,7 +152,8 @@ public class Mapping {
 	}
 
 	private int getContainingByte(int computerId) {
-		return length - getNumberOfContainmentBytes() + computerId / Byte.SIZE;
+		return firstIndex + length - getNumberOfContainmentBytes()
+				+ computerId / Byte.SIZE;
 	}
 
 	private byte getBitMaskFor(int computerId) {
@@ -195,7 +187,8 @@ public class Mapping {
 		}
 		if (getNumberOfContainmentBytes() > 0) {
 			System.arraycopy(mapping.getByteArray(),
-					mapping.getLengthOfMappingInByteArray()
+					mapping.getFirstIndexOfMappingInByteArray()
+							+ mapping.getLengthOfMappingInByteArray()
 							- getNumberOfContainmentBytes(),
 					newMapping,
 					newMapping.length - getNumberOfContainmentBytes(),
@@ -206,34 +199,51 @@ public class Mapping {
 
 	public void joinMappings(long[] joinVars, Mapping mapping1, long[] vars1,
 			Mapping mapping2, long[] vars2) {
-		byte[] newMapping = createNewMappingArray(
-				vars1.length + vars2.length - joinVars.length);
-		System.arraycopy(mapping1.getByteArray(), getHeaderSize(), newMapping,
-				getHeaderSize(), vars1.length * Long.BYTES);
-		int nextFreeIndex = getHeaderSize() + vars1.length * Long.BYTES;
-		if (joinVars.length == 0) {
-			System.arraycopy(mapping2.getByteArray(), getHeaderSize(),
-					newMapping, nextFreeIndex, vars2.length * Long.BYTES);
+		if (mapping2.isEmptyMapping()) {
+			byteArray = mapping1.getByteArray();
+			firstIndex = mapping1.getFirstIndexOfMappingInByteArray();
+			length = mapping1.getLengthOfMappingInByteArray();
+		} else if (mapping1.isEmptyMapping()) {
+			byteArray = mapping2.getByteArray();
+			firstIndex = mapping2.getFirstIndexOfMappingInByteArray();
+			length = mapping2.getLengthOfMappingInByteArray();
 		} else {
-			for (int i = 0; i < vars2.length; i++) {
-				if (!isJoinVar(vars2[i], joinVars)) {
-					System.arraycopy(mapping2.byteArray,
-							getHeaderSize() + i * Long.BYTES, newMapping,
-							nextFreeIndex, Long.BYTES);
-					nextFreeIndex += Long.BYTES;
+			byte[] newMapping = createNewMappingArray(
+					vars1.length + vars2.length - joinVars.length);
+			System.arraycopy(mapping1.getByteArray(),
+					mapping1.getFirstIndexOfMappingInByteArray()
+							+ getHeaderSize(),
+					newMapping, getHeaderSize(), vars1.length * Long.BYTES);
+			int nextFreeIndex = getHeaderSize() + vars1.length * Long.BYTES;
+			if (joinVars.length == 0) {
+				System.arraycopy(mapping2.getByteArray(),
+						mapping2.getFirstIndexOfMappingInByteArray()
+								+ getHeaderSize(),
+						newMapping, nextFreeIndex, vars2.length * Long.BYTES);
+			} else {
+				for (int i = 0; i < vars2.length; i++) {
+					if (!isJoinVar(vars2[i], joinVars)) {
+						System.arraycopy(mapping2.getByteArray(),
+								mapping2.getFirstIndexOfMappingInByteArray()
+										+ getHeaderSize() + i * Long.BYTES,
+								newMapping, nextFreeIndex, Long.BYTES);
+						nextFreeIndex += Long.BYTES;
+					}
 				}
 			}
+			set(newMapping);
 		}
 		// intersect containment
 		for (int i = 0; i < getNumberOfContainmentBytes(); i++) {
-			newMapping[newMapping.length - 1
-					- i] = (byte) (mapping1
-							.getByteArray()[mapping1
-									.getLengthOfMappingInByteArray() - 1 - i]
-							& mapping2.getByteArray()[mapping2
-									.getLengthOfMappingInByteArray() - 1 - i]);
+			byteArray[byteArray.length - 1
+					- i] = (byte) (mapping1.getByteArray()[mapping1
+							.getFirstIndexOfMappingInByteArray()
+							+ mapping1.getLengthOfMappingInByteArray() - 1 - i]
+					& mapping2.getByteArray()[mapping2
+							.getFirstIndexOfMappingInByteArray()
+							+ mapping2.getLengthOfMappingInByteArray() - 1
+							- i]);
 		}
-		set(newMapping);
 	}
 
 	private boolean isJoinVar(long var, long[] joinVars) {
@@ -294,7 +304,8 @@ public class Mapping {
 			throw new IllegalArgumentException(
 					"The variable " + var + " is not bound in this mapping.");
 		}
-		int indexOfMapping = getHeaderSize() + indexOfVar * Long.BYTES;
+		int indexOfMapping = getFirstIndexOfMappingInByteArray()
+				+ getHeaderSize() + indexOfVar * Long.BYTES;
 		return NumberConversion.bytes2long(getByteArray(), indexOfMapping);
 	}
 
@@ -330,21 +341,26 @@ public class Mapping {
 	public String toString(long[] vars) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getClass().getName()).append("[");
-		sb.append("type").append("=").append(MessageType.valueOf(byteArray[0]));
+		sb.append("type").append("=").append(MessageType
+				.valueOf(byteArray[getFirstIndexOfMappingInByteArray()]));
 		sb.append(", ");
-		sb.append("receiver").append("=").append(getTaskIdString(Byte.BYTES));
+		sb.append("receiver").append("=").append(getTaskIdString(
+				getFirstIndexOfMappingInByteArray() + Byte.BYTES));
 		sb.append(", ");
-		sb.append("sender").append("=")
-				.append(getTaskIdString(Byte.BYTES + Long.BYTES));
+		sb.append("sender").append("=").append(getTaskIdString(
+				getFirstIndexOfMappingInByteArray() + Byte.BYTES + Long.BYTES));
 		sb.append(", ");
-		sb.append("length").append("=").append(NumberConversion
-				.bytes2int(byteArray, Byte.BYTES + Long.BYTES + Long.BYTES));
+		sb.append("length").append("=")
+				.append(NumberConversion.bytes2int(byteArray,
+						getFirstIndexOfMappingInByteArray() + Byte.BYTES
+								+ Long.BYTES + Long.BYTES));
 		sb.append(", ");
 		sb.append("mappings").append("=").append("{");
 		for (int i = 0; i < vars.length; i++) {
 			sb.append(i == 0 ? "" : ",").append(vars[i]).append("->")
 					.append(NumberConversion.bytes2long(byteArray,
-							getHeaderSize() + i * Long.BYTES));
+							getFirstIndexOfMappingInByteArray()
+									+ getHeaderSize() + i * Long.BYTES));
 		}
 		sb.append("}");
 		sb.append(", ");
@@ -359,6 +375,18 @@ public class Mapping {
 		sb.append("}");
 		sb.append("]");
 		return sb.toString();
+	}
+
+	private String getTaskIdString(int startIndex) {
+		return NumberConversion.bytes2long(byteArray, startIndex)
+				+ " (computer="
+				+ NumberConversion.bytes2short(byteArray, startIndex)
+				+ ",query="
+				+ NumberConversion.bytes2int(byteArray,
+						startIndex + Short.BYTES)
+				+ ",task=" + NumberConversion.bytes2short(byteArray,
+						startIndex + Short.BYTES + Integer.BYTES)
+				+ ")";
 	}
 
 }
