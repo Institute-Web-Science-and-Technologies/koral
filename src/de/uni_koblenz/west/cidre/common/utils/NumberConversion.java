@@ -14,7 +14,7 @@ public class NumberConversion {
 
 	public static long bytes2long(byte[] bytes, int startIndex) {
 		long longValue = 0;
-		for (int i = startIndex; i < Long.BYTES; i++) {
+		for (int i = startIndex; i < startIndex + Long.BYTES; i++) {
 			longValue = longValue << Byte.SIZE;
 			longValue |= (bytes[i] & 0x000000ff);
 		}
@@ -27,7 +27,7 @@ public class NumberConversion {
 
 	public static int bytes2int(byte[] bytes, int startIndex) {
 		int intValue = 0;
-		for (int i = startIndex; i < Integer.BYTES; i++) {
+		for (int i = startIndex; i < startIndex + Integer.BYTES; i++) {
 			intValue = intValue << Byte.SIZE;
 			intValue |= (bytes[i] & 0x000000ff);
 		}
@@ -40,7 +40,7 @@ public class NumberConversion {
 
 	public static short bytes2short(byte[] bytes, int startIndex) {
 		short shortValue = 0;
-		for (int i = startIndex; i < Short.BYTES; i++) {
+		for (int i = startIndex; i < startIndex + Short.BYTES; i++) {
 			shortValue = (short) (shortValue << Byte.SIZE);
 			shortValue |= (bytes[i] & 0x000000ff);
 		}

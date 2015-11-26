@@ -1,8 +1,5 @@
 package de.uni_koblenz.west.cidre.slave.triple_store.impl;
 
-import java.nio.ByteBuffer;
-import java.util.BitSet;
-
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
@@ -108,8 +105,10 @@ public enum IndexType {
 
 	public abstract long getObject(byte[] triple);
 
-	public BitSet getContainment(byte[] triple) {
-		return BitSet.valueOf(ByteBuffer.wrap(triple, 24, triple.length - 24));
+	public byte[] getContainment(byte[] triple) {
+		byte[] result = new byte[triple.length - 3 * Long.BYTES];
+		System.arraycopy(triple, 3 * Long.BYTES, result, 0, result.length);
+		return result;
 	}
 
 	public abstract byte[] getSPOCArray(byte[] triple);

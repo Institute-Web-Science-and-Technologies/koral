@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.common.query;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
@@ -31,7 +32,7 @@ import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
  */
 public class Mapping {
 
-	private final int containmentSize;
+	private final int numberOfSlaves;
 
 	/**
 	 * This array consists of:
@@ -43,7 +44,8 @@ public class Mapping {
 	 * <li>mapping serialization
 	 * <ol>
 	 * <li>8*#vars bytes of mapping</li>
-	 * <li>{@link #containmentSize} bytes of containment serialization</li>
+	 * <li>{@link #numberOfSlaves}/8+{@link #numberOfSlaves}%8==0?0:1 bytes of
+	 * containment serialization</li>
 	 * </ol>
 	 * </li>
 	 * </ol>
@@ -54,8 +56,20 @@ public class Mapping {
 
 	private int length;
 
-	Mapping(int containmentSize) {
-		this.containmentSize = containmentSize;
+	private String getTaskIdString(int startIndex) {
+		return NumberConversion.bytes2long(byteArray, startIndex)
+				+ " (computer="
+				+ NumberConversion.bytes2short(byteArray, startIndex)
+				+ ",query="
+				+ NumberConversion.bytes2int(byteArray,
+						startIndex + Short.BYTES)
+				+ ",task=" + NumberConversion.bytes2short(byteArray,
+						startIndex + Short.BYTES + Integer.BYTES)
+				+ ")";
+	}
+
+	Mapping(int numberOfSlaves) {
+		this.numberOfSlaves = numberOfSlaves;
 	}
 
 	void set(byte[] byteArrayWithMapping, int firstIndexOfMappingInArray,
@@ -63,6 +77,26 @@ public class Mapping {
 		byteArray = byteArrayWithMapping;
 		firstIndex = firstIndexOfMappingInArray;
 		length = lengthOfMapping;
+	}
+
+	private void set(byte[] newMapping) {
+		byteArray = newMapping;
+		firstIndex = 0;
+		length = newMapping.length;
+	}
+
+	private int getNumberOfContainmentBytes() {
+		return numberOfSlaves / Byte.SIZE
+				+ (numberOfSlaves % Byte.SIZE == 0 ? 0 : 1);
+	}
+
+	private int getHeaderSize() {
+		return Byte.BYTES + Long.BYTES + Long.BYTES + Integer.BYTES;
+	}
+
+	private int getLengthOfMapping(int numberOfVars) {
+		return getHeaderSize() + numberOfVars * Long.BYTES
+				+ getNumberOfContainmentBytes();
 	}
 
 	public void updateReceiver(long receiverTaskID) {
@@ -75,22 +109,148 @@ public class Mapping {
 	}
 
 	public void setContainmentToAll() {
-		// TODO Auto-generated method stub
+		int sizeOfContainment = getNumberOfContainmentBytes();
+		if (numberOfSlaves % Byte.SIZE == 0) {
+			for (int i = 0; i < sizeOfContainment; i++) {
+				byteArray[length - sizeOfContainment + i] = (byte) 0xff;
+			}
+		} else {
+			for (int i = 0; i < sizeOfContainment - 1; i++) {
+				byteArray[length - sizeOfContainment + i] = (byte) 0xff;
+			}
+			int remainingComputers = numberOfSlaves % Byte.SIZE;
+			switch (remainingComputers) {
+			case 1:
+				byteArray[length - 1] = (byte) 0x80;
+				break;
+			case 2:
+				byteArray[length - 1] = (byte) 0xc0;
+				break;
+			case 3:
+				byteArray[length - 1] = (byte) 0xe0;
+				break;
+			case 4:
+				byteArray[length - 1] = (byte) 0xf0;
+				break;
+			case 5:
+				byteArray[length - 1] = (byte) 0xf8;
+				break;
+			case 6:
+				byteArray[length - 1] = (byte) 0xfc;
+				break;
+			case 7:
+				byteArray[length - 1] = (byte) 0xfe;
+				break;
+			}
+		}
 	}
 
 	public void updateContainment(int currentContainingComputer,
 			int nextContainingComputer) {
-		// TODO Auto-generated method stub
+		if (getNumberOfContainmentBytes() == 0) {
+			return;
+		}
+		// remove old containing computer
+		int byteIndex = getContainingByte(currentContainingComputer);
+		byte bitMask = getBitMaskFor(currentContainingComputer);
+		byteArray[byteIndex] = (byte) (byteArray[byteIndex] & ~bitMask);
+		// set new containingComputer
+		byteIndex = getContainingByte(nextContainingComputer);
+		bitMask = getBitMaskFor(nextContainingComputer);
+		byteArray[byteIndex] = (byte) (byteArray[byteIndex] | bitMask);
+	}
+
+	private int getContainingByte(int computerId) {
+		return length - getNumberOfContainmentBytes() + computerId / Byte.SIZE;
+	}
+
+	private byte getBitMaskFor(int computerId) {
+		switch (computerId % Byte.SIZE) {
+		case 0:
+			return (byte) 0x80;
+		case 1:
+			return (byte) 0x40;
+		case 2:
+			return (byte) 0x20;
+		case 3:
+			return (byte) 0x10;
+		case 4:
+			return (byte) 0x08;
+		case 5:
+			return (byte) 0x04;
+		case 6:
+			return (byte) 0x02;
+		case 7:
+			return (byte) 0x01;
+		}
+		return 0;
 	}
 
 	public void restrictMapping(long[] resultVars, Mapping mapping,
 			long[] vars) {
-		// TODO Auto-generated method stub
+		byte[] newMapping = createNewMappingArray(resultVars.length);
+		for (int i = 0; i < resultVars.length; i++) {
+			NumberConversion.long2bytes(mapping.getValue(resultVars[i], vars),
+					newMapping, getHeaderSize() + i * Long.BYTES);
+		}
+		if (getNumberOfContainmentBytes() > 0) {
+			System.arraycopy(mapping.getByteArray(),
+					mapping.getLengthOfMappingInByteArray()
+							- getNumberOfContainmentBytes(),
+					newMapping,
+					newMapping.length - getNumberOfContainmentBytes(),
+					getNumberOfContainmentBytes());
+		}
+		set(newMapping);
 	}
 
-	public void joinMappings(Mapping mapping1, long[] vars1, Mapping mapping2,
-			long[] vars2) {
-		// TODO Auto-generated method stub
+	public void joinMappings(long[] joinVars, Mapping mapping1, long[] vars1,
+			Mapping mapping2, long[] vars2) {
+		byte[] newMapping = createNewMappingArray(
+				vars1.length + vars2.length - joinVars.length);
+		System.arraycopy(mapping1.getByteArray(), getHeaderSize(), newMapping,
+				getHeaderSize(), vars1.length * Long.BYTES);
+		int nextFreeIndex = getHeaderSize() + vars1.length * Long.BYTES;
+		if (joinVars.length == 0) {
+			System.arraycopy(mapping2.getByteArray(), getHeaderSize(),
+					newMapping, nextFreeIndex, vars2.length * Long.BYTES);
+		} else {
+			for (int i = 0; i < vars2.length; i++) {
+				if (!isJoinVar(vars2[i], joinVars)) {
+					System.arraycopy(mapping2.byteArray,
+							getHeaderSize() + i * Long.BYTES, newMapping,
+							nextFreeIndex, Long.BYTES);
+					nextFreeIndex += Long.BYTES;
+				}
+			}
+		}
+		// intersect containment
+		for (int i = 0; i < getNumberOfContainmentBytes(); i++) {
+			newMapping[newMapping.length - 1
+					- i] = (byte) (mapping1
+							.getByteArray()[mapping1
+									.getLengthOfMappingInByteArray() - 1 - i]
+							& mapping2.getByteArray()[mapping2
+									.getLengthOfMappingInByteArray() - 1 - i]);
+		}
+		set(newMapping);
+	}
+
+	private boolean isJoinVar(long var, long[] joinVars) {
+		for (int i = 0; i < joinVars.length; i++) {
+			if (var == joinVars[i]) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private byte[] createNewMappingArray(int numberOfVars) {
+		byte[] newMapping = new byte[getLengthOfMapping(numberOfVars)];
+		newMapping[0] = MessageType.QUERY_MAPPING_BATCH.getValue();
+		NumberConversion.int2bytes(newMapping.length, newMapping,
+				Byte.BYTES + Long.BYTES + Long.BYTES);
+		return newMapping;
 	}
 
 	public byte[] getByteArray() {
@@ -114,25 +274,91 @@ public class Mapping {
 	 * @param var
 	 * @param vars
 	 * @return
+	 * @throws IllegalArgumentException
+	 *             if this is an empty mapping or var is not contained in vars.
 	 */
 	public long getValue(long var, long[] vars) {
-		// TODO Auto-generated method stub
-		return 0;
+		if (isEmptyMapping()) {
+			throw new IllegalArgumentException(
+					"An empty mapping does not have any values.");
+		}
+		int indexOfVar = 0;
+		if (var >= 0) {
+			for (; indexOfVar < vars.length; indexOfVar++) {
+				if (var == vars[indexOfVar]) {
+					break;
+				}
+			}
+		}
+		if (indexOfVar >= vars.length) {
+			throw new IllegalArgumentException(
+					"The variable " + var + " is not bound in this mapping.");
+		}
+		int indexOfMapping = getHeaderSize() + indexOfVar * Long.BYTES;
+		return NumberConversion.bytes2long(getByteArray(), indexOfMapping);
 	}
 
 	public boolean isEmptyMapping() {
-		return byteArray.length == Byte.BYTES + Long.BYTES + Long.BYTES
-				+ Integer.BYTES + containmentSize;
+		return length == getLengthOfMapping(0);
 	}
 
 	public short getIdOfFirstComputerKnowingThisMapping() {
-		// TODO Auto-generated method stub
+		for (int i = length - getNumberOfContainmentBytes(); i < length; i++) {
+			int numberOfAlreadyReadBytes = i
+					- (length - getNumberOfContainmentBytes());
+			if (byteArray[i] != 0) {
+				int value = (byteArray[i] & 0x00_00_00_ff) << (Integer.SIZE
+						- Byte.SIZE);
+				for (int numberOfReadBits = 0; numberOfReadBits < Byte.SIZE; numberOfReadBits++) {
+					if (value < 0) {
+						return (short) (numberOfAlreadyReadBytes * Byte.SIZE
+								+ numberOfReadBits);
+					}
+					value <<= 1;
+				}
+			}
+		}
 		return 0;
 	}
 
 	public boolean isKnownByComputer(int computerId) {
-		// TODO Auto-generated method stub
-		return false;
+		int byteIndex = getContainingByte(computerId);
+		byte bitMask = getBitMaskFor(computerId);
+		return ((byte) (byteArray[byteIndex] & bitMask)) != 0;
+	}
+
+	public String toString(long[] vars) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getName()).append("[");
+		sb.append("type").append("=").append(MessageType.valueOf(byteArray[0]));
+		sb.append(", ");
+		sb.append("receiver").append("=").append(getTaskIdString(Byte.BYTES));
+		sb.append(", ");
+		sb.append("sender").append("=")
+				.append(getTaskIdString(Byte.BYTES + Long.BYTES));
+		sb.append(", ");
+		sb.append("length").append("=").append(NumberConversion
+				.bytes2int(byteArray, Byte.BYTES + Long.BYTES + Long.BYTES));
+		sb.append(", ");
+		sb.append("mappings").append("=").append("{");
+		for (int i = 0; i < vars.length; i++) {
+			sb.append(i == 0 ? "" : ",").append(vars[i]).append("->")
+					.append(NumberConversion.bytes2long(byteArray,
+							getHeaderSize() + i * Long.BYTES));
+		}
+		sb.append("}");
+		sb.append(", ");
+		sb.append("containingComputers").append("=").append("{");
+		String delim = "";
+		for (int i = 0; i < getNumberOfContainmentBytes() * Byte.SIZE; i++) {
+			if (isKnownByComputer(i)) {
+				sb.append(delim).append(i);
+				delim = ",";
+			}
+		}
+		sb.append("}");
+		sb.append("]");
+		return sb.toString();
 	}
 
 }

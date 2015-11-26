@@ -33,23 +33,22 @@ public class DeSerializer {
 		throw new RuntimeException("decoding of " + serializedNode + " failed");
 	}
 
-	public static Node serializeBitSetAsNode(BitSet bitset) {
-		byte[] content = bitset.toByteArray();
+	public static Node serializeBitSetAsNode(byte[] bitset) {
 		StringBuilder sb = new StringBuilder();
-		for (byte b : content) {
+		for (byte b : bitset) {
 			sb.append(":").append(b);
 		}
 		return NodeFactory.createURI("urn:containment" + sb.toString());
 	}
 
-	public static BitSet deserializeBitSetFromNode(Node bitsetNode) {
+	public static byte[] deserializeBitSetFromNode(Node bitsetNode) {
 		String stringSerialization = bitsetNode.getURI();
 		String[] parts = stringSerialization.split(Pattern.quote(":"));
 		byte[] bitSetBytes = new byte[parts.length - 2];
 		for (int i = 2; i < parts.length; i++) {
 			bitSetBytes[i - 2] = Byte.parseByte(parts[i]);
 		}
-		return BitSet.valueOf(bitSetBytes);
+		return bitSetBytes;
 	}
 
 }

@@ -93,7 +93,7 @@ public class DictionaryEncoder implements Closeable {
 							.encode(DeSerializer.serializeNode(quad[2]));
 					statistics.count(subject, property, object, i);
 					byte[] containment = DeSerializer
-							.deserializeBitSetFromNode(quad[3]).toByteArray();
+							.deserializeBitSetFromNode(quad[3]);
 
 					out.writeLong(subject);
 					out.writeLong(property);

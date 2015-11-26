@@ -23,18 +23,14 @@ import de.uni_koblenz.west.cidre.slave.triple_store.impl.IndexType;
  */
 public class MappingRecycleCache {
 
-	private final int containmentSize;
+	private final int numberOfSlaves;
 
 	private final Mapping[] stack;
 
 	private int nextFreeIndex;
 
 	public MappingRecycleCache(int size, int numberOfSlaves) {
-		int containmentSize = numberOfSlaves / Byte.SIZE;
-		if (numberOfSlaves % Byte.SIZE != 0) {
-			containmentSize += 1;
-		}
-		this.containmentSize = containmentSize;
+		this.numberOfSlaves = numberOfSlaves;
 		stack = new Mapping[size];
 		nextFreeIndex = 0;
 	}
@@ -62,7 +58,8 @@ public class MappingRecycleCache {
 			byte[] triple) {
 		byte[] newMapping = new byte[Byte.BYTES + Long.BYTES + Long.BYTES
 				+ Integer.BYTES + Long.BYTES * pattern.getVariables().length
-				+ containmentSize];
+				+ (numberOfSlaves / Byte.SIZE
+						+ (numberOfSlaves % Byte.SIZE == 0 ? 0 : 1))];
 		newMapping[0] = MessageType.QUERY_MAPPING_BATCH.getValue();
 		NumberConversion.int2bytes(newMapping.length, newMapping,
 				Byte.BYTES + Long.BYTES + Long.BYTES);
@@ -99,16 +96,10 @@ public class MappingRecycleCache {
 		return result;
 	}
 
-	public Mapping cloneMapping(Mapping mapping) {
-		return createMapping(mapping.getByteArray(),
-				mapping.getFirstIndexOfMappingInByteArray(),
-				mapping.getLengthOfMappingInByteArray());
-	}
-
 	private Mapping getMapping() {
 		Mapping result;
 		if (isEmpty()) {
-			result = new Mapping(containmentSize);
+			result = new Mapping(numberOfSlaves);
 		} else {
 			result = pop();
 		}
@@ -128,10 +119,10 @@ public class MappingRecycleCache {
 		return result;
 	}
 
-	public Mapping mergeMappings(Mapping mapping1, long[] vars1,
-			Mapping mapping2, long[] vars2) {
+	public Mapping mergeMappings(long[] joinVars, Mapping mapping1,
+			long[] vars1, Mapping mapping2, long[] vars2) {
 		Mapping result = getMapping();
-		result.joinMappings(mapping1, vars1, mapping2, vars2);
+		result.joinMappings(joinVars, mapping1, vars1, mapping2, vars2);
 		return result;
 	}
 

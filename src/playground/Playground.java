@@ -1,9 +1,9 @@
 package playground;
 
-import java.io.File;
-
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
+import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.utils.CachedFileReceiverQueue;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * A class to test source code. Not used within CIDRE.
@@ -14,39 +14,39 @@ import de.uni_koblenz.west.cidre.common.utils.CachedFileReceiverQueue;
 public class Playground {
 
 	public static void main(String[] args) {
-		MappingRecycleCache recycleCache = new MappingRecycleCache(100, 0);
-		CachedFileReceiverQueue queue = new CachedFileReceiverQueue(3,
-				new File("/home/danijank/Downloads/test"), 0);
-		enqueue(queue, 1);
-		enqueue(queue, 2);
-		enqueue(queue, 3);
-		enqueue(queue, 4);
-		dequeue(recycleCache, queue);
-		dequeue(recycleCache, queue);
-		dequeue(recycleCache, queue);
-		enqueue(queue, 5);
-		enqueue(queue, 6);
-		enqueue(queue, 7);
-		enqueue(queue, 8);
-		dequeue(recycleCache, queue);
-		dequeue(recycleCache, queue);
-		dequeue(recycleCache, queue);
-		dequeue(recycleCache, queue);
-		dequeue(recycleCache, queue);
-		enqueue(queue, 9);
-		dequeue(recycleCache, queue);
-		queue.close();
+		MappingRecycleCache cache = new MappingRecycleCache(10, 15);
+
+		long[] vars1 = new long[] { 1 };
+		Mapping mapping1 = createMapping(cache, vars1, new long[] { 1 },
+				new byte[] { 1, 0 });
+		System.out.println(mapping1.toString(vars1));
+
+		long[] vars2 = new long[] {};
+		Mapping mapping2 = createMapping(cache, vars2, new long[] {},
+				new byte[] { 1, 0 });
+		System.out.println(mapping2.toString(vars2));
+
+		long[] vars3 = new long[] {};
+		Mapping mapping3 = cache.mergeMappings(vars3, mapping1, vars1, mapping2,
+				vars2);
+		System.out.println(mapping3.toString(vars3));
 	}
 
-	private static void enqueue(CachedFileReceiverQueue queue, int value) {
-		System.out.println("enqueue " + value);
-		queue.enqueue(new byte[] { (byte) value }, 0, 1);
-	}
-
-	private static void dequeue(MappingRecycleCache recycleCache,
-			CachedFileReceiverQueue queue) {
-		System.out.println("dequeue");
-		queue.dequeue(recycleCache);
+	private static Mapping createMapping(MappingRecycleCache cache, long[] vars,
+			long[] values, byte[] containment) {
+		byte[] newMapping = new byte[Byte.BYTES + Long.BYTES + Long.BYTES
+				+ Integer.BYTES + vars.length * Long.BYTES
+				+ containment.length];
+		newMapping[0] = MessageType.QUERY_MAPPING_BATCH.getValue();
+		NumberConversion.int2bytes(newMapping.length, newMapping,
+				Byte.BYTES + Long.BYTES + Long.BYTES);
+		for (int i = 0; i < values.length; i++) {
+			NumberConversion.long2bytes(values[i], newMapping, Byte.BYTES
+					+ Long.BYTES + Long.BYTES + Integer.BYTES + i * Long.BYTES);
+		}
+		System.arraycopy(containment, 0, newMapping,
+				newMapping.length - containment.length, containment.length);
+		return cache.createMapping(newMapping, 0, newMapping.length);
 	}
 
 }

@@ -55,7 +55,7 @@ public class JoinIterator implements Iterator<Mapping> {
 			Mapping joinCandidate = joinCandidates.next();
 			if (areJoinVarValuesEqual(joiningMapping, varsOfJoiningMapping,
 					joinCandidate, varsOfJoinCandidates)) {
-				return recycleCache.mergeMappings(joiningMapping,
+				return recycleCache.mergeMappings(joinVars, joiningMapping,
 						varsOfJoiningMapping, joinCandidate,
 						varsOfJoinCandidates);
 			}
