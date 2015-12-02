@@ -1,11 +1,14 @@
 package de.uni_koblenz.west.cidre.common.query.parser;
 
+import java.io.File;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
+import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
@@ -46,9 +49,14 @@ import org.apache.jena.sparql.algebra.op.OpTable;
 import org.apache.jena.sparql.algebra.op.OpTopN;
 import org.apache.jena.sparql.algebra.op.OpTriple;
 import org.apache.jena.sparql.algebra.op.OpUnion;
+import org.apache.jena.sparql.core.Var;
 
+import de.uni_koblenz.west.cidre.common.query.TriplePattern;
+import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.QueryOperatorTaskFactory;
+import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
 /**
  * Checks whether the query only consists of the supported operations and
@@ -61,12 +69,35 @@ public class SparqlParser implements OpVisitor {
 
 	private QueryExecutionTreeType treeType;
 
-	private VariableDictionary dictionary;
+	private final QueryOperatorTaskFactory taskFactory;
+
+	private final TripleStoreAccessor tripleStore;
+
+	private final DictionaryEncoder dictionary;
+
+	private VariableDictionary varDictionary;
 
 	private final Deque<QueryOperatorTask> stack;
 
-	public SparqlParser() {
+	private final int emittedMappingsPerRound;
+
+	private final int numberOfHashBuckets;
+
+	private final int maxInMemoryMappings;
+
+	public SparqlParser(DictionaryEncoder dictionary,
+			TripleStoreAccessor tripleStore, short slaveId, int queryId,
+			long coordinatorId, int numberOfSlaves, int cacheSize,
+			File cacheDirectory, int emittedMappingsPerRound,
+			int numberOfHashBuckets, int maxInMemoryMappings) {
+		this.dictionary = dictionary;
+		this.tripleStore = tripleStore;
 		stack = new ArrayDeque<>();
+		taskFactory = new QueryOperatorTaskFactory(slaveId, queryId,
+				coordinatorId, numberOfSlaves, cacheSize, cacheDirectory);
+		this.emittedMappingsPerRound = emittedMappingsPerRound;
+		this.numberOfHashBuckets = numberOfHashBuckets;
+		this.maxInMemoryMappings = maxInMemoryMappings;
 	}
 
 	/*
@@ -78,7 +109,7 @@ public class SparqlParser implements OpVisitor {
 	public QueryOperatorTask parse(String queryString,
 			QueryExecutionTreeType treeType, VariableDictionary dictionary) {
 		this.treeType = treeType;
-		this.dictionary = dictionary;
+		varDictionary = dictionary;
 		Query queryObject = QueryFactory.create(queryString);
 		if (!queryObject.isSelectType()) {
 			throw new UnsupportedOperationException(
@@ -104,8 +135,8 @@ public class SparqlParser implements OpVisitor {
 				if (numberOfTriplePattern > 1) {
 					QueryOperatorTask left = stack.pop();
 					QueryOperatorTask right = stack.pop();
-					QueryOperatorTask join = QueryOperatorTaskFactory
-							.createTriplePatternJoin(left, right);
+					QueryOperatorTask join = createTriplePatternJoin(left,
+							right);
 					stack.push(join);
 				}
 				break;
@@ -114,8 +145,8 @@ public class SparqlParser implements OpVisitor {
 					for (int i = 1; i < numberOfTriplePattern; i++) {
 						QueryOperatorTask right = stack.pop();
 						QueryOperatorTask left = stack.pop();
-						QueryOperatorTask join = QueryOperatorTaskFactory
-								.createTriplePatternJoin(left, right);
+						QueryOperatorTask join = createTriplePatternJoin(left,
+								right);
 						stack.push(join);
 					}
 				}
@@ -142,8 +173,8 @@ public class SparqlParser implements OpVisitor {
 				nextWorkingQueue.offer(leftChild);
 			} else {
 				QueryOperatorTask rightChild = workingQueue.poll();
-				QueryOperatorTask join = QueryOperatorTaskFactory
-						.createTriplePatternJoin(leftChild, rightChild);
+				QueryOperatorTask join = createTriplePatternJoin(leftChild,
+						rightChild);
 				nextWorkingQueue.offer(join);
 			}
 			if (workingQueue.isEmpty() && nextWorkingQueue.size() > 1) {
@@ -154,9 +185,60 @@ public class SparqlParser implements OpVisitor {
 		stack.push(nextWorkingQueue.poll());
 	}
 
+	private QueryOperatorTask createTriplePatternJoin(QueryOperatorTask left,
+			QueryOperatorTask right) {
+		return taskFactory.createTriplePatternJoin(emittedMappingsPerRound,
+				left, right, numberOfHashBuckets, maxInMemoryMappings);
+	}
+
 	public void visit(Triple triple) {
-		QueryOperatorTask task = QueryOperatorTaskFactory
-				.createTriplePatternMatch(triple, dictionary);
+		TriplePatternType type = TriplePatternType.SPO;
+		long subject = 0;
+		long property = 0;
+		long object = 0;
+
+		if (varDictionary != null && dictionary != null) {
+			Node subjectN = triple.getSubject();
+			if (subjectN.isVariable()) {
+				subject = varDictionary.encode(subjectN.getName());
+				type = TriplePatternType._PO;
+			} else {
+				subject = dictionary.encode(subjectN);
+			}
+
+			Node propertyN = triple.getPredicate();
+			if (propertyN.isVariable()) {
+				property = varDictionary.encode(propertyN.getName());
+				if (type == TriplePatternType.SPO) {
+					type = TriplePatternType.S_O;
+				} else {
+					type = TriplePatternType.__O;
+				}
+			} else {
+				property = dictionary.encode(propertyN);
+			}
+
+			Node objectN = triple.getObject();
+			if (objectN.isVariable()) {
+				object = varDictionary.encode(objectN.getName());
+				if (type == TriplePatternType.SPO) {
+					type = TriplePatternType.SP_;
+				} else if (type == TriplePatternType._PO) {
+					type = TriplePatternType._P_;
+				} else if (type == TriplePatternType.S_O) {
+					type = TriplePatternType.S__;
+				} else {
+					type = TriplePatternType.___;
+				}
+			} else {
+				object = dictionary.encode(objectN);
+			}
+		}
+
+		TriplePattern pattern = new TriplePattern(type, subject, property,
+				object);
+		QueryOperatorTask task = taskFactory.createTriplePatternMatch(
+				emittedMappingsPerRound, pattern, tripleStore);
 		stack.push(task);
 	}
 
@@ -352,9 +434,18 @@ public class SparqlParser implements OpVisitor {
 	@Override
 	public void visit(OpProject opProject) {
 		opProject.getSubOp().visit(this);
+		List<Var> vars = opProject.getVars();
+		long[] resultVars = new long[vars.size()];
+		int index = 0;
+		if (varDictionary != null) {
+			for (Var var : vars) {
+				resultVars[index++] = varDictionary.encode(var.getName());
+			}
+		}
+
 		QueryOperatorTask subTask = stack.pop();
-		QueryOperatorTask projection = QueryOperatorTaskFactory
-				.createProjection(opProject, subTask, dictionary);
+		QueryOperatorTask projection = taskFactory
+				.createProjection(emittedMappingsPerRound, resultVars, subTask);
 		stack.push(projection);
 	}
 

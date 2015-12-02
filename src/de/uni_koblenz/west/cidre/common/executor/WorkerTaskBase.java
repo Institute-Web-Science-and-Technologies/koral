@@ -40,7 +40,9 @@ public abstract class WorkerTaskBase implements WorkerTask {
 	public WorkerTaskBase(long id, int cacheSize, File cacheDirectory) {
 		this.id = id;
 		this.cacheSize = cacheSize;
-		this.cacheDirectory = new File(cacheDirectory.getAbsolutePath()
+		this.cacheDirectory = new File((cacheDirectory != null ? cacheDirectory
+				: new File(System.getProperty("java.io.tmpdir")))
+						.getAbsolutePath()
 				+ File.separatorChar + "workerTask_" + this.id);
 	}
 

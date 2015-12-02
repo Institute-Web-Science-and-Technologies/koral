@@ -203,6 +203,10 @@ public class DictionaryEncoder implements Closeable {
 		return DeSerializer.deserializeNode(plainText);
 	}
 
+	public long encode(Node node) {
+		return dictionary.encode(DeSerializer.serializeNode(node));
+	}
+
 	public boolean isEmpty() {
 		return dictionary.isEmpty();
 	}

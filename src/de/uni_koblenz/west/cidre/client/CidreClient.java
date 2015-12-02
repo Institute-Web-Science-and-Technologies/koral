@@ -198,7 +198,8 @@ public class CidreClient {
 			QueryExecutionTreeType treeType) throws IOException {
 		// check syntax
 		VariableDictionary dictionary = new VariableDictionary();
-		SparqlParser parser = new SparqlParser();
+		SparqlParser parser = new SparqlParser(null, null, (short) 0, 0, 0, 1,
+				0, null, 0, 1, 1);
 		QueryOperatorTask task = parser.parse(query, treeType, dictionary);
 		String queryString = QueryFactory.create(query).serialize();
 		String[] vars = dictionary.decode(task.getResultVariables());
