@@ -44,8 +44,9 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			ClientConnectionManager clientConnections,
 			DictionaryEncoder dictionary, GraphStatistics statistics,
 			Logger logger) {
-		super(computerID, queryID, (short) 0, Integer.MAX_VALUE, numberOfSlaves,
-				cacheSize, cacheDir);
+		super(computerID, queryID, (short) 0, numberOfSlaves, cacheSize,
+				cacheDir);
+		setEstimatedWorkLoad(Integer.MAX_VALUE);
 		this.clientConnections = clientConnections;
 		clientId = clientID;
 		this.dictionary = dictionary;
@@ -133,6 +134,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	protected void executePreStartStep() {
 		// send QUERY_CREATE
 		// TODO Auto-generated method stub
+		// TODO compute load estimation for each computer
 
 		sendKeepAliveMessageToClient();
 	}

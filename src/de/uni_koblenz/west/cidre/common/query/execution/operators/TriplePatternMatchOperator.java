@@ -6,6 +6,7 @@ import java.util.Iterator;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
 /**
@@ -23,24 +24,127 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	private Iterator<Mapping> iterator;
 
 	public TriplePatternMatchOperator(long id, long coordinatorId,
-			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
-			File cacheDirectory, TriplePattern pattern,
-			int emittedMappingsPerRound, TripleStoreAccessor tripleStore) {
-		super(id, coordinatorId, estimatedWorkLoad, numberOfSlaves, cacheSize,
-				cacheDirectory, emittedMappingsPerRound);
+			int numberOfSlaves, int cacheSize, File cacheDirectory,
+			TriplePattern pattern, int emittedMappingsPerRound,
+			TripleStoreAccessor tripleStore) {
+		super(id, coordinatorId, numberOfSlaves, cacheSize, cacheDirectory,
+				emittedMappingsPerRound);
 		this.pattern = pattern;
 		this.tripleStore = tripleStore;
 	}
 
 	public TriplePatternMatchOperator(short slaveId, int queryId, short taskId,
-			long coordinatorId, long estimatedWorkLoad, int numberOfSlaves,
-			int cacheSize, File cacheDirectory, TriplePattern pattern,
+			long coordinatorId, int numberOfSlaves, int cacheSize,
+			File cacheDirectory, TriplePattern pattern,
 			int emittedMappingsPerRound, TripleStoreAccessor tripleStore) {
-		super(slaveId, queryId, taskId, coordinatorId, estimatedWorkLoad,
-				numberOfSlaves, cacheSize, cacheDirectory,
-				emittedMappingsPerRound);
+		super(slaveId, queryId, taskId, coordinatorId, numberOfSlaves,
+				cacheSize, cacheDirectory, emittedMappingsPerRound);
 		this.pattern = pattern;
 		this.tripleStore = tripleStore;
+	}
+
+	@Override
+	public long computeEstimatedLoad(GraphStatistics statistics, int slave) {
+		switch (pattern.getType()) {
+		case ___:
+			return statistics.getChunkSizes()[slave];
+		case S__:
+			return slave < 0
+					? statistics.getTotalSubjectFrequency(pattern.getSubject())
+					: statistics.getSubjectFrequency(pattern.getSubject(),
+							slave);
+		case _P_:
+			return slave < 0
+					? statistics
+							.getTotalPropertyFrequency(pattern.getProperty())
+					: statistics.getPropertyFrequency(pattern.getProperty(),
+							slave);
+		case __O:
+			return slave < 0
+					? statistics.getTotalObjectFrequency(pattern.getObject())
+					: statistics.getObjectFrequency(pattern.getObject(), slave);
+		case SP_:
+			long subjectFrequency = slave < 0
+					? statistics.getTotalSubjectFrequency(pattern.getSubject())
+					: statistics.getSubjectFrequency(pattern.getSubject(),
+							slave);
+			if (subjectFrequency == 0) {
+				return 0;
+			}
+			long propertyFrequency = slave < 0
+					? statistics
+							.getTotalPropertyFrequency(pattern.getProperty())
+					: statistics.getPropertyFrequency(pattern.getProperty(),
+							slave);
+			if (subjectFrequency < propertyFrequency) {
+				return subjectFrequency;
+			} else {
+				return propertyFrequency;
+			}
+		case S_O:
+			subjectFrequency = slave < 0
+					? statistics.getTotalSubjectFrequency(pattern.getSubject())
+					: statistics.getSubjectFrequency(pattern.getSubject(),
+							slave);
+			if (subjectFrequency == 0) {
+				return 0;
+			}
+			long objectFrequency = slave < 0
+					? statistics.getTotalObjectFrequency(pattern.getObject())
+					: statistics.getObjectFrequency(pattern.getObject(), slave);
+			if (subjectFrequency < objectFrequency) {
+				return subjectFrequency;
+			} else {
+				return objectFrequency;
+			}
+		case _PO:
+			propertyFrequency = slave < 0
+					? statistics
+							.getTotalPropertyFrequency(pattern.getProperty())
+					: statistics.getPropertyFrequency(pattern.getProperty(),
+							slave);
+			if (propertyFrequency == 0) {
+				return 0;
+			}
+			objectFrequency = slave < 0
+					? statistics.getTotalObjectFrequency(pattern.getObject())
+					: statistics.getObjectFrequency(pattern.getObject(), slave);
+			if (propertyFrequency < objectFrequency) {
+				return propertyFrequency;
+			} else {
+				return objectFrequency;
+			}
+		case SPO:
+			subjectFrequency = slave < 0
+					? statistics.getTotalSubjectFrequency(pattern.getSubject())
+					: statistics.getSubjectFrequency(pattern.getSubject(),
+							slave);
+			if (subjectFrequency == 0) {
+				return 0;
+			}
+			propertyFrequency = slave < 0
+					? statistics
+							.getTotalPropertyFrequency(pattern.getProperty())
+					: statistics.getPropertyFrequency(pattern.getProperty(),
+							slave);
+			if (propertyFrequency == 0) {
+				return 0;
+			}
+			objectFrequency = slave < 0
+					? statistics.getTotalObjectFrequency(pattern.getObject())
+					: statistics.getObjectFrequency(pattern.getObject(), slave);
+			if (objectFrequency == 0) {
+				return 0;
+			} else {
+				return 1;
+			}
+		}
+		return 0;
+	}
+
+	@Override
+	public long computeTotalEstimatedLoad(GraphStatistics statistics) {
+		return computeEstimatedLoad(statistics, -1);
 	}
 
 	@Override

@@ -4,6 +4,8 @@ import java.io.File;
 
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
  * Performs the projection operation.
@@ -15,25 +17,35 @@ public class ProjectionOperator extends QueryOperatorBase {
 
 	private final long[] resultVars;
 
-	public ProjectionOperator(long id, long coordinatorId,
-			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
-			File cacheDirectory, int emittedMappingsPerRound, long[] resultVars,
-			QueryOperatorBase subOperation) {
-		super(id, coordinatorId, estimatedWorkLoad, numberOfSlaves, cacheSize,
-				cacheDirectory, emittedMappingsPerRound);
+	public ProjectionOperator(long id, long coordinatorId, int numberOfSlaves,
+			int cacheSize, File cacheDirectory, int emittedMappingsPerRound,
+			long[] resultVars, QueryOperatorTask subOperation) {
+		super(id, coordinatorId, numberOfSlaves, cacheSize, cacheDirectory,
+				emittedMappingsPerRound);
 		this.resultVars = resultVars;
 		addChildTask(subOperation);
 	}
 
 	public ProjectionOperator(short slaveId, int queryId, short taskId,
-			long coordinatorId, long estimatedWorkLoad, int numberOfSlaves,
-			int cacheSize, File cacheDirectory, int emittedMappingsPerRound,
-			long[] resultVars, QueryOperatorBase subOperation) {
-		super(slaveId, queryId, taskId, coordinatorId, estimatedWorkLoad,
-				numberOfSlaves, cacheSize, cacheDirectory,
-				emittedMappingsPerRound);
+			long coordinatorId, int numberOfSlaves, int cacheSize,
+			File cacheDirectory, int emittedMappingsPerRound, long[] resultVars,
+			QueryOperatorTask subOperation) {
+		super(slaveId, queryId, taskId, coordinatorId, numberOfSlaves,
+				cacheSize, cacheDirectory, emittedMappingsPerRound);
 		this.resultVars = resultVars;
 		addChildTask(subOperation);
+	}
+
+	@Override
+	public long computeEstimatedLoad(GraphStatistics statistics, int slave) {
+		QueryOperatorBase subOp = (QueryOperatorBase) getChildTask(0);
+		return subOp.computeEstimatedLoad(statistics, slave);
+	}
+
+	@Override
+	public long computeTotalEstimatedLoad(GraphStatistics statistics) {
+		QueryOperatorBase subOp = (QueryOperatorBase) getChildTask(0);
+		return subOp.computeTotalEstimatedLoad(statistics);
 	}
 
 	@Override

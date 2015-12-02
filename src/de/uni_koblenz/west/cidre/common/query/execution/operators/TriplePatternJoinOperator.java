@@ -5,7 +5,9 @@ import java.util.Arrays;
 
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
  * Performs the join operation of mappings as a hash join.
@@ -28,12 +30,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private JoinIterator iterator;
 
 	public TriplePatternJoinOperator(long id, long coordinatorId,
-			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
-			File cacheDirectory, int emittedMappingsPerRound,
-			QueryOperatorBase leftChild, QueryOperatorBase rightChild,
-			int numberOfHashBuckets, int maxInMemoryMappings) {
-		super(id, coordinatorId, estimatedWorkLoad, numberOfSlaves, cacheSize,
-				cacheDirectory, emittedMappingsPerRound);
+			int numberOfSlaves, int cacheSize, File cacheDirectory,
+			int emittedMappingsPerRound, QueryOperatorTask leftChild,
+			QueryOperatorTask rightChild, int numberOfHashBuckets,
+			int maxInMemoryMappings) {
+		super(id, coordinatorId, numberOfSlaves, cacheSize, cacheDirectory,
+				emittedMappingsPerRound);
 		addChildTask(leftChild);
 		addChildTask(rightChild);
 		computeVars(leftChild.getResultVariables(),
@@ -64,13 +66,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	public TriplePatternJoinOperator(short slaveId, int queryId, short taskId,
-			long coordinatorId, long estimatedWorkLoad, int numberOfSlaves,
-			int cacheSize, File cacheDirectory, int emittedMappingsPerRound,
-			QueryOperatorBase leftChild, QueryOperatorBase rightChild,
+			long coordinatorId, int numberOfSlaves, int cacheSize,
+			File cacheDirectory, int emittedMappingsPerRound,
+			QueryOperatorTask leftChild, QueryOperatorTask rightChild,
 			int numberOfHashBuckets, int maxInMemoryMappings) {
-		super(slaveId, queryId, taskId, coordinatorId, estimatedWorkLoad,
-				numberOfSlaves, cacheSize, cacheDirectory,
-				emittedMappingsPerRound);
+		super(slaveId, queryId, taskId, coordinatorId, numberOfSlaves,
+				cacheSize, cacheDirectory, emittedMappingsPerRound);
 		addChildTask(leftChild);
 		addChildTask(rightChild);
 		computeVars(leftChild.getResultVariables(),
@@ -128,6 +129,39 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				resultVars[i] = allVars[i];
 			}
 		}
+	}
+
+	@Override
+	public long computeEstimatedLoad(GraphStatistics statistics, int slave) {
+		long totalLoad = statistics.getTotalOwnerLoad();
+		if (totalLoad == 0) {
+			return 0;
+		}
+		double loadFactor = ((double) statistics.getOwnerLoad(slave))
+				/ totalLoad;
+		if (loadFactor == 0) {
+			return 0;
+		}
+		long joinSize = computeTotalEstimatedLoad(statistics);
+		if (joinSize == 0) {
+			return 0;
+		}
+		return (long) (joinSize * loadFactor);
+	}
+
+	@Override
+	public long computeTotalEstimatedLoad(GraphStatistics statistics) {
+		QueryOperatorBase leftChild = (QueryOperatorBase) getChildTask(0);
+		long leftLoad = leftChild.computeTotalEstimatedLoad(statistics);
+		if (leftLoad == 0) {
+			return 0;
+		}
+		QueryOperatorBase rightChild = (QueryOperatorBase) getChildTask(1);
+		long rightLoad = rightChild.computeTotalEstimatedLoad(statistics);
+		if (rightLoad == 0) {
+			return 0;
+		}
+		return leftLoad * rightLoad;
 	}
 
 	@Override

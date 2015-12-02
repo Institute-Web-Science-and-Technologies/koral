@@ -130,6 +130,64 @@ public class GraphStatistics implements Closeable {
 		return database.setOwner(id, owner);
 	}
 
+	public long getSubjectFrequency(long subject, int slave) {
+		return database.getStatisticsForResource(subject)[0 * numberOfChunks
+				+ slave];
+	}
+
+	public long getPropertyFrequency(long property, int slave) {
+		return database.getStatisticsForResource(property)[1 * numberOfChunks
+				+ slave];
+	}
+
+	public long getObjectFrequency(long object, int slave) {
+		return database.getStatisticsForResource(object)[2 * numberOfChunks
+				+ slave];
+	}
+
+	public long getOwnerLoad(int slave) {
+		return database.getOwnerLoad()[slave];
+	}
+
+	public long getTotalSubjectFrequency(long subject) {
+		long totalFrequency = 0;
+		long[] statisticsForResource = database
+				.getStatisticsForResource(subject);
+		for (int slave = 0; slave < numberOfChunks; slave++) {
+			totalFrequency += statisticsForResource[0 * numberOfChunks + slave];
+		}
+		return totalFrequency;
+	}
+
+	public long getTotalPropertyFrequency(long property) {
+		long totalFrequency = 0;
+		long[] statisticsForResource = database
+				.getStatisticsForResource(property);
+		for (int slave = 0; slave < numberOfChunks; slave++) {
+			totalFrequency += statisticsForResource[1 * numberOfChunks + slave];
+		}
+		return totalFrequency;
+	}
+
+	public long getTotalObjectFrequency(long object) {
+		long totalFrequency = 0;
+		long[] statisticsForResource = database
+				.getStatisticsForResource(object);
+		for (int slave = 0; slave < numberOfChunks; slave++) {
+			totalFrequency += statisticsForResource[2 * numberOfChunks + slave];
+		}
+		return totalFrequency;
+	}
+
+	public long getTotalOwnerLoad() {
+		long result = 0;
+		long[] ownerloads = database.getOwnerLoad();
+		for (long load : ownerloads) {
+			result += load;
+		}
+		return result;
+	}
+
 	public void clear() {
 		database.clear();
 	}

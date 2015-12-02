@@ -5,6 +5,7 @@ import java.io.File;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
  * This is the base implementation of {@link WorkerTask} that is common for all
@@ -23,22 +24,36 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	private final int emittedMappingsPerRound;
 
 	public QueryOperatorBase(short slaveId, int queryId, short taskId,
-			long coordinatorId, long estimatedWorkLoad, int numberOfSlaves,
-			int cacheSize, File cacheDirectory, int emittedMappingsPerRound) {
+			long coordinatorId, int numberOfSlaves, int cacheSize,
+			File cacheDirectory, int emittedMappingsPerRound) {
 		super((((((long) slaveId) << Integer.SIZE)
 				| (queryId & 0x00_00_00_00_ff_ff_ff_ffl)) << Short.SIZE)
-				| (taskId & 0x00_00_00_00_00_00_ff_ffl), estimatedWorkLoad,
-				numberOfSlaves, cacheSize, cacheDirectory);
+				| (taskId & 0x00_00_00_00_00_00_ff_ffl), numberOfSlaves,
+				cacheSize, cacheDirectory);
 		this.coordinatorId = coordinatorId;
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
 	}
 
-	public QueryOperatorBase(long id, long coordinatorId,
-			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
-			File cacheDirectory, int emittedMappingsPerRound) {
-		super(id, estimatedWorkLoad, numberOfSlaves, cacheSize, cacheDirectory);
+	public QueryOperatorBase(long id, long coordinatorId, int numberOfSlaves,
+			int cacheSize, File cacheDirectory, int emittedMappingsPerRound) {
+		super(id, numberOfSlaves, cacheSize, cacheDirectory);
 		this.coordinatorId = coordinatorId;
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
+	}
+
+	/**
+	 * @param statistics
+	 * @param slave
+	 *            the first slave has id 0
+	 * @return
+	 */
+	public abstract long computeEstimatedLoad(GraphStatistics statistics,
+			int slave);
+
+	public abstract long computeTotalEstimatedLoad(GraphStatistics statistics);
+
+	public void adjustEstimatedLoad(GraphStatistics statistics, int slave) {
+		setEstimatedWorkLoad(computeEstimatedLoad(statistics, slave));
 	}
 
 	@Override

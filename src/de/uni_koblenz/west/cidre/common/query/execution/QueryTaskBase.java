@@ -21,25 +21,23 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
 	protected MessageSenderBuffer messageSender;
 
-	private final long estimatedWorkLoad;
+	private long estimatedWorkLoad;
 
 	private QueryTaskState state;
 
 	private int numberOfMissingFinishedMessages;
 
 	public QueryTaskBase(short slaveId, int queryId, short taskId,
-			long estimatedWorkLoad, int numberOfSlaves, int cacheSize,
-			File cacheDirectory) {
+			int numberOfSlaves, int cacheSize, File cacheDirectory) {
 		this((((((long) slaveId) << Integer.SIZE)
 				| (queryId & 0x00_00_00_00_ff_ff_ff_ffl)) << Short.SIZE)
-				| (taskId & 0x00_00_00_00_00_00_ff_ffl), estimatedWorkLoad,
-				numberOfSlaves, cacheSize, cacheDirectory);
+				| (taskId & 0x00_00_00_00_00_00_ff_ffl), numberOfSlaves,
+				cacheSize, cacheDirectory);
 	}
 
-	public QueryTaskBase(long id, long estimatedWorkLoad, int numberOfSlaves,
-			int cacheSize, File cacheDirectory) {
+	public QueryTaskBase(long id, int numberOfSlaves, int cacheSize,
+			File cacheDirectory) {
 		super(id, cacheSize, cacheDirectory);
-		this.estimatedWorkLoad = estimatedWorkLoad;
 		numberOfMissingFinishedMessages = numberOfSlaves;
 		state = QueryTaskState.CREATED;
 	}
@@ -50,6 +48,10 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 		super.setUp(messageSender, recycleCache, logger);
 		this.recycleCache = recycleCache;
 		this.messageSender = messageSender;
+	}
+
+	public void setEstimatedWorkLoad(long estimatedWorkLoad) {
+		this.estimatedWorkLoad = estimatedWorkLoad;
 	}
 
 	@Override
