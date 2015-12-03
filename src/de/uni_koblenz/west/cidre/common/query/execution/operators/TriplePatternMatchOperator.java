@@ -202,4 +202,17 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 				|| (iterator != null && !iterator.hasNext());
 	}
 
+	@Override
+	public void toString(StringBuilder sb, int indention) {
+		indent(sb, indention);
+		sb.append(getClass().getSimpleName());
+		sb.append(" ").append(pattern.isSubjectVariable() ? "?" : "")
+				.append(pattern.getSubject());
+		sb.append(" ").append(pattern.isPropertyVariable() ? "?" : "")
+				.append(pattern.getProperty());
+		sb.append(" ").append(pattern.isObjectVariable() ? "?" : "")
+				.append(pattern.getObject());
+		sb.append("\n");
+	}
+
 }

@@ -171,6 +171,21 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	}
 
 	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		toString(sb, 0);
+		return sb.toString();
+	}
+
+	public abstract void toString(StringBuilder sb, int indention);
+
+	protected void indent(StringBuilder sb, int indention) {
+		for (int i = 0; i < indention; i++) {
+			sb.append("    ");
+		}
+	}
+
+	@Override
 	public void close() {
 		super.close();
 		closeInternal();

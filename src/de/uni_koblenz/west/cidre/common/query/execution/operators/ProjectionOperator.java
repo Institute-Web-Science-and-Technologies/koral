@@ -98,4 +98,15 @@ public class ProjectionOperator extends QueryOperatorBase {
 		return true;
 	}
 
+	@Override
+	public void toString(StringBuilder sb, int indention) {
+		indent(sb, indention);
+		sb.append(getClass().getSimpleName());
+		for (long var : getResultVariables()) {
+			sb.append(" ?").append(var);
+		}
+		sb.append("\n");
+		((QueryOperatorBase) getChildTask(0)).toString(sb, indention + 1);
+	}
+
 }

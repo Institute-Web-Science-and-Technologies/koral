@@ -347,6 +347,30 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		rightHashSet.close();
 	}
 
+	@Override
+	public void toString(StringBuilder sb, int indention) {
+		indent(sb, indention);
+		sb.append(getClass().getSimpleName());
+		sb.append(" ").append(joinType.name());
+		sb.append(" joinVars: [");
+		String delim = "";
+		for (long var : joinVars) {
+			sb.append(delim).append(var);
+			delim = ",";
+		}
+		sb.append("]");
+		sb.append(" resultVars: [");
+		delim = "";
+		for (long var : resultVars) {
+			sb.append(delim).append(var);
+			delim = ",";
+		}
+		sb.append("]");
+		sb.append("\n");
+		((QueryOperatorBase) getChildTask(0)).toString(sb, indention + 1);
+		((QueryOperatorBase) getChildTask(1)).toString(sb, indention + 1);
+	}
+
 	private static enum JoinType {
 		JOIN, CARTESIAN_PRODUCT, LEFT_FORWARD, RIGHT_FORWARD;
 	}
