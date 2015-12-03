@@ -1,32 +1,22 @@
 package playground;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.EOFException;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.zip.GZIPInputStream;
 
-import org.apache.jena.graph.Node;
+import org.apache.jena.query.QueryFactory;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.query.TriplePattern;
-import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
+import de.uni_koblenz.west.cidre.common.query.parser.QueryExecutionTreeType;
+import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
+import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HashCoverCreator;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
-import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
-import de.uni_koblenz.west.cidre.slave.triple_store.impl.MappingIteratorWrapper;
 
 /**
  * A class to test source code. Not used within CIDRE.
@@ -37,22 +27,33 @@ import de.uni_koblenz.west.cidre.slave.triple_store.impl.MappingIteratorWrapper;
 public class Playground {
 
 	public static void main(String[] args) {
-		File workingDir = new File("/home/danijank/Downloads/testdata");
-		File inputFile = new File(workingDir.getParentFile(), "foaf.rdf");
-		Configuration conf = new Configuration();
-		conf.setDictionaryDir("/home/danijank/Downloads/testdata/dictionary");
-		conf.setStatisticsDir("/home/danijank/Downloads/testdata/statistics");
-		conf.setTripleStoreDir("/home/danijank/Downloads/testdata/tripleStore");
+		File workingDir = new File(System.getProperty("java.io.tmpdir")
+				+ File.separator + "cidreTest");
+		if (!workingDir.exists()) {
+			workingDir.mkdir();
+		}
 
+		File inputFile = new File(args[0]);
+		Configuration conf = new Configuration();
+		conf.setDictionaryDir(
+				workingDir.getAbsolutePath() + File.separator + "dictionary");
+		conf.setStatisticsDir(
+				workingDir.getAbsolutePath() + File.separator + "statistics");
+		conf.setTripleStoreDir(
+				workingDir.getAbsolutePath() + File.separator + "tripleStore");
+
+		// create cover
 		RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
 		HashCoverCreator coverCreator = new HashCoverCreator(null);
 		File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 
+		// encode cover and collect statistics
 		DictionaryEncoder encoder = new DictionaryEncoder(conf, null);
 		GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
 		File[] encodedFiles = encoder.encodeGraphChunks(cover, statistics,
 				workingDir);
 
+		// store triples
 		TripleStoreAccessor accessor = new TripleStoreAccessor(conf, null);
 		for (File file : encodedFiles) {
 			if (file != null) {
@@ -60,77 +61,53 @@ public class Playground {
 			}
 		}
 
-		printStoredData(encoder, accessor);
+		// process query
+		String query = readQueryFromFile(new File(args[1]));
+		query = QueryFactory.create(query).serialize();
+		System.out.println(query);
+
+		VariableDictionary dictionary = new VariableDictionary();
+		SparqlParser parser = new SparqlParser(encoder, accessor, (short) 0, 0,
+				0, 4, conf.getReceiverQueueSize(), workingDir,
+				conf.getMaxEmittedMappingsPerRound(),
+				conf.getNumberOfHashBuckets(),
+				conf.getMaxInMemoryMappingsDuringJoin());
+		QueryOperatorTask task = parser.parse(query,
+				QueryExecutionTreeType.LEFT_LINEAR, dictionary);
+		System.out.println(task.toString());
 
 		encoder.close();
 		statistics.close();
 		accessor.close();
+
+		delete(workingDir);
 	}
 
-	private static void printStoredData(DictionaryEncoder encoder,
-			TripleStoreAccessor accessor) {
-		MappingIteratorWrapper wrapper = (MappingIteratorWrapper) accessor
-				.lookup(null,
-						new TriplePattern(TriplePatternType.___, 0l, 1l, 2l))
-				.iterator();
-
-		try {
-			Field iterField = wrapper.getClass().getDeclaredField("iter");
-			iterField.setAccessible(true);
-			@SuppressWarnings("unchecked")
-			Iterator<byte[]> iter = (Iterator<byte[]>) iterField.get(wrapper);
-
-			while (iter.hasNext()) {
-				byte[] next = iter.next();
-				ByteBuffer buffer = ByteBuffer.wrap(next);
-				System.out.println(encoder.decode(buffer.getLong()) + " "
-						+ encoder.decode(buffer.getLong()) + " "
-						+ encoder.decode(buffer.getLong()) + " "
-						+ BitSet.valueOf(
-								Arrays.copyOfRange(next, 3 * 8, next.length)));
+	private static void delete(File dir) {
+		for (File file : dir.listFiles()) {
+			if (file.isDirectory()) {
+				delete(file);
+			} else {
+				file.delete();
 			}
-
-		} catch (NoSuchFieldException | SecurityException
-				| IllegalArgumentException | IllegalAccessException e) {
-			e.printStackTrace();
 		}
+		dir.delete();
 	}
 
-	public static void decodeFile(DictionaryEncoder dictionary,
-			File[] encodedFiles) {
-		for (File file : encodedFiles) {
-			try (DataInputStream input = new DataInputStream(
-					new BufferedInputStream(
-							new GZIPInputStream(new FileInputStream(file))));
-					BufferedWriter output = new BufferedWriter(new FileWriter(
-							new File(file.getAbsolutePath() + ".nq")));) {
-				while (true) {
-					try {
-						Node subject = dictionary.decode(input.readLong());
-						Node property = dictionary.decode(input.readLong());
-						Node object = dictionary.decode(input.readLong());
-
-						short length = input.readShort();
-						byte[] containment = new byte[length];
-						input.readFully(containment);
-						Node cntmentNode = DeSerializer
-								.serializeBitSetAsNode(containment);
-
-						output.write(DeSerializer.serializeNode(subject));
-						output.write(" ");
-						output.write(DeSerializer.serializeNode(property));
-						output.write(" ");
-						output.write(DeSerializer.serializeNode(object));
-						output.write(" ");
-						output.write(DeSerializer.serializeNode(cntmentNode));
-						output.write(" .\n");
-					} catch (EOFException e) {
-						break;
-					}
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
+	private static String readQueryFromFile(File queryFile) {
+		try (BufferedReader br = new BufferedReader(
+				new FileReader(queryFile));) {
+			StringBuilder sb = new StringBuilder();
+			String delim = "";
+			for (String line = br.readLine(); line != null; line = br
+					.readLine()) {
+				sb.append(delim);
+				sb.append(line);
+				delim = "\n";
 			}
+			return sb.toString();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
