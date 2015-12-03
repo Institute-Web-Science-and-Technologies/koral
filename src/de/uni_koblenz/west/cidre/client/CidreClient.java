@@ -157,45 +157,50 @@ public class CidreClient {
 	}
 
 	public File processQueryFromFile(String queryFile, String outputFile,
-			QueryExecutionTreeType treeType)
+			QueryExecutionTreeType treeType, boolean useBaseOperators)
 					throws UnsupportedEncodingException, FileNotFoundException,
 					IOException {
-		return processQueryFromFile(new File(queryFile), outputFile, treeType);
+		return processQueryFromFile(new File(queryFile), outputFile, treeType,
+				useBaseOperators);
 	}
 
 	public File processQueryFromFile(File queryFile, String outputFile,
-			QueryExecutionTreeType treeType)
+			QueryExecutionTreeType treeType, boolean useBaseOperators)
 					throws UnsupportedEncodingException, FileNotFoundException,
 					IOException {
-		return processQuery(readQueryFromFile(queryFile), outputFile, treeType);
+		return processQuery(readQueryFromFile(queryFile), outputFile, treeType,
+				useBaseOperators);
 	}
 
 	public File processQuery(String query, String outputFile,
-			QueryExecutionTreeType treeType)
+			QueryExecutionTreeType treeType, boolean useBaseOperators)
 					throws UnsupportedEncodingException, FileNotFoundException,
 					IOException {
 		File output = new File(outputFile);
 		try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
 				new FileOutputStream(output), "UTF-8"));) {
-			processQuery(query, bw, treeType);
+			processQuery(query, bw, treeType, useBaseOperators);
 		}
 		return output;
 	}
 
 	public void processQueryFromFile(String queryFile, Writer outputWriter,
-			QueryExecutionTreeType treeType)
+			QueryExecutionTreeType treeType, boolean useBaseOperators)
 					throws FileNotFoundException, IOException {
-		processQueryFromFile(new File(queryFile), outputWriter, treeType);
+		processQueryFromFile(new File(queryFile), outputWriter, treeType,
+				useBaseOperators);
 	}
 
 	public void processQueryFromFile(File queryFile, Writer outputWriter,
-			QueryExecutionTreeType treeType)
+			QueryExecutionTreeType treeType, boolean useBaseOperators)
 					throws FileNotFoundException, IOException {
-		processQuery(readQueryFromFile(queryFile), outputWriter, treeType);
+		processQuery(readQueryFromFile(queryFile), outputWriter, treeType,
+				useBaseOperators);
 	}
 
 	public void processQuery(String query, Writer outputWriter,
-			QueryExecutionTreeType treeType) throws IOException {
+			QueryExecutionTreeType treeType, boolean useBaseOperators)
+					throws IOException {
 		// check syntax
 		VariableDictionary dictionary = new VariableDictionary();
 		SparqlParser parser = new SparqlParser(null, null, (short) 0, 0, 0, 1,
@@ -206,10 +211,11 @@ public class CidreClient {
 
 		try {
 			// send query
-			byte[][] args = new byte[3][];
+			byte[][] args = new byte[4][];
 			args[0] = new byte[] { (byte) (args.length - 1) };
 			args[1] = NumberConversion.int2bytes(treeType.ordinal());
-			args[2] = queryString.getBytes("UTF-8");
+			args[2] = new byte[] { useBaseOperators ? (byte) 1 : (byte) 0 };
+			args[3] = queryString.getBytes("UTF-8");
 			connection.sendCommand("query", args);
 
 			// receive response
@@ -453,6 +459,8 @@ public class CidreClient {
 					.valueOf(commandLine.getOptionValue("t"));
 		}
 
+		boolean useBaselineOperators = commandLine.hasOption("b");
+
 		try {
 			if (commandLine.hasOption("q")) {
 				if (commandLine.hasOption("o")) {
@@ -460,13 +468,14 @@ public class CidreClient {
 					System.out.println("Output written to "
 							+ outputFile.getAbsolutePath());
 					client.processQueryFromFile(commandLine.getOptionValue("q"),
-							outputFile.getAbsolutePath(), treeType);
+							outputFile.getAbsolutePath(), treeType,
+							useBaselineOperators);
 				} else {
 					System.out.println("Output written to console.");
 					OutputStreamWriter writer = new OutputStreamWriter(
 							System.out);
 					client.processQueryFromFile(commandLine.getOptionValue("q"),
-							writer, treeType);
+							writer, treeType, useBaselineOperators);
 					writer.flush();
 				}
 			} else {
@@ -487,12 +496,14 @@ public class CidreClient {
 					System.out.println("Output written to "
 							+ outputFile.getAbsolutePath());
 					client.processQuery(sb.toString(),
-							outputFile.getAbsolutePath(), treeType);
+							outputFile.getAbsolutePath(), treeType,
+							useBaselineOperators);
 				} else {
 					System.out.println("Output written to console.");
 					OutputStreamWriter writer = new OutputStreamWriter(
 							System.out);
-					client.processQuery(sb.toString(), writer, treeType);
+					client.processQuery(sb.toString(), writer, treeType,
+							useBaselineOperators);
 					writer.flush();
 				}
 			}
@@ -545,6 +556,11 @@ public class CidreClient {
 						+ QueryExecutionTreeType.LEFT_LINEAR.name() + ".")
 				.required(false).build();
 
+		Option useBaseOperators = Option.builder("b").longOpt("base")
+				.hasArg(false)
+				.desc("If set, the baseline query operators are used.")
+				.required(false).build();
+
 		Option output = Option.builder("o").longOpt("output").hasArg()
 				.argName("outputFile")
 				.desc("The CSV file where the output is stored. If no file is given, the output is written to command line.")
@@ -557,6 +573,7 @@ public class CidreClient {
 
 		Options options = new Options();
 		options.addOption(treeType);
+		options.addOption(useBaseOperators);
 		options.addOption(output);
 		options.addOption(queryFile);
 		return options;

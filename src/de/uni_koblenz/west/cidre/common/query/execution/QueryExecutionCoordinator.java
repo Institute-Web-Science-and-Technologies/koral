@@ -31,6 +31,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	private QueryExecutionTreeType treeType;
 
+	private boolean useBaseOperators;
+
 	private String queryString;
 
 	private long currentTaskLoad;
@@ -64,7 +66,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 				break;
 			}
 		}
-		queryString = MessageUtils.convertToString(arguments[1], logger);
+		useBaseOperators = arguments[1][0] == 1;
+		queryString = MessageUtils.convertToString(arguments[2], logger);
 		if (logger != null) {
 			logger.fine("Started query coordinator for query "
 					+ queryString.replace('\n', ' '));

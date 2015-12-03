@@ -14,19 +14,19 @@ import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
  */
 public class QueryOperatorTaskFactory {
 
-	private final short slaveId;
+	protected final short slaveId;
 
-	private final int queryId;
+	protected final int queryId;
 
 	private int nextTaskId;
 
-	private final long coordinatorId;
+	protected final long coordinatorId;
 
-	private final int numberOfSlaves;
+	protected final int numberOfSlaves;
 
-	private final int cacheSize;
+	protected final int cacheSize;
 
-	private final File cacheDirectory;
+	protected final File cacheDirectory;
 
 	public QueryOperatorTaskFactory(short slaveId, int queryId,
 			long coordinatorId, int numberOfSlaves, int cacheSize,
@@ -40,7 +40,7 @@ public class QueryOperatorTaskFactory {
 		this.cacheDirectory = cacheDirectory;
 	}
 
-	private short getNextTaskId() {
+	protected short getNextTaskId() {
 		if (nextTaskId > (Short.MAX_VALUE) - Short.MIN_VALUE) {
 			throw new RuntimeException(
 					"The maximal number of tasks have already been created.");
