@@ -133,8 +133,8 @@ public class SparqlParser implements OpVisitor {
 			switch (treeType) {
 			case LEFT_LINEAR:
 				if (numberOfTriplePattern > 1) {
-					QueryOperatorTask left = stack.pop();
 					QueryOperatorTask right = stack.pop();
+					QueryOperatorTask left = stack.pop();
 					QueryOperatorTask join = createTriplePatternJoin(left,
 							right);
 					stack.push(join);
