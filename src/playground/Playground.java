@@ -1,9 +1,32 @@
 package playground;
 
-import de.uni_koblenz.west.cidre.common.messages.MessageType;
-import de.uni_koblenz.west.cidre.common.query.Mapping;
-import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.zip.GZIPInputStream;
+
+import org.apache.jena.graph.Node;
+
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.query.TriplePattern;
+import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
+import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
+import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HashCoverCreator;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
+import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
+import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
+import de.uni_koblenz.west.cidre.slave.triple_store.impl.MappingIteratorWrapper;
 
 /**
  * A class to test source code. Not used within CIDRE.
@@ -14,55 +37,101 @@ import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 public class Playground {
 
 	public static void main(String[] args) {
-		MappingRecycleCache cache = new MappingRecycleCache(10, 15);
+		File workingDir = new File("/home/danijank/Downloads/testdata");
+		File inputFile = new File(workingDir.getParentFile(), "foaf.rdf");
+		Configuration conf = new Configuration();
+		conf.setDictionaryDir("/home/danijank/Downloads/testdata/dictionary");
+		conf.setStatisticsDir("/home/danijank/Downloads/testdata/statistics");
+		conf.setTripleStoreDir("/home/danijank/Downloads/testdata/tripleStore");
 
-		long[] vars1 = new long[] { 1, 2 };
-		Mapping mapping1 = createMapping(cache, vars1, new long[] { 1, 2 },
-				new byte[] { 1, 0 });
-		System.out.println(mapping1.toString(vars1));
-		System.out.println(mapping1.isKnownByComputer(7));
-		System.out.println(mapping1.toString(vars1));
+		RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
+		HashCoverCreator coverCreator = new HashCoverCreator(null);
+		File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
+
+		DictionaryEncoder encoder = new DictionaryEncoder(conf, null);
+		GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
+		File[] encodedFiles = encoder.encodeGraphChunks(cover, statistics,
+				workingDir);
+
+		TripleStoreAccessor accessor = new TripleStoreAccessor(conf, null);
+		for (File file : encodedFiles) {
+			if (file != null) {
+				accessor.storeTriples(file);
+			}
+		}
+
+		printStoredData(encoder, accessor);
+
+		encoder.close();
+		statistics.close();
+		accessor.close();
 	}
 
-	@SuppressWarnings("unused")
-	private static long[] joinVars(long[] vars1, long[] vars2, long[] join) {
-		long[] result = new long[vars1.length + vars2.length - join.length];
-		System.arraycopy(vars1, 0, result, 0, vars1.length);
-		int next = vars1.length;
-		for (int i = 0; i < vars2.length; i++) {
-			boolean isJoinVar = false;
-			for (long var : join) {
-				if (var == vars2[i]) {
-					isJoinVar = true;
-					break;
+	private static void printStoredData(DictionaryEncoder encoder,
+			TripleStoreAccessor accessor) {
+		MappingIteratorWrapper wrapper = (MappingIteratorWrapper) accessor
+				.lookup(null,
+						new TriplePattern(TriplePatternType.___, 0l, 1l, 2l))
+				.iterator();
+
+		try {
+			Field iterField = wrapper.getClass().getDeclaredField("iter");
+			iterField.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			Iterator<byte[]> iter = (Iterator<byte[]>) iterField.get(wrapper);
+
+			while (iter.hasNext()) {
+				byte[] next = iter.next();
+				ByteBuffer buffer = ByteBuffer.wrap(next);
+				System.out.println(encoder.decode(buffer.getLong()) + " "
+						+ encoder.decode(buffer.getLong()) + " "
+						+ encoder.decode(buffer.getLong()) + " "
+						+ BitSet.valueOf(
+								Arrays.copyOfRange(next, 3 * 8, next.length)));
+			}
+
+		} catch (NoSuchFieldException | SecurityException
+				| IllegalArgumentException | IllegalAccessException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void decodeFile(DictionaryEncoder dictionary,
+			File[] encodedFiles) {
+		for (File file : encodedFiles) {
+			try (DataInputStream input = new DataInputStream(
+					new BufferedInputStream(
+							new GZIPInputStream(new FileInputStream(file))));
+					BufferedWriter output = new BufferedWriter(new FileWriter(
+							new File(file.getAbsolutePath() + ".nq")));) {
+				while (true) {
+					try {
+						Node subject = dictionary.decode(input.readLong());
+						Node property = dictionary.decode(input.readLong());
+						Node object = dictionary.decode(input.readLong());
+
+						short length = input.readShort();
+						byte[] containment = new byte[length];
+						input.readFully(containment);
+						Node cntmentNode = DeSerializer
+								.serializeBitSetAsNode(containment);
+
+						output.write(DeSerializer.serializeNode(subject));
+						output.write(" ");
+						output.write(DeSerializer.serializeNode(property));
+						output.write(" ");
+						output.write(DeSerializer.serializeNode(object));
+						output.write(" ");
+						output.write(DeSerializer.serializeNode(cntmentNode));
+						output.write(" .\n");
+					} catch (EOFException e) {
+						break;
+					}
 				}
-			}
-			if (isJoinVar) {
-				continue;
-			} else {
-				result[next++] = vars2[i];
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
-		return result;
-	}
-
-	private static Mapping createMapping(MappingRecycleCache cache, long[] vars,
-			long[] values, byte[] containment) {
-		byte[] newMapping = new byte[Byte.BYTES + Long.BYTES + Long.BYTES
-				+ Integer.BYTES + vars.length * Long.BYTES + containment.length
-				+ 2];
-		newMapping[1] = MessageType.QUERY_MAPPING_BATCH.getValue();
-		NumberConversion.int2bytes(newMapping.length, newMapping,
-				1 + Byte.BYTES + Long.BYTES + Long.BYTES);
-		for (int i = 0; i < values.length; i++) {
-			NumberConversion.long2bytes(values[i], newMapping, 1 + Byte.BYTES
-					+ Long.BYTES + Long.BYTES + Integer.BYTES + i * Long.BYTES);
-		}
-		System.arraycopy(containment, 0, newMapping,
-				newMapping.length - containment.length - 1, containment.length);
-		newMapping[0] = -1;
-		newMapping[newMapping.length - 1] = -1;
-		return cache.createMapping(newMapping, 1, newMapping.length - 2);
 	}
 
 }

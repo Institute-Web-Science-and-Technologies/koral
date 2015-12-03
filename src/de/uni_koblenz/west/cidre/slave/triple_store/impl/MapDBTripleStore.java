@@ -48,16 +48,20 @@ public class MapDBTripleStore implements TripleStore {
 	@Override
 	public void storeTriple(long subject, long property, long object,
 			byte[] containment) {
-		ByteBuffer buffer = ByteBuffer
-				.allocate(3 * Long.BYTES + containment.length);
-		spo.put(buffer.putLong(subject).putLong(property).putLong(object)
-				.put(containment).array());
-		buffer.flip();
-		osp.put(buffer.putLong(object).putLong(subject).putLong(property)
-				.put(containment).array());
-		buffer.flip();
-		pos.put(buffer.putLong(property).putLong(object).putLong(subject)
-				.put(containment).array());
+		spo.put(createByteArray(subject, property, object, containment));
+		osp.put(createByteArray(object, subject, property, containment));
+		pos.put(createByteArray(property, object, subject, containment));
+	}
+
+	private byte[] createByteArray(long value1, long value2, long value3,
+			byte[] containment) {
+		byte[] result = new byte[3 * Long.BYTES + containment.length];
+		NumberConversion.long2bytes(value1, result, 0);
+		NumberConversion.long2bytes(value2, result, Long.BYTES);
+		NumberConversion.long2bytes(value3, result, 2 * Long.BYTES);
+		System.arraycopy(containment, 0, result, 3 * Long.BYTES,
+				containment.length);
+		return result;
 	}
 
 	@Override
