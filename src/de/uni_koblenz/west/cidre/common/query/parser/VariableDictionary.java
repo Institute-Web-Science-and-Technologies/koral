@@ -24,7 +24,7 @@ public class VariableDictionary {
 		}
 		int id = -1;
 		// check existence of id
-		for (int i = 0; i <= nextID; i++) {
+		for (int i = 0; i < nextID; i++) {
 			if (id2name[i].equals(varName)) {
 				id = i;
 				break;
