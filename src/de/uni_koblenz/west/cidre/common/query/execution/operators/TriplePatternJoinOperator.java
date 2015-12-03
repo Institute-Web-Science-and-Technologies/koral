@@ -121,12 +121,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		// assign variables to arrays
 		resultVars = new long[numberOfResultVars];
 		joinVars = new long[numberOfJoinVars];
+		int nextJoinVarIndex = 0;
 		for (int i = 0; i < allVars.length; i++) {
 			if (i > 0 && allVars[i - 1] == allVars[i]) {
 				// each variable occurs at most two times
-				joinVars[i] = allVars[i];
+				joinVars[nextJoinVarIndex] = allVars[i];
+				nextJoinVarIndex++;
 			} else {
-				resultVars[i] = allVars[i];
+				resultVars[i - nextJoinVarIndex] = allVars[i];
 			}
 		}
 	}
