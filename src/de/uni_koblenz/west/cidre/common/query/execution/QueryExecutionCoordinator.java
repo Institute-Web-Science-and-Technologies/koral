@@ -65,6 +65,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			}
 		}
 		queryString = MessageUtils.convertToString(arguments[1], logger);
+		if (logger != null) {
+			logger.fine("Started query coordinator for query "
+					+ queryString.replace('\n', ' '));
+		}
 	}
 
 	public int getQueryId() {
