@@ -37,9 +37,14 @@ public class ProjectionOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	public long computeEstimatedLoad(GraphStatistics statistics, int slave) {
+	public long computeEstimatedLoad(GraphStatistics statistics, int slave,
+			boolean setLoads) {
 		QueryOperatorBase subOp = (QueryOperatorBase) getChildTask(0);
-		return subOp.computeEstimatedLoad(statistics, slave);
+		long load = subOp.computeEstimatedLoad(statistics, slave, setLoads);
+		if (setLoads) {
+			setEstimatedWorkLoad(load);
+		}
+		return load;
 	}
 
 	@Override

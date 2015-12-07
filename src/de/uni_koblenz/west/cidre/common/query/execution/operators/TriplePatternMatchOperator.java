@@ -44,102 +44,116 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	public long computeEstimatedLoad(GraphStatistics statistics, int slave) {
+	public long computeEstimatedLoad(GraphStatistics statistics, int slave,
+			boolean setLoads) {
+		long load = 0;
 		switch (pattern.getType()) {
 		case ___:
-			return statistics.getChunkSizes()[slave];
+			load = statistics.getChunkSizes()[slave];
+			break;
 		case S__:
-			return slave < 0
+			load = slave < 0
 					? statistics.getTotalSubjectFrequency(pattern.getSubject())
 					: statistics.getSubjectFrequency(pattern.getSubject(),
 							slave);
+			break;
 		case _P_:
-			return slave < 0
+			load = slave < 0
 					? statistics
 							.getTotalPropertyFrequency(pattern.getProperty())
 					: statistics.getPropertyFrequency(pattern.getProperty(),
 							slave);
+			break;
 		case __O:
-			return slave < 0
+			load = slave < 0
 					? statistics.getTotalObjectFrequency(pattern.getObject())
 					: statistics.getObjectFrequency(pattern.getObject(), slave);
+			break;
 		case SP_:
 			long subjectFrequency = slave < 0
 					? statistics.getTotalSubjectFrequency(pattern.getSubject())
 					: statistics.getSubjectFrequency(pattern.getSubject(),
 							slave);
-			if (subjectFrequency == 0) {
-				return 0;
+			if (subjectFrequency != 0) {
+				long propertyFrequency = slave < 0
+						? statistics.getTotalPropertyFrequency(
+								pattern.getProperty())
+						: statistics.getPropertyFrequency(pattern.getProperty(),
+								slave);
+				if (subjectFrequency < propertyFrequency) {
+					load = subjectFrequency;
+				} else {
+					load = propertyFrequency;
+				}
 			}
-			long propertyFrequency = slave < 0
-					? statistics
-							.getTotalPropertyFrequency(pattern.getProperty())
-					: statistics.getPropertyFrequency(pattern.getProperty(),
-							slave);
-			if (subjectFrequency < propertyFrequency) {
-				return subjectFrequency;
-			} else {
-				return propertyFrequency;
-			}
+			break;
 		case S_O:
 			subjectFrequency = slave < 0
 					? statistics.getTotalSubjectFrequency(pattern.getSubject())
 					: statistics.getSubjectFrequency(pattern.getSubject(),
 							slave);
-			if (subjectFrequency == 0) {
-				return 0;
+			if (subjectFrequency != 0) {
+				long objectFrequency = slave < 0
+						? statistics
+								.getTotalObjectFrequency(pattern.getObject())
+						: statistics.getObjectFrequency(pattern.getObject(),
+								slave);
+				if (subjectFrequency < objectFrequency) {
+					load = subjectFrequency;
+				} else {
+					load = objectFrequency;
+				}
 			}
-			long objectFrequency = slave < 0
-					? statistics.getTotalObjectFrequency(pattern.getObject())
-					: statistics.getObjectFrequency(pattern.getObject(), slave);
-			if (subjectFrequency < objectFrequency) {
-				return subjectFrequency;
-			} else {
-				return objectFrequency;
-			}
+			break;
 		case _PO:
-			propertyFrequency = slave < 0
+			long propertyFrequency = slave < 0
 					? statistics
 							.getTotalPropertyFrequency(pattern.getProperty())
 					: statistics.getPropertyFrequency(pattern.getProperty(),
 							slave);
-			if (propertyFrequency == 0) {
-				return 0;
+			if (propertyFrequency != 0) {
+				long objectFrequency = slave < 0
+						? statistics
+								.getTotalObjectFrequency(pattern.getObject())
+						: statistics.getObjectFrequency(pattern.getObject(),
+								slave);
+				if (propertyFrequency < objectFrequency) {
+					load = propertyFrequency;
+				} else {
+					load = objectFrequency;
+				}
 			}
-			objectFrequency = slave < 0
-					? statistics.getTotalObjectFrequency(pattern.getObject())
-					: statistics.getObjectFrequency(pattern.getObject(), slave);
-			if (propertyFrequency < objectFrequency) {
-				return propertyFrequency;
-			} else {
-				return objectFrequency;
-			}
+			break;
 		case SPO:
 			subjectFrequency = slave < 0
 					? statistics.getTotalSubjectFrequency(pattern.getSubject())
 					: statistics.getSubjectFrequency(pattern.getSubject(),
 							slave);
-			if (subjectFrequency == 0) {
-				return 0;
+			if (subjectFrequency != 0) {
+				propertyFrequency = slave < 0
+						? statistics.getTotalPropertyFrequency(
+								pattern.getProperty())
+						: statistics.getPropertyFrequency(pattern.getProperty(),
+								slave);
+				if (propertyFrequency != 0) {
+					long objectFrequency = slave < 0
+							? statistics.getTotalObjectFrequency(
+									pattern.getObject())
+							: statistics.getObjectFrequency(pattern.getObject(),
+									slave);
+					if (objectFrequency == 0) {
+						load = 0;
+					} else {
+						load = 1;
+					}
+				}
 			}
-			propertyFrequency = slave < 0
-					? statistics
-							.getTotalPropertyFrequency(pattern.getProperty())
-					: statistics.getPropertyFrequency(pattern.getProperty(),
-							slave);
-			if (propertyFrequency == 0) {
-				return 0;
-			}
-			objectFrequency = slave < 0
-					? statistics.getTotalObjectFrequency(pattern.getObject())
-					: statistics.getObjectFrequency(pattern.getObject(), slave);
-			if (objectFrequency == 0) {
-				return 0;
-			} else {
-				return 1;
-			}
+			break;
 		}
-		return 0;
+		if (setLoads) {
+			setEstimatedWorkLoad(load);
+		}
+		return load;
 	}
 
 	@Override

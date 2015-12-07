@@ -47,13 +47,17 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	 *            the first slave has id 0
 	 * @return
 	 */
+	public long computeEstimatedLoad(GraphStatistics statistics, int slave) {
+		return computeEstimatedLoad(statistics, slave, false);
+	}
+
 	public abstract long computeEstimatedLoad(GraphStatistics statistics,
-			int slave);
+			int slave, boolean setLoads);
 
 	public abstract long computeTotalEstimatedLoad(GraphStatistics statistics);
 
 	public void adjustEstimatedLoad(GraphStatistics statistics, int slave) {
-		setEstimatedWorkLoad(computeEstimatedLoad(statistics, slave));
+		computeEstimatedLoad(statistics, slave, true);
 	}
 
 	@Override
