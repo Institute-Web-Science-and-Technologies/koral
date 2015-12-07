@@ -138,11 +138,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 			boolean setLoads) {
 		long load = 0;
 		long totalLoad = statistics.getTotalOwnerLoad();
-		// TODO remove
-		System.out.println("total owner load=" + totalLoad);
 		if (totalLoad != 0) {
-			// TODO remove
-			System.out.println("owner load=" + statistics.getOwnerLoad(slave));
 			double loadFactor = ((double) statistics.getOwnerLoad(slave))
 					/ totalLoad;
 			if (loadFactor != 0) {
