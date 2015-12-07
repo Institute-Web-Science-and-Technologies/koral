@@ -368,6 +368,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 			delim = ",";
 		}
 		sb.append("]");
+		sb.append(" estimatedWorkLoad: ").append(getEstimatedTaskLoad());
 		sb.append("\n");
 		((QueryOperatorBase) getChildTask(0)).toString(sb, indention + 1);
 		((QueryOperatorBase) getChildTask(1)).toString(sb, indention + 1);
