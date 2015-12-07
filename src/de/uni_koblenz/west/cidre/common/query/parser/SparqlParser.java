@@ -55,7 +55,8 @@ import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
-import de.uni_koblenz.west.cidre.common.query.execution.operators.QueryOperatorTaskFactory;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTaskFactoryBase;
+import de.uni_koblenz.west.cidre.common.query.execution.operators.DefaultQueryOperatorTaskFactory;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.base_impl.QueryBaseOperatorTaskFactory;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
@@ -71,7 +72,7 @@ public class SparqlParser implements OpVisitor {
 
 	private QueryExecutionTreeType treeType;
 
-	private final QueryOperatorTaskFactory taskFactory;
+	private final QueryOperatorTaskFactoryBase taskFactory;
 
 	private final TripleStoreAccessor tripleStore;
 
@@ -80,6 +81,10 @@ public class SparqlParser implements OpVisitor {
 	private VariableDictionary varDictionary;
 
 	private final Deque<QueryOperatorTask> stack;
+
+	private final short slaveId;
+
+	private final int queryId;
 
 	private final int emittedMappingsPerRound;
 
@@ -107,12 +112,14 @@ public class SparqlParser implements OpVisitor {
 		this.dictionary = dictionary;
 		this.tripleStore = tripleStore;
 		stack = new ArrayDeque<>();
+		this.slaveId = slaveId;
+		this.queryId = queryId;
 		if (useBaseImplementation) {
-			taskFactory = new QueryBaseOperatorTaskFactory(slaveId, queryId,
-					coordinatorId, numberOfSlaves, cacheSize, cacheDirectory);
+			taskFactory = new QueryBaseOperatorTaskFactory(coordinatorId,
+					numberOfSlaves, cacheSize, cacheDirectory);
 		} else {
-			taskFactory = new QueryOperatorTaskFactory(slaveId, queryId,
-					coordinatorId, numberOfSlaves, cacheSize, cacheDirectory);
+			taskFactory = new DefaultQueryOperatorTaskFactory(coordinatorId,
+					numberOfSlaves, cacheSize, cacheDirectory);
 		}
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
 		this.numberOfHashBuckets = numberOfHashBuckets;
@@ -206,9 +213,9 @@ public class SparqlParser implements OpVisitor {
 
 	private QueryOperatorTask createTriplePatternJoin(QueryOperatorTask left,
 			QueryOperatorTask right) {
-		QueryOperatorTask join = taskFactory.createTriplePatternJoin(
-				emittedMappingsPerRound, left, right, numberOfHashBuckets,
-				maxInMemoryMappings);
+		QueryOperatorTask join = taskFactory.createTriplePatternJoin(slaveId,
+				queryId, emittedMappingsPerRound, left, right,
+				numberOfHashBuckets, maxInMemoryMappings);
 		((QueryOperatorBase) left).setParentTask(join);
 		((QueryOperatorBase) right).setParentTask(join);
 		return join;
@@ -260,8 +267,8 @@ public class SparqlParser implements OpVisitor {
 
 		TriplePattern pattern = new TriplePattern(type, subject, property,
 				object);
-		QueryOperatorTask task = taskFactory.createTriplePatternMatch(
-				emittedMappingsPerRound, pattern, tripleStore);
+		QueryOperatorTask task = taskFactory.createTriplePatternMatch(slaveId,
+				queryId, emittedMappingsPerRound, pattern, tripleStore);
 		stack.push(task);
 	}
 
@@ -467,8 +474,8 @@ public class SparqlParser implements OpVisitor {
 		}
 
 		QueryOperatorTask subTask = stack.pop();
-		QueryOperatorTask projection = taskFactory
-				.createProjection(emittedMappingsPerRound, resultVars, subTask);
+		QueryOperatorTask projection = taskFactory.createProjection(slaveId,
+				queryId, emittedMappingsPerRound, resultVars, subTask);
 		((QueryOperatorBase) subTask).setParentTask(projection);
 		stack.push(projection);
 	}

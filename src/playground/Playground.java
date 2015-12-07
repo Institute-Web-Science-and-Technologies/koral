@@ -4,11 +4,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.jena.query.QueryFactory;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionTreeDeserializer;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.parser.QueryExecutionTreeType;
@@ -78,13 +78,18 @@ public class Playground {
 				QueryExecutionTreeType.LEFT_LINEAR, dictionary);
 		System.out.println(task.toString());
 
+		QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(
+				accessor, conf.getNumberOfSlaves(), conf.getReceiverQueueSize(),
+				workingDir, conf.getNumberOfHashBuckets(),
+				conf.getMaxInMemoryMappingsDuringJoin());
+
 		for (int i = 0; i < 4; i++) {
 			System.out.println("Slave " + i + ":");
 			((QueryOperatorBase) task).adjustEstimatedLoad(statistics, i);
 			System.out.println(task.toString());
-			byte[] serializedTask = ((QueryOperatorBase) task).serialize();
-			System.out.println(
-					Arrays.toString(serializedTask));
+			byte[] serializedTask = ((QueryOperatorBase) task).serialize(false);
+			System.out.println();
+			System.out.println(deserializer.deserialize(serializedTask));
 		}
 
 		encoder.close();

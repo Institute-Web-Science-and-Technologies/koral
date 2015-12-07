@@ -20,8 +20,6 @@ import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 public abstract class QueryOperatorBase extends QueryTaskBase
 		implements QueryOperatorTask {
 
-	private static final long serialVersionUID = 5082379213597473198L;
-
 	private final long coordinatorId;
 
 	private QueryOperatorBase parent;
@@ -180,10 +178,10 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	}
 
 	@Override
-	public byte[] serialize() {
+	public byte[] serialize(boolean useBaseImplementation) {
 		ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
 		try (DataOutputStream output = new DataOutputStream(byteOutput);) {
-			serialize(output);
+			serialize(output, useBaseImplementation);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

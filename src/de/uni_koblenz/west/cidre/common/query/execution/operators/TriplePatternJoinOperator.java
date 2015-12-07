@@ -8,6 +8,7 @@ import java.util.Arrays;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
@@ -18,8 +19,6 @@ import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
  *
  */
 public class TriplePatternJoinOperator extends QueryOperatorBase {
-
-	private static final long serialVersionUID = -7080940709960048810L;
 
 	private long[] resultVars;
 
@@ -361,14 +360,19 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	public void serialize(DataOutputStream output) throws IOException {
+	public void serialize(DataOutputStream output,
+			boolean useBaseImplementation) throws IOException {
 		if (getParentTask() == null) {
+			output.writeBoolean(useBaseImplementation);
 			output.writeLong(getCoordinatorID());
 		}
-		output.writeLong(serialVersionUID);
-		((QueryOperatorTask) getChildTask(0)).serialize(output);
-		((QueryOperatorTask) getChildTask(1)).serialize(output);
+		output.writeInt(QueryOperatorType.TRIPLE_PATTERN_JOIN.ordinal());
+		((QueryOperatorTask) getChildTask(0)).serialize(output,
+				useBaseImplementation);
+		((QueryOperatorTask) getChildTask(1)).serialize(output,
+				useBaseImplementation);
 		output.writeLong(getID());
+		output.writeInt(getEmittedMappingsPerRound());
 		output.writeLong(getEstimatedTaskLoad());
 	}
 

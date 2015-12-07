@@ -8,6 +8,7 @@ import java.util.Iterator;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
@@ -18,8 +19,6 @@ import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
  *
  */
 public class TriplePatternMatchOperator extends QueryOperatorBase {
-
-	private static final long serialVersionUID = 746920140276892703L;
 
 	private final TriplePattern pattern;
 
@@ -221,12 +220,15 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	public void serialize(DataOutputStream output) throws IOException {
+	public void serialize(DataOutputStream output,
+			boolean useBaseImplementation) throws IOException {
 		if (getParentTask() == null) {
+			output.writeBoolean(useBaseImplementation);
 			output.writeLong(getCoordinatorID());
 		}
-		output.writeLong(serialVersionUID);
+		output.writeInt(QueryOperatorType.TRIPLE_PATTERN_MATCH.ordinal());
 		output.writeLong(getID());
+		output.writeInt(getEmittedMappingsPerRound());
 		output.writeLong(getEstimatedTaskLoad());
 		output.writeInt(pattern.getType().ordinal());
 		output.writeLong(pattern.getSubject());

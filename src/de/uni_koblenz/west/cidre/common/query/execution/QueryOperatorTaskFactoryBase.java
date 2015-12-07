@@ -1,0 +1,86 @@
+package de.uni_koblenz.west.cidre.common.query.execution;
+
+import java.io.File;
+
+import de.uni_koblenz.west.cidre.common.query.TriplePattern;
+import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
+
+/**
+ * Provides base functionality for the creation and deserialization of query
+ * operator tasks.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
+public abstract class QueryOperatorTaskFactoryBase {
+
+	private int nextTaskId;
+
+	protected final long coordinatorId;
+
+	protected final int numberOfSlaves;
+
+	protected final int cacheSize;
+
+	protected final File cacheDirectory;
+
+	public QueryOperatorTaskFactoryBase(long coordinatorId, int numberOfSlaves,
+			int cacheSize, File cacheDirectory) {
+		nextTaskId = 0;
+		this.coordinatorId = coordinatorId;
+		this.numberOfSlaves = numberOfSlaves;
+		this.cacheSize = cacheSize;
+		this.cacheDirectory = cacheDirectory;
+	}
+
+	private short getNextTaskId() {
+		if (nextTaskId > (Short.MAX_VALUE) - Short.MIN_VALUE) {
+			throw new RuntimeException(
+					"The maximal number of tasks have already been created.");
+		}
+		return (short) nextTaskId++;
+	}
+
+	private long getNewTaskId(short slaveId, int queryId) {
+		return (((((long) slaveId) << Integer.SIZE)
+				| (queryId & 0x00_00_00_00_ff_ff_ff_ffl)) << Short.SIZE)
+				| (getNextTaskId() & 0x00_00_00_00_00_00_ff_ffl);
+	}
+
+	public QueryOperatorTask createTriplePatternMatch(short slaveId,
+			int queryId, int emittedMappingsPerRound, TriplePattern pattern,
+			TripleStoreAccessor tripleStore) {
+		return createTriplePatternMatch(getNewTaskId(slaveId, queryId),
+				emittedMappingsPerRound, pattern, tripleStore);
+	}
+
+	public abstract QueryOperatorTask createTriplePatternMatch(long taskId,
+			int emittedMappingsPerRound, TriplePattern pattern,
+			TripleStoreAccessor tripleStore);
+
+	public QueryOperatorTask createTriplePatternJoin(short slaveId, int queryId,
+			int emittedMappingsPerRound, QueryOperatorTask leftChild,
+			QueryOperatorTask rightChild, int numberOfHashBuckets,
+			int maxInMemoryMappings) {
+		return createTriplePatternJoin(getNewTaskId(slaveId, queryId),
+				emittedMappingsPerRound, leftChild, rightChild,
+				numberOfHashBuckets, maxInMemoryMappings);
+	}
+
+	public abstract QueryOperatorTask createTriplePatternJoin(long taskId,
+			int emittedMappingsPerRound, QueryOperatorTask leftChild,
+			QueryOperatorTask rightChild, int numberOfHashBuckets,
+			int maxInMemoryMappings);
+
+	public QueryOperatorTask createProjection(short slaveId, int queryId,
+			int emittedMappingsPerRound, long[] resultVars,
+			QueryOperatorTask subOperation) {
+		return createProjection(getNewTaskId(slaveId, queryId),
+				emittedMappingsPerRound, resultVars, subOperation);
+	}
+
+	public abstract QueryOperatorTask createProjection(long taskId,
+			int emittedMappingsPerRound, long[] resultVars,
+			QueryOperatorTask subOperation);
+
+}

@@ -2,7 +2,6 @@ package de.uni_koblenz.west.cidre.common.query.execution;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 
@@ -12,7 +11,7 @@ import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public interface QueryOperatorTask extends WorkerTask, Serializable {
+public interface QueryOperatorTask extends WorkerTask {
 
 	public long[] getResultVariables();
 
@@ -21,8 +20,9 @@ public interface QueryOperatorTask extends WorkerTask, Serializable {
 	 */
 	public long getFirstJoinVar();
 
-	public byte[] serialize();
+	public byte[] serialize(boolean useBaseImplementation);
 
-	public void serialize(DataOutputStream output) throws IOException;
+	public void serialize(DataOutputStream output,
+			boolean useBaseImplementation) throws IOException;
 
 }

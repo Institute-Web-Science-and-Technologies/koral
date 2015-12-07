@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.cidre.common.query.execution.operators.base_impl;
+package de.uni_koblenz.west.cidre.common.query.execution.operators;
 
 import java.io.File;
 
@@ -7,10 +7,17 @@ import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTaskFactoryBase;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
-public class QueryBaseOperatorTaskFactory extends QueryOperatorTaskFactoryBase {
+/**
+ * Provides methods to create the query execution tree.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
+public class DefaultQueryOperatorTaskFactory
+		extends QueryOperatorTaskFactoryBase {
 
-	public QueryBaseOperatorTaskFactory(long coordinatorId, int numberOfSlaves,
-			int cacheSize, File cacheDirectory) {
+	public DefaultQueryOperatorTaskFactory(long coordinatorId,
+			int numberOfSlaves, int cacheSize, File cacheDirectory) {
 		super(coordinatorId, numberOfSlaves, cacheSize, cacheDirectory);
 	}
 
@@ -18,7 +25,7 @@ public class QueryBaseOperatorTaskFactory extends QueryOperatorTaskFactoryBase {
 	public QueryOperatorTask createTriplePatternMatch(long taskId,
 			int emittedMappingsPerRound, TriplePattern pattern,
 			TripleStoreAccessor tripleStore) {
-		return new TriplePatternMatchBaseOperator(taskId, coordinatorId,
+		return new TriplePatternMatchOperator(taskId, coordinatorId,
 				numberOfSlaves, cacheSize, cacheDirectory, pattern,
 				emittedMappingsPerRound, tripleStore);
 	}
@@ -28,7 +35,7 @@ public class QueryBaseOperatorTaskFactory extends QueryOperatorTaskFactoryBase {
 			int emittedMappingsPerRound, QueryOperatorTask leftChild,
 			QueryOperatorTask rightChild, int numberOfHashBuckets,
 			int maxInMemoryMappings) {
-		return new TriplePatternJoinBaseOperator(taskId, coordinatorId,
+		return new TriplePatternJoinOperator(taskId, coordinatorId,
 				numberOfSlaves, cacheSize, cacheDirectory,
 				emittedMappingsPerRound, leftChild, rightChild,
 				numberOfHashBuckets, maxInMemoryMappings);
@@ -38,7 +45,7 @@ public class QueryBaseOperatorTaskFactory extends QueryOperatorTaskFactoryBase {
 	public QueryOperatorTask createProjection(long taskId,
 			int emittedMappingsPerRound, long[] resultVars,
 			QueryOperatorTask subOperation) {
-		return new ProjectionBaseOperator(taskId, coordinatorId, numberOfSlaves,
+		return new ProjectionOperator(taskId, coordinatorId, numberOfSlaves,
 				cacheSize, cacheDirectory, emittedMappingsPerRound, resultVars,
 				subOperation);
 	}

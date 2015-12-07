@@ -9,8 +9,6 @@ import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
 public class TriplePatternMatchBaseOperator extends TriplePatternMatchOperator {
 
-	private static final long serialVersionUID = 1162712420312094580L;
-
 	public TriplePatternMatchBaseOperator(long id, long coordinatorId,
 			int numberOfSlaves, int cacheSize, File cacheDirectory,
 			TriplePattern pattern, int emittedMappingsPerRound,
