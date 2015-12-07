@@ -129,6 +129,8 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 			long[] statistics = map.get(resourceID);
 			if (statistics == null) {
 				statistics = new long[3 * numberOfChunks + 1];
+				int owner = (int) (resourceID >>> (Long.SIZE - Short.SIZE));
+				ownerLoad[owner]++;
 			}
 			statistics[column]++;
 			// MapDB does not detect changes in array automatically
@@ -187,7 +189,8 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 			close();
 			throw e;
 		}
-		ownerLoad[owner]++;
+		ownerLoad[oldOwner & 0x00_00_ff_ff]--;
+		ownerLoad[owner & 0x00_00_ff_ff]++;
 
 		return newID;
 	}
