@@ -53,6 +53,7 @@ import org.apache.jena.sparql.core.Var;
 
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.QueryOperatorTaskFactory;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.base_impl.QueryBaseOperatorTaskFactory;
@@ -205,8 +206,12 @@ public class SparqlParser implements OpVisitor {
 
 	private QueryOperatorTask createTriplePatternJoin(QueryOperatorTask left,
 			QueryOperatorTask right) {
-		return taskFactory.createTriplePatternJoin(emittedMappingsPerRound,
-				left, right, numberOfHashBuckets, maxInMemoryMappings);
+		QueryOperatorTask join = taskFactory.createTriplePatternJoin(
+				emittedMappingsPerRound, left, right, numberOfHashBuckets,
+				maxInMemoryMappings);
+		((QueryOperatorBase) left).setParentTask(join);
+		((QueryOperatorBase) right).setParentTask(join);
+		return join;
 	}
 
 	public void visit(Triple triple) {
@@ -464,6 +469,7 @@ public class SparqlParser implements OpVisitor {
 		QueryOperatorTask subTask = stack.pop();
 		QueryOperatorTask projection = taskFactory
 				.createProjection(emittedMappingsPerRound, resultVars, subTask);
+		((QueryOperatorBase) subTask).setParentTask(projection);
 		stack.push(projection);
 	}
 
