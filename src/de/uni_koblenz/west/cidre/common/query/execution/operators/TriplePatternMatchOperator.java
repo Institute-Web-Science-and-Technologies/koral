@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.cidre.common.query.execution.operators;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 
 import de.uni_koblenz.west.cidre.common.query.Mapping;
@@ -16,6 +18,8 @@ import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
  *
  */
 public class TriplePatternMatchOperator extends QueryOperatorBase {
+
+	private static final long serialVersionUID = 746920140276892703L;
 
 	private final TriplePattern pattern;
 
@@ -214,6 +218,20 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	protected boolean isFinishedInternal() {
 		return getEstimatedTaskLoad() == 0 || tripleStore == null
 				|| (iterator != null && !iterator.hasNext());
+	}
+
+	@Override
+	public void serialize(DataOutputStream output) throws IOException {
+		if (getParentTask() == null) {
+			output.writeLong(getCoordinatorID());
+		}
+		output.writeLong(serialVersionUID);
+		output.writeLong(getID());
+		output.writeLong(getEstimatedTaskLoad());
+		output.writeInt(pattern.getType().ordinal());
+		output.writeLong(pattern.getSubject());
+		output.writeLong(pattern.getProperty());
+		output.writeLong(pattern.getObject());
 	}
 
 	@Override

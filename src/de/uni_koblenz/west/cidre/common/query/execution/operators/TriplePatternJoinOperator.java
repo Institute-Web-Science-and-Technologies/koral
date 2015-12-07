@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.cidre.common.query.execution.operators;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 
 import de.uni_koblenz.west.cidre.common.query.Mapping;
@@ -16,6 +18,8 @@ import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
  *
  */
 public class TriplePatternJoinOperator extends QueryOperatorBase {
+
+	private static final long serialVersionUID = -7080940709960048810L;
 
 	private long[] resultVars;
 
@@ -354,6 +358,18 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	protected void closeInternal() {
 		leftHashSet.close();
 		rightHashSet.close();
+	}
+
+	@Override
+	public void serialize(DataOutputStream output) throws IOException {
+		if (getParentTask() == null) {
+			output.writeLong(getCoordinatorID());
+		}
+		output.writeLong(serialVersionUID);
+		((QueryOperatorTask) getChildTask(0)).serialize(output);
+		((QueryOperatorTask) getChildTask(1)).serialize(output);
+		output.writeLong(getID());
+		output.writeLong(getEstimatedTaskLoad());
 	}
 
 	@Override

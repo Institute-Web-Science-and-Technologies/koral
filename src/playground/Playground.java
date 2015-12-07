@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.jena.query.QueryFactory;
 
@@ -77,43 +78,13 @@ public class Playground {
 				QueryExecutionTreeType.LEFT_LINEAR, dictionary);
 		System.out.println(task.toString());
 
-		System.out.println("==statistics==");
-		System.out.println(
-				"resource, subject0, ..., subject3, property0, ..., property3, object0, ..., object3");
-		for (int i = 0; i < 20; i++) {
-			for (int j = 0; j < 4; j++) {
-				long r = ((long) j) << 48;
-				r |= (i & 0x00_00_ff_ff_ff_ff_ff_ffl);
-				if (encoder.decode(r) == null) {
-					continue;
-				}
-				String rs = r + "";
-				while (rs.length() < 15) {
-					rs = " " + rs;
-				}
-				System.out.print(rs + "\t");
-				System.out.print("[" + statistics.getSubjectFrequency(r, 0)
-						+ "," + statistics.getSubjectFrequency(r, 1) + ","
-						+ statistics.getSubjectFrequency(r, 2) + ","
-						+ statistics.getSubjectFrequency(r, 3) + "]\t");
-				System.out.print("[" + statistics.getPropertyFrequency(r, 0)
-						+ "," + statistics.getPropertyFrequency(r, 1) + ","
-						+ statistics.getPropertyFrequency(r, 2) + ","
-						+ statistics.getPropertyFrequency(r, 3) + "]\t");
-				System.out.println("[" + statistics.getObjectFrequency(r, 0)
-						+ "," + statistics.getObjectFrequency(r, 1) + ","
-						+ statistics.getObjectFrequency(r, 2) + ","
-						+ statistics.getObjectFrequency(r, 3) + "]");
-			}
-		}
-		System.out.println("ownerload:[" + statistics.getOwnerLoad(0) + ","
-				+ statistics.getOwnerLoad(1) + "," + statistics.getOwnerLoad(2)
-				+ "," + statistics.getOwnerLoad(3) + "]");
-
 		for (int i = 0; i < 4; i++) {
 			System.out.println("Slave " + i + ":");
 			((QueryOperatorBase) task).adjustEstimatedLoad(statistics, i);
 			System.out.println(task.toString());
+			byte[] serializedTask = ((QueryOperatorBase) task).serialize();
+			System.out.println(
+					Arrays.toString(serializedTask));
 		}
 
 		encoder.close();

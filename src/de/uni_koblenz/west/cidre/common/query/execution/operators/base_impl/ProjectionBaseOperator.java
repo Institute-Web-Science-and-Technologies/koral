@@ -8,6 +8,8 @@ import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOper
 
 public class ProjectionBaseOperator extends ProjectionOperator {
 
+	private static final long serialVersionUID = 5672375567745585589L;
+
 	public ProjectionBaseOperator(long id, long coordinatorId,
 			int numberOfSlaves, int cacheSize, File cacheDirectory,
 			int emittedMappingsPerRound, long[] resultVars,

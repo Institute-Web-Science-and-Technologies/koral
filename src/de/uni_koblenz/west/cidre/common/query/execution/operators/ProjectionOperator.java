@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.cidre.common.query.execution.operators;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
 
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
@@ -14,6 +16,8 @@ import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
  *
  */
 public class ProjectionOperator extends QueryOperatorBase {
+
+	private static final long serialVersionUID = 2131272792884189245L;
 
 	private final long[] resultVars;
 
@@ -101,6 +105,21 @@ public class ProjectionOperator extends QueryOperatorBase {
 	@Override
 	protected boolean isFinishedInternal() {
 		return true;
+	}
+
+	@Override
+	public void serialize(DataOutputStream output) throws IOException {
+		if (getParentTask() == null) {
+			output.writeLong(getCoordinatorID());
+		}
+		output.writeLong(serialVersionUID);
+		((QueryOperatorTask) getChildTask(0)).serialize(output);
+		output.writeLong(getID());
+		output.writeLong(getEstimatedTaskLoad());
+		output.writeInt(resultVars.length);
+		for (int i = 0; i < resultVars.length; i++) {
+			output.writeLong(resultVars[i]);
+		}
 	}
 
 	@Override

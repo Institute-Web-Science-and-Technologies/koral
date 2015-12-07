@@ -8,6 +8,8 @@ import de.uni_koblenz.west.cidre.common.query.execution.operators.TriplePatternJ
 
 public class TriplePatternJoinBaseOperator extends TriplePatternJoinOperator {
 
+	private static final long serialVersionUID = -5650707172851306378L;
+
 	public TriplePatternJoinBaseOperator(long id, long coordinatorId,
 			int numberOfSlaves, int cacheSize, File cacheDirectory,
 			int emittedMappingsPerRound, QueryOperatorTask leftChild,

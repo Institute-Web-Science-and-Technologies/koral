@@ -1,6 +1,9 @@
 package de.uni_koblenz.west.cidre.common.query.execution;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
@@ -16,6 +19,8 @@ import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
  */
 public abstract class QueryOperatorBase extends QueryTaskBase
 		implements QueryOperatorTask {
+
+	private static final long serialVersionUID = 5082379213597473198L;
 
 	private final long coordinatorId;
 
@@ -172,6 +177,17 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 				}
 			}
 		}
+	}
+
+	@Override
+	public byte[] serialize() {
+		ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
+		try (DataOutputStream output = new DataOutputStream(byteOutput);) {
+			serialize(output);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return byteOutput.toByteArray();
 	}
 
 	@Override
