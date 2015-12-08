@@ -52,11 +52,11 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			public void run() {
 				if (isAlive()) {
 					interrupt();
-				}
-				try {
-					join();
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
+					try {
+						join();
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
+					}
 				}
 			}
 		}));
