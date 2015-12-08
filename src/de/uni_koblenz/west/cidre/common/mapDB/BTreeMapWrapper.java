@@ -43,7 +43,9 @@ public class BTreeMapWrapper<K, V> extends MapDBMapWrapper<K, V> {
 
 	@Override
 	public void close() {
-		map.close();
+		if (!database.isClosed()) {
+			map.close();
+		}
 		super.close();
 	}
 
