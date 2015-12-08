@@ -53,16 +53,16 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			@Override
 			public void run() {
+				// TODO remove
+				System.out.println("interrupt!");
+				continueRunning = false;
 				if (isAlive()) {
 					interrupt();
-					continueRunning = false;
-					// TODO remove
-					System.out.println("interrupt!");
-					try {
-						join();
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					}
+				}
+				try {
+					join();
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
 				}
 			}
 		}));
