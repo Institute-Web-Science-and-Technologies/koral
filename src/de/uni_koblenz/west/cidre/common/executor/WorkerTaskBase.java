@@ -120,8 +120,10 @@ public abstract class WorkerTaskBase implements WorkerTask {
 	@Override
 	public Set<WorkerTask> getPrecedingTasks() {
 		Set<WorkerTask> precedingTasks = new HashSet<>();
-		for (WorkerTask child : children) {
-			precedingTasks.add(child);
+		if (children != null) {
+			for (WorkerTask child : children) {
+				precedingTasks.add(child);
+			}
 		}
 		return precedingTasks;
 	}
@@ -151,9 +153,11 @@ public abstract class WorkerTaskBase implements WorkerTask {
 	}
 
 	protected boolean areAllChildrenFinished() {
-		for (WorkerTask child : children) {
-			if (!child.hasFinished()) {
-				return false;
+		if (children != null) {
+			for (WorkerTask child : children) {
+				if (!child.hasFinished()) {
+					return false;
+				}
 			}
 		}
 		return true;
