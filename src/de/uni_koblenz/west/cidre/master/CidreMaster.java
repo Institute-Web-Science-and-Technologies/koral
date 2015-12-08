@@ -59,6 +59,8 @@ public class CidreMaster extends CidreSystem {
 			}
 			throw t;
 		}
+		// TODO remove
+		System.out.println("master started");
 	}
 
 	public DictionaryEncoder getDictionary() {
