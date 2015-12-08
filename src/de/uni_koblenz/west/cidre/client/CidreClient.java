@@ -221,7 +221,7 @@ public class CidreClient {
 			// receive response
 			try {
 				byte[][] response = connection.getResponse();
-				outputHeaders(vars, outputWriter);
+				boolean isFirstResult = true;
 				while (response != null) {
 					MessageType mtype = MessageType.valueOf(response[0][0]);
 					if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
@@ -230,6 +230,10 @@ public class CidreClient {
 									.extractMessageString(response[0], null));
 						}
 					} else if (mtype == MessageType.QUERY_RESULT) {
+						if (isFirstResult) {
+							outputHeaders(vars, outputWriter);
+							isFirstResult = false;
+						}
 						outputWriter.write("\n");
 						outputWriter.write(MessageUtils
 								.convertToString(response[0], null));

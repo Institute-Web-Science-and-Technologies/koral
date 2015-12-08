@@ -191,7 +191,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	public void close() {
-		if (!hasFinished()) {
+		if (!hasFinished() && !isAborted()) {
 			sendMessageToClient(MessageUtils.createStringMessage(
 					MessageType.CLIENT_COMMAND_FAILED,
 					"The query has been closed before it was finished.",
@@ -209,9 +209,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			messageSender.sendQueryAbortion(getQueryId());
 		}
 		super.close();
-		if (logger != null) {
-			logger.finer("query execution coordinator " + getID() + " closed.");
-		}
 	}
 
 }
