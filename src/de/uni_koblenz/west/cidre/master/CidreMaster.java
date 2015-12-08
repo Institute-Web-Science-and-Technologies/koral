@@ -197,9 +197,17 @@ public class CidreMaster extends CidreSystem {
 
 	@Override
 	protected void shutDownInternal() {
+		// TODO remove
+		System.out.println("closing master");
 		clientMessageProcessor.close();
+		// TODO remove
+		System.out.println("client message processor closed");
 		dictionary.close();
+		// TODO remove
+		System.out.println("dictionary closed");
 		statistics.close();
+		// TODO remove
+		System.out.println("statistics closed");
 	}
 
 	public static void main(String[] args) {
