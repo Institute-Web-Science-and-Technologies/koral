@@ -93,9 +93,8 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	}
 
 	private void receiveTask(WorkerTask task) {
-		boolean wasEmpty = tasks.isEmpty();
 		tasks.offer(task);
-		if (wasEmpty) {
+		if (!isAlive()) {
 			start();
 		}
 	}

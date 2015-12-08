@@ -68,7 +68,6 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	public void createQuery(byte[] receivedQUERY_CREATEMessage) {
 		// TODO Auto-generated method stub
-		// TODO create query coordinator task
 		// TODO messageSender.sendQueryCreated(0, receivedQUERY_CREATEMessage,
 		// 1);
 
