@@ -139,6 +139,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void executePreStartStep() {
+		// TODO delete
 		if (logger != null) {
 			logger.fine(queryString);
 		}
