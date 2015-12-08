@@ -42,6 +42,10 @@ public class CidreSlave extends CidreSystem {
 			tmpDir.mkdirs();
 		}
 		tripleStore = new TripleStoreAccessor(conf, logger);
+		// TODO remove
+		if (logger != null) {
+			logger.fine("running");
+		}
 	}
 
 	private static String[] getCurrentIP(Configuration conf)
