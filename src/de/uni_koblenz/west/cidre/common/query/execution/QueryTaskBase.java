@@ -143,6 +143,10 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
 	@Override
 	public boolean hasFinished() {
+		return hasFinishedSuccessfully() || isAborted();
+	}
+
+	public boolean hasFinishedSuccessfully() {
 		return state == QueryTaskState.FINISHED;
 	}
 
