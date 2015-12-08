@@ -35,6 +35,8 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 
 	protected Logger logger;
 
+	private volatile boolean continueRunning;
+
 	private final NetworkManager networkManager;
 
 	private final WorkerManager workerManager;
@@ -47,18 +49,17 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 	public CidreSystem(Configuration conf, String[] currentAddress,
 			NetworkManager networkManager) {
 		// add shutdown hook that terminates everything
-		Thread thisThread = this;
+		continueRunning = true;
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			@Override
 			public void run() {
-				// TODO remove
-				System.out.println("shut down");
-				if (thisThread.isAlive()) {
-					thisThread.interrupt();
+				if (isAlive()) {
+					interrupt();
+					continueRunning = false;
 					// TODO remove
 					System.out.println("interrupt!");
 					try {
-						thisThread.join();
+						join();
 					} catch (InterruptedException e) {
 						throw new RuntimeException(e);
 					}
@@ -110,9 +111,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 	@Override
 	public void run() {
 		try {
-			while (!isInterrupted()) {
-				// TODO remove
-				System.out.println(isInterrupted());
+			while (continueRunning && !isInterrupted()) {
 				runOneIteration();
 			}
 			if (logger != null) {
