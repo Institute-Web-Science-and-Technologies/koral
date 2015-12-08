@@ -139,6 +139,11 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void executePreStartStep() {
+		if (logger != null) {
+			logger.fine(queryString);
+		}
+		start();
+
 		// send QUERY_CREATE
 		// TODO Auto-generated method stub
 		// TODO compute load estimation for each computer
