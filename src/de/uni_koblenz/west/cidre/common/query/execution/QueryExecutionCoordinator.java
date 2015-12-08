@@ -95,6 +95,11 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	}
 
 	@Override
+	public boolean hasInput() {
+		return true;
+	}
+
+	@Override
 	public void enqueueMessage(long sender, byte[] message, int firstIndex,
 			int messageLength) {
 		MessageType mType = MessageType.valueOf(message[firstIndex]);

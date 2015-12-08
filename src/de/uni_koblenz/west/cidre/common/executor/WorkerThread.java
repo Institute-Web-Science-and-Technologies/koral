@@ -122,10 +122,6 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	@Override
 	public void run() {
 		while (!isInterrupted()) {
-			// TODO delete
-			if (logger != null) {
-				logger.fine("worker thread " + id + " finished round");
-			}
 			long currentLoad = 0;
 			Iterator<WorkerTask> iterator = tasks.iterator();
 			while (!isInterrupted() && iterator.hasNext()) {
