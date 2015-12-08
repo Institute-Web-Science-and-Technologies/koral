@@ -148,7 +148,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		if (logger != null) {
 			logger.fine(queryString);
 		}
-		start();
+		close();
 
 		// send QUERY_CREATE
 		// TODO Auto-generated method stub
@@ -209,6 +209,9 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			messageSender.sendQueryAbortion(getQueryId());
 		}
 		super.close();
+		if (logger != null) {
+			logger.finer("query execution coordinator " + getID() + " closed.");
+		}
 	}
 
 }
