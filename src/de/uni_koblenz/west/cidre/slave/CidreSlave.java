@@ -37,15 +37,23 @@ public class CidreSlave extends CidreSystem {
 	public CidreSlave(Configuration conf) throws ConfigurationException {
 		super(conf, getCurrentIP(conf),
 				new SlaveNetworkManager(conf, getCurrentIP(conf)));
-		tmpDir = new File(conf.getTmpDir());
-		if (!tmpDir.exists()) {
-			tmpDir.mkdirs();
+		try {
+			tmpDir = new File(conf.getTmpDir());
+			if (!tmpDir.exists()) {
+				tmpDir.mkdirs();
+			}
+			tripleStore = new TripleStoreAccessor(conf, logger);
+		} catch (Throwable t) {
+			if (logger != null) {
+				logger.throwing(t.getStackTrace()[0].getClassName(),
+						t.getStackTrace()[0].getMethodName(), t);
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+				}
+			}
+			throw t;
 		}
-		// TODO remove
-		if (logger != null) {
-			logger.fine("running");
-		}
-		tripleStore = new TripleStoreAccessor(conf, logger);
 	}
 
 	private static String[] getCurrentIP(Configuration conf)

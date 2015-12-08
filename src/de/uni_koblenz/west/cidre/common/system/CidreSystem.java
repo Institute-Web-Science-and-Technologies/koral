@@ -110,14 +110,22 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			if (logger != null) {
 				logger.throwing(t.getStackTrace()[0].getClassName(),
 						t.getStackTrace()[0].getMethodName(), t);
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-				}
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
 			}
 			throw t;
 		} finally {
-			shutDown();
+			try {
+				shutDown();
+			} catch (Throwable t) {
+				if (logger != null) {
+					logger.throwing(t.getStackTrace()[0].getClassName(),
+							t.getStackTrace()[0].getMethodName(), t);
+				}
+				throw t;
+			}
 		}
 	}
 
