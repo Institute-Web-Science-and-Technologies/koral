@@ -110,6 +110,8 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 	public void run() {
 		try {
 			while (!isInterrupted()) {
+				// TODO remove
+				System.out.println(isInterrupted());
 				runOneIteration();
 			}
 			if (logger != null) {
