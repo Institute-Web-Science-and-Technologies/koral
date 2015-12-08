@@ -285,7 +285,7 @@ public class MessageReceiverListener implements MessageListener {
 
 	private synchronized WorkerTask getTask(int dim1Index, int dim2Index,
 			int dim3Index, int dim4Index, int dim5Index, int dim6Index) {
-		if (taskRegistry[dim1Index] == null
+		if (taskRegistry == null || taskRegistry[dim1Index] == null
 				|| taskRegistry[dim1Index][dim2Index] == null
 				|| taskRegistry[dim1Index][dim2Index][dim3Index] == null
 				|| taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index] == null
@@ -305,7 +305,7 @@ public class MessageReceiverListener implements MessageListener {
 		int dim3Index = array[firstIndexOfQueryID + 2] & 0x00_00_00_ff;
 		int dim4Index = array[firstIndexOfQueryID + 3] & 0x00_00_00_ff;
 
-		if (taskRegistry[dim1Index] == null
+		if (taskRegistry == null || taskRegistry[dim1Index] == null
 				|| taskRegistry[dim1Index][dim2Index] == null
 				|| taskRegistry[dim1Index][dim2Index][dim3Index] == null
 				|| taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index] == null) {
@@ -333,7 +333,7 @@ public class MessageReceiverListener implements MessageListener {
 		int dim5Index = id[6] & 0x00_00_00_ff;
 		int dim6Index = id[7] & 0x00_00_00_ff;
 
-		if (taskRegistry[dim1Index] == null
+		if (taskRegistry == null || taskRegistry[dim1Index] == null
 				|| taskRegistry[dim1Index][dim2Index] == null
 				|| taskRegistry[dim1Index][dim2Index][dim3Index] == null
 				|| taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index] == null
