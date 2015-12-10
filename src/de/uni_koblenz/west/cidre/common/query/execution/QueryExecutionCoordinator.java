@@ -127,6 +127,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 					logger.finer("Query " + getQueryId()
 							+ " has been created on all slaves. Start of execution.");
 				}
+				sendMessageToClient(MessageUtils.createStringMessage(
+						MessageType.MASTER_WORK_IN_PROGRESS,
+						"Query execution tree has been created on all slaves. Start of execution.",
+						logger));
 			}
 			break;
 		case QUERY_TASK_FAILED:
