@@ -33,6 +33,12 @@ public abstract class QueryOperatorTaskFactoryBase {
 		this.cacheDirectory = cacheDirectory;
 	}
 
+	public QueryOperatorTaskFactoryBase(
+			QueryOperatorTaskFactoryBase taskFactory) {
+		this(taskFactory.coordinatorId, taskFactory.numberOfSlaves,
+				taskFactory.cacheSize, taskFactory.cacheDirectory);
+	}
+
 	private short getNextTaskId() {
 		if (nextTaskId > (Short.MAX_VALUE) - Short.MIN_VALUE) {
 			throw new RuntimeException(

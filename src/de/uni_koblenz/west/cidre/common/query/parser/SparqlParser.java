@@ -72,7 +72,7 @@ public class SparqlParser implements OpVisitor {
 
 	private QueryExecutionTreeType treeType;
 
-	private final QueryOperatorTaskFactoryBase taskFactory;
+	private QueryOperatorTaskFactoryBase taskFactory;
 
 	private final TripleStoreAccessor tripleStore;
 
@@ -124,6 +124,20 @@ public class SparqlParser implements OpVisitor {
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
 		this.numberOfHashBuckets = numberOfHashBuckets;
 		this.maxInMemoryMappings = maxInMemoryMappings;
+	}
+
+	public void setUseBaseImplementation(boolean useBaseOperators) {
+		if (useBaseOperators
+				&& !(taskFactory instanceof QueryBaseOperatorTaskFactory)) {
+			taskFactory = new QueryBaseOperatorTaskFactory(taskFactory);
+		} else if (!useBaseOperators
+				&& !(taskFactory instanceof DefaultQueryOperatorTaskFactory)) {
+			taskFactory = new DefaultQueryOperatorTaskFactory(taskFactory);
+		}
+	}
+
+	public boolean isBaseImplementationUsed() {
+		return taskFactory instanceof QueryBaseOperatorTaskFactory;
 	}
 
 	/*

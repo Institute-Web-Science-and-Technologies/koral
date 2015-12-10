@@ -8,6 +8,8 @@ import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.query.parser.QueryExecutionTreeType;
+import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
+import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
@@ -31,21 +33,22 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	private QueryExecutionTreeType treeType;
 
-	private boolean useBaseOperators;
-
 	private String queryString;
-
-	private long currentTaskLoad;
 
 	private int numberOfMissingQueryCreatedMessages;
 
 	private long lastContactWithClient;
 
+	private SparqlParser parser;
+
+	private final VariableDictionary varDictionary;
+
 	public QueryExecutionCoordinator(short computerID, int queryID,
 			int numberOfSlaves, int cacheSize, File cacheDir, int clientID,
 			ClientConnectionManager clientConnections,
 			DictionaryEncoder dictionary, GraphStatistics statistics,
-			Logger logger) {
+			int emittedMappingsPerRound, int numberOfHashBuckets,
+			int maxInMemoryMappings, Logger logger) {
 		super(computerID, queryID, (short) 0, numberOfSlaves, cacheSize,
 				cacheDir);
 		setEstimatedWorkLoad(Integer.MAX_VALUE);
@@ -56,6 +59,11 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		addInputQueue();
 		numberOfMissingQueryCreatedMessages = numberOfSlaves;
 		lastContactWithClient = System.currentTimeMillis();
+		varDictionary = new VariableDictionary();
+		parser = new SparqlParser(dictionary, null, computerID, getQueryId(),
+				getID(), numberOfSlaves, cacheSize, cacheDir,
+				emittedMappingsPerRound, numberOfHashBuckets,
+				maxInMemoryMappings, false);
 	}
 
 	public void processQueryRequest(byte[][] arguments) {
@@ -66,7 +74,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 				break;
 			}
 		}
-		useBaseOperators = arguments[1][0] == 1;
+		boolean useBaseOperators = arguments[1][0] == 1;
+		if (useBaseOperators) {
+			parser.setUseBaseImplementation(useBaseOperators);
+		}
 		queryString = MessageUtils.convertToString(arguments[2], logger);
 		if (logger != null) {
 			logger.fine("Started query coordinator for query "
@@ -144,16 +155,13 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void executePreStartStep() {
-		// TODO delete
-		if (logger != null) {
-			logger.fine(queryString);
+		if (parser != null) {
+			QueryOperatorBase queryExecutionTree = (QueryOperatorBase) parser
+					.parse(queryString, treeType, varDictionary);
+			messageSender.sendQueryCreate(statistics, getQueryId(),
+					queryExecutionTree, parser.isBaseImplementationUsed());
+			parser = null;
 		}
-		close();
-
-		// send QUERY_CREATE
-		// TODO Auto-generated method stub
-		// TODO compute load estimation for each computer
-
 		sendKeepAliveMessageToClient();
 	}
 

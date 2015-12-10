@@ -46,6 +46,12 @@ public class ClientMessageProcessor
 
 	private final int mappingReceiverQueueSize;
 
+	private final int emittedMappingsPerRound;
+
+	private final int numberOfHashBuckets;
+
+	private final int maxInMemoryMappings;
+
 	public ClientMessageProcessor(Configuration conf,
 			ClientConnectionManager clientConnections, CidreMaster master,
 			Logger logger) {
@@ -64,6 +70,9 @@ public class ClientMessageProcessor
 		queryIdGenerator = new ReusableIDGenerator();
 		this.clientConnections.registerClosedConnectionListener(this);
 		mappingReceiverQueueSize = conf.getReceiverQueueSize();
+		emittedMappingsPerRound = conf.getMaxEmittedMappingsPerRound();
+		numberOfHashBuckets = conf.getNumberOfHashBuckets();
+		maxInMemoryMappings = conf.getMaxInMemoryMappingsDuringJoin();
 	}
 
 	/**
@@ -242,7 +251,9 @@ public class ClientMessageProcessor
 						master.getComputerId(), queryIdGenerator.getNextId(),
 						master.getNumberOfSlaves(), mappingReceiverQueueSize,
 						tmpDir, clientID.intValue(), clientConnections,
-						master.getDictionary(), master.getStatistics(), logger);
+						master.getDictionary(), master.getStatistics(),
+						emittedMappingsPerRound, numberOfHashBuckets,
+						maxInMemoryMappings, logger);
 				coordinator.processQueryRequest(arguments);
 				clientAddress2queryExecutionCoordinator.put(address,
 						coordinator);

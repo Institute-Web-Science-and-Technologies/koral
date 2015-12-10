@@ -1,12 +1,19 @@
 package de.uni_koblenz.west.cidre.common.executor.messagePassing;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
  * <p>
@@ -44,6 +51,8 @@ public class MessageSenderBuffer {
 
 	private final int[] nextIndex;
 
+	private final int numberOfSlaves;
+
 	public MessageSenderBuffer(int numberOfSlaves, int bundleSize,
 			MessageSender messageSender,
 			MessageReceiverListener localMessageReceiver, Logger logger) {
@@ -52,14 +61,23 @@ public class MessageSenderBuffer {
 		this.localMessageReceiver = localMessageReceiver;
 		mappingBuffer = new Mapping[numberOfSlaves + 1][bundleSize];
 		nextIndex = new int[numberOfSlaves + 1];
+		this.numberOfSlaves = numberOfSlaves;
 	}
 
-	public void sendQueryCreate(int queryId, byte[] queryTree) {
-		ByteBuffer message = ByteBuffer
-				.allocate(Byte.BYTES + Integer.BYTES + queryTree.length);
-		message.put(MessageType.QUERY_CREATE.getValue()).putInt(queryId)
-				.put(queryTree);
-		messageSender.sendToAllSlaves(message.array());
+	public void sendQueryCreate(GraphStatistics statistics, int queryId,
+			QueryOperatorBase queryTree, boolean useBaseImplementation) {
+		for (int slave = 0; slave < numberOfSlaves; slave++) {
+			queryTree.adjustEstimatedLoad(statistics, slave);
+			ByteOutputStream output = new ByteOutputStream();
+			output.write(MessageType.QUERY_CREATE.getValue());
+			output.write(NumberConversion.int2bytes(queryId));
+			try (DataOutputStream output2 = new DataOutputStream(output);) {
+				queryTree.serialize(output2, useBaseImplementation);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			messageSender.send(slave + 1, output.getBytes());
+		}
 	}
 
 	public void sendQueryCreated(int receivingComputer, long coordinatorID) {

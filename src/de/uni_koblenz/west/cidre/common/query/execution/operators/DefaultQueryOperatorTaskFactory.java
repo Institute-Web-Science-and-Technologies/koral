@@ -21,6 +21,11 @@ public class DefaultQueryOperatorTaskFactory
 		super(coordinatorId, numberOfSlaves, cacheSize, cacheDirectory);
 	}
 
+	public DefaultQueryOperatorTaskFactory(
+			QueryOperatorTaskFactoryBase taskFactory) {
+		super(taskFactory);
+	}
+
 	@Override
 	public QueryOperatorTask createTriplePatternMatch(long taskId,
 			int emittedMappingsPerRound, TriplePattern pattern,
