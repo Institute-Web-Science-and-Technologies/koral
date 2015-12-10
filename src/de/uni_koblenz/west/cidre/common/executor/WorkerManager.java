@@ -1,6 +1,9 @@
 package de.uni_koblenz.west.cidre.common.executor;
 
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.File;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -10,7 +13,10 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverL
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionTreeDeserializer;
+import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
 /**
  * This class manages the different {@link WorkerThread}s, i.e., starting and
@@ -32,14 +38,39 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final WorkerThread[] workers;
 
+	private final int numberOfSlaves;
+
+	private final TripleStoreAccessor tripleStore;
+
+	private final int cacheSize;
+
+	private final File cacheDirectory;
+
+	private final int numberOfHashBuckets;
+
+	private final int maxInMemoryMappings;
+
 	public WorkerManager(Configuration conf, MessageNotifier notifier,
-			MessageSender messageSender, int numberOfSlaves, Logger logger) {
+			MessageSender messageSender, Logger logger) {
+		this(conf, null, notifier, messageSender, logger);
+	}
+
+	public WorkerManager(Configuration conf, TripleStoreAccessor tripleStore,
+			MessageNotifier notifier, MessageSender messageSender,
+			Logger logger) {
 		this.logger = logger;
 		messageNotifier = notifier;
 		MessageReceiverListener receiver = new MessageReceiverListener(logger);
 		this.messageSender = new MessageSenderBuffer(conf.getNumberOfSlaves(),
 				conf.getMappingBundleSize(), messageSender, receiver, logger);
 		notifier.registerMessageListener(receiver.getClass(), receiver);
+		numberOfSlaves = conf.getNumberOfSlaves();
+		this.tripleStore = tripleStore;
+		cacheSize = conf.getReceiverQueueSize();
+		cacheDirectory = new File(conf.getTmpDir());
+		numberOfHashBuckets = conf.getNumberOfHashBuckets();
+		maxInMemoryMappings = conf.getMaxInMemoryMappingsDuringJoin();
+
 		int availableCPUs = Runtime.getRuntime().availableProcessors() - 1;
 		if (availableCPUs < 1) {
 			availableCPUs = 1;
@@ -67,12 +98,37 @@ public class WorkerManager implements Closeable, AutoCloseable {
 	}
 
 	public void createQuery(byte[] receivedQUERY_CREATEMessage) {
-		// TODO Auto-generated method stub
-		// TODO messageSender.sendQueryCreated(0, receivedQUERY_CREATEMessage,
-		// 1);
-
-		if (logger != null) {
-			logger.finer("Query " + " created.");
+		int computerOfQueryExecutionCoordinator = NumberConversion.bytes2short(
+				receivedQUERY_CREATEMessage, Byte.BYTES + 1) & 0x00_00_ff_ff;
+		long coordinatorId = NumberConversion
+				.bytes2long(receivedQUERY_CREATEMessage, Byte.BYTES + 1);
+		QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(
+				tripleStore, numberOfSlaves, cacheSize, cacheDirectory,
+				numberOfHashBuckets, maxInMemoryMappings);
+		try (DataInputStream input = new DataInputStream(
+				new ByteArrayInputStream(receivedQUERY_CREATEMessage, 1,
+						receivedQUERY_CREATEMessage.length - 1));) {
+			QueryOperatorTask queryExecutionTree = deserializer
+					.deserialize(input);
+			initializeTaskTree(queryExecutionTree);
+			messageSender.sendQueryCreated(computerOfQueryExecutionCoordinator,
+					coordinatorId);
+			if (logger != null) {
+				logger.finer("Query " + " created.");
+			}
+		} catch (Throwable e) {
+			String message = "Error during deserialization of query "
+					+ NumberConversion.bytes2int(receivedQUERY_CREATEMessage,
+							Byte.BYTES + 1 + Short.BYTES)
+					+ ".";
+			if (logger != null) {
+				logger.finer(message);
+				logger.throwing(e.getStackTrace()[0].getClassName(),
+						e.getStackTrace()[0].getMethodName(), e);
+			}
+			messageSender.sendQueryTaskFailed(
+					computerOfQueryExecutionCoordinator, coordinatorId,
+					message + " Cause: " + e.getMessage());
 		}
 	}
 

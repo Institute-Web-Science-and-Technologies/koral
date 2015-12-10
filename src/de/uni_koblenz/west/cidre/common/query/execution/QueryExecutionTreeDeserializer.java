@@ -11,6 +11,12 @@ import de.uni_koblenz.west.cidre.common.query.execution.operators.DefaultQueryOp
 import de.uni_koblenz.west.cidre.common.query.execution.operators.base_impl.QueryBaseOperatorTaskFactory;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
+/**
+ * Deserializes the query execution tree received by the slaves.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
 public class QueryExecutionTreeDeserializer {
 
 	private QueryOperatorTaskFactoryBase taskFactory;

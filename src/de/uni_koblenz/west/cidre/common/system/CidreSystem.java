@@ -91,7 +91,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 		listeners = new HashMap<>();
 
 		workerManager = new WorkerManager(conf, this, getNetworkManager(),
-				getNetworkManager().getNumberOfSlaves(), logger);
+				logger);
 
 		if (logger != null) {
 			logger.info(getClass().getSimpleName() + " started");
