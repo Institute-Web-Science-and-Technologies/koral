@@ -1,12 +1,11 @@
 package de.uni_koblenz.west.cidre.common.executor.messagePassing;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
-
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
@@ -68,15 +67,15 @@ public class MessageSenderBuffer {
 			QueryOperatorBase queryTree, boolean useBaseImplementation) {
 		for (int slave = 0; slave < numberOfSlaves; slave++) {
 			queryTree.adjustEstimatedLoad(statistics, slave);
-			ByteOutputStream output = new ByteOutputStream();
-			output.write(MessageType.QUERY_CREATE.getValue());
-			output.write(NumberConversion.int2bytes(queryId));
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
 			try (DataOutputStream output2 = new DataOutputStream(output);) {
+				output.write(MessageType.QUERY_CREATE.getValue());
+				output.write(NumberConversion.int2bytes(queryId));
 				queryTree.serialize(output2, useBaseImplementation);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-			messageSender.send(slave + 1, output.getBytes());
+			messageSender.send(slave + 1, output.toByteArray());
 		}
 	}
 

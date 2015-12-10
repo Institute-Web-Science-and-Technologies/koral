@@ -99,15 +99,18 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	public void createQuery(byte[] receivedQUERY_CREATEMessage) {
 		int computerOfQueryExecutionCoordinator = NumberConversion.bytes2short(
-				receivedQUERY_CREATEMessage, Byte.BYTES + 1) & 0x00_00_ff_ff;
-		long coordinatorId = NumberConversion
-				.bytes2long(receivedQUERY_CREATEMessage, Byte.BYTES + 1);
+				receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES + 1)
+				& 0x00_00_ff_ff;
+		long coordinatorId = NumberConversion.bytes2long(
+				receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES + 1);
 		QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(
 				tripleStore, numberOfSlaves, cacheSize, cacheDirectory,
 				numberOfHashBuckets, maxInMemoryMappings);
 		try (DataInputStream input = new DataInputStream(
-				new ByteArrayInputStream(receivedQUERY_CREATEMessage, 1,
-						receivedQUERY_CREATEMessage.length - 1));) {
+				new ByteArrayInputStream(receivedQUERY_CREATEMessage,
+						Byte.BYTES + Integer.BYTES,
+						receivedQUERY_CREATEMessage.length - Byte.BYTES
+								- Integer.BYTES));) {
 			QueryOperatorTask queryExecutionTree = deserializer
 					.deserialize(input);
 			initializeTaskTree(queryExecutionTree);
@@ -119,7 +122,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		} catch (Throwable e) {
 			String message = "Error during deserialization of query "
 					+ NumberConversion.bytes2int(receivedQUERY_CREATEMessage,
-							Byte.BYTES + 1 + Short.BYTES)
+							Byte.BYTES)
 					+ ".";
 			if (logger != null) {
 				logger.finer(message);
