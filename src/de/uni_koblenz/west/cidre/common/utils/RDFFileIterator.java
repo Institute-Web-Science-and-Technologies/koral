@@ -116,9 +116,10 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 		if (logger != null) {
 			String prefix = message.substring(0, 7);
 			String suffix = message.substring(message.indexOf(','));
-			logger.finer(
-					"Skipping rest of line because of the following error: "
-							+ prefix + lineWithError + suffix);
+			logger.finer("Skipping rest of line of file "
+					+ rdfFiles[currentFile].getAbsolutePath()
+					+ " because of the following error: " + prefix
+					+ lineWithError + suffix);
 		}
 		if (message.contains("(newline)")) {
 			lineWithError--;
@@ -134,13 +135,19 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 		int currentLine = 1;
 		int nextChar = -1;
 		try {
+			StringBuilder sb = new StringBuilder();
 			do {
 				nextChar = in.read();
 				if (nextChar == '\n') {
 					currentLine++;
+				} else if (currentLine == lineWithError && nextChar != -1) {
+					sb.append((char) nextChar);
 				}
 			} while (currentLine <= lineWithError && nextChar != -1);
 			skippedLineNumbers = currentLine - 1;
+			if (logger != null) {
+				logger.finer("Skipped line is: " + sb.toString());
+			}
 		} catch (IOException e1) {
 			if (logger != null) {
 				logger.finer("Skipping rest of file "
