@@ -79,7 +79,7 @@ public class DictionaryEncoder implements Closeable {
 					plainGraphChunks[i].getParentFile().getAbsolutePath()
 							+ File.separatorChar + "chunk" + i + ".enc.int.gz");
 			try (RDFFileIterator iter = new RDFFileIterator(plainGraphChunks[i],
-					logger);
+					true, logger);
 					DataOutputStream out = new DataOutputStream(
 							new BufferedOutputStream(
 									new GZIPOutputStream(new FileOutputStream(

@@ -292,7 +292,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 						MessageType.MASTER_WORK_IN_PROGRESS,
 						"Started creation of graph cover.", logger));
 
-		RDFFileIterator rdfFiles = new RDFFileIterator(workingDir, logger);
+		RDFFileIterator rdfFiles = new RDFFileIterator(workingDir, true,
+				logger);
 		GraphCoverCreator coverCreator = GraphCoverCreatorFactory
 				.getGraphCoverCreator(coverStrategy, logger);
 		File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir,
