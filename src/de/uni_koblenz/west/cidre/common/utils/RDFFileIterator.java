@@ -1,15 +1,21 @@
 package de.uni_koblenz.west.cidre.common.utils;
 
+import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.jena.atlas.io.IO;
 import org.apache.jena.atlas.web.ContentType;
@@ -53,6 +59,8 @@ import org.apache.jena.sparql.core.Quad;
 public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 		Closeable, AutoCloseable {
 
+	private final static int MAX_NUMBER_OF_STORED_LINE_OFFSETS = 1000000;
+
 	private final Logger logger;
 
 	private final File[] rdfFiles;
@@ -72,6 +80,8 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 	private final ExecutorService executor;
 
 	private final boolean deleteReadFiles;
+
+	private SortedMap<Integer, Long> lineNumber2Offset;
 
 	public RDFFileIterator(File file, boolean deleteFiles, Logger logger) {
 		this.logger = logger;
@@ -113,6 +123,9 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 		String message = e.getMessage();
 		int lineWithError = skippedLineNumbers
 				+ Integer.parseInt(message.substring(7, message.indexOf(',')));
+		if (message.contains("(newline)")) {
+			lineWithError--;
+		}
 		if (logger != null) {
 			String prefix = message.substring(0, 7);
 			String suffix = message.substring(message.indexOf(','));
@@ -121,8 +134,9 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 					+ " because of the following error: " + prefix
 					+ lineWithError + suffix);
 		}
-		if (message.contains("(newline)")) {
-			lineWithError--;
+		if (lineNumber2Offset == null || lineNumber2Offset.isEmpty()
+				|| lineNumber2Offset.lastKey() < lineWithError) {
+			createLineNumberMapping(lineWithError);
 		}
 		String baseIRI = rdfFiles[currentFile].getAbsolutePath();
 		TypedInputStream in = RDFDataMgr.open(baseIRI);
@@ -130,11 +144,58 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 		createIterator(baseIRI, in);
 	}
 
+	private void createLineNumberMapping(int lineWithError) {
+		long offset = 0;
+		int lineNumber = 1;
+		if (lineWithError == 1) {
+			lineNumber2Offset.put(lineNumber, offset);
+		}
+		if (lineNumber2Offset != null && !lineNumber2Offset.isEmpty()) {
+			lineNumber = lineNumber2Offset.lastKey();
+			offset = lineNumber2Offset.get(lineNumber);
+		}
+		System.err.println(">>>looking for line offsets");
+		lineNumber2Offset = new TreeMap<>();
+		boolean isGzip = rdfFiles[currentFile].getName().toLowerCase()
+				.endsWith(".gz");
+		try (InputStream input = isGzip
+				? new GZIPInputStream(
+						new FileInputStream(rdfFiles[currentFile]))
+				: new FileInputStream(rdfFiles[currentFile]);
+				BufferedInputStream bufferedInput = new BufferedInputStream(
+						input);) {
+			bufferedInput.skip(offset);
+			for (int readChar = bufferedInput
+					.read(); readChar != -1; readChar = bufferedInput.read()) {
+				offset++;
+				if (readChar == '\n') {
+					lineNumber++;
+					if (lineNumber >= lineWithError) {
+						lineNumber2Offset.put(lineNumber, offset);
+					}
+					if (lineNumber >= lineWithError
+							+ MAX_NUMBER_OF_STORED_LINE_OFFSETS) {
+						break;
+					}
+				}
+			}
+		} catch (IOException e) {
+			lineNumber2Offset = null;
+		}
+	}
+
 	private void skipErroneousLine(TypedInputStream in, String baseIRI,
 			int lineWithError) {
 		int currentLine = 1;
 		int nextChar = -1;
 		try {
+			if (lineNumber2Offset != null) {
+				Long offset = lineNumber2Offset.get(lineWithError);
+				if (offset != null) {
+					currentLine = lineWithError;
+					in.skip(offset);
+				}
+			}
 			StringBuilder sb = new StringBuilder();
 			do {
 				nextChar = in.read();
@@ -161,6 +222,7 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 	}
 
 	private void getNextIterator() {
+		lineNumber2Offset = null;
 		if (deleteReadFiles && currentFile > 0
 				&& currentFile <= rdfFiles.length) {
 			rdfFiles[currentFile - 1].delete();
