@@ -32,10 +32,20 @@ import org.apache.jena.riot.system.StreamRDF;
 import org.apache.jena.sparql.core.Quad;
 
 /**
+ * <p>
  * Iterates over all triples contained in one graph file or in any graph file
  * contained in a folder. Blank nodes get an id unique to the computer on which
  * the graph file is read first. (Probably, blank nodes with the same label in
  * different files will receive different ids.)
+ * </p>
+ * 
+ * <p>
+ * {@link RDFFileIterator} parses files with two threads: One reads some triples
+ * or quadruples in a buffer while the other consumes the triples or quadruples.
+ * In the case that the input file is {@link #isCurrentFileSkippable()}, the
+ * iterator skips the line with the error and continues with the next line, if
+ * an syntax error is found.
+ * </p>
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
