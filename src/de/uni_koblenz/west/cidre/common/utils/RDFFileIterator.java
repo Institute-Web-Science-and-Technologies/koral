@@ -154,7 +154,6 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 			lineNumber = lineNumber2Offset.lastKey();
 			offset = lineNumber2Offset.get(lineNumber);
 		}
-		System.err.println(">>>looking for line offsets");
 		lineNumber2Offset = new TreeMap<>();
 		boolean isGzip = rdfFiles[currentFile].getName().toLowerCase()
 				.endsWith(".gz");
