@@ -27,6 +27,7 @@ import org.apache.jena.sparql.core.Quad;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
+import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 
 public class PreprocessBTC2014 {
@@ -58,14 +59,30 @@ public class PreprocessBTC2014 {
 		conf.setLoglevel(Level.ALL);
 		conf.setLogDirectory(outputDir.getAbsolutePath());
 		DatasetGraph graph = DatasetGraphFactory.createMem();
-		try (RDFFileIterator iterator = new RDFFileIterator(inputDir, false,
+		if (!inputDir.exists()) {
+			throw new RuntimeException("The input directory "
+					+ inputDir.getAbsolutePath() + " does not exist.");
+		}
+		if (inputDir.isFile()) {
+			preprocessFile(inputDir, outputDir, conf, graph);
+		} else {
+			for (File inputFile : inputDir.listFiles(new GraphFileFilter())) {
+				preprocessFile(inputFile, outputDir, conf, graph);
+			}
+		}
+	}
+
+	private static void preprocessFile(File inputFile, File outputDir,
+			Configuration conf, DatasetGraph graph) {
+		try (RDFFileIterator iterator = new RDFFileIterator(inputFile, false,
 				LoggerFactory.getCSVFileLogger(conf,
-						new String[] { "btc2014Preprocessing", "" },
+						new String[] { "cleaned", inputFile.getName() },
 						PreprocessBTC2014.class.getName()));
 				BufferedOutputStream output = new BufferedOutputStream(
-						new GZIPOutputStream(new FileOutputStream(
-								outputDir.getAbsolutePath() + File.separator
-										+ "btc2014.nq.gz")));) {
+						new GZIPOutputStream(
+								new FileOutputStream(outputDir.getAbsolutePath()
+										+ File.separator + "cleaned_"
+										+ inputFile.getName())));) {
 			for (Node[] tuple : iterator) {
 				if (tuple.length == 3) {
 					Graph defaultGraph = graph.getDefaultGraph();
@@ -79,7 +96,6 @@ public class PreprocessBTC2014 {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-
 	}
 
 	private static void downloadDataset(File inputDir) {
