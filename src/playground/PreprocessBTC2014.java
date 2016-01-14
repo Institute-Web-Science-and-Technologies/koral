@@ -108,7 +108,9 @@ public class PreprocessBTC2014 {
 			if (csvFileLogger != null) {
 				for (Handler handler : csvFileLogger.getHandlers()) {
 					if (handler instanceof CSVFileHandler) {
+						handler.flush();
 						csvFileLogger.removeHandler(handler);
+						handler.close();
 					}
 				}
 			}
