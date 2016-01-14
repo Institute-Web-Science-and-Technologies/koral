@@ -12,7 +12,9 @@ import java.io.LineNumberReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
@@ -26,6 +28,7 @@ import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sparql.core.Quad;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.logger.CSVFileHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
 import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
@@ -74,27 +77,41 @@ public class PreprocessBTC2014 {
 
 	private static void preprocessFile(File inputFile, File outputDir,
 			Configuration conf, DatasetGraph graph) {
-		try (RDFFileIterator iterator = new RDFFileIterator(inputFile, false,
-				LoggerFactory.getCSVFileLogger(conf,
-						new String[] { "cleaned", inputFile.getName() },
-						PreprocessBTC2014.class.getName()));
-				BufferedOutputStream output = new BufferedOutputStream(
-						new GZIPOutputStream(
-								new FileOutputStream(outputDir.getAbsolutePath()
-										+ File.separator + "cleaned_"
-										+ inputFile.getName())));) {
-			for (Node[] tuple : iterator) {
-				if (tuple.length == 3) {
-					Graph defaultGraph = graph.getDefaultGraph();
-					defaultGraph.add(new Triple(tuple[0], tuple[1], tuple[2]));
-				} else {
-					graph.add(new Quad(tuple[3], tuple[0], tuple[1], tuple[2]));
+		Logger csvFileLogger = null;
+		try {
+			csvFileLogger = LoggerFactory.getCSVFileLogger(conf,
+					new String[] { "cleaned", inputFile.getName() },
+					PreprocessBTC2014.class.getName());
+			try (RDFFileIterator iterator = new RDFFileIterator(inputFile,
+					false, csvFileLogger);
+					BufferedOutputStream output = new BufferedOutputStream(
+							new GZIPOutputStream(new FileOutputStream(
+									outputDir.getAbsolutePath() + File.separator
+											+ "cleaned_"
+											+ inputFile.getName())));) {
+				for (Node[] tuple : iterator) {
+					if (tuple.length == 3) {
+						Graph defaultGraph = graph.getDefaultGraph();
+						defaultGraph
+								.add(new Triple(tuple[0], tuple[1], tuple[2]));
+					} else {
+						graph.add(new Quad(tuple[3], tuple[0], tuple[1],
+								tuple[2]));
+					}
+					RDFDataMgr.write(output, graph, RDFFormat.NQ);
+					graph.clear();
 				}
-				RDFDataMgr.write(output, graph, RDFFormat.NQ);
-				graph.clear();
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
+		} finally {
+			if (csvFileLogger != null) {
+				for (Handler handler : csvFileLogger.getHandlers()) {
+					if (handler instanceof CSVFileHandler) {
+						csvFileLogger.removeHandler(handler);
+					}
+				}
+			}
 		}
 	}
 
