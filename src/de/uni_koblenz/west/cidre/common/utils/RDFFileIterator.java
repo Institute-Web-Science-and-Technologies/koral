@@ -163,7 +163,10 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 				: new FileInputStream(rdfFiles[currentFile]);
 				BufferedInputStream bufferedInput = new BufferedInputStream(
 						input);) {
-			bufferedInput.skip(offset);
+			long skippedBytes = 0;
+			while (skippedBytes < offset) {
+				skippedBytes += bufferedInput.skip(offset - skippedBytes);
+			}
 			for (int readChar = bufferedInput
 					.read(); readChar != -1; readChar = bufferedInput.read()) {
 				offset++;
@@ -192,7 +195,10 @@ public class RDFFileIterator implements Iterable<Node[]>, Iterator<Node[]>,
 				Long offset = lineNumber2Offset.get(lineWithError);
 				if (offset != null) {
 					currentLine = lineWithError;
-					in.skip(offset);
+					long skippedBytes = 0;
+					while (skippedBytes < offset) {
+						skippedBytes += in.skip(offset - skippedBytes);
+					}
 				}
 			}
 			StringBuilder sb = new StringBuilder();
