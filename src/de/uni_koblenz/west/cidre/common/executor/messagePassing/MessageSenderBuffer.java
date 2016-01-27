@@ -198,14 +198,11 @@ public class MessageSenderBuffer {
 					.putShort((short) messageSender.getCurrentID());
 			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
 				Mapping mapping = mappingBuffer[receivingComputer][i];
-				buffer.put(MessageType.QUERY_MAPPING_BATCH.getValue());
-				buffer.putInt(mapping.getLengthOfMappingInByteArray());
 				buffer.put(mapping.getByteArray(),
 						mapping.getFirstIndexOfMappingInByteArray(),
-						mapping.getLengthOfMappingInByteArray() - Byte.BYTES
-								- Integer.BYTES);
-				mappingCache.releaseMapping(mapping);
+						mapping.getLengthOfMappingInByteArray());
 				mappingBuffer[receivingComputer][i] = null;
+				mappingCache.releaseMapping(mapping);
 			}
 			nextIndex[receivingComputer] = 0;
 		}
