@@ -234,7 +234,6 @@ public class CidreClient {
 							outputHeaders(vars, outputWriter);
 							isFirstResult = false;
 						}
-						outputWriter.write("\n");
 						outputWriter.write(MessageUtils
 								.convertToString(response[0], null));
 					} else {
@@ -258,7 +257,7 @@ public class CidreClient {
 		for (String var : vars) {
 			outputWriter.write(delim);
 			outputWriter.write(var);
-			delim = "\t";
+			delim = Configuration.QUERY_RESULT_COLUMN_SEPARATOR_CHAR;
 		}
 	}
 

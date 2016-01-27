@@ -44,7 +44,7 @@ public class Mapping {
 	 * <li>mapping serialization
 	 * <ol>
 	 * <li>8*#vars bytes of mapping</li>
-	 * <li>{@link #numberOfSlaves}/8+{@link #numberOfSlaves}%8==0?0:1 bytes of
+	 * <li>{@link #numberOfSlaves}/8+({@link #numberOfSlaves}%8==0?0:1) bytes of
 	 * containment serialization</li>
 	 * </ol>
 	 * </li>

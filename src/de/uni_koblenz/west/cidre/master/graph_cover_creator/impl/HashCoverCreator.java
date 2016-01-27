@@ -19,6 +19,7 @@ import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sparql.core.Quad;
 
+import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
@@ -166,7 +167,8 @@ public class HashCoverCreator implements GraphCoverCreator {
 			Node node = statement[i];
 			if (node.isBlank()) {
 				statement[i] = NodeFactory
-						.createURI("urn:blankNode:" + node.getBlankNodeId());
+						.createURI(Configuration.BLANK_NODE_URI_PREFIX
+								+ node.getBlankNodeId());
 			}
 		}
 	}

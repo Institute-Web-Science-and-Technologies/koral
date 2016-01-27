@@ -3,10 +3,14 @@ package de.uni_koblenz.west.cidre.common.query.execution;
 import java.io.File;
 import java.util.logging.Logger;
 
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.NodeFactory;
+
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.parser.QueryExecutionTreeType;
 import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
 import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
@@ -14,6 +18,7 @@ import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
+import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 
 /**
  * Coordinates the query execution and sends messages to the requesting client.
@@ -43,6 +48,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	private final VariableDictionary varDictionary;
 
+	private final int emittedMappingsPerRound;
+
+	private long[] resultVariables;
+
 	public QueryExecutionCoordinator(short computerID, int queryID,
 			int numberOfSlaves, int cacheSize, File cacheDir, int clientID,
 			ClientConnectionManager clientConnections,
@@ -60,6 +69,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		numberOfMissingQueryCreatedMessages = numberOfSlaves;
 		lastContactWithClient = System.currentTimeMillis();
 		varDictionary = new VariableDictionary();
+		this.emittedMappingsPerRound = emittedMappingsPerRound;
 		parser = new SparqlParser(dictionary, null, computerID, getQueryId(),
 				getID(), numberOfSlaves, cacheSize, cacheDir,
 				emittedMappingsPerRound, numberOfHashBuckets,
@@ -162,6 +172,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		if (parser != null) {
 			QueryOperatorBase queryExecutionTree = (QueryOperatorBase) parser
 					.parse(queryString, treeType, varDictionary);
+			resultVariables = queryExecutionTree.getResultVariables();
 			messageSender.sendQueryCreate(statistics, getQueryId(),
 					queryExecutionTree, parser.isBaseImplementationUsed());
 			parser = null;
@@ -171,10 +182,50 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void executeOperationStep() {
-		// TODO before sending to sparql requester replace urn:blankNode: by _:
-		// for proper blank node syntax
-		// TODO Auto-generated method stub
-		sendKeepAliveMessageToClient();
+		StringBuilder result = new StringBuilder();
+		for (int numberOfAlreadyEmittedMessages = 0; numberOfAlreadyEmittedMessages < emittedMappingsPerRound; numberOfAlreadyEmittedMessages++) {
+			Mapping mapping = consumeMapping(0);
+			if (mapping == null) {
+				break;
+			}
+			// the result has always to start with a new row, since the client
+			// already writes the header without row separator
+			result.append(Configuration.QUERY_RESULT_ROW_SEPARATOR_CHAR);
+			String delim = "";
+			for (long var : resultVariables) {
+				long varResult = mapping.getValue(var, resultVariables);
+				if (varResult == -1) {
+					throw new RuntimeException(
+							"The mapping " + mapping.toString(resultVariables)
+									+ " does not contain a mapping for variable "
+									+ var + ".");
+				}
+				Node resultNode = dictionary.decode(varResult);
+				if (resultNode == null) {
+					throw new RuntimeException(
+							"The value " + varResult + " of variable " + var
+									+ " could not be found in the dictionary.");
+				}
+				if (resultNode.isURI() && resultNode.getURI()
+						.startsWith(Configuration.BLANK_NODE_URI_PREFIX)) {
+					// this is a replacement of a blank node
+					resultNode = NodeFactory.createBlankNode(resultNode.getURI()
+							.substring(Configuration.BLANK_NODE_URI_PREFIX
+									.length()));
+				}
+				String resultResourceString = DeSerializer
+						.serializeNode(resultNode);
+				result.append(delim).append(resultResourceString);
+				delim = Configuration.QUERY_RESULT_COLUMN_SEPARATOR_CHAR;
+			}
+		}
+		if (result.length() > 0) {
+			clientConnections.send(clientId, MessageUtils.createStringMessage(
+					MessageType.QUERY_RESULT, result.toString(), logger));
+			lastContactWithClient = System.currentTimeMillis();
+		} else {
+			sendKeepAliveMessageToClient();
+		}
 	}
 
 	private void sendKeepAliveMessageToClient() {

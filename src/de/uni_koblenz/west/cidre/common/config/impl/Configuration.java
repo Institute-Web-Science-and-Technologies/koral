@@ -22,6 +22,12 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
  */
 public class Configuration implements Configurable {
 
+	public static final String QUERY_RESULT_COLUMN_SEPARATOR_CHAR = "\t";
+
+	public static final String QUERY_RESULT_ROW_SEPARATOR_CHAR = "\n";
+
+	public static final String BLANK_NODE_URI_PREFIX = "urn:blankNode:";
+
 	private static final String DEFAULT_PORT = "4710";
 
 	@Property(name = "master", description = "The ip and port of the master server, e.g., 192.168.0.1:4710. If no port is specified, the default port "

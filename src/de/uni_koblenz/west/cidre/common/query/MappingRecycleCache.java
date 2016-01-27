@@ -81,6 +81,7 @@ public class MappingRecycleCache {
 					insertionIndex);
 			insertionIndex += Long.BYTES;
 		}
+		// set containment information
 		if (insertionIndex < triple.length) {
 			System.arraycopy(triple, 3 * Long.BYTES, newMapping, insertionIndex,
 					triple.length - 3 * Long.BYTES);
