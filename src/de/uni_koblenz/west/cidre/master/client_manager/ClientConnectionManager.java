@@ -206,7 +206,9 @@ public class ClientConnectionManager
 	@Override
 	public void close() {
 		for (int i = 0; i < outClientSockets.size(); i++) {
-			closeConnection(i);
+			if (outClientSockets.get(i) != null) {
+				closeConnection(i);
+			}
 		}
 		context.destroySocket(inSocket);
 		inSocket = null;
