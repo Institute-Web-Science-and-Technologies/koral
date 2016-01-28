@@ -102,6 +102,10 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	public void startQuery(byte[] receivedMessage) {
 		for (WorkerTask task : receiver.getAllTasksOfQuery(receivedMessage,
 				1)) {
+			// TODO removed
+			if (logger != null) {
+				logger.info("start task: " + task.getID());
+			}
 			task.start();
 		}
 	}
