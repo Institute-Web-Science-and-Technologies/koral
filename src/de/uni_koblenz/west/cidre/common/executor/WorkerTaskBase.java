@@ -171,8 +171,10 @@ public abstract class WorkerTaskBase implements WorkerTask {
 
 	@Override
 	public void close() {
-		for (CachedFileReceiverQueue queue : inputQueues) {
-			queue.close();
+		if (inputQueues != null) {
+			for (CachedFileReceiverQueue queue : inputQueues) {
+				queue.close();
+			}
 		}
 	}
 
