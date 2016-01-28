@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
-import java.util.Arrays;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -183,11 +182,11 @@ public class WorkerManager implements Closeable, AutoCloseable {
 	}
 
 	public void startQuery(byte[] receivedMessage) {
-		// TODO removed
-		if (logger != null) {
-			logger.info("worker threads " + Arrays.toString(workers));
-		}
 		for (WorkerThread worker : workers) {
+			// TODO removed
+			if (logger != null) {
+				logger.info("worker thread: " + worker.getId());
+			}
 			worker.startQuery(receivedMessage);
 		}
 		if (logger != null) {
