@@ -60,6 +60,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			int maxInMemoryMappings, Logger logger) {
 		super(computerID, queryID, (short) 0, numberOfSlaves, cacheSize,
 				cacheDir);
+		this.logger = logger;
 		setEstimatedWorkLoad(Integer.MAX_VALUE);
 		this.clientConnections = clientConnections;
 		clientId = clientID;
