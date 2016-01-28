@@ -182,7 +182,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 	}
 
 	public void startQuery(byte[] receivedMessage) {
-		// startQuery() on any worker will start the QueryTask independent to
+		// startQuery() on any worker will start all QueryTasks independent to
 		// which worker it is assigned.
 		if (workers != null && workers.length > 0) {
 			workers[0].startQuery(receivedMessage);
@@ -195,8 +195,10 @@ public class WorkerManager implements Closeable, AutoCloseable {
 	}
 
 	public void abortQuery(byte[] receivedMessage) {
-		for (WorkerThread worker : workers) {
-			worker.abortQuery(receivedMessage);
+		// abortQuery() on any worker will abort all QueryTasks independent to
+		// which worker it is assigned.
+		if (workers != null && workers.length > 0) {
+			workers[0].abortQuery(receivedMessage);
 		}
 		if (logger != null) {
 			logger.finer(

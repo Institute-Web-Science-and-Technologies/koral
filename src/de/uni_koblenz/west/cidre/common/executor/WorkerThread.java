@@ -113,6 +113,13 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		}
 	}
 
+	/**
+	 * Aborts all query tasks with this query ID, independent of the
+	 * {@link WorkerThread} of the {@link WorkerManager} which owns this
+	 * {@link WorkerThread}.
+	 * 
+	 * @param receivedMessage
+	 */
 	public void abortQuery(byte[] receivedMessage) {
 		Set<WorkerTask> queryTasks = receiver
 				.getAllTasksOfQuery(receivedMessage, 1);
