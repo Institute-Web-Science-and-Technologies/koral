@@ -183,10 +183,6 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	public void startQuery(byte[] receivedMessage) {
 		for (WorkerThread worker : workers) {
-			// TODO removed
-			if (logger != null) {
-				logger.info("worker thread: " + worker.getId());
-			}
 			worker.startQuery(receivedMessage);
 		}
 		if (logger != null) {
