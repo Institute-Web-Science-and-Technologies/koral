@@ -110,7 +110,9 @@ public class MessageReceiverListener implements MessageListener {
 					currentIndex += lengthOfMapping;
 				}
 				break;
+			case QUERY_CREATED:
 			case QUERY_TASK_FINISHED:
+			case QUERY_TASK_FAILED:
 				WorkerTask task = getTask(message, 3);
 				if (task == null) {
 					if (logger != null) {
