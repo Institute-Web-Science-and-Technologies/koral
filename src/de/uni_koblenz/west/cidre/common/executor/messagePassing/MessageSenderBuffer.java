@@ -90,7 +90,7 @@ public class MessageSenderBuffer {
 
 	public void sendQueryStart(int queryID) {
 		ByteBuffer message = ByteBuffer.allocate(Byte.BYTES + Integer.BYTES);
-		message.put(MessageType.QUERY_CREATE.getValue()).putInt(queryID);
+		message.put(MessageType.QUERY_START.getValue()).putInt(queryID);
 		messageSender.sendToAllSlaves(message.array());
 	}
 
