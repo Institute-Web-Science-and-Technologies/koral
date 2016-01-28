@@ -12,7 +12,6 @@ import java.util.logging.Logger;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * Executes all registered {@link WorkerTask}s in iterations. During one
@@ -100,13 +99,17 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		}
 	}
 
+	/**
+	 * Starts all query tasks with this query ID, independent of the
+	 * {@link WorkerThread} of the {@link WorkerManager} which owns this
+	 * {@link WorkerThread}.
+	 * 
+	 * @param receivedMessage
+	 */
 	public void startQuery(byte[] receivedMessage) {
-		int startedQueryId = NumberConversion.bytes2int(receivedMessage, 1);
-		for (WorkerTask task : tasks) {
-			int queryId = (int) ((task.getID() << Short.SIZE) >>> Short.SIZE);
-			if (queryId == startedQueryId) {
-				task.start();
-			}
+		for (WorkerTask task : receiver.getAllTasksOfQuery(receivedMessage,
+				1)) {
+			task.start();
 		}
 	}
 

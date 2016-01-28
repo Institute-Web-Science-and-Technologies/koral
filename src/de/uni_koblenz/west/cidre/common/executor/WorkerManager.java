@@ -182,8 +182,10 @@ public class WorkerManager implements Closeable, AutoCloseable {
 	}
 
 	public void startQuery(byte[] receivedMessage) {
-		for (WorkerThread worker : workers) {
-			worker.startQuery(receivedMessage);
+		// startQuery() on any worker will start the QueryTask independent to
+		// which worker it is assigned.
+		if (workers != null && workers.length > 0) {
+			workers[0].startQuery(receivedMessage);
 		}
 		if (logger != null) {
 			logger.finer(
