@@ -49,15 +49,30 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 	public void connect(String masterAddress) {
 		System.out.println("Connecting to master...");
 		outSocket = context.createSocket(ZMQ.PUSH);
-		outSocket.connect("tcp://" + masterAddress);
+		synchronized (outSocket) {
+			if (outSocket == null) {
+				System.out.println("Connection to master is already closed.");
+				return;
+			}
+			outSocket.connect("tcp://" + masterAddress);
+		}
 		if (inSocket == null) {
 			inSocket = context.createSocket(ZMQ.PULL);
-			inSocket.setReceiveTimeOut(
-					(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
+			synchronized (inSocket) {
+				if (inSocket != null) {
+					inSocket.setReceiveTimeOut(
+							(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
+				}
+			}
 			try {
 				String hostAddress = getHostAddress();
-				int port = inSocket.bindToRandomPort("tcp://" + hostAddress,
-						49152, 61000);
+				int port = -1;
+				synchronized (inSocket) {
+					if (inSocket != null) {
+						port = inSocket.bindToRandomPort("tcp://" + hostAddress,
+								49152, 61000);
+					}
+				}
 				clientAddress = hostAddress + ":" + port;
 
 				// exchange a unique connection with master
@@ -71,7 +86,12 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 							MessageType.CLIENT_CONNECTION_CREATION,
 							clientAddress, null));
 				}
-				byte[] answer = inSocket.recv();
+				byte[] answer = null;
+				synchronized (inSocket) {
+					if (inSocket != null) {
+						answer = inSocket.recv();
+					}
+				}
 				if (answer == null
 						|| (answer.length != 1 && MessageType.valueOf(
 								answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION)) {
@@ -231,7 +251,14 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		byte[] mType = null;
 		while (mType == null && System.currentTimeMillis()
 				- startTime < Configuration.CLIENT_CONNECTION_TIMEOUT) {
-			mType = inSocket.recv(ZMQ.DONTWAIT);
+			synchronized (inSocket) {
+				if (inSocket == null) {
+					System.out
+							.println("Connection to master is already closed.");
+					return null;
+				}
+				mType = inSocket.recv(ZMQ.DONTWAIT);
+			}
 			if (mType == null) {
 				try {
 					Thread.sleep(10);
@@ -258,7 +285,14 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			}
 			response[0] = mType;
 			for (int i = 1; i < response.length; i++) {
-				response[i] = inSocket.recv();
+				synchronized (inSocket) {
+					if (inSocket == null) {
+						System.out.println(
+								"Connection to master is already closed.");
+						return null;
+					}
+					response[i] = inSocket.recv();
+				}
 			}
 		} catch (IllegalArgumentException e) {
 			throw new RuntimeException("Unknwon message type " + mType[0], e);
@@ -282,8 +316,10 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		outSocket.send(MessageUtils.createStringMessage(
 				MessageType.CLIENT_CLOSES_CONNECTION, clientAddress, null));
 		if (inSocket != null) {
-			context.destroySocket(inSocket);
-			inSocket = null;
+			synchronized (inSocket) {
+				context.destroySocket(inSocket);
+				inSocket = null;
+			}
 			System.out.println("Connection to master closed.");
 		}
 	}
