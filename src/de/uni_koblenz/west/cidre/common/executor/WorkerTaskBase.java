@@ -74,9 +74,11 @@ public abstract class WorkerTaskBase implements WorkerTask {
 
 	@Override
 	public boolean hasInput() {
-		for (CachedFileReceiverQueue queue : inputQueues) {
-			if (!queue.isEmpty()) {
-				return true;
+		if (inputQueues != null) {
+			for (CachedFileReceiverQueue queue : inputQueues) {
+				if (!queue.isEmpty()) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -138,7 +140,11 @@ public abstract class WorkerTaskBase implements WorkerTask {
 	}
 
 	protected WorkerTask getChildTask(int i) {
-		return children[i];
+		if (children == null || children.length == 0) {
+			return null;
+		} else {
+			return children[i];
+		}
 	}
 
 	/**
