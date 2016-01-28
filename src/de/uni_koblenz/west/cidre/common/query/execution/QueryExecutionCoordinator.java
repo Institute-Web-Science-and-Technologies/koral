@@ -93,6 +93,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			logger.fine("Started query coordinator for query "
 					+ queryString.replace('\n', ' '));
 		}
+		// TODO remove
+		if (logger != null) {
+			logger.info(statistics.toString());
+		}
 	}
 
 	public int getQueryId() {

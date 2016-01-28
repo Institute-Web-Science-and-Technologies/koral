@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map.Entry;
 
 import org.mapdb.BTreeKeySerializer.BasicKeySerializer;
 import org.mapdb.Serializer;
@@ -230,6 +231,30 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("ResourceID");
+		for (int i = 0; i < numberOfChunks; i++) {
+			sb.append(";").append("subjectInChunk").append(i);
+		}
+		for (int i = 0; i < numberOfChunks; i++) {
+			sb.append(";").append("propertyInChunk").append(i);
+		}
+		for (int i = 0; i < numberOfChunks; i++) {
+			sb.append(";").append("objectInChunk").append(i);
+		}
+		sb.append(";").append("overallOccurrance");
+		for (Entry<Long, long[]> entry : map.entrySet()) {
+			sb.append("\n");
+			sb.append(entry.getKey());
+			for (long value : entry.getValue()) {
+				sb.append(";").append(value);
+			}
+		}
+		return sb.toString();
 	}
 
 }

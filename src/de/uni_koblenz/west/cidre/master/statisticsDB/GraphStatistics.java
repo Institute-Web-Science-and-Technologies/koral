@@ -197,4 +197,9 @@ public class GraphStatistics implements Closeable {
 		database.close();
 	}
 
+	@Override
+	public String toString() {
+		return database.toString();
+	}
+
 }
