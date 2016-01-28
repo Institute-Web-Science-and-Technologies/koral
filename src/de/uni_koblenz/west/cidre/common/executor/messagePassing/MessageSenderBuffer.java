@@ -72,10 +72,6 @@ public class MessageSenderBuffer {
 				output.write(MessageType.QUERY_CREATE.getValue());
 				output.write(NumberConversion.int2bytes(queryId));
 				queryTree.serialize(output2, useBaseImplementation);
-				// TODO remove
-				if (logger != null) {
-					logger.info("send to slave " + slave + "\n" + queryTree);
-				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}

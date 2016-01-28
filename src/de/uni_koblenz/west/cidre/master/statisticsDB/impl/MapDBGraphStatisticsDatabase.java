@@ -236,12 +236,12 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("TriplesPerChunk");
+		sb.append("TriplesPerChunk ");
 		for (long l : numberOfTriplesPerChunk) {
 			sb.append("\t").append(l);
 		}
 		sb.append("\n");
-		sb.append("OwnerLoad");
+		sb.append("OwnerLoad ");
 		for (long l : ownerLoad) {
 			sb.append("\t").append(l);
 		}
