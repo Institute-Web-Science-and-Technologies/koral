@@ -63,7 +63,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	public void start() {
 		if (state != QueryTaskState.CREATED) {
 			throw new IllegalStateException(
-					"The query task could not be started, becaue it is in state "
+					"The query task could not be started, because it is in state "
 							+ state.name() + ".");
 		}
 		state = QueryTaskState.STARTED;
