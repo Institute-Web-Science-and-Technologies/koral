@@ -146,11 +146,6 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 							"Execution of task " + task + "failed. Cause:\n"
 									+ e.getClass().getName() + ": "
 									+ e.getMessage());
-					// TODO remove
-					if (logger != null) {
-						logger.info(
-								"send fail notification: " + e.getMessage());
-					}
 				}
 			}
 			this.currentLoad = currentLoad;

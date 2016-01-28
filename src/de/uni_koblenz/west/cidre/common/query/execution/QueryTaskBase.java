@@ -61,6 +61,11 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
 	@Override
 	public void start() {
+		// TODO removed
+		if (logger != null) {
+			logger.info(
+					"current state of task " + getID() + " is " + state.name());
+		}
 		if (state != QueryTaskState.CREATED) {
 			throw new IllegalStateException(
 					"The query task could not be started, because it is in state "
