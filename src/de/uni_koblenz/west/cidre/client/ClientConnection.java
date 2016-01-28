@@ -61,9 +61,16 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 				clientAddress = hostAddress + ":" + port;
 
 				// exchange a unique connection with master
-				outSocket.send(MessageUtils.createStringMessage(
-						MessageType.CLIENT_CONNECTION_CREATION, clientAddress,
-						null));
+				synchronized (outSocket) {
+					if (outSocket == null) {
+						System.out.println(
+								"Connection to master is already closed.");
+						return;
+					}
+					outSocket.send(MessageUtils.createStringMessage(
+							MessageType.CLIENT_CONNECTION_CREATION,
+							clientAddress, null));
+				}
 				byte[] answer = inSocket.recv();
 				if (answer == null
 						|| (answer.length != 1 && MessageType.valueOf(
@@ -78,9 +85,14 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 					public void run() {
 						while (!isInterrupted() && inSocket != null) {
 							long startTime = System.currentTimeMillis();
-							outSocket.send(MessageUtils.createStringMessage(
-									MessageType.CLIENT_IS_ALIVE, clientAddress,
-									null));
+							synchronized (outSocket) {
+								if (outSocket == null) {
+									break;
+								}
+								outSocket.send(MessageUtils.createStringMessage(
+										MessageType.CLIENT_IS_ALIVE,
+										clientAddress, null));
+							}
 							long remainingSleepTime = Configuration.CLIENT_KEEP_ALIVE_INTERVAL
 									- System.currentTimeMillis() + startTime;
 							if (remainingSleepTime > 0) {
@@ -147,18 +159,25 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
 			byte[] commandBytes = command.getBytes("UTF-8");
 
-			outSocket.sendMore(
-					new byte[] { MessageType.CLIENT_COMMAND.getValue() });
-			outSocket.sendMore(clientAddress);
-			outSocket.sendMore(commandBytes);
-			if (args.length == 0) {
-				outSocket.send(new byte[] { (byte) 0 });
-			} else {
-				for (int i = 0; i < args.length; i++) {
-					if (i == args.length - 1) {
-						outSocket.send(args[i]);
-					} else {
-						outSocket.sendMore(args[i]);
+			synchronized (outSocket) {
+				if (outSocket == null) {
+					System.out
+							.println("Connection to master is already closed.");
+					return;
+				}
+				outSocket.sendMore(
+						new byte[] { MessageType.CLIENT_COMMAND.getValue() });
+				outSocket.sendMore(clientAddress);
+				outSocket.sendMore(commandBytes);
+				if (args.length == 0) {
+					outSocket.send(new byte[] { (byte) 0 });
+				} else {
+					for (int i = 0; i < args.length; i++) {
+						if (i == args.length - 1) {
+							outSocket.send(args[i]);
+						} else {
+							outSocket.sendMore(args[i]);
+						}
 					}
 				}
 			}
@@ -175,17 +194,23 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		}
 		try {
 			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
-
-			outSocket.sendMore(
-					new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() });
-			outSocket.sendMore(clientAddress);
-			outSocket.sendMore(
-					NumberConversion.int2bytes(fileChunk.getFileID()));
-			outSocket.sendMore(
-					NumberConversion.long2bytes(fileChunk.getSequenceNumber()));
-			outSocket.sendMore(NumberConversion
-					.long2bytes(fileChunk.getTotalNumberOfSequences()));
-			outSocket.send(fileChunk.getContent());
+			synchronized (outSocket) {
+				if (outSocket == null) {
+					System.out
+							.println("Connection to master is already closed.");
+					return;
+				}
+				outSocket.sendMore(new byte[] {
+						MessageType.FILE_CHUNK_RESPONSE.getValue() });
+				outSocket.sendMore(clientAddress);
+				outSocket.sendMore(
+						NumberConversion.int2bytes(fileChunk.getFileID()));
+				outSocket.sendMore(NumberConversion
+						.long2bytes(fileChunk.getSequenceNumber()));
+				outSocket.sendMore(NumberConversion
+						.long2bytes(fileChunk.getTotalNumberOfSequences()));
+				outSocket.send(fileChunk.getContent());
+			}
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
@@ -242,9 +267,15 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 	}
 
 	public void sendCommandAbortion(String command) {
-		outSocket.send(MessageUtils.createStringMessage(
-				MessageType.CLIENT_COMMAND_ABORTED,
-				clientAddress + "|" + command, null));
+		synchronized (outSocket) {
+			if (outSocket == null) {
+				System.out.println("Connection to master is already closed.");
+				return;
+			}
+			outSocket.send(MessageUtils.createStringMessage(
+					MessageType.CLIENT_COMMAND_ABORTED,
+					clientAddress + "|" + command, null));
+		}
 	}
 
 	private void closeConnectionToMaster() {
@@ -260,10 +291,12 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 	@Override
 	public void close() {
 		if (outSocket != null) {
-			closeConnectionToMaster();
-			context.destroySocket(outSocket);
-			NetworkContextFactory.destroyNetworkContext(context);
-			outSocket = null;
+			synchronized (outSocket) {
+				closeConnectionToMaster();
+				context.destroySocket(outSocket);
+				NetworkContextFactory.destroyNetworkContext(context);
+				outSocket = null;
+			}
 		}
 	}
 
