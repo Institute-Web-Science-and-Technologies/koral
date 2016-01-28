@@ -87,6 +87,10 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	}
 
 	public void addWorkerTask(WorkerTask task) {
+		// TODO removed
+		if (logger != null) {
+			logger.info("worker thread " + id + ": add task " + task.getID());
+		}
 		task.setUp(messageSender, mappingCache, logger);
 		receiver.register(task);
 		receiveTask(task);
