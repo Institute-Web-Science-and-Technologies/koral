@@ -314,9 +314,9 @@ public class MessageReceiverListener implements MessageListener {
 			return result;
 		}
 
-		for (int dim5Index = 0; dim5Index <= taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index].length; dim5Index++) {
+		for (int dim5Index = 0; dim5Index < taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index].length; dim5Index++) {
 			if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index] != null) {
-				for (int dim6Index = 0; dim6Index <= taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index].length; dim6Index++) {
+				for (int dim6Index = 0; dim6Index < taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index].length; dim6Index++) {
 					if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index] != null) {
 						result.add(
 								taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index]);
