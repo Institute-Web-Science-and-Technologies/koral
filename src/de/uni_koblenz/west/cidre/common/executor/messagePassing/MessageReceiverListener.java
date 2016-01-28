@@ -324,12 +324,6 @@ public class MessageReceiverListener implements MessageListener {
 				}
 			}
 		}
-		// TODO removed
-		if (logger != null) {
-			logger.info("tasks of query "
-					+ NumberConversion.bytes2int(array, firstIndexOfQueryID)
-					+ ": " + result);
-		}
 		return result;
 	}
 
