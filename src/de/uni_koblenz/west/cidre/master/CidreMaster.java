@@ -146,6 +146,10 @@ public class CidreMaster extends CidreSystem {
 			case QUERY_MAPPING_BATCH:
 			case QUERY_TASK_FINISHED:
 			case QUERY_TASK_FAILED:
+				// TODO remove
+				if (logger != null) {
+					logger.info("received " + messageType.name());
+				}
 				short senderID = NumberConversion.bytes2short(receivedMessage,
 						1);
 				notifyMessageListener(MessageReceiverListener.class, senderID,
