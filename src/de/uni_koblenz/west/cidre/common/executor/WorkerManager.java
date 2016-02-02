@@ -201,10 +201,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
 	}
 
 	public void abortQuery(byte[] receivedMessage) {
-		// abortQuery() on any worker will abort all QueryTasks independent to
-		// which worker it is assigned.
-		if (workers != null && workers.length > 0) {
-			workers[0].abortQuery(receivedMessage);
+		for (WorkerThread worker : workers) {
+			worker.abortQuery(receivedMessage);
 		}
 		if (logger != null) {
 			logger.finer(
