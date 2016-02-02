@@ -134,12 +134,6 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 				WorkerTask task = iterator.next();
 				try {
 					long currentLoadOfThisTask = task.getCurrentTaskLoad();
-					if (logger != null && (task.getID() >>> 48) == 1) {
-						// TODO remove
-						logger.info(task.getClass().getSimpleName() + "_"
-								+ task.getID() + " has input? "
-								+ task.hasInput());
-					}
 					if (task.hasInput()) {
 						task.execute();
 					}

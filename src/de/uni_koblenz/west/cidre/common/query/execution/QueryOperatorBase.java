@@ -103,7 +103,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	@Override
 	public boolean hasInput() {
 		if (getChildTask(0) == null) {
-			return isFinishedInternal();
+			return !isFinishedInternal();
 		} else {
 			return super.hasInput();
 		}
