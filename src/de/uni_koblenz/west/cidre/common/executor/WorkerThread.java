@@ -90,6 +90,11 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		task.setUp(messageSender, mappingCache, logger);
 		receiver.register(task);
 		receiveTask(task);
+		if (logger != null) {
+			// TODO remove
+			logger.info(getClass().getSimpleName() + "_" + task.getID()
+					+ " assigned to worker thread " + getId());
+		}
 	}
 
 	private void receiveTask(WorkerTask task) {
