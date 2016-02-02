@@ -197,7 +197,7 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
 	@Override
 	protected void executeOperationStep() {
-		if (logger != null) {
+		if (logger != null && (getID() >>> 48) == 1) {
 			// TODO remove
 			logger.info(getClass().getSimpleName() + "_" + getID()
 					+ " tripleStore=" + tripleStore + " estimatedTaskLoad="
