@@ -209,7 +209,7 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 			if (logger != null) {
 				// TODO remove
 				logger.info(getClass().getSimpleName() + "_" + getID()
-						+ " emitted " + i + 1 + " mappings");
+						+ " emitted " + (i + 1) + " mappings");
 			}
 		}
 	}
