@@ -206,6 +206,11 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 		for (int i = 0; i < getEmittedMappingsPerRound()
 				&& iterator.hasNext(); i++) {
 			emitMapping(iterator.next());
+			if (logger != null) {
+				// TODO remove
+				logger.info(getClass().getSimpleName() + "_" + getID()
+						+ " emitted " + i + " mappings");
+			}
 		}
 	}
 
