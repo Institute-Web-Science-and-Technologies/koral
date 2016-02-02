@@ -7,7 +7,6 @@ import java.io.IOException;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
-import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -113,7 +112,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	protected void executePreStartStep() {
 	}
 
-	protected void executeFinalStep(MappingRecycleCache recycleCache) {
+	@Override
+	protected void executeFinalStep() {
 		messageSender.sendQueryTaskFinished(getID(), getParentTask() == null,
 				getCoordinatorID(), recycleCache);
 	}

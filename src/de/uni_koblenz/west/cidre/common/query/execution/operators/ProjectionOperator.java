@@ -98,10 +98,6 @@ public class ProjectionOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	protected void executeFinalStep() {
-	}
-
-	@Override
 	protected boolean isFinishedInternal() {
 		return true;
 	}

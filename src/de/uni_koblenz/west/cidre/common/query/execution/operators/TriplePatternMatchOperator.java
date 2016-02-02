@@ -197,22 +197,11 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
 	@Override
 	protected void executeOperationStep() {
-		// if (logger != null && (getID() >>> 48) == 1) {
-		// // TODO remove
-		// logger.info(getClass().getSimpleName() + "_" + getID()
-		// + " tripleStore=" + tripleStore + " estimatedTaskLoad="
-		// + getEstimatedTaskLoad());
-		// }
 		if (getEstimatedTaskLoad() == 0 || tripleStore == null) {
 			return;
 		}
 		if (iterator == null) {
 			iterator = tripleStore.lookup(recycleCache, pattern).iterator();
-			if (logger != null) {
-				// TODO remove
-				logger.info(getClass().getSimpleName() + "_" + getID()
-						+ " has matches? " + iterator.hasNext());
-			}
 		}
 		for (int i = 0; i < getEmittedMappingsPerRound()
 				&& iterator.hasNext(); i++) {
@@ -220,13 +209,9 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 			if (logger != null) {
 				// TODO remove
 				logger.info(getClass().getSimpleName() + "_" + getID()
-						+ " emitted " + i + " mappings");
+						+ " emitted " + i + 1 + " mappings");
 			}
 		}
-	}
-
-	@Override
-	protected void executeFinalStep() {
 	}
 
 	@Override

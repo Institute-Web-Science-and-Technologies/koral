@@ -350,10 +350,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	protected void executeFinalStep() {
-	}
-
-	@Override
 	protected void closeInternal() {
 		leftHashSet.close();
 		rightHashSet.close();
