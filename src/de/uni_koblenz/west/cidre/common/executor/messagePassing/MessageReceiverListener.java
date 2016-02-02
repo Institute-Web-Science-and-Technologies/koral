@@ -93,9 +93,14 @@ public class MessageReceiverListener implements MessageListener {
 									+ Long.BYTES);
 					long sender = NumberConversion.bytes2long(message,
 							currentIndex + Byte.BYTES + Long.BYTES);
-					WorkerTask task = getTask(message,
-							currentIndex + Byte.BYTES);
-					if (task == null) {
+					WorkerTask task = null;
+					ArrayIndexOutOfBoundsException error = null;
+					try {
+						task = getTask(message, currentIndex + Byte.BYTES);
+					} catch (ArrayIndexOutOfBoundsException e) {
+						error = e;
+					}
+					if (task == null || error != null) {
 						if (logger != null) {
 							long receiver = NumberConversion.bytes2long(message,
 									currentIndex + Byte.BYTES);
@@ -113,8 +118,14 @@ public class MessageReceiverListener implements MessageListener {
 			case QUERY_CREATED:
 			case QUERY_TASK_FINISHED:
 			case QUERY_TASK_FAILED:
-				WorkerTask task = getTask(message, 3);
-				if (task == null) {
+				WorkerTask task = null;
+				ArrayIndexOutOfBoundsException error = null;
+				try {
+					task = getTask(message, 3);
+				} catch (ArrayIndexOutOfBoundsException e) {
+					error = e;
+				}
+				if (task == null || error != null) {
 					if (logger != null) {
 						long receiver = NumberConversion.bytes2long(message, 3);
 						logger.info("Discarding a " + messageType.name()
