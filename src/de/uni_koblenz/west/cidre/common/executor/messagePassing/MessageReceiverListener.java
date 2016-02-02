@@ -123,8 +123,9 @@ public class MessageReceiverListener implements MessageListener {
 					}
 				} else {
 					task.enqueueMessage(
-							NumberConversion.bytes2long(message,
-									message.length - Long.BYTES),
+							((long) NumberConversion.bytes2short(message,
+									Byte.BYTES)) << (Short.BYTES
+											+ Integer.BYTES),
 							message, 0, message.length);
 				}
 				break;

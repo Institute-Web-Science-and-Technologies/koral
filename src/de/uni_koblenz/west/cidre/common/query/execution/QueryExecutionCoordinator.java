@@ -148,10 +148,11 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			if (logger != null) {
 				logger.finer("Query " + getQueryId() + " failed.");
 			}
-			byte[] result = new byte[messageLength - Long.BYTES];
+			byte[] result = new byte[messageLength - Long.BYTES - Short.BYTES];
 			result[0] = MessageType.CLIENT_COMMAND_FAILED.getValue();
-			System.arraycopy(mType, firstIndex + Byte.BYTES + Long.BYTES,
-					result, 1, result.length - Byte.BYTES);
+			System.arraycopy(message,
+					firstIndex + Byte.BYTES + Long.BYTES + Short.BYTES, result,
+					Byte.BYTES, result.length - Byte.BYTES);
 			sendMessageToClient(result);
 			closeInternal();
 			break;
