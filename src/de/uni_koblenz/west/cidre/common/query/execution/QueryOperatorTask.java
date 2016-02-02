@@ -20,9 +20,9 @@ public interface QueryOperatorTask extends WorkerTask {
 	 */
 	public long getFirstJoinVar();
 
-	public byte[] serialize(boolean useBaseImplementation);
+	public byte[] serialize(boolean useBaseImplementation, int slaveId);
 
 	public void serialize(DataOutputStream output,
-			boolean useBaseImplementation) throws IOException;
+			boolean useBaseImplementation, int slaveId) throws IOException;
 
 }

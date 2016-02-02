@@ -361,17 +361,17 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	@Override
 	public void serialize(DataOutputStream output,
-			boolean useBaseImplementation) throws IOException {
+			boolean useBaseImplementation, int slaveId) throws IOException {
 		if (getParentTask() == null) {
 			output.writeBoolean(useBaseImplementation);
 			output.writeLong(getCoordinatorID());
 		}
 		output.writeInt(QueryOperatorType.TRIPLE_PATTERN_JOIN.ordinal());
 		((QueryOperatorTask) getChildTask(0)).serialize(output,
-				useBaseImplementation);
+				useBaseImplementation, slaveId);
 		((QueryOperatorTask) getChildTask(1)).serialize(output,
-				useBaseImplementation);
-		output.writeLong(getID());
+				useBaseImplementation, slaveId);
+		output.writeLong(getIdOnSlave(slaveId));
 		output.writeInt(getEmittedMappingsPerRound());
 		output.writeLong(getEstimatedTaskLoad());
 	}

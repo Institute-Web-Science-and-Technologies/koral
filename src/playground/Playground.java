@@ -87,7 +87,8 @@ public class Playground {
 			System.out.println("Slave " + i + ":");
 			((QueryOperatorBase) task).adjustEstimatedLoad(statistics, i);
 			System.out.println(task.toString());
-			byte[] serializedTask = ((QueryOperatorBase) task).serialize(false);
+			byte[] serializedTask = ((QueryOperatorBase) task).serialize(false,
+					0);
 			System.out.println();
 			System.out.println(deserializer.deserialize(serializedTask));
 		}

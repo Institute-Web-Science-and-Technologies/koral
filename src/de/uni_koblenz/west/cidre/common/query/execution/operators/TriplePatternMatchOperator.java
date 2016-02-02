@@ -221,13 +221,13 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
 	@Override
 	public void serialize(DataOutputStream output,
-			boolean useBaseImplementation) throws IOException {
+			boolean useBaseImplementation, int slaveId) throws IOException {
 		if (getParentTask() == null) {
 			output.writeBoolean(useBaseImplementation);
 			output.writeLong(getCoordinatorID());
 		}
 		output.writeInt(QueryOperatorType.TRIPLE_PATTERN_MATCH.ordinal());
-		output.writeLong(getID());
+		output.writeLong(getIdOnSlave(slaveId));
 		output.writeInt(getEmittedMappingsPerRound());
 		output.writeLong(getEstimatedTaskLoad());
 		output.writeInt(pattern.getType().ordinal());

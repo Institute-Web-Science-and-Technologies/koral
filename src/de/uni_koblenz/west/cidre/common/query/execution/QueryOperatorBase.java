@@ -187,14 +187,19 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	}
 
 	@Override
-	public byte[] serialize(boolean useBaseImplementation) {
+	public byte[] serialize(boolean useBaseImplementation, int slaveId) {
 		ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
 		try (DataOutputStream output = new DataOutputStream(byteOutput);) {
-			serialize(output, useBaseImplementation);
+			serialize(output, useBaseImplementation, slaveId);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 		return byteOutput.toByteArray();
+	}
+
+	protected long getIdOnSlave(int slaveId) {
+		return ((getID() << Short.SIZE) >>> Short.SIZE)
+				| (((long) slaveId) << (Integer.SIZE + Short.SIZE));
 	}
 
 	@Override

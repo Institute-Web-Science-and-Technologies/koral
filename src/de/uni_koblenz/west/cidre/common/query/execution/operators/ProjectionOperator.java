@@ -108,15 +108,15 @@ public class ProjectionOperator extends QueryOperatorBase {
 
 	@Override
 	public void serialize(DataOutputStream output,
-			boolean useBaseImplementation) throws IOException {
+			boolean useBaseImplementation, int slaveId) throws IOException {
 		if (getParentTask() == null) {
 			output.writeBoolean(useBaseImplementation);
 			output.writeLong(getCoordinatorID());
 		}
 		output.writeInt(QueryOperatorType.PROJECTION.ordinal());
 		((QueryOperatorTask) getChildTask(0)).serialize(output,
-				useBaseImplementation);
-		output.writeLong(getID());
+				useBaseImplementation, slaveId);
+		output.writeLong(getIdOnSlave(slaveId));
 		output.writeInt(getEmittedMappingsPerRound());
 		output.writeLong(getEstimatedTaskLoad());
 		output.writeInt(resultVars.length);

@@ -71,7 +71,7 @@ public class MessageSenderBuffer {
 			try (DataOutputStream output2 = new DataOutputStream(output);) {
 				output.write(MessageType.QUERY_CREATE.getValue());
 				output.write(NumberConversion.int2bytes(queryId));
-				queryTree.serialize(output2, useBaseImplementation);
+				queryTree.serialize(output2, useBaseImplementation, slave + 1);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
