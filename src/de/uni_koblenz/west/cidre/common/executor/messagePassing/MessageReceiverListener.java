@@ -104,9 +104,9 @@ public class MessageReceiverListener implements MessageListener {
 						if (logger != null) {
 							long receiver = NumberConversion.bytes2long(message,
 									currentIndex + Byte.BYTES);
-							logger.info(
-									"Discarding a mapping because the receiving task "
-											+ receiver + " is not present.");
+							logger.info("Discarding a mapping from " + sender
+									+ " because the receiving task " + receiver
+									+ " is not present.");
 						}
 					} else {
 						task.enqueueMessage(sender, message, currentIndex,
