@@ -197,6 +197,11 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
 	@Override
 	protected void executeOperationStep() {
+		if (logger != null) {
+			// TODO remove
+			logger.info(getClass().getSimpleName() + "_" + getID() + " "
+					+ tripleStore);
+		}
 		if (getEstimatedTaskLoad() == 0 || tripleStore == null) {
 			return;
 		}
