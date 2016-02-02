@@ -32,7 +32,7 @@ public class CidreSlave extends CidreSystem {
 
 	private final File tmpDir;
 
-	private final TripleStoreAccessor tripleStore;
+	private TripleStoreAccessor tripleStore;
 
 	public CidreSlave(Configuration conf) throws ConfigurationException {
 		super(conf, getCurrentIP(conf),
@@ -54,6 +54,12 @@ public class CidreSlave extends CidreSystem {
 			}
 			throw t;
 		}
+	}
+
+	@Override
+	protected void setTripleStore(TripleStoreAccessor tripleStore) {
+		super.setTripleStore(tripleStore);
+		this.tripleStore = tripleStore;
 	}
 
 	private static String[] getCurrentIP(Configuration conf)

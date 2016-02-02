@@ -22,6 +22,7 @@ import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
 import de.uni_koblenz.west.cidre.common.messages.MessageListener;
 import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
+import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
 /**
  * This class abstracts the functionality that is the same for the CIDRE master
@@ -104,6 +105,10 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 
 	protected WorkerManager getWorkerManager() {
 		return workerManager;
+	}
+
+	protected void setTripleStore(TripleStoreAccessor tripleStore) {
+		workerManager.setTripleStore(tripleStore);
 	}
 
 	@Override

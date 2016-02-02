@@ -40,7 +40,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final int numberOfSlaves;
 
-	private final TripleStoreAccessor tripleStore;
+	private TripleStoreAccessor tripleStore;
 
 	private final int cacheSize;
 
@@ -91,6 +91,10 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		if (this.logger != null) {
 			this.logger.info(availableCPUs + " executor threads started");
 		}
+	}
+
+	public void setTripleStore(TripleStoreAccessor tripleStore) {
+		this.tripleStore = tripleStore;
 	}
 
 	public void addTask(WorkerTask rootTask) {
