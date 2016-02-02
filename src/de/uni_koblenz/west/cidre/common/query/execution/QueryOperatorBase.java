@@ -111,6 +111,11 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 
 	@Override
 	protected void executePreStartStep() {
+		if (logger != null) {
+			// TODO remove
+			logger.info(getClass().getSimpleName() + "_" + getID() + " "
+					+ (getID() >>> 48));
+		}
 	}
 
 	protected void executeFinalStep(MappingRecycleCache recycleCache) {
