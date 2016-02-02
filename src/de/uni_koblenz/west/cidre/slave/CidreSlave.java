@@ -42,7 +42,7 @@ public class CidreSlave extends CidreSystem {
 			if (!tmpDir.exists()) {
 				tmpDir.mkdirs();
 			}
-			tripleStore = new TripleStoreAccessor(conf, logger);
+			setTripleStore(new TripleStoreAccessor(conf, logger));
 		} catch (Throwable t) {
 			if (logger != null) {
 				logger.throwing(t.getStackTrace()[0].getClassName(),
@@ -58,8 +58,8 @@ public class CidreSlave extends CidreSystem {
 
 	@Override
 	protected void setTripleStore(TripleStoreAccessor tripleStore) {
-		super.setTripleStore(tripleStore);
 		this.tripleStore = tripleStore;
+		super.setTripleStore(tripleStore);
 	}
 
 	private static String[] getCurrentIP(Configuration conf)
