@@ -34,6 +34,10 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 				emittedMappingsPerRound);
 		this.pattern = pattern;
 		this.tripleStore = tripleStore;
+		if (logger != null) {
+			// TODO remove
+			logger.info(getClass().getSimpleName() + "_" + getID());
+		}
 	}
 
 	public TriplePatternMatchOperator(short slaveId, int queryId, short taskId,
