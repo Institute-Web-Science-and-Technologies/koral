@@ -34,7 +34,11 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 
 	private Socket outSocket;
 
+	private final Object outSocketSemaphore = getClass();
+
 	private Socket inSocket;
+
+	private final Object inSocketSemaphore = "";
 
 	private String clientAddress;
 
@@ -49,7 +53,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 	public void connect(String masterAddress) {
 		System.out.println("Connecting to master...");
 		outSocket = context.createSocket(ZMQ.PUSH);
-		synchronized (outSocket) {
+		synchronized (outSocketSemaphore) {
 			if (outSocket == null) {
 				System.out.println("Connection to master is already closed.");
 				return;
@@ -58,7 +62,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		}
 		if (inSocket == null) {
 			inSocket = context.createSocket(ZMQ.PULL);
-			synchronized (inSocket) {
+			synchronized (inSocketSemaphore) {
 				if (inSocket != null) {
 					inSocket.setReceiveTimeOut(
 							(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
@@ -67,7 +71,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			try {
 				String hostAddress = getHostAddress();
 				int port = -1;
-				synchronized (inSocket) {
+				synchronized (inSocketSemaphore) {
 					if (inSocket != null) {
 						port = inSocket.bindToRandomPort("tcp://" + hostAddress,
 								49152, 61000);
@@ -76,7 +80,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 				clientAddress = hostAddress + ":" + port;
 
 				// exchange a unique connection with master
-				synchronized (outSocket) {
+				synchronized (outSocketSemaphore) {
 					if (outSocket == null) {
 						System.out.println(
 								"Connection to master is already closed.");
@@ -87,7 +91,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 							clientAddress, null));
 				}
 				byte[] answer = null;
-				synchronized (inSocket) {
+				synchronized (inSocketSemaphore) {
 					if (inSocket != null) {
 						answer = inSocket.recv();
 					}
@@ -105,7 +109,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 					public void run() {
 						while (!isInterrupted() && inSocket != null) {
 							long startTime = System.currentTimeMillis();
-							synchronized (outSocket) {
+							synchronized (outSocketSemaphore) {
 								if (outSocket == null) {
 									break;
 								}
@@ -179,7 +183,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
 			byte[] commandBytes = command.getBytes("UTF-8");
 
-			synchronized (outSocket) {
+			synchronized (outSocketSemaphore) {
 				if (outSocket == null) {
 					System.out
 							.println("Connection to master is already closed.");
@@ -214,7 +218,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		}
 		try {
 			byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
-			synchronized (outSocket) {
+			synchronized (outSocketSemaphore) {
 				if (outSocket == null) {
 					System.out
 							.println("Connection to master is already closed.");
@@ -251,7 +255,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		byte[] mType = null;
 		while (mType == null && System.currentTimeMillis()
 				- startTime < Configuration.CLIENT_CONNECTION_TIMEOUT) {
-			synchronized (inSocket) {
+			synchronized (inSocketSemaphore) {
 				if (inSocket == null) {
 					System.out
 							.println("Connection to master is already closed.");
@@ -285,7 +289,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			}
 			response[0] = mType;
 			for (int i = 1; i < response.length; i++) {
-				synchronized (inSocket) {
+				synchronized (inSocketSemaphore) {
 					if (inSocket == null) {
 						System.out.println(
 								"Connection to master is already closed.");
@@ -301,7 +305,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 	}
 
 	public void sendCommandAbortion(String command) {
-		synchronized (outSocket) {
+		synchronized (outSocketSemaphore) {
 			if (outSocket == null) {
 				System.out.println("Connection to master is already closed.");
 				return;
@@ -316,7 +320,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 		outSocket.send(MessageUtils.createStringMessage(
 				MessageType.CLIENT_CLOSES_CONNECTION, clientAddress, null));
 		if (inSocket != null) {
-			synchronized (inSocket) {
+			synchronized (inSocketSemaphore) {
 				context.destroySocket(inSocket);
 				inSocket = null;
 			}
@@ -327,7 +331,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 	@Override
 	public void close() {
 		if (outSocket != null) {
-			synchronized (outSocket) {
+			synchronized (outSocketSemaphore) {
 				closeConnectionToMaster();
 				context.destroySocket(outSocket);
 				NetworkContextFactory.destroyNetworkContext(context);

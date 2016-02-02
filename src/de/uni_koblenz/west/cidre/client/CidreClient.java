@@ -352,10 +352,16 @@ public class CidreClient {
 				return;
 			}
 
+			Thread thisThread = Thread.currentThread();
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
 				public void run() {
 					client.shutDown();
+					try {
+						thisThread.join();
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
+					}
 				}
 			});
 
