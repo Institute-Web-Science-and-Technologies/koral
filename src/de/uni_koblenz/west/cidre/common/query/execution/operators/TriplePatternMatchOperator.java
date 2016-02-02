@@ -202,6 +202,11 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 		}
 		if (iterator == null) {
 			iterator = tripleStore.lookup(recycleCache, pattern).iterator();
+			if (logger != null) {
+				// TODO remove
+				logger.info(getClass().getSimpleName() + "_" + getID()
+						+ " has matches? " + iterator.hasNext());
+			}
 		}
 		for (int i = 0; i < getEmittedMappingsPerRound()
 				&& iterator.hasNext(); i++) {
