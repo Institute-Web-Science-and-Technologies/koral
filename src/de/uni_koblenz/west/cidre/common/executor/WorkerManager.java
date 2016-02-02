@@ -117,7 +117,9 @@ public class WorkerManager implements Closeable, AutoCloseable {
 			messageSender.sendQueryCreated(computerOfQueryExecutionCoordinator,
 					coordinatorId);
 			if (logger != null) {
-				logger.finer("Query " + " created.");
+				int queryID = (int) ((queryExecutionTree.getID() >>> Short.SIZE)
+						& 0x00_00_00_00_ff_ff_ff_ffl);
+				logger.finer("Query " + queryID + " created.");
 			}
 		} catch (Throwable e) {
 			String message = "Error during deserialization of query "
