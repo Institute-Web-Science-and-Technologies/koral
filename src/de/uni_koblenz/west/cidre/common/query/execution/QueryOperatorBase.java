@@ -131,8 +131,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 			messageSender.sendQueryMapping(mapping, getID(), getCoordinatorID(),
 					recycleCache);
 		} else {
-			short thisComputerID = (short) (getID() >>> Short.BYTES
-					+ Integer.BYTES);
+			short thisComputerID = (short) (getID() >>> (Short.SIZE
+					+ Integer.SIZE));
 			long parentBaseID = getParentTask().getID()
 					& 0x00_00_FF_FF_FF_FF_FF_FFl;
 			if (mapping.isEmptyMapping()) {
@@ -156,12 +156,13 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 				} else {
 					long ownerLong = mapping.getValue(firstJoinVar,
 							getResultVariables()) & 0xFF_FF_00_00_00_00_00_00l;
-					int owner = (int) (ownerLong >>> (Short.BYTES
-							+ Integer.BYTES));
+					int owner = ((int) (ownerLong >>> (Short.SIZE
+							+ Integer.SIZE))) + 1;
+					ownerLong = ((long) owner) << (Integer.SIZE + Short.SIZE);
 					if (mapping.isKnownByComputer(owner)) {
 						if (mapping.isKnownByComputer(
-								(int) (getID() >>> (Short.BYTES
-										+ Integer.BYTES)))) {
+								(int) (getID() >>> (Short.SIZE
+										+ Integer.SIZE)))) {
 							// the owner also knows a replicate of this mapping,
 							// forward it to parent task on this computer
 							messageSender.sendQueryMapping(mapping, getID(),
@@ -171,8 +172,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 						if (mapping
 								.getIdOfFirstComputerKnowingThisMapping() == thisComputerID) {
 							// first knowing computer sends mapping to owner
-							// which
-							// is a remote computer
+							// which is a remote computer
 							mapping.updateContainment(
 									(int) (getID() >>> (Short.SIZE
 											+ Integer.SIZE)),
