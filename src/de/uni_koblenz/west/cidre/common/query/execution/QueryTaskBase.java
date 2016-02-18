@@ -130,8 +130,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	}
 
 	private boolean isFinishedLocally() {
-		return numberOfMissingFinishedMessages == 0 && areAllChildrenFinished()
-				&& isFinishedInternal();
+		return areAllChildrenFinished() && isFinishedInternal();
 	}
 
 	/**
