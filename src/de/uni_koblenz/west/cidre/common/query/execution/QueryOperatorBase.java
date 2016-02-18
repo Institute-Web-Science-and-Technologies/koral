@@ -114,6 +114,10 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 
 	@Override
 	protected void executeFinalStep() {
+		if (logger != null) {
+			// TODO remove
+			logger.info(getID() + " sends finish notification");
+		}
 		messageSender.sendQueryTaskFinished(getID(), getParentTask() == null,
 				getCoordinatorID(), recycleCache);
 	}
