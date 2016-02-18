@@ -52,6 +52,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	private long[] resultVariables;
 
+	private int numberOfMissingFinishNotifications;
+
 	public QueryExecutionCoordinator(short computerID, int queryID,
 			int numberOfSlaves, int cacheSize, File cacheDir, int clientID,
 			ClientConnectionManager clientConnections,
@@ -68,6 +70,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		this.statistics = statistics;
 		addInputQueue();
 		numberOfMissingQueryCreatedMessages = numberOfSlaves;
+		numberOfMissingFinishNotifications = numberOfSlaves;
 		lastContactWithClient = System.currentTimeMillis();
 		varDictionary = new VariableDictionary();
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
@@ -164,6 +167,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	@Override
 	protected void handleFinishNotification(long sender, Object object,
 			int firstIndex, int messageLength) {
+		numberOfMissingFinishNotifications--;
 	}
 
 	@Override
@@ -248,13 +252,17 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void executeFinalStep() {
+		if (logger != null) {
+			// TODO remove
+			logger.info(getID() + " sends finish notification to client");
+		}
 		sendMessageToClient(
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 	}
 
 	@Override
 	protected boolean isFinishedInternal() {
-		return true;
+		return numberOfMissingFinishNotifications == 0;
 	}
 
 	@Override
