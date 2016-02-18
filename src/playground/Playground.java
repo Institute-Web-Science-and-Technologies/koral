@@ -63,6 +63,13 @@ public class Playground {
 			}
 		}
 
+		// MappingRecycleCache cache = new MappingRecycleCache(10, 4);
+		// long[] resultVars = new long[] { 1 };
+		// for (Mapping result : accessor.lookup(cache, new TriplePattern(
+		// TriplePatternType.SP_, 0, 562949953421315l, 4))) {
+		// System.out.println(result.toString(resultVars));
+		// }
+
 		// process query
 		String query = readQueryFromFile(new File(args[1]));
 		query = QueryFactory.create(query).serialize();
