@@ -90,7 +90,14 @@ public abstract class WorkerTaskBase implements WorkerTask {
 
 	protected void enqueuMessageInternal(int inputQueueIndex, byte[] message,
 			int firstIndex, int length) {
-		inputQueues[inputQueueIndex].enqueue(message, firstIndex, length);
+		if (inputQueues[inputQueueIndex].isClosed()) {
+			if (logger != null) {
+				logger.finer("Discarding a message because the queue of task "
+						+ getID() + " was already closed.");
+			}
+		} else {
+			inputQueues[inputQueueIndex].enqueue(message, firstIndex, length);
+		}
 	}
 
 	protected Mapping consumeMapping(int inputQueueIndex,

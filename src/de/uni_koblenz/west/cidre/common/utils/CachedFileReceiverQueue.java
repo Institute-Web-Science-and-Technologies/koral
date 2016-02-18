@@ -337,6 +337,10 @@ public class CachedFileReceiverQueue implements Closeable {
 		return null;
 	}
 
+	public synchronized boolean isClosed() {
+		return status == QueueStatus.CLOSED;
+	}
+
 	@Override
 	public synchronized void close() {
 		status = QueueStatus.CLOSED;
