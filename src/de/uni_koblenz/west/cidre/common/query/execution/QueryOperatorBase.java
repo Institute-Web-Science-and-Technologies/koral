@@ -208,6 +208,12 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 												+ mapping.toString(
 														getResultVariables()));
 							}
+						} else {
+							if (logger != null) {
+								// TODO remove
+								logger.info("discarded mapping: " + mapping
+										.toString(getResultVariables()));
+							}
 						}
 					}
 				}
