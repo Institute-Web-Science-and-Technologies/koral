@@ -47,17 +47,6 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	public boolean hasInput() {
-		if (getEstimatedTaskLoad() == 0) {
-			// return true so that this task becomes executed once and can send
-			// its finish notification
-			return true;
-		} else {
-			return super.hasInput();
-		}
-	}
-
-	@Override
 	public long computeEstimatedLoad(GraphStatistics statistics, int slave,
 			boolean setLoads) {
 		long load = 0;

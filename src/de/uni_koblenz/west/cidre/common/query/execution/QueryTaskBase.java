@@ -94,6 +94,17 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 			int firstIndex, int length);
 
 	@Override
+	public boolean hasInput() {
+		if (isFinishedLocally()) {
+			// return true, such that a finished task can execute its final
+			// operations
+			return true;
+		} else {
+			return super.hasInput();
+		}
+	}
+
+	@Override
 	public void execute() {
 		if (state == QueryTaskState.CREATED) {
 			executePreStartStep();
