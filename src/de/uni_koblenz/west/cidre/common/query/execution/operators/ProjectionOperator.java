@@ -93,6 +93,11 @@ public class ProjectionOperator extends QueryOperatorBase {
 						resultVars);
 				emitMapping(result);
 				recycleCache.releaseMapping(mapping);
+				if (logger != null) {
+					// TODO remove
+					logger.info(getClass().getSimpleName() + " " + getID()
+							+ ": emitted " + (i + 1) + " mappings");
+				}
 			}
 		}
 	}
