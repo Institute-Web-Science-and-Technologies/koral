@@ -108,12 +108,13 @@ public class HashCoverCreator implements GraphCoverCreator {
 		}
 		byte[] bitset = new byte[bitsetSize];
 		int bitsetIndex = targetChunk / Byte.SIZE;
-		byte bitsetMask = getBitMaskFor(targetChunk);
+		byte bitsetMask = getBitMaskFor(targetChunk + 1);
 		bitset[bitsetIndex] |= bitsetMask;
 		return DeSerializer.serializeBitSetAsNode(bitset);
 	}
 
 	private byte getBitMaskFor(int computerId) {
+		computerId -= 1;
 		switch (computerId % Byte.SIZE) {
 		case 0:
 			return (byte) 0x80;
