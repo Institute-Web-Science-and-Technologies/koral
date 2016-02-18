@@ -267,11 +267,64 @@ public class MessageReceiverListener implements MessageListener {
 
 		if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index] == null) {
 			taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index] = task;
+			if (logger != null) {
+				// TODO remove
+				logger.info(toString());
+			}
 		} else if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index] != task) {
 			throw new IllegalArgumentException(
 					"There already exists a WorkerTask with id "
 							+ task.getID());
 		}
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("[");
+		if (taskRegistry != null) {
+			for (int i0 = 0; i0 < taskRegistry.length; i0++) {
+				sb.append("\n\t" + i0 + "[");
+				if (taskRegistry[i0] != null) {
+					for (int i1 = 0; i1 < taskRegistry[i0].length; i1++) {
+						sb.append("\n\t\t" + i1 + "[");
+						if (taskRegistry[i0][i1] != null) {
+							for (int i2 = 0; i2 < taskRegistry[i0][i1].length; i2++) {
+								sb.append("\n\t\t\t" + i2 + "[");
+								if (taskRegistry[i0][i1][i2] != null) {
+									for (int i3 = 0; i3 < taskRegistry[i0][i1][i2].length; i3++) {
+										sb.append("\n\t\t\t\t" + i3 + "[");
+										if (taskRegistry[i0][i1][i2][i3] != null) {
+											for (int i4 = 0; i4 < taskRegistry[i0][i1][i2][i3].length; i4++) {
+												sb.append("\n\t\t\t\t\t" + i4
+														+ "[");
+												if (taskRegistry[i0][i1][i2][i3][i4] != null) {
+													for (int i5 = 0; i5 < taskRegistry[i0][i1][i2][i3][i4].length; i5++) {
+														if (taskRegistry[i0][i1][i2][i3][i4][i5] != null) {
+															sb.append(
+																	"\n\t\t\t\t\t\t"
+																			+ i5
+																			+ taskRegistry[i0][i1][i2][i3][i4][i5]
+																					.toString());
+														}
+													}
+												}
+												sb.append("\n\t\t\t\t\t]" + i4);
+											}
+										}
+										sb.append("\n\t\t\t\t]" + i3);
+									}
+								}
+								sb.append("\n\t\t\t]" + i2);
+							}
+						}
+						sb.append("\n\t\t]" + i1);
+					}
+				}
+				sb.append("\n\t]" + i0);
+			}
+		}
+		sb.append("\n]");
+		return sb.toString();
 	}
 
 	private WorkerTask getTask(byte[] array, int firstIndexOfReceiverID) {
