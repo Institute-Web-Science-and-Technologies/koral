@@ -152,11 +152,13 @@ public class Mapping {
 	}
 
 	private int getContainingByte(int computerId) {
+		computerId -= 1;
 		return firstIndex + length - getNumberOfContainmentBytes()
 				+ computerId / Byte.SIZE;
 	}
 
 	private byte getBitMaskFor(int computerId) {
+		computerId -= 1;
 		switch (computerId % Byte.SIZE) {
 		case 0:
 			return (byte) 0x80;
@@ -322,14 +324,14 @@ public class Mapping {
 						- Byte.SIZE);
 				for (int numberOfReadBits = 0; numberOfReadBits < Byte.SIZE; numberOfReadBits++) {
 					if (value < 0) {
-						return (short) (numberOfAlreadyReadBytes * Byte.SIZE
-								+ numberOfReadBits);
+						return (short) ((numberOfAlreadyReadBytes * Byte.SIZE
+								+ numberOfReadBits) + 1);
 					}
 					value <<= 1;
 				}
 			}
 		}
-		return 0;
+		return -1;
 	}
 
 	public boolean isKnownByComputer(int computerId) {
@@ -367,8 +369,8 @@ public class Mapping {
 		sb.append("containingComputers").append("=").append("{");
 		String delim = "";
 		for (int i = 0; i < getNumberOfContainmentBytes() * Byte.SIZE; i++) {
-			if (isKnownByComputer(i)) {
-				sb.append(delim).append(i);
+			if (isKnownByComputer(i + 1)) {
+				sb.append(delim).append(i + 1);
 				delim = ",";
 			}
 		}
