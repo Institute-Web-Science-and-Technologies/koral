@@ -104,7 +104,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 		if (getChildTask(0) == null) {
 			// return true so that this task becomes executed once and can send
 			// its finish notification
-			return isFinishedInternal();
+			return !isFinishedInternal() || getEstimatedTaskLoad() == 0;
 		} else {
 			return super.hasInput();
 		}
