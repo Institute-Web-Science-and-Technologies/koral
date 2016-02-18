@@ -267,10 +267,6 @@ public class MessageReceiverListener implements MessageListener {
 
 		if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index] == null) {
 			taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index] = task;
-			if (logger != null) {
-				// TODO remove
-				logger.info(toString());
-			}
 		} else if (taskRegistry[dim1Index][dim2Index][dim3Index][dim4Index][dim5Index][dim6Index] != task) {
 			throw new IllegalArgumentException(
 					"There already exists a WorkerTask with id "

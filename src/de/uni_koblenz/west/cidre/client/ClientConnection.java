@@ -281,6 +281,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			case MASTER_WORK_IN_PROGRESS:
 			case CLIENT_COMMAND_SUCCEEDED:
 			case CLIENT_COMMAND_FAILED:
+			case QUERY_RESULT:
 				response = new byte[1][];
 				break;
 			default:
