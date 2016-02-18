@@ -169,7 +169,7 @@ public class MessageSenderBuffer {
 	}
 
 	private int getComputerID(long taskID) {
-		return (int) (taskID >>> 6 * Byte.BYTES);
+		return (int) (taskID >>> 6 * Byte.SIZE);
 	}
 
 	public void sendAllBufferedMessages(MappingRecycleCache mappingCache) {
