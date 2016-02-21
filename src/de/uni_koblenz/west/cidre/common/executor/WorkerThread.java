@@ -134,7 +134,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 				WorkerTask task = iterator.next();
 				try {
 					long currentLoadOfThisTask = task.getCurrentTaskLoad();
-					if (task.hasInput()) {
+					if (task.hasInput() || task.hasToPerformFinalSteps()) {
 						task.execute();
 					}
 					if (task.hasFinished()) {

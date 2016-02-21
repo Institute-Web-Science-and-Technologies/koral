@@ -102,13 +102,11 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	}
 
 	@Override
-	public boolean hasInput() {
+	public boolean hasToPerformFinalSteps() {
 		if (getChildTask(0) == null) {
-			// return true so that this task becomes executed once and can send
-			// its finish notification
 			return !isFinishedInternal() || getEstimatedTaskLoad() == 0;
 		} else {
-			return super.hasInput();
+			return super.hasToPerformFinalSteps();
 		}
 	}
 

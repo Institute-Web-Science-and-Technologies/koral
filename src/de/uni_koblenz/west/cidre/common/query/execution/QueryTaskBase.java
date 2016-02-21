@@ -101,19 +101,11 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 			int firstIndex, int length);
 
 	@Override
-	public boolean hasInput() {
-		if (isFinishedLocally() && state == QueryTaskState.STARTED) {
-			// return true, such that a finished task can execute its final
-			// operations
-			if (logger != null) {
-				// TODO remove
-				logger.info(NumberConversion.id2description(getID())
-						+ " is finished locally");
-			}
-			return true;
-		} else {
-			return super.hasInput();
-		}
+	public boolean hasToPerformFinalSteps() {
+		return (isFinishedLocally() && state == QueryTaskState.STARTED)
+				|| (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH
+						&& numberOfMissingFinishedMessages == 0)
+				|| super.hasToPerformFinalSteps();
 	}
 
 	@Override

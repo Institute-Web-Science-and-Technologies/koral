@@ -84,6 +84,11 @@ public abstract class WorkerTaskBase implements WorkerTask {
 		return false;
 	}
 
+	@Override
+	public boolean hasToPerformFinalSteps() {
+		return false;
+	}
+
 	protected long getSizeOfInputQueue(int inputQueueIndex) {
 		return inputQueues[inputQueueIndex].size();
 	}

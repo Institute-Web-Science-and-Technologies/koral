@@ -8,7 +8,6 @@ import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -95,12 +94,6 @@ public class ProjectionOperator extends QueryOperatorBase {
 				emitMapping(result);
 				recycleCache.releaseMapping(mapping);
 			}
-		}
-		if (logger != null) {
-			// TODO remove
-			logger.info(NumberConversion.id2description(getID())
-					+ " has emitted mappings." + " areAllChildrenFinished() = "
-					+ areAllChildrenFinished());
 		}
 	}
 

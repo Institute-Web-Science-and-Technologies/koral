@@ -58,6 +58,8 @@ public interface WorkerTask extends Closeable {
 
 	public boolean hasInput();
 
+	public boolean hasToPerformFinalSteps();
+
 	public void enqueueMessage(long sender, byte[] message, int firstIndex,
 			int lengthOfMessage);
 
