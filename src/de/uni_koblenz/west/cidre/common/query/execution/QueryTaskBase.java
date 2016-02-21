@@ -78,6 +78,11 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 			numberOfMissingFinishedMessages--;
 			handleFinishNotification(sender, message, firstIndex,
 					messageLength);
+			if (logger != null) {
+				// TODO remove
+				logger.info(getID() + " missing finish notifications = "
+						+ numberOfMissingFinishedMessages);
+			}
 			break;
 		case QUERY_MAPPING_BATCH:
 			handleMappingReception(sender, message, firstIndex, messageLength);
