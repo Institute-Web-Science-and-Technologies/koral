@@ -90,7 +90,7 @@ public class NumberConversion {
 	}
 
 	public static String id2description(long id) {
-		String result = "(computer=";
+		String result = id + "(computer=";
 		result += (id >>> (Integer.SIZE + Short.SIZE));
 		result += ",query=";
 		result += ((id << Short.SIZE) >>> (Short.SIZE + Short.SIZE));
