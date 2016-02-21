@@ -273,7 +273,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected boolean isFinishedInternal() {
-		return numberOfMissingFinishNotifications == 0;
+		return numberOfMissingFinishNotifications == -1;
 	}
 
 	@Override
