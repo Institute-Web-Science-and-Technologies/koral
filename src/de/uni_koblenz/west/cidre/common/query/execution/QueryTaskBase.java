@@ -100,21 +100,21 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	protected abstract void handleMappingReception(long sender, byte[] message,
 			int firstIndex, int length);
 
-	// @Override
-	// public boolean hasInput() {
-	// if (isFinishedLocally()) {
-	// // return true, such that a finished task can execute its final
-	// // operations
-	// if (logger != null) {
-	// // TODO remove
-	// logger.info(NumberConversion.id2description(getID())
-	// + " is finished locally");
-	// }
-	// return true;
-	// } else {
-	// return super.hasInput();
-	// }
-	// }
+	@Override
+	public boolean hasInput() {
+		if (isFinishedLocally() && state == QueryTaskState.STARTED) {
+			// return true, such that a finished task can execute its final
+			// operations
+			if (logger != null) {
+				// TODO remove
+				logger.info(NumberConversion.id2description(getID())
+						+ " is finished locally");
+			}
+			return true;
+		} else {
+			return super.hasInput();
+		}
+	}
 
 	@Override
 	public void execute() {
