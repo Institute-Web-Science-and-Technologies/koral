@@ -168,6 +168,12 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	protected void handleFinishNotification(long sender, Object object,
 			int firstIndex, int messageLength) {
 		numberOfMissingFinishNotifications--;
+		if (logger != null) {
+			// TODO remove
+			logger.info(NumberConversion.id2description(getID())
+					+ " receives finish notification. Missing notifications = "
+					+ numberOfMissingFinishNotifications);
+		}
 	}
 
 	@Override
