@@ -102,7 +102,11 @@ public abstract class WorkerTaskBase implements WorkerTask {
 
 	protected Mapping consumeMapping(int inputQueueIndex,
 			MappingRecycleCache recycleCache) {
-		return inputQueues[inputQueueIndex].dequeue(recycleCache);
+		if (!inputQueues[inputQueueIndex].isClosed()) {
+			return inputQueues[inputQueueIndex].dequeue(recycleCache);
+		} else {
+			return null;
+		}
 	}
 
 	protected boolean isInputQueueEmpty(int inputQueueIndex) {
