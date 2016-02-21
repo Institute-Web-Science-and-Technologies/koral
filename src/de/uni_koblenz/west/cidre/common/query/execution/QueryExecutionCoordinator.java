@@ -252,10 +252,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void executeFinalStep() {
-	}
-
-	@Override
-	protected void tidyUp() {
 		if (logger != null) {
 			// TODO remove
 			logger.info(NumberConversion.id2description(getID())
