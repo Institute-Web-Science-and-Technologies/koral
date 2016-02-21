@@ -130,6 +130,11 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 		} else if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
 			if (numberOfMissingFinishedMessages == 0) {
 				state = QueryTaskState.FINISHED;
+				if (logger != null) {
+					// TODO remove
+					logger.info(NumberConversion.id2description(getID()) + " "
+							+ state);
+				}
 			}
 		}
 	}
