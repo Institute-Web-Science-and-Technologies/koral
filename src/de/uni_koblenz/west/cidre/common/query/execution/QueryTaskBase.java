@@ -126,7 +126,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 			}
 		}
 		if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
-			if (numberOfMissingFinishedMessages <= 0) {
+			if (numberOfMissingFinishedMessages == 0) {
 				state = QueryTaskState.FINISHED;
 				tidyUp();
 				if (logger != null) {
