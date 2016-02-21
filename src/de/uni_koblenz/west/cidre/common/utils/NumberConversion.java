@@ -89,4 +89,15 @@ public class NumberConversion {
 		}
 	}
 
+	public static String id2description(long id) {
+		String result = "(computer=";
+		result += (id >>> (Integer.SIZE + Short.SIZE));
+		result += ",query=";
+		result += ((id << Short.SIZE) >>> (Short.SIZE + Short.SIZE));
+		result += ",task=";
+		result += (id & 0x00_00_00_00_00_00_ff_ff);
+		result += ")";
+		return result;
+	}
+
 }

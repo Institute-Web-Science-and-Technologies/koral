@@ -254,7 +254,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	protected void executeFinalStep() {
 		if (logger != null) {
 			// TODO remove
-			logger.info(getID() + " sends finish notification to client");
+			logger.info(NumberConversion.id2description(getID())
+					+ " sends finish notification to client");
 		}
 		sendMessageToClient(
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });

@@ -8,6 +8,7 @@ import java.io.IOException;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOperator;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -119,7 +120,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	protected void executeFinalStep() {
 		if (logger != null) {
 			// TODO remove
-			logger.info(getID() + " sends finish notification");
+			logger.info(NumberConversion.id2description(getID())
+					+ " sends finish notification");
 		}
 		messageSender.sendQueryTaskFinished(getID(), getParentTask() == null,
 				getCoordinatorID(), recycleCache);
@@ -143,8 +145,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 					getParentTask().getID(), recycleCache);
 			// if (logger != null) {
 			// // TODO remove
-			// logger.info(
-			// "emitted the following mapping to local projection operator: "
+			// logger.info(NumberConversion.id2description(getID())+
+			// " emitted the following mapping to local projection operator: "
 			// + mapping.toString(getResultVariables()));
 			// }
 		} else {
@@ -162,8 +164,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 							parentBaseID, recycleCache);
 					// if (logger != null) {
 					// // TODO remove
-					// logger.info(
-					// "emitted the following empty mapping to all parents: "
+					// logger.info(NumberConversion.id2description(getID())+
+					// " emitted the following empty mapping to all parents: "
 					// + mapping.toString(
 					// getResultVariables()));
 					// }
@@ -179,8 +181,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 							recycleCache);
 					// if (logger != null) {
 					// // TODO remove
-					// logger.info(
-					// "emitted the following mapping to parent cartesian join
+					// logger.info(NumberConversion.id2description(getID())+
+					// " emitted the following mapping to parent cartesian join
 					// on computer 1: "
 					// + mapping.toString(
 					// getResultVariables()));
@@ -201,8 +203,9 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 									getParentTask().getID(), recycleCache);
 							// if (logger != null) {
 							// // TODO remove
-							// logger.info(
-							// "emitted the following mapping to local parent: "
+							// logger.info(NumberConversion.id2description(getID())+
+							// " emitted the following mapping to local parent:
+							// "
 							// + mapping.toString(
 							// getResultVariables()));
 							// }
@@ -220,8 +223,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 									parentBaseID | ownerLong, recycleCache);
 							// if (logger != null) {
 							// // TODO remove
-							// logger.info(
-							// "emitted the following mapping to parent on
+							// logger.info(NumberConversion.id2description(getID())+
+							// " emitted the following mapping to parent on
 							// computer "
 							// + owner + ": "
 							// + mapping.toString(
@@ -230,7 +233,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 						} else {
 							// if (logger != null) {
 							// // TODO remove
-							// logger.info("discarded mapping: " + mapping
+							// logger.info(NumberConversion.id2description(getID())+"
+							// discarded mapping: " + mapping
 							// .toString(getResultVariables()));
 							// }
 						}

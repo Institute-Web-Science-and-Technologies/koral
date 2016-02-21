@@ -8,6 +8,7 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuf
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * Common superclass for query cordinator and all query operations.
@@ -80,7 +81,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 					messageLength);
 			if (logger != null) {
 				// TODO remove
-				logger.info(getID() + " missing finish notifications = "
+				logger.info(NumberConversion.id2description(getID())
+						+ " missing finish notifications = "
 						+ numberOfMissingFinishedMessages);
 			}
 			break;
