@@ -128,6 +128,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 		if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
 			if (numberOfMissingFinishedMessages == 0) {
 				state = QueryTaskState.FINISHED;
+				tidyUp();
 				if (logger != null) {
 					// TODO remove
 					logger.info(NumberConversion.id2description(getID()) + " "
@@ -142,6 +143,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	protected abstract void executeOperationStep();
 
 	protected abstract void executeFinalStep();
+
+	protected abstract void tidyUp();
 
 	/**
 	 * Called by subclasses of {@link QueryOperatorBase}.

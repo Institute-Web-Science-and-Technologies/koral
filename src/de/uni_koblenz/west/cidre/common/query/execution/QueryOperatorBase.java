@@ -134,6 +134,10 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 				getCoordinatorID(), recycleCache);
 	}
 
+	@Override
+	protected void tidyUp() {
+	}
+
 	/**
 	 * Called by subclasses of {@link QueryOperatorBase}.<br>
 	 * Sends <code>mapping</code> to the {@link #parent} operator. If this is
