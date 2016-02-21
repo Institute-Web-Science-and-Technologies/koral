@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOperator;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -136,6 +137,16 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 		if (getParentTask() == null) {
 			messageSender.sendQueryMapping(mapping, getID(), getCoordinatorID(),
 					recycleCache);
+		} else if (getParentTask() instanceof ProjectionOperator) {
+			// projection operator filters all mappings on the same computer
+			messageSender.sendQueryMapping(mapping, getID(),
+					getParentTask().getID(), recycleCache);
+			if (logger != null) {
+				// TODO remove
+				logger.info(
+						"emitted the following mapping to local projection operator: "
+								+ mapping.toString(getResultVariables()));
+			}
 		} else {
 			short thisComputerID = (short) (getID() >>> (Short.SIZE
 					+ Integer.SIZE));
