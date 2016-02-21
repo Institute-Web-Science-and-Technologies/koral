@@ -258,7 +258,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void executeFinalStep() {
-		numberOfMissingFinishNotifications++;
 	}
 
 	@Override
