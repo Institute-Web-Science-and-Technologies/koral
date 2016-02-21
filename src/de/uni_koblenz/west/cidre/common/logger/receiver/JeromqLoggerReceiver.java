@@ -33,9 +33,17 @@ public class JeromqLoggerReceiver extends Thread {
 	private final Writer writer;
 
 	public JeromqLoggerReceiver(String port) {
+		this(null, port);
+	}
+
+	public JeromqLoggerReceiver(String address, String port) {
 		context = NetworkContextFactory.getNetworkContext();
 		socket = context.createSocket(ZMQ.PULL);
-		socket.bind("tcp://*:" + port);
+		if (address != null) {
+			socket.bind("tcp://" + address + ":" + port);
+		} else {
+			socket.bind("tcp://*:" + port);
+		}
 		writer = null;
 	}
 
@@ -98,8 +106,13 @@ public class JeromqLoggerReceiver extends Thread {
 				port = line.getOptionValue("p");
 			}
 
+			String address = null;
+			if (line.hasOption("i")) {
+				address = line.getOptionValue("i");
+			}
+
 			JeromqLoggerReceiver jeromqLoggerReceiver = new JeromqLoggerReceiver(
-					port);
+					address, port);
 			jeromqLoggerReceiver.start();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -127,9 +140,15 @@ public class JeromqLoggerReceiver extends Thread {
 						+ " is used as default.")
 				.required(false).build();
 
+		Option address = Option.builder("i").longOpt("ip").hasArg()
+				.argName("ipAddress")
+				.desc("specific IP address to which the log receiver should be bound. To specifiy the port use the -p option.")
+				.required(false).build();
+
 		Options options = new Options();
 		options.addOption(help);
 		options.addOption(port);
+		options.addOption(address);
 		return options;
 	}
 
