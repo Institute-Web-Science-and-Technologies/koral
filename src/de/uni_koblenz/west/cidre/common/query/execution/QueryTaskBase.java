@@ -26,7 +26,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
 	private QueryTaskState state;
 
-	private int numberOfMissingFinishedMessages;
+	protected int numberOfMissingFinishedMessages;
 
 	public QueryTaskBase(short slaveId, int queryId, short taskId,
 			int numberOfSlaves, int cacheSize, File cacheDirectory) {
