@@ -126,6 +126,11 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 				numberOfMissingFinishedMessages--;
 				state = QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH;
 				executeFinalStep();
+				if (logger != null) {
+					// TODO remove
+					logger.info(NumberConversion.id2description(getID()) + " "
+							+ state);
+				}
 			}
 		} else if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
 			if (numberOfMissingFinishedMessages == 0) {
