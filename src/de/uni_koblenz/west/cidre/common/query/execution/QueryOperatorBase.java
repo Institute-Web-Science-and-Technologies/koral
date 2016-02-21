@@ -104,7 +104,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	@Override
 	public boolean hasToPerformFinalSteps() {
 		if (getChildTask(0) == null) {
-			return !isFinishedInternal() || getEstimatedTaskLoad() == 0;
+			return isFinishedInternal() || getEstimatedTaskLoad() == 0;
 		} else {
 			return super.hasToPerformFinalSteps();
 		}
