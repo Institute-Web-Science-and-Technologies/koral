@@ -71,7 +71,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		addInputQueue();
 		numberOfMissingQueryCreatedMessages = numberOfSlaves;
 		numberOfMissingFinishNotificationsFromSlaves = numberOfSlaves;
-		numberOfMissingFinishedMessages += 1;
 		lastContactWithClient = System.currentTimeMillis();
 		varDictionary = new VariableDictionary();
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
