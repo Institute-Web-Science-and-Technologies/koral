@@ -236,6 +236,7 @@ public class CidreClient {
 						}
 						outputWriter.write(MessageUtils
 								.convertToString(response[0], null));
+						outputWriter.flush();
 					} else {
 						processCommandResponse("querying database", response);
 						break;
