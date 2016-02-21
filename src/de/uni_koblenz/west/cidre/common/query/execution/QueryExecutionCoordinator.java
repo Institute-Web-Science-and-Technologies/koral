@@ -70,7 +70,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		this.statistics = statistics;
 		addInputQueue();
 		numberOfMissingQueryCreatedMessages = numberOfSlaves;
-		numberOfMissingFinishNotifications = numberOfSlaves + 1;
+		numberOfMissingFinishNotifications = numberOfSlaves;
 		lastContactWithClient = System.currentTimeMillis();
 		varDictionary = new VariableDictionary();
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
@@ -258,6 +258,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void executeFinalStep() {
+		numberOfMissingFinishNotifications++;
 	}
 
 	@Override
