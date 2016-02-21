@@ -124,7 +124,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 							+ state);
 				}
 			}
-		} else if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
+		}
+		if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
 			if (numberOfMissingFinishedMessages == 0) {
 				state = QueryTaskState.FINISHED;
 				if (logger != null) {
