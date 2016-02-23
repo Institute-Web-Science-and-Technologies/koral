@@ -512,7 +512,7 @@ public class SparqlParser implements OpVisitor {
 			}
 			if (isUnbound) {
 				throw new RuntimeException(
-						"The variable " + varDictionary.decode(selectedVar)
+						"The variable ?" + varDictionary.decode(selectedVar)
 								+ " of the select operation is unbound.");
 			}
 		}
