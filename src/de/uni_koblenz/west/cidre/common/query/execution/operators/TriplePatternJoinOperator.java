@@ -114,19 +114,17 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	private void computeVars(long[] leftVars, long[] rightVars) {
-		switch (joinType) {
-		case LEFT_FORWARD:
+		long[] leftResultVars = ((QueryOperatorBase) getChildTask(0))
+				.getResultVariables();
+		long[] rightResultVars = ((QueryOperatorBase) getChildTask(1))
+				.getResultVariables();
+		if (leftResultVars.length == 0) {
 			joinVars = new long[0];
-			resultVars = ((QueryOperatorBase) getChildTask(0))
-					.getResultVariables();
-			break;
-		case RIGHT_FORWARD:
+			resultVars = rightResultVars;
+		} else if (rightResultVars.length == 0) {
 			joinVars = new long[0];
-			resultVars = ((QueryOperatorBase) getChildTask(1))
-					.getResultVariables();
-			break;
-		case CARTESIAN_PRODUCT:
-		case JOIN:
+			resultVars = leftResultVars;
+		} else {
 			long[] allVars = new long[leftVars.length + rightVars.length];
 			System.arraycopy(leftVars, 0, allVars, 0, leftVars.length);
 			System.arraycopy(rightVars, 0, allVars, leftVars.length,
