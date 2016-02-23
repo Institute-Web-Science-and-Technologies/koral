@@ -148,6 +148,11 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 						logger.throwing(e.getStackTrace()[0].getClassName(),
 								e.getStackTrace()[0].getMethodName(), e);
 					}
+					if (logger != null) {
+						// TODO remove
+						logger.info("removed task " + NumberConversion
+								.id2description(task.getID()));
+					}
 					removeTask(iterator, task);
 					messageSender.sendQueryTaskFailed(0,
 							task.getCoordinatorID(),
@@ -176,19 +181,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 	 */
 	private void removeTask(Iterator<WorkerTask> iterator, WorkerTask task) {
 		iterator.remove();
-		if (logger != null) {
-			// TODO remove
-			logger.info("removed task "
-					+ NumberConversion.id2description(task.getID())
-					+ " from worker thread");
-		}
 		receiver.unregister(task);
-		if (logger != null) {
-			// TODO remove
-			logger.info("removed task "
-					+ NumberConversion.id2description(task.getID())
-					+ " from message receiver");
-		}
 		task.close();
 	}
 

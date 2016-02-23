@@ -155,9 +155,11 @@ public class UnlimitedMappingHashSet
 
 	@Override
 	public void close() {
-		for (UnlimitedMappingCache cache : buckets) {
-			if (cache != null) {
-				cache.close();
+		if (buckets != null) {
+			for (UnlimitedMappingCache cache : buckets) {
+				if (cache != null) {
+					cache.close();
+				}
 			}
 		}
 	}
