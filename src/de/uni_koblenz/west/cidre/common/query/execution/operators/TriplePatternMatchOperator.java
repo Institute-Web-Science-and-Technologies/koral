@@ -52,7 +52,14 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 		long load = 0;
 		switch (pattern.getType()) {
 		case ___:
-			load = statistics.getChunkSizes()[slave];
+			long[] loads = statistics.getChunkSizes();
+			if (slave < 0) {
+				for (long load_i : loads) {
+					load += load_i;
+				}
+			} else {
+				load = loads[slave];
+			}
 			break;
 		case S__:
 			load = slave < 0
