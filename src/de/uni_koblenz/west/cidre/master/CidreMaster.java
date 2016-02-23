@@ -150,6 +150,11 @@ public class CidreMaster extends CidreSystem {
 						1);
 				notifyMessageListener(MessageReceiverListener.class, senderID,
 						receivedMessage);
+				if (logger != null
+						&& messageType == MessageType.QUERY_TASK_FAILED) {
+					// TODO remove
+					logger.info("received fail notification");
+				}
 				break;
 			default:
 				if (logger != null) {
