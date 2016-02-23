@@ -255,6 +255,11 @@ public class MessageSenderBuffer {
 				.putShort((short) messageSender.getCurrentID())
 				.putLong(controllerID).put(messageBytes);
 		messageSender.send(receiver, messageBB.array());
+		if (logger != null) {
+			// TODO remove
+			logger.info(
+					"Sendig fail notification to query execution coordinator.");
+		}
 	}
 
 	public void sendQueryAbortion(int queryID) {
