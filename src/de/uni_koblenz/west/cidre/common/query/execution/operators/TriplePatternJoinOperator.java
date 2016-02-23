@@ -12,7 +12,6 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
@@ -286,13 +285,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				i--;
 			} else {
 				Mapping resultMapping = iterator.next();
-				if (logger != null) {
-					// TODO remove
-					logger.info("join "
-							+ NumberConversion.id2description(getID())
-							+ " produces mapping\n"
-							+ resultMapping.toString(getResultVariables()));
-				}
 				emitMapping(resultMapping);
 			}
 		}
