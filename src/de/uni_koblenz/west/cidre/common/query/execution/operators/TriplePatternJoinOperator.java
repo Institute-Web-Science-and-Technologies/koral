@@ -250,8 +250,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						}
 						leftHashSet.add(mapping, getFirstJoinVar(),
 								mappingVars);
-						iterator = new JoinIterator(recycleCache, joinVars,
-								mapping, mappingVars,
+						iterator = new JoinIterator(recycleCache,
+								getResultVariables(), joinVars, mapping,
+								mappingVars,
 								joinType == JoinType.CARTESIAN_PRODUCT
 										? rightHashSet.iterator()
 										: rightHashSet.getMatchCandidates(
@@ -282,8 +283,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						}
 						rightHashSet.add(mapping, getFirstJoinVar(),
 								mappingVars);
-						iterator = new JoinIterator(recycleCache, joinVars,
-								mapping, mappingVars,
+						iterator = new JoinIterator(recycleCache,
+								getResultVariables(), joinVars, mapping,
+								mappingVars,
 								joinType == JoinType.CARTESIAN_PRODUCT
 										? leftHashSet.iterator()
 										: leftHashSet.getMatchCandidates(

@@ -199,8 +199,8 @@ public class Mapping {
 		set(newMapping);
 	}
 
-	public void joinMappings(long[] joinVars, Mapping mapping1, long[] vars1,
-			Mapping mapping2, long[] vars2) {
+	public void joinMappings(long[] resultVarsOrdering, Mapping mapping1,
+			long[] vars1, Mapping mapping2, long[] vars2) {
 		if (mapping2.isEmptyMapping()) {
 			byteArray = mapping1.getByteArray();
 			firstIndex = mapping1.getFirstIndexOfMappingInByteArray();
@@ -211,27 +211,21 @@ public class Mapping {
 			length = mapping2.getLengthOfMappingInByteArray();
 		} else {
 			byte[] newMapping = createNewMappingArray(
-					vars1.length + vars2.length - joinVars.length);
-			System.arraycopy(mapping1.getByteArray(),
-					mapping1.getFirstIndexOfMappingInByteArray()
-							+ getHeaderSize(),
-					newMapping, getHeaderSize(), vars1.length * Long.BYTES);
-			int nextFreeIndex = getHeaderSize() + vars1.length * Long.BYTES;
-			if (joinVars.length == 0) {
-				System.arraycopy(mapping2.getByteArray(),
-						mapping2.getFirstIndexOfMappingInByteArray()
-								+ getHeaderSize(),
-						newMapping, nextFreeIndex, vars2.length * Long.BYTES);
-			} else {
-				for (int i = 0; i < vars2.length; i++) {
-					if (!isJoinVar(vars2[i], joinVars)) {
-						System.arraycopy(mapping2.getByteArray(),
-								mapping2.getFirstIndexOfMappingInByteArray()
-										+ getHeaderSize() + i * Long.BYTES,
-								newMapping, nextFreeIndex, Long.BYTES);
-						nextFreeIndex += Long.BYTES;
-					}
+					resultVarsOrdering.length);
+			int nextFreeIndex = getHeaderSize();
+			for (int nextVarIndex = 0; nextVarIndex < resultVarsOrdering.length; nextVarIndex++) {
+				long valueOfVar = 0;
+				try {
+					valueOfVar = mapping1
+							.getValue(resultVarsOrdering[nextVarIndex], vars1);
+				} catch (IllegalArgumentException e) {
+					// mapping1 does not contain the variable
+					valueOfVar = mapping2
+							.getValue(resultVarsOrdering[nextVarIndex], vars2);
 				}
+				NumberConversion.long2bytes(valueOfVar, newMapping,
+						nextFreeIndex);
+				nextFreeIndex += Long.BYTES;
 			}
 			set(newMapping);
 		}
@@ -246,15 +240,6 @@ public class Mapping {
 							+ mapping2.getLengthOfMappingInByteArray() - 1
 							- i]);
 		}
-	}
-
-	private boolean isJoinVar(long var, long[] joinVars) {
-		for (int i = 0; i < joinVars.length; i++) {
-			if (var == joinVars[i]) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private byte[] createNewMappingArray(int numberOfVars) {

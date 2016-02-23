@@ -117,10 +117,11 @@ public class MappingRecycleCache {
 		return result;
 	}
 
-	public Mapping mergeMappings(long[] joinVars, Mapping mapping1,
+	public Mapping mergeMappings(long[] resultVarsOrdering, Mapping mapping1,
 			long[] vars1, Mapping mapping2, long[] vars2) {
 		Mapping result = getMapping();
-		result.joinMappings(joinVars, mapping1, vars1, mapping2, vars2);
+		result.joinMappings(resultVarsOrdering, mapping1, vars1, mapping2,
+				vars2);
 		return result;
 	}
 
