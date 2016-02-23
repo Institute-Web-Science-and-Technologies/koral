@@ -210,8 +210,8 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
 	@Override
 	public void close() {
-		map.close();
 		persistNumberOfTriplesPerChunk();
+		map.close();
 	}
 
 	private void persistNumberOfTriplesPerChunk() {
