@@ -114,33 +114,47 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	private void computeVars(long[] leftVars, long[] rightVars) {
-		long[] allVars = new long[leftVars.length + rightVars.length];
-		System.arraycopy(leftVars, 0, allVars, 0, leftVars.length);
-		System.arraycopy(rightVars, 0, allVars, leftVars.length,
-				rightVars.length);
-		Arrays.sort(allVars);
-		// count occurrences of different variable types
-		int numberOfJoinVars = 0;
-		int numberOfResultVars = 0;
-		for (int i = 0; i < allVars.length; i++) {
-			if (i > 0 && allVars[i - 1] == allVars[i]) {
-				// each variable occurs at most two times
-				numberOfJoinVars++;
-			} else {
-				numberOfResultVars++;
+		switch (joinType) {
+		case LEFT_FORWARD:
+			joinVars = new long[0];
+			resultVars = ((QueryOperatorBase) getChildTask(0))
+					.getResultVariables();
+			break;
+		case RIGHT_FORWARD:
+			joinVars = new long[0];
+			resultVars = ((QueryOperatorBase) getChildTask(1))
+					.getResultVariables();
+			break;
+		case CARTESIAN_PRODUCT:
+		case JOIN:
+			long[] allVars = new long[leftVars.length + rightVars.length];
+			System.arraycopy(leftVars, 0, allVars, 0, leftVars.length);
+			System.arraycopy(rightVars, 0, allVars, leftVars.length,
+					rightVars.length);
+			Arrays.sort(allVars);
+			// count occurrences of different variable types
+			int numberOfJoinVars = 0;
+			int numberOfResultVars = 0;
+			for (int i = 0; i < allVars.length; i++) {
+				if (i > 0 && allVars[i - 1] == allVars[i]) {
+					// each variable occurs at most two times
+					numberOfJoinVars++;
+				} else {
+					numberOfResultVars++;
+				}
 			}
-		}
-		// assign variables to arrays
-		resultVars = new long[numberOfResultVars];
-		joinVars = new long[numberOfJoinVars];
-		int nextJoinVarIndex = 0;
-		for (int i = 0; i < allVars.length; i++) {
-			if (i > 0 && allVars[i - 1] == allVars[i]) {
-				// each variable occurs at most two times
-				joinVars[nextJoinVarIndex] = allVars[i];
-				nextJoinVarIndex++;
-			} else {
-				resultVars[i - nextJoinVarIndex] = allVars[i];
+			// assign variables to arrays
+			resultVars = new long[numberOfResultVars];
+			joinVars = new long[numberOfJoinVars];
+			int nextJoinVarIndex = 0;
+			for (int i = 0; i < allVars.length; i++) {
+				if (i > 0 && allVars[i - 1] == allVars[i]) {
+					// each variable occurs at most two times
+					joinVars[nextJoinVarIndex] = allVars[i];
+					nextJoinVarIndex++;
+				} else {
+					resultVars[i - nextJoinVarIndex] = allVars[i];
+				}
 			}
 		}
 	}
