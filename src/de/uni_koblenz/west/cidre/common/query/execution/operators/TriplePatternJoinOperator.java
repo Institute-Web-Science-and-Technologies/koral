@@ -243,11 +243,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								0)).getResultVariables();
 						long[] rightVars = ((QueryOperatorBase) getChildTask(1))
 								.getResultVariables();
-						if (logger != null) {
-							// TODO remove
-							logger.info("consumed mapping from left child:\n"
-									+ mapping.toString(mappingVars));
-						}
 						leftHashSet.add(mapping, getFirstJoinVar(),
 								mappingVars);
 						iterator = new JoinIterator(recycleCache,
@@ -276,11 +271,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								1)).getResultVariables();
 						long[] leftVars = ((QueryOperatorBase) getChildTask(0))
 								.getResultVariables();
-						if (logger != null) {
-							// TODO remove
-							logger.info("consumed mapping from right child:\n"
-									+ mapping.toString(mappingVars));
-						}
 						rightHashSet.add(mapping, getFirstJoinVar(),
 								mappingVars);
 						iterator = new JoinIterator(recycleCache,
@@ -297,11 +287,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				i--;
 			} else {
 				Mapping resultMapping = iterator.next();
-				if (logger != null) {
-					// TODO remove
-					logger.info("joined mapping:\n"
-							+ resultMapping.toString(resultVars));
-				}
 				emitMapping(resultMapping);
 			}
 		}
