@@ -131,18 +131,33 @@ public class GraphStatistics implements Closeable {
 	}
 
 	public long getSubjectFrequency(long subject, int slave) {
-		return database.getStatisticsForResource(subject)[0 * numberOfChunks
-				+ slave];
+		long[] statisticsForResource = database
+				.getStatisticsForResource(subject);
+		if (statisticsForResource == null) {
+			// this resource does not occur
+			return 0;
+		}
+		return statisticsForResource[0 * numberOfChunks + slave];
 	}
 
 	public long getPropertyFrequency(long property, int slave) {
-		return database.getStatisticsForResource(property)[1 * numberOfChunks
-				+ slave];
+		long[] statisticsForResource = database
+				.getStatisticsForResource(property);
+		if (statisticsForResource == null) {
+			// this resource does not occur
+			return 0;
+		}
+		return statisticsForResource[1 * numberOfChunks + slave];
 	}
 
 	public long getObjectFrequency(long object, int slave) {
-		return database.getStatisticsForResource(object)[2 * numberOfChunks
-				+ slave];
+		long[] statisticsForResource = database
+				.getStatisticsForResource(object);
+		if (statisticsForResource == null) {
+			// this resource does not occur
+			return 0;
+		}
+		return statisticsForResource[2 * numberOfChunks + slave];
 	}
 
 	public long getOwnerLoad(int slave) {
@@ -153,6 +168,10 @@ public class GraphStatistics implements Closeable {
 		long totalFrequency = 0;
 		long[] statisticsForResource = database
 				.getStatisticsForResource(subject);
+		if (statisticsForResource == null) {
+			// this resource does not occur
+			return 0;
+		}
 		for (int slave = 0; slave < numberOfChunks; slave++) {
 			totalFrequency += statisticsForResource[0 * numberOfChunks + slave];
 		}
@@ -163,6 +182,10 @@ public class GraphStatistics implements Closeable {
 		long totalFrequency = 0;
 		long[] statisticsForResource = database
 				.getStatisticsForResource(property);
+		if (statisticsForResource == null) {
+			// this resource does not occur
+			return 0;
+		}
 		for (int slave = 0; slave < numberOfChunks; slave++) {
 			totalFrequency += statisticsForResource[1 * numberOfChunks + slave];
 		}
@@ -173,6 +196,10 @@ public class GraphStatistics implements Closeable {
 		long totalFrequency = 0;
 		long[] statisticsForResource = database
 				.getStatisticsForResource(object);
+		if (statisticsForResource == null) {
+			// this resource does not occur
+			return 0;
+		}
 		for (int slave = 0; slave < numberOfChunks; slave++) {
 			totalFrequency += statisticsForResource[2 * numberOfChunks + slave];
 		}
