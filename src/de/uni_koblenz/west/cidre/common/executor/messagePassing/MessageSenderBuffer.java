@@ -254,16 +254,7 @@ public class MessageSenderBuffer {
 		messageBB.put(MessageType.QUERY_TASK_FAILED.getValue())
 				.putShort((short) messageSender.getCurrentID())
 				.putLong(controllerID).put(messageBytes);
-		if (logger != null) {
-			// TODO remove
-			logger.info(
-					"Sendig fail notification to query execution coordinator.");
-		}
 		messageSender.send(receiver, messageBB.array());
-		if (logger != null) {
-			// TODO remove
-			logger.info("message sent!");
-		}
 	}
 
 	public void sendQueryAbortion(int queryID) {

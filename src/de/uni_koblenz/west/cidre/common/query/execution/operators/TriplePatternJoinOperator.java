@@ -12,7 +12,6 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
@@ -361,18 +360,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	@Override
 	protected void closeInternal() {
-		if (logger != null) {
-			// TODO remove
-			logger.info("close internal "
-					+ NumberConversion.id2description(getID()));
-		}
 		leftHashSet.close();
 		rightHashSet.close();
-		if (logger != null) {
-			// TODO remove
-			logger.info("close internal finished"
-					+ NumberConversion.id2description(getID()));
-		}
 	}
 
 	@Override
