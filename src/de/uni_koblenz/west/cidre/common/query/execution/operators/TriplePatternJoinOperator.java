@@ -276,8 +276,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						iterator = new JoinIterator(recycleCache, joinVars,
 								mapping, mappingVars,
 								joinType == JoinType.CARTESIAN_PRODUCT
-										? rightHashSet.iterator()
-										: rightHashSet.getMatchCandidates(
+										? leftHashSet.iterator()
+										: leftHashSet.getMatchCandidates(
 												mapping, getFirstJoinVar(),
 												leftVars),
 								leftVars);
