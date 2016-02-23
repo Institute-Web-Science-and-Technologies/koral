@@ -169,12 +169,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	protected void handleFinishNotification(long sender, Object object,
 			int firstIndex, int messageLength) {
 		numberOfMissingFinishNotificationsFromSlaves--;
-		if (logger != null) {
-			// TODO remove
-			logger.info(NumberConversion.id2description(getID())
-					+ " receives finish notification. Missing notifications = "
-					+ numberOfMissingFinishNotificationsFromSlaves);
-		}
 	}
 
 	@Override
@@ -263,11 +257,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void tidyUp() {
-		if (logger != null) {
-			// TODO remove
-			logger.info(NumberConversion.id2description(getID())
-					+ " sends finish notification to client");
-		}
 		sendMessageToClient(
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 	}

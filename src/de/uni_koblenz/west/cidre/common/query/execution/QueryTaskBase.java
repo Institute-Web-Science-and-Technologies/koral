@@ -8,7 +8,6 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuf
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * Common superclass for query cordinator and all query operations.
@@ -79,12 +78,6 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 			numberOfMissingFinishedMessages--;
 			handleFinishNotification(sender, message, firstIndex,
 					messageLength);
-			if (logger != null) {
-				// TODO remove
-				logger.info(NumberConversion.id2description(getID())
-						+ " missing finish notifications = "
-						+ numberOfMissingFinishedMessages);
-			}
 			break;
 		case QUERY_MAPPING_BATCH:
 			handleMappingReception(sender, message, firstIndex, messageLength);
@@ -118,22 +111,12 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 				numberOfMissingFinishedMessages--;
 				state = QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH;
 				executeFinalStep();
-				if (logger != null) {
-					// TODO remove
-					logger.info(NumberConversion.id2description(getID()) + " "
-							+ state);
-				}
 			}
 		}
 		if (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH) {
 			if (numberOfMissingFinishedMessages == 0) {
 				state = QueryTaskState.FINISHED;
 				tidyUp();
-				if (logger != null) {
-					// TODO remove
-					logger.info(NumberConversion.id2description(getID()) + " "
-							+ state);
-				}
 			}
 		}
 	}
