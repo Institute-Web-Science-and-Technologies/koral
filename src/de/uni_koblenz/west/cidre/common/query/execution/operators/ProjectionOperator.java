@@ -3,6 +3,7 @@ package de.uni_koblenz.west.cidre.common.query.execution.operators;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
@@ -91,6 +92,16 @@ public class ProjectionOperator extends QueryOperatorBase {
 						mapping, ((QueryOperatorBase) getChildTask(0))
 								.getResultVariables(),
 						resultVars);
+				if (logger != null) {
+					// TODO remove
+					logger.info(
+							"original:\n"
+									+ mapping.toString(
+											((QueryOperatorBase) getChildTask(
+													0)).getResultVariables())
+							+ "\nselectedVars: " + Arrays.toString(resultVars)
+							+ "\nresult:\n" + result.toString(resultVars));
+				}
 				emitMapping(result);
 				recycleCache.releaseMapping(mapping);
 			}
