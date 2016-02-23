@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * Executes all registered {@link WorkerTask}s in iterations. During one
@@ -148,6 +149,11 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 								e.getStackTrace()[0].getMethodName(), e);
 					}
 					removeTask(iterator, task);
+					if (logger != null) {
+						// TODO remove
+						logger.info("removed task " + NumberConversion
+								.id2description(task.getID()));
+					}
 					messageSender.sendQueryTaskFailed(0,
 							task.getCoordinatorID(),
 							"Execution of task " + task + "failed. Cause:\n"
