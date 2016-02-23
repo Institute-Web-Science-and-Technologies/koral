@@ -493,7 +493,30 @@ public class SparqlParser implements OpVisitor {
 		QueryOperatorTask projection = taskFactory.createProjection(slaveId,
 				queryId, emittedMappingsPerRound, resultVars, subTask);
 		((QueryOperatorBase) subTask).setParentTask(projection);
+		long[] varsOfChild = subTask.getResultVariables();
+		long[] resultVarsOfProjection = projection.getResultVariables();
+		checkIfAllProjectedVariablesAreBound(resultVarsOfProjection,
+				varsOfChild);
 		stack.push(projection);
+	}
+
+	private boolean checkIfAllProjectedVariablesAreBound(
+			long[] resultVarsOfProjection, long[] varsOfChild) {
+		for (long selectedVar : resultVarsOfProjection) {
+			boolean isUnbound = true;
+			for (long childVar : varsOfChild) {
+				if (selectedVar == childVar) {
+					isUnbound = false;
+					break;
+				}
+			}
+			if (isUnbound) {
+				throw new RuntimeException(
+						"The variable " + varDictionary.decode(selectedVar)
+								+ " of the select operation is unbound.");
+			}
+		}
+		return true;
 	}
 
 	@Override
