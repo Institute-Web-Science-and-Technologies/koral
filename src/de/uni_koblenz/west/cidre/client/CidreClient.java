@@ -13,6 +13,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -21,6 +22,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.jena.graph.Node;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.util.FileUtils;
 
@@ -36,6 +38,7 @@ import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
 import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
 import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 
 /**
@@ -201,10 +204,24 @@ public class CidreClient {
 	public void processQuery(String query, Writer outputWriter,
 			QueryExecutionTreeType treeType, boolean useBaseOperators)
 					throws IOException {
+		class DummyDictionaryEncoder extends DictionaryEncoder {
+
+			public DummyDictionaryEncoder(Configuration conf, Logger logger) {
+				super(conf, logger);
+			}
+
+			@Override
+			public long encode(Node node) {
+				return 0;
+			}
+
+		}
+
 		// check syntax
 		VariableDictionary dictionary = new VariableDictionary();
-		SparqlParser parser = new SparqlParser(null, null, (short) 0, 0, 0, 1,
-				0, null, 0, 1, 1);
+		SparqlParser parser = new SparqlParser(
+				new DummyDictionaryEncoder(null, null), null, (short) 0, 0, 0,
+				1, 0, null, 0, 1, 1);
 		QueryOperatorTask task = parser.parse(query, treeType, dictionary);
 		String queryString = QueryFactory.create(query).serialize();
 		String[] vars = dictionary.decode(task.getResultVariables());

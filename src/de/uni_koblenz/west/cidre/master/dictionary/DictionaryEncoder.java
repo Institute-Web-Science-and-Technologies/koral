@@ -54,11 +54,15 @@ public class DictionaryEncoder implements Closeable {
 
 	public DictionaryEncoder(Configuration conf, Logger logger) {
 		this.logger = logger;
-		dictionary = new MapDBDictionary(conf.getDictionaryStorageType(),
-				conf.getDictionaryDataStructure(), conf.getDictionaryDir(),
-				conf.useTransactionsForDictionary(),
-				conf.isDictionaryAsynchronouslyWritten(),
-				conf.getDictionaryCacheType());
+		if (conf != null) {
+			dictionary = new MapDBDictionary(conf.getDictionaryStorageType(),
+					conf.getDictionaryDataStructure(), conf.getDictionaryDir(),
+					conf.useTransactionsForDictionary(),
+					conf.isDictionaryAsynchronouslyWritten(),
+					conf.getDictionaryCacheType());
+		} else {
+			dictionary = null;
+		}
 	}
 
 	public File[] encodeGraphChunks(File[] plainGraphChunks,
