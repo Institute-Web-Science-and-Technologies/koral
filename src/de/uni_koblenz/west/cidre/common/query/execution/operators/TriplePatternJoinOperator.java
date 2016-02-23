@@ -251,7 +251,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 										? rightHashSet.iterator()
 										: rightHashSet.getMatchCandidates(
 												mapping, getFirstJoinVar(),
-												rightVars),
+												mappingVars),
 								rightVars);
 					}
 				} else {
@@ -272,17 +272,13 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								.getResultVariables();
 						rightHashSet.add(mapping, getFirstJoinVar(),
 								mappingVars);
-						if (logger != null) {
-							// TODO remove
-							logger.info(mapping.toString(leftVars));
-						}
 						iterator = new JoinIterator(recycleCache, joinVars,
 								mapping, mappingVars,
 								joinType == JoinType.CARTESIAN_PRODUCT
 										? leftHashSet.iterator()
 										: leftHashSet.getMatchCandidates(
 												mapping, getFirstJoinVar(),
-												leftVars),
+												mappingVars),
 								leftVars);
 					}
 				}
