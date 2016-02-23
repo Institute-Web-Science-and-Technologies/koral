@@ -4,8 +4,11 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
+import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
@@ -27,9 +30,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private final JoinType joinType;
 
-	private final UnlimitedMappingHashSet leftHashSet;
+	private final int numberOfHashBuckets;
 
-	private final UnlimitedMappingHashSet rightHashSet;
+	private UnlimitedMappingHashSet leftHashSet;
+
+	private UnlimitedMappingHashSet rightHashSet;
 
 	private JoinIterator iterator;
 
@@ -61,12 +66,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		if (numberOfInMemoryMappingsPerSet <= 0) {
 			numberOfInMemoryMappingsPerSet = 1;
 		}
-		leftHashSet = new UnlimitedMappingHashSet(numberOfHashBuckets,
-				numberOfHashBuckets, cacheDirectory, recycleCache,
-				getClass().getSimpleName() + getID() + "_leftChild_");
-		rightHashSet = new UnlimitedMappingHashSet(numberOfHashBuckets,
-				numberOfHashBuckets, cacheDirectory, recycleCache,
-				getClass().getSimpleName() + getID() + "_rightChild_");
+
+		this.numberOfHashBuckets = numberOfHashBuckets;
 	}
 
 	public TriplePatternJoinOperator(short slaveId, int queryId, short taskId,
@@ -97,11 +98,19 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		if (numberOfInMemoryMappingsPerSet <= 0) {
 			numberOfInMemoryMappingsPerSet = 1;
 		}
+
+		this.numberOfHashBuckets = numberOfHashBuckets;
+	}
+
+	@Override
+	public void setUp(MessageSenderBuffer messageSender,
+			MappingRecycleCache recycleCache, Logger logger) {
+		super.setUp(messageSender, recycleCache, logger);
 		leftHashSet = new UnlimitedMappingHashSet(numberOfHashBuckets,
-				numberOfHashBuckets, cacheDirectory, recycleCache,
+				numberOfHashBuckets, getCacheDirectory(), recycleCache,
 				getClass().getSimpleName() + getID() + "_leftChild_");
 		rightHashSet = new UnlimitedMappingHashSet(numberOfHashBuckets,
-				numberOfHashBuckets, cacheDirectory, recycleCache,
+				numberOfHashBuckets, getCacheDirectory(), recycleCache,
 				getClass().getSimpleName() + getID() + "_rightChild_");
 	}
 

@@ -57,6 +57,10 @@ public abstract class WorkerTaskBase implements WorkerTask {
 		return id;
 	}
 
+	protected File getCacheDirectory() {
+		return cacheDirectory;
+	}
+
 	protected void addInputQueue() {
 		if (inputQueues == null || inputQueues.length == 0) {
 			inputQueues = new CachedFileReceiverQueue[1];
