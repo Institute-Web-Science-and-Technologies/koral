@@ -315,55 +315,53 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	private void executeLeftForwardStep() {
-		if (rightHashSet.isEmpty()) {
-			if (hasChildFinished(1)) {
-				// the right child has finished successfully
-				Mapping mapping = consumeMapping(1);
-				if (mapping != null) {
-					long[] rightVars = ((QueryOperatorBase) getChildTask(1))
-							.getResultVariables();
-					rightHashSet.add(mapping, getFirstJoinVar(), rightVars);
-				}
-			} else {
+		if (hasChildFinished(1)) {
+			// the right child has finished
+			if (rightHashSet.isEmpty()) {
 				// no match for the right expression could be found
 				// discard all mappings received from left child
 				while (!isInputQueueEmpty(0)) {
 					Mapping mapping = consumeMapping(0);
 					recycleCache.releaseMapping(mapping);
 				}
-			}
-		} else {
-			// the right child has matched
-			for (int i = 0; i < getEmittedMappingsPerRound()
-					&& !isInputQueueEmpty(0); i++) {
-				emitMapping(consumeMapping(0));
+			} else {
+				// the right child has matched
+				for (int i = 0; i < getEmittedMappingsPerRound()
+						&& !isInputQueueEmpty(0); i++) {
+					emitMapping(consumeMapping(0));
+				}
+				if (hasChildFinished(0) && leftHashSet.isEmpty()) {
+					// as a final step, discard the empty mapping from the right
+					// child
+					Mapping mapping = consumeMapping(1);
+					recycleCache.releaseMapping(mapping);
+				}
 			}
 		}
 	}
 
 	private void executeRightForwardStep() {
-		if (leftHashSet.isEmpty()) {
-			if (hasChildFinished(0)) {
-				// the left child has finished successfully
-				Mapping mapping = consumeMapping(0);
-				if (mapping != null) {
-					long[] leftVars = ((QueryOperatorBase) getChildTask(0))
-							.getResultVariables();
-					leftHashSet.add(mapping, getFirstJoinVar(), leftVars);
-				}
-			} else {
+		if (hasChildFinished(0)) {
+			// the left child has finished
+			if (leftHashSet.isEmpty()) {
 				// no match for the left expression could be found
 				// discard all mappings received from right child
 				while (!isInputQueueEmpty(1)) {
 					Mapping mapping = consumeMapping(1);
 					recycleCache.releaseMapping(mapping);
 				}
-			}
-		} else {
-			// the left child has matched
-			for (int i = 0; i < getEmittedMappingsPerRound()
-					&& !isInputQueueEmpty(1); i++) {
-				emitMapping(consumeMapping(1));
+			} else {
+				// the left child has matched
+				for (int i = 0; i < getEmittedMappingsPerRound()
+						&& !isInputQueueEmpty(1); i++) {
+					emitMapping(consumeMapping(1));
+				}
+				if (hasChildFinished(1) && rightHashSet.isEmpty()) {
+					// as a final step, discard the empty mapping from the left
+					// child
+					Mapping mapping = consumeMapping(0);
+					recycleCache.releaseMapping(mapping);
+				}
 			}
 		}
 	}
