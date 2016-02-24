@@ -171,11 +171,10 @@ public abstract class WorkerTaskBase implements WorkerTask {
 	 * Called by subclasses of {@link QueryOperatorBase}.
 	 * 
 	 * @param child
-	 * @return <code>true</code> if all {@link Mapping}s of <code>child</code>
-	 *         have been processed and the child operation is finished.
+	 * @return <code>true</code> if the child operation is finished.
 	 */
 	protected boolean hasChildFinished(int child) {
-		return isInputQueueEmpty(child) && children[child].hasFinished();
+		return children[child].hasFinished();
 	}
 
 	protected boolean areAllChildrenFinished() {
