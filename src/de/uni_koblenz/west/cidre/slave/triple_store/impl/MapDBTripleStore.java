@@ -3,6 +3,7 @@ package de.uni_koblenz.west.cidre.slave.triple_store.impl;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.NavigableSet;
+import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
@@ -20,6 +21,9 @@ import de.uni_koblenz.west.cidre.slave.triple_store.TripleStore;
  *
  */
 public class MapDBTripleStore implements TripleStore {
+
+	// TODO remove
+	public static Logger logger;
 
 	private final MultiMap spo;
 
@@ -74,6 +78,10 @@ public class MapDBTripleStore implements TripleStore {
 		case ___:
 			queryPrefix = new byte[0];
 			matches = spo.get(queryPrefix);
+			if (logger != null) {
+				// TODO remove
+				logger.info(matches.toString());
+			}
 			indexType = IndexType.SPO;
 			break;
 		case S__:
