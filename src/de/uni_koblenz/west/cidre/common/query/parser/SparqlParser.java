@@ -249,7 +249,7 @@ public class SparqlParser implements OpVisitor {
 				subject = varDictionary.encode(subjectN.getName());
 				type = TriplePatternType._PO;
 			} else {
-				subject = dictionary.encode(subjectN);
+				subject = dictionary.encode(subjectN, false);
 			}
 
 			Node propertyN = triple.getPredicate();
@@ -261,7 +261,7 @@ public class SparqlParser implements OpVisitor {
 					type = TriplePatternType.__O;
 				}
 			} else {
-				property = dictionary.encode(propertyN);
+				property = dictionary.encode(propertyN, false);
 			}
 
 			Node objectN = triple.getObject();
@@ -277,7 +277,7 @@ public class SparqlParser implements OpVisitor {
 					type = TriplePatternType.___;
 				}
 			} else {
-				object = dictionary.encode(objectN);
+				object = dictionary.encode(objectN, false);
 			}
 		}
 

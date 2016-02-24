@@ -90,11 +90,11 @@ public class DictionaryEncoder implements Closeable {
 											intermediateFiles[i]))));) {
 				for (Node[] quad : iter) {
 					long subject = dictionary
-							.encode(DeSerializer.serializeNode(quad[0]));
+							.encode(DeSerializer.serializeNode(quad[0]), true);
 					long property = dictionary
-							.encode(DeSerializer.serializeNode(quad[1]));
+							.encode(DeSerializer.serializeNode(quad[1]), true);
 					long object = dictionary
-							.encode(DeSerializer.serializeNode(quad[2]));
+							.encode(DeSerializer.serializeNode(quad[2]), true);
 					statistics.count(subject, property, object, i);
 					byte[] containment = DeSerializer
 							.deserializeBitSetFromNode(quad[3]);
@@ -207,8 +207,9 @@ public class DictionaryEncoder implements Closeable {
 		return DeSerializer.deserializeNode(plainText);
 	}
 
-	public long encode(Node node) {
-		return dictionary.encode(DeSerializer.serializeNode(node));
+	public long encode(Node node, boolean createNewEncodingForUnknownNodes) {
+		return dictionary.encode(DeSerializer.serializeNode(node),
+				createNewEncodingForUnknownNodes);
 	}
 
 	public boolean isEmpty() {

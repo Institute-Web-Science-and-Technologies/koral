@@ -211,7 +211,8 @@ public class CidreClient {
 			}
 
 			@Override
-			public long encode(Node node) {
+			public long encode(Node node,
+					boolean createNewEncodingForUnknownNodes) {
 				return 0;
 			}
 

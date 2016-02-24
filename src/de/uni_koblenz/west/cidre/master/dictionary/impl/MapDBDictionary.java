@@ -26,7 +26,10 @@ public class MapDBDictionary implements Dictionary {
 
 	private final MapDBMapWrapper<Long, String> decoder;
 
-	private long nextID = 0;
+	/**
+	 * id 0 indicates that a string in a query has not been encoded yet
+	 */
+	private long nextID = 1;
 
 	private final long maxID = 0x0000ffffffffffffl;
 
@@ -98,7 +101,7 @@ public class MapDBDictionary implements Dictionary {
 	}
 
 	@Override
-	public long encode(String value) {
+	public long encode(String value, boolean createNewEncodingForUnknownNodes) {
 		Long id = null;
 		try {
 			id = encoder.get(value);
@@ -110,6 +113,8 @@ public class MapDBDictionary implements Dictionary {
 			if (nextID > maxID) {
 				throw new RuntimeException(
 						"The maximum number of Strings have been encoded.");
+			} else if (!createNewEncodingForUnknownNodes) {
+				return 0;
 			} else {
 				try {
 					id = nextID;
@@ -127,7 +132,7 @@ public class MapDBDictionary implements Dictionary {
 
 	@Override
 	public long setOwner(String value, short owner) {
-		return setOwner(value, encode(value), owner);
+		return setOwner(value, encode(value, false), owner);
 	}
 
 	@Override
