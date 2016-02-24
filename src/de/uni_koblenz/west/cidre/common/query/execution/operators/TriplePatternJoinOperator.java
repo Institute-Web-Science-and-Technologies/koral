@@ -12,7 +12,6 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
@@ -343,25 +342,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private void executeRightForwardStep() {
 		if (hasChildFinished(0)) {
-			if (logger != null) {
-				// TODO remove
-				logger.info(NumberConversion.id2description(getID())
-						+ " left child finished");
-			}
 			// the left child has finished
 			if (leftHashSet.isEmpty()) {
 				// no match for the left expression could be found
 				// discard all mappings received from right child
 				while (!isInputQueueEmpty(1)) {
 					Mapping mapping = consumeMapping(1);
-					if (logger != null) {
-						// TODO remove
-						logger.info(NumberConversion.id2description(getID())
-								+ " discarding mapping"
-								+ mapping.toString(
-										((QueryOperatorTask) getChildTask(1))
-												.getResultVariables()));
-					}
 					recycleCache.releaseMapping(mapping);
 				}
 			} else {
@@ -369,41 +355,13 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				for (int i = 0; i < getEmittedMappingsPerRound()
 						&& !isInputQueueEmpty(1); i++) {
 					Mapping mapping = consumeMapping(1);
-					if (logger != null) {
-						// TODO remove
-						logger.info(NumberConversion.id2description(getID())
-								+ " emitting mapping"
-								+ mapping.toString(
-										((QueryOperatorTask) getChildTask(1))
-												.getResultVariables()));
-					}
 					emitMapping(mapping);
 				}
 				if (hasChildFinished(1) && rightHashSet.isEmpty()) {
 					// as a final step, discard the empty mapping from the left
 					// child
 					Mapping mapping = consumeMapping(0);
-					if (logger != null) {
-						// TODO remove
-						logger.info(NumberConversion.id2description(getID())
-								+ mapping.toString(
-										((QueryOperatorTask) getChildTask(0))
-												.getResultVariables()));
-					}
 					recycleCache.releaseMapping(mapping);
-				}
-				Mapping mapping = consumeMapping(0);
-				if (logger != null && mapping != null) {
-					// TODO remove
-					logger.info(NumberConversion.id2description(getID())
-							+ mapping.toString(
-									((QueryOperatorTask) getChildTask(0))
-											.getResultVariables()));
-				}
-				if (logger != null) {
-					// TODO remove
-					logger.info(NumberConversion.id2description(getID())
-							+ getSizeOfInputQueue(0));
 				}
 			}
 		}
