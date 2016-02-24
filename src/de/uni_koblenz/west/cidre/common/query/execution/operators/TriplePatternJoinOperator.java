@@ -317,6 +317,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private void executeLeftForwardStep() {
 		if (hasChildFinished(1)) {
+			if (logger != null) {
+				// TODO remove
+				logger.info(NumberConversion.id2description(getID())
+						+ " left input size: " + leftHashSet.size());
+			}
 			// the right child has finished
 			if (rightHashSet.isEmpty()) {
 				// no match for the right expression could be found
@@ -343,11 +348,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private void executeRightForwardStep() {
 		if (hasChildFinished(0)) {
-			if (logger != null) {
-				// TODO remove
-				logger.info(NumberConversion.id2description(getID())
-						+ " left input size: " + leftHashSet.size());
-			}
 			// the left child has finished
 			if (leftHashSet.isEmpty()) {
 				// no match for the left expression could be found
