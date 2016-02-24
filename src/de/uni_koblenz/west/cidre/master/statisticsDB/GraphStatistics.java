@@ -34,6 +34,10 @@ public class GraphStatistics implements Closeable {
 				conf.useTransactionsForStatistics(),
 				conf.areStatisticsAsynchronouslyWritten(),
 				conf.getStatisticsCacheType(), numberOfChunks);
+		if (logger != null) {
+			// TODO remove
+			logger.info(database.toString());
+		}
 	}
 
 	public void count(long subject, long property, long object, int chunk) {
