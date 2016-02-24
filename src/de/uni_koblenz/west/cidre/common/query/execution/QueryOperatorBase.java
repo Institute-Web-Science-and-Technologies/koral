@@ -8,6 +8,7 @@ import java.io.IOException;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOperator;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -141,6 +142,12 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	 * @param mapping
 	 */
 	protected void emitMapping(Mapping mapping) {
+		if (logger != null) {
+			// TODO remove
+			logger.info(NumberConversion.id2description(getID())
+					+ " emitted mapping\n"
+					+ mapping.toString(getResultVariables()));
+		}
 		if (getParentTask() == null) {
 			messageSender.sendQueryMapping(mapping, getID(), getCoordinatorID(),
 					recycleCache);
