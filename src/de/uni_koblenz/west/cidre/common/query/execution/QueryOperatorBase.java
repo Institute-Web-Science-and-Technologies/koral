@@ -8,7 +8,6 @@ import java.io.IOException;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOperator;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -149,12 +148,12 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 			// projection operator filters all mappings on the same computer
 			messageSender.sendQueryMapping(mapping, getID(),
 					getParentTask().getID(), recycleCache);
-			if (logger != null) {
-				// TODO remove
-				logger.info(NumberConversion.id2description(getID())
-						+ " emitted the following mapping to local projection operator: "
-						+ mapping.toString(getResultVariables()));
-			}
+			// if (logger != null) {
+			// // TODO remove
+			// logger.info(NumberConversion.id2description(getID())
+			// + " emitted the following mapping to local projection operator: "
+			// + mapping.toString(getResultVariables()));
+			// }
 		} else {
 			short thisComputerID = (short) (getID() >>> (Short.SIZE
 					+ Integer.SIZE));
@@ -168,12 +167,12 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 					mapping.setContainmentToAll();
 					messageSender.sendQueryMappingToAll(mapping, getID(),
 							parentBaseID, recycleCache);
-					if (logger != null) {
-						// TODO remove
-						logger.info(NumberConversion.id2description(getID())
-								+ " emitted the following empty mapping to all parents: "
-								+ mapping.toString(getResultVariables()));
-					}
+					// if (logger != null) {
+					// // TODO remove
+					// logger.info(NumberConversion.id2description(getID())
+					// + " emitted the following empty mapping to all parents: "
+					// + mapping.toString(getResultVariables()));
+					// }
 				}
 			} else {
 				long firstJoinVar = ((QueryOperatorTask) getParentTask())
@@ -184,12 +183,13 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 					messageSender.sendQueryMapping(mapping, getID(),
 							parentBaseID | 0x00_01_00_00_00_00_00_00l,
 							recycleCache);
-					if (logger != null) {
-						// TODO remove
-						logger.info(NumberConversion.id2description(getID())
-								+ " emitted the following mapping to parent cartesian join on computer 1: "
-								+ mapping.toString(getResultVariables()));
-					}
+					// if (logger != null) {
+					// // TODO remove
+					// logger.info(NumberConversion.id2description(getID())
+					// + " emitted the following mapping to parent cartesian
+					// join on computer 1: "
+					// + mapping.toString(getResultVariables()));
+					// }
 				} else {
 					long ownerLong = mapping.getValue(firstJoinVar,
 							getResultVariables()) & 0xFF_FF_00_00_00_00_00_00l;
@@ -204,14 +204,15 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 							// forward it to parent task on this computer
 							messageSender.sendQueryMapping(mapping, getID(),
 									getParentTask().getID(), recycleCache);
-							if (logger != null) {
-								// TODO remove
-								logger.info(
-										NumberConversion.id2description(getID())
-												+ " emitted the following mapping to local parent:"
-												+ mapping.toString(
-														getResultVariables()));
-							}
+							// if (logger != null) {
+							// // TODO remove
+							// logger.info(
+							// NumberConversion.id2description(getID())
+							// + " emitted the following mapping to local
+							// parent:"
+							// + mapping.toString(
+							// getResultVariables()));
+							// }
 						}
 					} else {
 						if (mapping
@@ -224,25 +225,27 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 									owner);
 							messageSender.sendQueryMapping(mapping, getID(),
 									parentBaseID | ownerLong, recycleCache);
-							if (logger != null) {
-								// TODO remove
-								logger.info(
-										NumberConversion.id2description(getID())
-												+ " emitted the following mapping to parent on computer "
-												+ owner + ": "
-												+ mapping.toString(
-														getResultVariables()));
-							}
-						} else {
-							if (logger != null) {
-								// TODO remove
-								logger.info(
-										NumberConversion.id2description(getID())
-												+ " discarded mapping: "
-												+ mapping.toString(
-														getResultVariables()));
-							}
+							// if (logger != null) {
+							// // TODO remove
+							// logger.info(
+							// NumberConversion.id2description(getID())
+							// + " emitted the following mapping to parent on
+							// computer "
+							// + owner + ": "
+							// + mapping.toString(
+							// getResultVariables()));
+							// }
 						}
+						// else {
+						// if (logger != null) {
+						// // TODO remove
+						// logger.info(
+						// NumberConversion.id2description(getID())
+						// + " discarded mapping: "
+						// + mapping.toString(
+						// getResultVariables()));
+						// }
+						// }
 					}
 				}
 			}
