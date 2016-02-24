@@ -141,9 +141,9 @@ public class MultiMap implements Closeable, AutoCloseable, Iterable<byte[]> {
 
 	@Override
 	public void close() {
+		saveMaxLength();
 		if (!database.isClosed()) {
 			database.close();
 		}
-		saveMaxLength();
 	}
 }
