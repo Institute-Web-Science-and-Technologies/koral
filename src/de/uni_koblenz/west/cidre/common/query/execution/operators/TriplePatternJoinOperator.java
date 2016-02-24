@@ -392,6 +392,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					}
 					recycleCache.releaseMapping(mapping);
 				}
+				Mapping mapping = consumeMapping(0);
+				if (logger != null && mapping != null) {
+					// TODO remove
+					logger.info(NumberConversion.id2description(getID())
+							+ mapping.toString(
+									((QueryOperatorTask) getChildTask(0))
+											.getResultVariables()));
+				}
 			}
 		}
 	}
