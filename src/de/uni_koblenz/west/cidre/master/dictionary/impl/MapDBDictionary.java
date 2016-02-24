@@ -178,7 +178,7 @@ public class MapDBDictionary implements Dictionary {
 
 	@Override
 	public boolean isEmpty() {
-		return nextID == 0;
+		return nextID == 1;
 	}
 
 	@Override
@@ -189,7 +189,7 @@ public class MapDBDictionary implements Dictionary {
 		if (decoder != null) {
 			decoder.clear();
 		}
-		nextID = 0;
+		nextID = 1;
 	}
 
 	@Override
