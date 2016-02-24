@@ -12,7 +12,6 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
@@ -317,19 +316,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private void executeLeftForwardStep() {
 		if (hasChildFinished(1)) {
-			if (logger != null) {
-				// TODO remove
-				logger.info(NumberConversion.id2description(getID())
-						+ " left input size: " + leftHashSet.size());
-			}
 			// the right child has finished
 			if (rightHashSet.isEmpty()) {
 				// no match for the right expression could be found
 				// discard all mappings received from left child
-				while (!isInputQueueEmpty(0)) {
-					Mapping mapping = consumeMapping(0);
-					recycleCache.releaseMapping(mapping);
-				}
+				// while (!isInputQueueEmpty(0)) {
+				// Mapping mapping = consumeMapping(0);
+				// recycleCache.releaseMapping(mapping);
+				// }
 			} else {
 				// the right child has matched
 				for (int i = 0; i < getEmittedMappingsPerRound()
