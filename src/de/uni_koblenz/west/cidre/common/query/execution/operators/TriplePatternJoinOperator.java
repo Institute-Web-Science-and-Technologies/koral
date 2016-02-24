@@ -400,6 +400,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 									((QueryOperatorTask) getChildTask(0))
 											.getResultVariables()));
 				}
+				if (logger != null) {
+					// TODO remove
+					logger.info(NumberConversion.id2description(getID())
+							+ getSizeOfInputQueue(0));
+				}
 			}
 		}
 	}
