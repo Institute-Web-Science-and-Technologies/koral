@@ -317,13 +317,13 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private void executeLeftForwardStep() {
 		if (hasChildFinished(1)) {
 			// the right child has finished
-			if (rightHashSet.isEmpty()) {
+			if (isInputQueueEmpty(1)) {
 				// no match for the right expression could be found
 				// discard all mappings received from left child
-				// while (!isInputQueueEmpty(0)) {
-				// Mapping mapping = consumeMapping(0);
-				// recycleCache.releaseMapping(mapping);
-				// }
+				while (!isInputQueueEmpty(0)) {
+					Mapping mapping = consumeMapping(0);
+					recycleCache.releaseMapping(mapping);
+				}
 			} else {
 				// the right child has matched
 				for (int i = 0; i < getEmittedMappingsPerRound()
@@ -343,7 +343,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private void executeRightForwardStep() {
 		if (hasChildFinished(0)) {
 			// the left child has finished
-			if (leftHashSet.isEmpty()) {
+			if (isInputQueueEmpty(0)) {
 				// no match for the left expression could be found
 				// discard all mappings received from right child
 				while (!isInputQueueEmpty(1)) {
