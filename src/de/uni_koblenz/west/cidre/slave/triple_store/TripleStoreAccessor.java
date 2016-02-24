@@ -38,7 +38,6 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
 		if (logger != null) {
 			// TODO remove
 			logger.info("\n" + tripleStore.toString());
-			MapDBTripleStore.logger = logger;
 		}
 	}
 

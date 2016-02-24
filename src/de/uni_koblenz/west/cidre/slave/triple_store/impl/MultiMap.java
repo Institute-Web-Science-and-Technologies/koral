@@ -16,6 +16,7 @@ import org.mapdb.Fun;
 
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * A MapDB implementation of a multi map.
@@ -132,6 +133,73 @@ public class MultiMap implements Closeable, AutoCloseable, Iterable<byte[]> {
 	@Override
 	public Iterator<byte[]> iterator() {
 		return multiMap.iterator();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("maxElementLenght=").append(maxElementLength).append("\n");
+		String delim = "";
+		for (byte[] triple : multiMap) {
+			sb.append(delim);
+			sb.append("(");
+			sb.append(NumberConversion.bytes2long(triple, 0 * Long.BYTES));
+			sb.append(",");
+			sb.append(NumberConversion.bytes2long(triple, 1 * Long.BYTES));
+			sb.append(",");
+			sb.append(NumberConversion.bytes2long(triple, 2 * Long.BYTES));
+			sb.append(",");
+			sb.append("{");
+			int computerId = 0;
+			String computerDelim = "";
+			for (int i = 3 * Long.BYTES; i < triple.length; i++) {
+				if ((triple[i] & 0x80) != 0) {
+					sb.append(computerDelim);
+					sb.append(computerId + 1);
+					computerDelim = ",";
+				}
+				if ((triple[i] & 0x40) != 0) {
+					sb.append(computerDelim);
+					sb.append(computerId + 2);
+					computerDelim = ",";
+				}
+				if ((triple[i] & 0x20) != 0) {
+					sb.append(computerDelim);
+					sb.append(computerId + 3);
+					computerDelim = ",";
+				}
+				if ((triple[i] & 0x10) != 0) {
+					sb.append(computerDelim);
+					sb.append(computerId + 4);
+					computerDelim = ",";
+				}
+				if ((triple[i] & 0x8) != 0) {
+					sb.append(computerDelim);
+					sb.append(computerId + 5);
+					computerDelim = ",";
+				}
+				if ((triple[i] & 0x4) != 0) {
+					sb.append(computerDelim);
+					sb.append(computerId + 6);
+					computerDelim = ",";
+				}
+				if ((triple[i] & 0x2) != 0) {
+					sb.append(computerDelim);
+					sb.append(computerId + 7);
+					computerDelim = ",";
+				}
+				if ((triple[i] & 0x1) != 0) {
+					sb.append(computerDelim);
+					sb.append(computerId + 8);
+					computerDelim = ",";
+				}
+				computerId += 8;
+			}
+			sb.append("}");
+			sb.append(")");
+			delim = "\n";
+		}
+		return sb.toString();
 	}
 
 	public void clear() {

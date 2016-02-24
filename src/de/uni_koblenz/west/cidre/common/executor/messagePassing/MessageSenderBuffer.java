@@ -67,11 +67,6 @@ public class MessageSenderBuffer {
 			QueryOperatorBase queryTree, boolean useBaseImplementation) {
 		for (int slave = 0; slave < numberOfSlaves; slave++) {
 			queryTree.adjustEstimatedLoad(statistics, slave);
-			if (logger != null) {
-				// TODO remove
-				logger.info(
-						"slave " + (slave + 1) + "\n" + queryTree.toString());
-			}
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
 			try (DataOutputStream output2 = new DataOutputStream(output);) {
 				output.write(MessageType.QUERY_CREATE.getValue());
