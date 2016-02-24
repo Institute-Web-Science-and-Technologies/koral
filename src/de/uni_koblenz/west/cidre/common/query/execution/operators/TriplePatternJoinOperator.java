@@ -330,7 +330,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						&& !isInputQueueEmpty(0); i++) {
 					emitMapping(consumeMapping(0));
 				}
-				if (hasChildFinished(0) && leftHashSet.isEmpty()) {
+				if (hasChildFinished(0) && isInputQueueEmpty(0)) {
 					// as a final step, discard the empty mapping from the right
 					// child
 					Mapping mapping = consumeMapping(1);
@@ -357,7 +357,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					Mapping mapping = consumeMapping(1);
 					emitMapping(mapping);
 				}
-				if (hasChildFinished(1) && rightHashSet.isEmpty()) {
+				if (hasChildFinished(1) && isInputQueueEmpty(1)) {
 					// as a final step, discard the empty mapping from the left
 					// child
 					Mapping mapping = consumeMapping(0);
