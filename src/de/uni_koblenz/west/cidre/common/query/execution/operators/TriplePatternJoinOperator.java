@@ -334,6 +334,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					// as a final step, discard the empty mapping from the right
 					// child
 					Mapping mapping = consumeMapping(1);
+					if (logger != null) {
+						// TODO remove
+						logger.info(mapping
+								.toString(((QueryOperatorTask) getChildTask(1))
+										.getResultVariables()));
+					}
 					recycleCache.releaseMapping(mapping);
 				}
 			}
