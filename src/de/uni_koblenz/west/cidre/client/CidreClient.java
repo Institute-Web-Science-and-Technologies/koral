@@ -204,6 +204,8 @@ public class CidreClient {
 	public void processQuery(String query, Writer outputWriter,
 			QueryExecutionTreeType treeType, boolean useBaseOperators)
 					throws IOException {
+		long startTime = System.currentTimeMillis();
+
 		class DummyDictionaryEncoder extends DictionaryEncoder {
 
 			public DummyDictionaryEncoder(Configuration conf, Logger logger) {
@@ -239,6 +241,7 @@ public class CidreClient {
 			// receive response
 			try {
 				byte[][] response = connection.getResponse();
+				long numberOfReceivedMappings = 0;
 				boolean isFirstResult = true;
 				while (response != null) {
 					MessageType mtype = MessageType.valueOf(response[0][0]);
@@ -252,12 +255,22 @@ public class CidreClient {
 							outputHeaders(vars, outputWriter);
 							isFirstResult = false;
 						}
-						outputWriter.write(MessageUtils
-								.convertToString(response[0], null));
+						String string = MessageUtils
+								.convertToString(response[0], null);
+						outputWriter.write(string);
 						outputWriter.flush();
+						numberOfReceivedMappings += countNumberOfMappings(
+								string);
 					} else {
 						outputWriter.write("\n");
 						outputWriter.flush();
+						System.out
+								.println(
+										"Received " + numberOfReceivedMappings
+												+ " result mappings (counted by number of lines) in "
+												+ (System.currentTimeMillis()
+														- startTime)
+												+ " msec.");
 						processCommandResponse("querying database", response);
 						break;
 					}
@@ -270,6 +283,18 @@ public class CidreClient {
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private long countNumberOfMappings(String string) {
+		long result = 0;
+		char separatorChar = Configuration.QUERY_RESULT_ROW_SEPARATOR_CHAR
+				.charAt(0);
+		for (char c : string.toCharArray()) {
+			if (c == separatorChar) {
+				result++;
+			}
+		}
+		return result;
 	}
 
 	private void outputHeaders(String[] vars, Writer outputWriter)
