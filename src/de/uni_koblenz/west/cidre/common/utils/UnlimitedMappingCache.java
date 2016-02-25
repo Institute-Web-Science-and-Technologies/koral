@@ -100,6 +100,7 @@ public class UnlimitedMappingCache
 				boolean wasAFileWritten = false;
 				if (fileOutput != null) {
 					fileOutput.close();
+					fileOutput = null;
 					wasAFileWritten = true;
 				}
 				if (fileInput != null) {
@@ -159,6 +160,9 @@ public class UnlimitedMappingCache
 			if (fileOutput != null) {
 				fileOutput.close();
 			}
+		} catch (IOException e) {
+		}
+		try {
 			if (fileInput != null) {
 				fileInput.close();
 			}
