@@ -193,7 +193,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	@Override
 	protected void executeOperationStep() {
 		StringBuilder result = new StringBuilder();
-		for (int numberOfAlreadyEmittedMessages = 0; numberOfAlreadyEmittedMessages < emittedMappingsPerRound; numberOfAlreadyEmittedMessages++) {
+		int numberOfAlreadyEmittedMessages = 0;
+		for (numberOfAlreadyEmittedMessages = 0; numberOfAlreadyEmittedMessages < emittedMappingsPerRound; numberOfAlreadyEmittedMessages++) {
 			Mapping mapping = consumeMapping(0);
 			if (mapping == null) {
 				break;
@@ -235,6 +236,11 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			lastContactWithClient = System.currentTimeMillis();
 		} else {
 			sendKeepAliveMessageToClient();
+		}
+		if (numberOfAlreadyEmittedMessages > 0 && logger != null) {
+			// TODO remove
+			logger.info("sent " + numberOfAlreadyEmittedMessages
+					+ " mappings to client");
 		}
 	}
 
