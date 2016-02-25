@@ -120,10 +120,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		return null;
 	}
 
-	@Override
-	public boolean hasInput() {
-		return true;
-	}
+	// @Override
+	// public boolean hasInput() {
+	// return true;
+	// }
 
 	@Override
 	public void enqueueMessage(long sender, byte[] message, int firstIndex,
