@@ -36,6 +36,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final MessageSenderBuffer messageSender;
 
+	private final MessageReceiverListener messageReceiver;
+
 	private final WorkerThread[] workers;
 
 	private final int numberOfSlaves;
@@ -60,10 +62,12 @@ public class WorkerManager implements Closeable, AutoCloseable {
 			Logger logger) {
 		this.logger = logger;
 		messageNotifier = notifier;
-		MessageReceiverListener receiver = new MessageReceiverListener(logger);
+		messageReceiver = new MessageReceiverListener(logger);
 		this.messageSender = new MessageSenderBuffer(conf.getNumberOfSlaves(),
-				conf.getMappingBundleSize(), messageSender, receiver, logger);
-		notifier.registerMessageListener(receiver.getClass(), receiver);
+				conf.getMappingBundleSize(), messageSender, messageReceiver,
+				logger);
+		messageNotifier.registerMessageListener(messageReceiver.getClass(),
+				messageReceiver);
 		numberOfSlaves = conf.getNumberOfSlaves();
 		this.tripleStore = tripleStore;
 		cacheSize = conf.getReceiverQueueSize();
@@ -79,8 +83,9 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		for (int i = 0; i < workers.length; i++) {
 			workers[i] = new WorkerThread(i,
 					conf.getSizeOfMappingRecycleCache(),
-					conf.getUnbalanceThresholdForWorkerThreads(), receiver,
-					this.messageSender, numberOfSlaves, logger);
+					conf.getUnbalanceThresholdForWorkerThreads(),
+					messageReceiver, this.messageSender, numberOfSlaves,
+					logger);
 			if (i > 0) {
 				workers[i - 1].setNext(workers[i]);
 				workers[i].setPrevious(workers[i - 1]);
@@ -217,6 +222,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
 				executor.clear();
 			}
 		}
+		messageNotifier.registerMessageListener(messageReceiver.getClass(),
+				messageReceiver);
 	}
 
 	@Override
