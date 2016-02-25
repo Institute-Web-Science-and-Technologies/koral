@@ -12,6 +12,7 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
@@ -251,6 +252,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						}
 					} else {
 						Mapping mapping = consumeMapping(0);
+						if (logger != null) {
+							// TODO remove
+							logger.info(NumberConversion.id2description(getID())
+									+ " consumed mapping from left child:\n"
+									+ mapping.toString(
+											((QueryOperatorTask) getChildTask(
+													0)).getResultVariables()));
+						}
 						long[] mappingVars = ((QueryOperatorBase) getChildTask(
 								0)).getResultVariables();
 						long[] rightVars = ((QueryOperatorBase) getChildTask(1))
@@ -279,6 +288,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						}
 					} else {
 						Mapping mapping = consumeMapping(1);
+						if (logger != null) {
+							// TODO remove
+							logger.info(NumberConversion.id2description(getID())
+									+ " consumed mapping from right child:\n"
+									+ mapping.toString(
+											((QueryOperatorTask) getChildTask(
+													1)).getResultVariables()));
+						}
 						long[] mappingVars = ((QueryOperatorBase) getChildTask(
 								1)).getResultVariables();
 						long[] leftVars = ((QueryOperatorBase) getChildTask(0))
@@ -299,6 +316,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				i--;
 			} else {
 				Mapping resultMapping = iterator.next();
+				if (logger != null) {
+					// TODO remove
+					logger.info(NumberConversion.id2description(getID())
+							+ " emit mapping:\n"
+							+ resultMapping.toString(getResultVariables()));
+				}
 				emitMapping(resultMapping);
 			}
 		}
