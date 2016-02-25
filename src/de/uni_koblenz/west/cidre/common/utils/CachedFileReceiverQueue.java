@@ -288,7 +288,6 @@ public class CachedFileReceiverQueue implements Closeable {
 
 	public synchronized void enqueue(byte[] message, int firstIndex,
 			int length) {
-		size++;
 		try {
 			switch (status) {
 			case CLOSED:
@@ -308,14 +307,15 @@ public class CachedFileReceiverQueue implements Closeable {
 				enqueueInFile2(message, firstIndex, length);
 				break;
 			}
+			size++;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	public synchronized Mapping dequeue(MappingRecycleCache recycleCache) {
-		size--;
 		try {
+			Mapping result = null;
 			switch (status) {
 			case CLOSED:
 				throw new IllegalStateException(
@@ -323,18 +323,24 @@ public class CachedFileReceiverQueue implements Closeable {
 			case MEMORY_MEMORY:
 			case FILE1_MEMORY:
 			case FILE2_MEMORY:
-				return dequeueFromMemory(recycleCache);
+				result = dequeueFromMemory(recycleCache);
+				break;
 			case MEMORY_FILE1:
 			case FILE2_FILE1:
-				return dequeueFromFile1(recycleCache);
+				result = dequeueFromFile1(recycleCache);
+				break;
 			case MEMORY_FILE2:
 			case FILE1_FILE2:
-				return dequeueFromFile2(recycleCache);
+				result = dequeueFromFile2(recycleCache);
+				break;
 			}
+			if (result != null) {
+				size--;
+			}
+			return result;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		return null;
 	}
 
 	public synchronized boolean isClosed() {
