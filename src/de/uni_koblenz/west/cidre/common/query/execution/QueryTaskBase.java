@@ -95,7 +95,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
 	@Override
 	public boolean hasToPerformFinalSteps() {
-		return (isSubQueryExecutionTreeFinished() && state == QueryTaskState.STARTED)
+		return (isSubQueryExecutionTreeFinished()
+				&& state == QueryTaskState.STARTED)
 				|| (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH
 						&& numberOfMissingFinishedMessages == 0)
 				|| super.hasToPerformFinalSteps();
@@ -150,7 +151,9 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	 *         input queues and finish notifications are already checked in
 	 *         {@link QueryOperatorBase}).
 	 */
-	protected abstract boolean isFinishedLocally();
+	protected boolean isFinishedLocally() {
+		return !hasInput();
+	}
 
 	@Override
 	public boolean isInFinalState() {

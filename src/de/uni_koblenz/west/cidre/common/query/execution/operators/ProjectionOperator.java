@@ -98,11 +98,6 @@ public class ProjectionOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	protected boolean isFinishedLocally() {
-		return true;
-	}
-
-	@Override
 	public void serialize(DataOutputStream output,
 			boolean useBaseImplementation, int slaveId) throws IOException {
 		if (getParentTask() == null) {

@@ -368,11 +368,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	protected boolean isFinishedLocally() {
-		return true;
-	}
-
-	@Override
 	protected void closeInternal() {
 		leftHashSet.close();
 		rightHashSet.close();
