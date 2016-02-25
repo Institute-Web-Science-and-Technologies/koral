@@ -42,6 +42,8 @@ public class UnlimitedMappingCache
 
 	private int nextReadIndex;
 
+	private int nextFileOffset;
+
 	public UnlimitedMappingCache(int maxInMemorySize, File cacheDirectory,
 			MappingRecycleCache recycleCache, String uniqueFileNameSuffix) {
 		super();
@@ -97,17 +99,15 @@ public class UnlimitedMappingCache
 	public Iterator<Mapping> iterator() {
 		if (nextWriteIndex >= cache.length) {
 			try {
-				boolean wasAFileWritten = false;
 				if (fileOutput != null) {
 					fileOutput.close();
 					fileOutput = null;
-					wasAFileWritten = true;
 				}
 				if (fileInput != null) {
 					fileInput.close();
-					wasAFileWritten = true;
 				}
-				if (wasAFileWritten) {
+				if (diskCacheFile.exists()) {
+					nextFileOffset = 0;
 					fileInput = new DataInputStream(new BufferedInputStream(
 							new FileInputStream(diskCacheFile)));
 				}
@@ -123,10 +123,26 @@ public class UnlimitedMappingCache
 	private Mapping getNext() {
 		if (nextReadIndex < nextWriteIndex && nextReadIndex < cache.length) {
 			return cache[nextReadIndex++];
-		} else if (fileInput != null) {
+		} else if (diskCacheFile.exists()) {
 			try {
+				if (fileInput == null) {
+					if (fileOutput != null) {
+						try {
+							fileOutput.close();
+						} catch (IOException e) {
+						}
+						fileOutput = null;
+					}
+					fileInput = new DataInputStream(new BufferedInputStream(
+							new FileInputStream(diskCacheFile)));
+					long skippedBytes = 0;
+					while (skippedBytes < nextFileOffset) {
+						skippedBytes += fileInput.skip(nextFileOffset);
+					}
+				}
 				try {
 					int lengthOfArray = fileInput.readInt();
+					nextFileOffset += Integer.BYTES;
 					byte[] mappingArray = new byte[lengthOfArray];
 					fileInput.readFully(mappingArray);
 					return recycleCache.createMapping(mappingArray, 0,
