@@ -274,7 +274,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected boolean isFinishedLocally() {
-		return numberOfMissingFinishNotificationsFromSlaves == 0;
+		return numberOfMissingFinishNotificationsFromSlaves == 0
+				&& isInputQueueEmpty(0);
 	}
 
 	@Override
