@@ -65,7 +65,9 @@ public class NetworkManager implements Closeable, MessageSender {
 	public void sendMore(int receiver, byte[] message) {
 		Socket out = senders[receiver];
 		if (out != null) {
-			out.sendMore(message);
+			synchronized (out) {
+				out.sendMore(message);
+			}
 		}
 	}
 
@@ -73,7 +75,9 @@ public class NetworkManager implements Closeable, MessageSender {
 	public void send(int receiver, byte[] message) {
 		Socket out = senders[receiver];
 		if (out != null) {
-			out.send(message);
+			synchronized (out) {
+				out.send(message);
+			}
 		}
 	}
 
@@ -100,7 +104,9 @@ public class NetworkManager implements Closeable, MessageSender {
 			}
 			Socket out = senders[i];
 			if (out != null) {
-				out.send(message);
+				synchronized (out) {
+					out.send(message);
+				}
 			}
 		}
 	}
@@ -112,9 +118,13 @@ public class NetworkManager implements Closeable, MessageSender {
 	public byte[] receive(boolean waitForResponse) {
 		if (receiver != null) {
 			if (waitForResponse) {
-				return receiver.recv();
+				synchronized (receiver) {
+					return receiver.recv();
+				}
 			} else {
-				return receiver.recv(ZMQ.DONTWAIT);
+				synchronized (receiver) {
+					return receiver.recv(ZMQ.DONTWAIT);
+				}
 			}
 		} else {
 			return null;
@@ -128,10 +138,16 @@ public class NetworkManager implements Closeable, MessageSender {
 	@Override
 	public void close() {
 		for (int i = 0; i < senders.length; i++) {
-			context.destroySocket(senders[i]);
-			senders[i] = null;
+			if (senders[i] != null) {
+				synchronized (senders[i]) {
+					context.destroySocket(senders[i]);
+					senders[i] = null;
+				}
+			}
 		}
-		context.destroySocket(receiver);
+		synchronized (receiver) {
+			context.destroySocket(receiver);
+		}
 		receiver = null;
 		NetworkContextFactory.destroyNetworkContext(context);
 	}
