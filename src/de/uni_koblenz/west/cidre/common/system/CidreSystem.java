@@ -329,6 +329,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			}
 		}
 		listeners = new HashMap<>();
+		workerManager.clear();
 		clearInternal();
 	}
 
