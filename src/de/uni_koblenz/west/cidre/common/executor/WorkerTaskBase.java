@@ -97,7 +97,7 @@ public abstract class WorkerTaskBase implements WorkerTask {
 		return inputQueues[inputQueueIndex].size();
 	}
 
-	protected void enqueuMessageInternal(int inputQueueIndex, byte[] message,
+	protected void enqueuMessage(int inputQueueIndex, byte[] message,
 			int firstIndex, int length) {
 		if (inputQueues[inputQueueIndex].isClosed()) {
 			if (logger != null) {
@@ -174,13 +174,13 @@ public abstract class WorkerTaskBase implements WorkerTask {
 	 * @return <code>true</code> if the child operation is finished.
 	 */
 	protected boolean hasChildFinished(int child) {
-		return children[child].hasFinished();
+		return children[child].isInFinalState();
 	}
 
 	protected boolean areAllChildrenFinished() {
 		if (children != null) {
 			for (WorkerTask child : children) {
-				if (!child.hasFinished()) {
+				if (!child.isInFinalState()) {
 					return false;
 				}
 			}

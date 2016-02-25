@@ -97,13 +97,13 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 		long taskId = (sender & 0x00_00_ff_ff_ff_ff_ff_ffl)
 				| (getID() & 0xff_ff_00_00_00_00_00_00l);
 		int childIndex = getIndexOfChild(taskId);
-		enqueuMessageInternal(childIndex, message, firstIndex, length);
+		enqueuMessage(childIndex, message, firstIndex, length);
 	}
 
 	@Override
 	public boolean hasInput() {
 		if (getChildTask(0) == null) {
-			return !isFinishedInternal();
+			return !isFinishedLocally();
 		} else {
 			return super.hasInput();
 		}
@@ -112,7 +112,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	@Override
 	public boolean hasToPerformFinalSteps() {
 		if (getChildTask(0) == null) {
-			return isFinishedInternal() || getEstimatedTaskLoad() == 0;
+			return isFinishedLocally() || getEstimatedTaskLoad() == 0;
 		} else {
 			return super.hasToPerformFinalSteps();
 		}

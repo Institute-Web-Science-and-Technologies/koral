@@ -174,7 +174,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	@Override
 	protected void handleMappingReception(long sender, byte[] message,
 			int firstIndex, int length) {
-		enqueuMessageInternal(0, message, firstIndex, length);
+		enqueuMessage(0, message, firstIndex, length);
 	}
 
 	@Override
@@ -265,13 +265,13 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	}
 
 	@Override
-	protected boolean isFinishedInternal() {
+	protected boolean isFinishedLocally() {
 		return numberOfMissingFinishNotificationsFromSlaves == 0;
 	}
 
 	@Override
 	public void close() {
-		if (!hasFinished()) {
+		if (!isInFinalState()) {
 			sendMessageToClient(MessageUtils.createStringMessage(
 					MessageType.CLIENT_COMMAND_FAILED,
 					"The query has been closed before it was finished.",
@@ -285,7 +285,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	}
 
 	private void closeInternal() {
-		if (!hasFinished()) {
+		if (!isInFinalState()) {
 			messageSender.sendQueryAbortion(getQueryId());
 		}
 		super.close();

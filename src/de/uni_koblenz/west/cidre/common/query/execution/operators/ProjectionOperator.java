@@ -98,7 +98,7 @@ public class ProjectionOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	protected boolean isFinishedInternal() {
+	protected boolean isFinishedLocally() {
 		return true;
 	}
 

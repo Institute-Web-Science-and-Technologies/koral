@@ -95,7 +95,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
 	@Override
 	public boolean hasToPerformFinalSteps() {
-		return (isFinishedLocally() && state == QueryTaskState.STARTED)
+		return (isSubQueryExecutionTreeFinished() && state == QueryTaskState.STARTED)
 				|| (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH
 						&& numberOfMissingFinishedMessages == 0)
 				|| super.hasToPerformFinalSteps();
@@ -107,7 +107,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 			executePreStartStep();
 		} else if (state == QueryTaskState.STARTED) {
 			executeOperationStep();
-			if (isFinishedLocally()) {
+			if (isSubQueryExecutionTreeFinished()) {
 				numberOfMissingFinishedMessages--;
 				state = QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH;
 				executeFinalStep();
@@ -141,8 +141,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 		return consumeMapping(child, recycleCache);
 	}
 
-	private boolean isFinishedLocally() {
-		return areAllChildrenFinished() && isFinishedInternal();
+	private boolean isSubQueryExecutionTreeFinished() {
+		return areAllChildrenFinished() && isFinishedLocally();
 	}
 
 	/**
@@ -150,10 +150,10 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 	 *         input queues and finish notifications are already checked in
 	 *         {@link QueryOperatorBase}).
 	 */
-	protected abstract boolean isFinishedInternal();
+	protected abstract boolean isFinishedLocally();
 
 	@Override
-	public boolean hasFinished() {
+	public boolean isInFinalState() {
 		return hasFinishedSuccessfully() || isAborted();
 	}
 

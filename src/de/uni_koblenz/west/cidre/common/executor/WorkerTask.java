@@ -68,7 +68,10 @@ public interface WorkerTask extends Closeable {
 	 */
 	public void execute();
 
-	public boolean hasFinished();
+	/**
+	 * @return true, if task has successfully finished or if it was aborted
+	 */
+	public boolean isInFinalState();
 
 	@Override
 	public void close();

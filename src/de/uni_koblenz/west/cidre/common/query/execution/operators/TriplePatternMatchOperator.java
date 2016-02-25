@@ -218,7 +218,7 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	}
 
 	@Override
-	protected boolean isFinishedInternal() {
+	protected boolean isFinishedLocally() {
 		return getEstimatedTaskLoad() == 0 || tripleStore == null
 				|| (iterator != null && !iterator.hasNext());
 	}
