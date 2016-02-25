@@ -307,12 +307,9 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 	}
 
 	public void shutDown() {
-		shutDownInternal();
 		workerManager.close();
 		networkManager.close();
 	}
-
-	protected abstract void shutDownInternal();
 
 	public void clear() {
 		for (MessageListener[][] value : listeners.values()) {
@@ -330,10 +327,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 		}
 		listeners = new HashMap<>();
 		workerManager.clear();
-		clearInternal();
 	}
-
-	public abstract void clearInternal();
 
 	protected static Options createCommandLineOptions() {
 		Option help = new Option("h", "help", false, "print this help message");

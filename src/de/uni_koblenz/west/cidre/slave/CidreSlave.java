@@ -210,12 +210,14 @@ public class CidreSlave extends CidreSystem {
 	}
 
 	@Override
-	protected void shutDownInternal() {
+	public void shutDown() {
+		super.shutDown();
 		tripleStore.close();
 	}
 
 	@Override
-	public void clearInternal() {
+	public void clear() {
+		super.clear();
 		tripleStore.clear();
 		if (logger != null) {
 			logger.info("slave " + getNetworkManager().getCurrentID()

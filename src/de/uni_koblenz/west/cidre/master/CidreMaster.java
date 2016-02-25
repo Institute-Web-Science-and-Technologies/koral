@@ -183,7 +183,8 @@ public class CidreMaster extends CidreSystem {
 	}
 
 	@Override
-	public void clearInternal() {
+	public void clear() {
+		super.clear();
 		getNetworkManager()
 				.sendToAllSlaves(new byte[] { MessageType.CLEAR.getValue() });
 		clientMessageProcessor.clear();
@@ -196,7 +197,8 @@ public class CidreMaster extends CidreSystem {
 	}
 
 	@Override
-	protected void shutDownInternal() {
+	public void shutDown() {
+		super.shutDown();
 		clientMessageProcessor.close();
 		dictionary.close();
 		statistics.close();
