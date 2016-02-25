@@ -36,8 +36,8 @@ public class JeromqStreamHandler extends Handler {
 		}
 		context = NetworkContextFactory.getNetworkContext();
 		socket = context.createSocket(ZMQ.PUSH);
-		socket.setDelayAttachOnConnect(true);
-		socket.setSendTimeOut(3000);
+		// socket.setDelayAttachOnConnect(true);
+		// socket.setSendTimeOut(3000);
 		socket.connect("tcp://" + receiver);
 		formatter = new CSVFormatter(currentServer);
 		send(formatter.getHead(this));

@@ -58,16 +58,16 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 				System.out.println("Connection to master is already closed.");
 				return;
 			}
-			outSocket.setDelayAttachOnConnect(true);
-			outSocket.setSendTimeOut(3000);
+			// outSocket.setDelayAttachOnConnect(true);
+			// outSocket.setSendTimeOut(3000);
 			outSocket.connect("tcp://" + masterAddress);
 		}
 		if (inSocket == null) {
 			inSocket = context.createSocket(ZMQ.PULL);
 			synchronized (inSocketSemaphore) {
 				if (inSocket != null) {
-					inSocket.setDelayAttachOnConnect(true);
-					inSocket.setSendTimeOut(3000);
+					// inSocket.setDelayAttachOnConnect(true);
+					// inSocket.setSendTimeOut(3000);
 					inSocket.setReceiveTimeOut(
 							(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
 				}

@@ -39,8 +39,8 @@ public class JeromqLoggerReceiver extends Thread {
 	public JeromqLoggerReceiver(String address, String port) {
 		context = NetworkContextFactory.getNetworkContext();
 		socket = context.createSocket(ZMQ.PULL);
-		socket.setDelayAttachOnConnect(true);
-		socket.setSendTimeOut(3000);
+		// socket.setDelayAttachOnConnect(true);
+		// socket.setSendTimeOut(3000);
 		if (address != null) {
 			socket.bind("tcp://" + address + ":" + port);
 		} else {

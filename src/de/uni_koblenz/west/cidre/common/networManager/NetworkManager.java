@@ -38,8 +38,8 @@ public class NetworkManager implements Closeable, MessageSender {
 		senders = new Socket[conf.getNumberOfSlaves() + 1];
 		String[] master = conf.getMaster();
 		senders[0] = context.createSocket(ZMQ.PUSH);
-		senders[0].setDelayAttachOnConnect(true);
-		senders[0].setSendTimeOut(3000);
+		// senders[0].setDelayAttachOnConnect(true);
+		// senders[0].setSendTimeOut(3000);
 
 		senders[0].connect("tcp://" + master[0] + ":" + master[1]);
 		if (Arrays.equals(currentServer, master)) {
@@ -48,8 +48,8 @@ public class NetworkManager implements Closeable, MessageSender {
 		for (int i = 1; i < senders.length; i++) {
 			String[] slave = conf.getSlave(i - 1);
 			senders[i] = context.createSocket(ZMQ.PUSH);
-			senders[i].setDelayAttachOnConnect(true);
-			senders[i].setSendTimeOut(3000);
+			// senders[i].setDelayAttachOnConnect(true);
+			// senders[i].setSendTimeOut(3000);
 			senders[i].connect("tcp://" + slave[0] + ":" + slave[1]);
 			if (Arrays.equals(currentServer, slave)) {
 				currentID = i;
