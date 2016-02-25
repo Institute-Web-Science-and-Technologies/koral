@@ -51,6 +51,7 @@ public class ClientConnectionManager
 		context = NetworkContextFactory.getNetworkContext();
 
 		inSocket = context.createSocket(ZMQ.PULL);
+		inSocket.setDelayAttachOnConnect(true);
 		inSocket.bind("tcp://" + client[0] + ":" + client[1]);
 
 		if (logger != null) {
@@ -113,6 +114,7 @@ public class ClientConnectionManager
 
 	public int createConnection(String clientIPAndPort) {
 		Socket socket = context.createSocket(ZMQ.PUSH);
+		socket.setDelayAttachOnConnect(true);
 		socket.connect("tcp://" + clientIPAndPort);
 		for (int i = 0; i < outClientSockets.size(); i++) {
 			if (outClientSockets.get(i) == null) {
