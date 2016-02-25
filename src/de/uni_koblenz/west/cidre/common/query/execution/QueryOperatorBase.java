@@ -8,7 +8,6 @@ import java.io.IOException;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOperator;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -138,10 +137,6 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 
 	@Override
 	protected void tidyUp() {
-		if (logger != null) {
-			// TODO remove
-			logger.info(NumberConversion.id2description(getID()) + " finished");
-		}
 	}
 
 	/**

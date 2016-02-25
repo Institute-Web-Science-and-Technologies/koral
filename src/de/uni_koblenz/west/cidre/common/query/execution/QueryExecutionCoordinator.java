@@ -237,11 +237,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		} else {
 			sendKeepAliveMessageToClient();
 		}
-		if (numberOfAlreadyEmittedMessages > 0 && logger != null) {
-			// TODO remove
-			logger.info("sent " + numberOfAlreadyEmittedMessages
-					+ " mappings to client");
-		}
 	}
 
 	private void sendKeepAliveMessageToClient() {
@@ -267,8 +262,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 		if (logger != null) {
 			logger.fine("Query " + getQueryId() + " is finished.");
-			// TODO remove
-			logger.info("discarded mappings: " + getSizeOfInputQueue(0));
 		}
 	}
 
