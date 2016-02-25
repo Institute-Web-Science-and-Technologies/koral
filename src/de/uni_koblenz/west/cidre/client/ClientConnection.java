@@ -59,6 +59,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 				return;
 			}
 			outSocket.setDelayAttachOnConnect(true);
+			outSocket.setSendTimeOut(3000);
 			outSocket.connect("tcp://" + masterAddress);
 		}
 		if (inSocket == null) {
@@ -66,6 +67,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 			synchronized (inSocketSemaphore) {
 				if (inSocket != null) {
 					inSocket.setDelayAttachOnConnect(true);
+					inSocket.setSendTimeOut(3000);
 					inSocket.setReceiveTimeOut(
 							(int) Configuration.CLIENT_CONNECTION_TIMEOUT);
 				}
