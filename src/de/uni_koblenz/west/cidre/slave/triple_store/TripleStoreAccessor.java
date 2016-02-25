@@ -35,10 +35,6 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
 				conf.getTripleStoreDir(), conf.useTransactionsForTripleStore(),
 				conf.isTripleStoreAsynchronouslyWritten(),
 				conf.getTripleStoreCacheType());
-		if (logger != null) {
-			// TODO remove
-			logger.info("\n" + tripleStore.toString());
-		}
 	}
 
 	public void storeTriples(File file) {
