@@ -8,6 +8,7 @@ import java.io.IOException;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOperator;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -110,6 +111,13 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	}
 
 	@Override
+	protected boolean isFinishedLocally() {
+		// prevent infinite loop if leefs in query execution tree do not change
+		// implementation of this method
+		return !super.hasInput();
+	}
+
+	@Override
 	public boolean hasToPerformFinalSteps() {
 		if (getChildTask(0) == null) {
 			return isFinishedLocally() || getEstimatedTaskLoad() == 0;
@@ -130,6 +138,10 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 
 	@Override
 	protected void tidyUp() {
+		if (logger != null) {
+			// TODO remove
+			logger.info(NumberConversion.id2description(getID()) + " finished");
+		}
 	}
 
 	/**
