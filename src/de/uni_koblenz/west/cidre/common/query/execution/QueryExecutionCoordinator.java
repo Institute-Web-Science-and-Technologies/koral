@@ -120,10 +120,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		return null;
 	}
 
-	// @Override
-	// public boolean hasInput() {
-	// return true;
-	// }
+	@Override
+	public boolean hasInput() {
+		return true;
+	}
 
 	@Override
 	public void enqueueMessage(long sender, byte[] message, int firstIndex,
@@ -275,7 +275,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	@Override
 	protected boolean isFinishedLocally() {
 		return numberOfMissingFinishNotificationsFromSlaves == 0
-				&& super.isFinishedLocally();
+				&& isInputQueueEmpty(0);
 	}
 
 	@Override
