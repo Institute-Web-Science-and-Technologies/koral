@@ -267,13 +267,14 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 		if (logger != null) {
 			logger.fine("Query " + getQueryId() + " is finished.");
+			// TODO remove
+			logger.info("discarded mappings: " + getSizeOfInputQueue(0));
 		}
 	}
 
 	@Override
 	protected boolean isFinishedLocally() {
-		return numberOfMissingFinishNotificationsFromSlaves == 0
-				&& isInputQueueEmpty(0);
+		return numberOfMissingFinishNotificationsFromSlaves == 0;
 	}
 
 	@Override
