@@ -287,77 +287,77 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private int foundJoins = 0;
 
 	private void executeJoinStep() {
-		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
-			if (iterator == null || !iterator.hasNext()) {
-				if (iterator != null && !iterator.hasNext()) {
-					recycleCache.releaseMapping(iterator.getJoiningMapping());
-				}
-				if (shouldConsumefromLeftChild()) {
-					if (isInputQueueEmpty(0)) {
-						if (hasChildFinished(0)) {
-							// left child is finished
-							rightMappingCache.close();
-						}
-						if (isInputQueueEmpty(1)) {
-							// there are no mappings to consume
-							return;
-						}
-					} else {
-						Mapping mapping = consumeMapping(0);
-						long[] mappingVars = ((QueryOperatorBase) getChildTask(
-								0)).getResultVariables();
-						long[] rightVars = ((QueryOperatorBase) getChildTask(1))
-								.getResultVariables();
-						// TODO remove
-						receivedMappingsFromLeft++;
-						leftMappingCache.add(mapping);
-						iterator = new JoinIterator(recycleCache,
-								getResultVariables(), joinVars, mapping,
-								mappingVars,
-								joinType == JoinType.CARTESIAN_PRODUCT
-										? rightMappingCache.iterator()
-										: rightMappingCache.getMatchCandidates(
-												mapping, mappingVars),
-								rightVars);
+		// for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
+		if (iterator == null || !iterator.hasNext()) {
+			if (iterator != null && !iterator.hasNext()) {
+				recycleCache.releaseMapping(iterator.getJoiningMapping());
+			}
+			if (shouldConsumefromLeftChild()) {
+				if (isInputQueueEmpty(0)) {
+					if (hasChildFinished(0)) {
+						// left child is finished
+						rightMappingCache.close();
+					}
+					if (isInputQueueEmpty(1)) {
+						// there are no mappings to consume
+						return;
 					}
 				} else {
-					if (isInputQueueEmpty(1)) {
-						if (hasChildFinished(1)) {
-							// right child is finished
-							leftMappingCache.close();
-						}
-						if (isInputQueueEmpty(0)) {
-							// there are no mappings to consume
-							return;
-						}
-					} else {
-						Mapping mapping = consumeMapping(1);
-						long[] mappingVars = ((QueryOperatorBase) getChildTask(
-								1)).getResultVariables();
-						long[] leftVars = ((QueryOperatorBase) getChildTask(0))
-								.getResultVariables();
-						// TODO remove
-						receivedMappingsFromRight++;
-						rightMappingCache.add(mapping);
-						iterator = new JoinIterator(recycleCache,
-								getResultVariables(), joinVars, mapping,
-								mappingVars,
-								joinType == JoinType.CARTESIAN_PRODUCT
-										? leftMappingCache.iterator()
-										: leftMappingCache.getMatchCandidates(
-												mapping, mappingVars),
-								leftVars);
-					}
+					Mapping mapping = consumeMapping(0);
+					long[] mappingVars = ((QueryOperatorBase) getChildTask(0))
+							.getResultVariables();
+					long[] rightVars = ((QueryOperatorBase) getChildTask(1))
+							.getResultVariables();
+					// TODO remove
+					receivedMappingsFromLeft++;
+					leftMappingCache.add(mapping);
+					iterator = new JoinIterator(recycleCache,
+							getResultVariables(), joinVars, mapping,
+							mappingVars,
+							joinType == JoinType.CARTESIAN_PRODUCT
+									? rightMappingCache.iterator()
+									: rightMappingCache.getMatchCandidates(
+											mapping, mappingVars),
+							rightVars);
 				}
-				i--;
 			} else {
-				Mapping resultMapping = iterator.next();
-				emitMapping(resultMapping);
-				// TODO remove
-				emittedMappings++;
-				foundJoins++;
+				if (isInputQueueEmpty(1)) {
+					if (hasChildFinished(1)) {
+						// right child is finished
+						leftMappingCache.close();
+					}
+					if (isInputQueueEmpty(0)) {
+						// there are no mappings to consume
+						return;
+					}
+				} else {
+					Mapping mapping = consumeMapping(1);
+					long[] mappingVars = ((QueryOperatorBase) getChildTask(1))
+							.getResultVariables();
+					long[] leftVars = ((QueryOperatorBase) getChildTask(0))
+							.getResultVariables();
+					// TODO remove
+					receivedMappingsFromRight++;
+					rightMappingCache.add(mapping);
+					iterator = new JoinIterator(recycleCache,
+							getResultVariables(), joinVars, mapping,
+							mappingVars,
+							joinType == JoinType.CARTESIAN_PRODUCT
+									? leftMappingCache.iterator()
+									: leftMappingCache.getMatchCandidates(
+											mapping, mappingVars),
+							leftVars);
+				}
 			}
+			// i--;
+		} else {
+			Mapping resultMapping = iterator.next();
+			emitMapping(resultMapping);
+			// TODO remove
+			emittedMappings++;
+			foundJoins++;
 		}
+		// }
 		if (logger != null) {
 			// TODO remove
 			logger.info(NumberConversion.id2description(getID())
