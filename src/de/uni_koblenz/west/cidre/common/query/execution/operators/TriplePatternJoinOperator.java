@@ -15,6 +15,7 @@ import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -275,6 +276,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		}
 	}
 
+	// TODO remove
+
+	private int emittedMappings = 0;
+
+	private int receivedMappingsFromLeft = 0;
+
+	private int receivedMappingsFromRight = 0;
+
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
@@ -292,15 +301,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 							return;
 						}
 					} else {
+						// TODO remove
+						receivedMappingsFromLeft++;
 						Mapping mapping = consumeMapping(0);
-						// if (logger != null) {
-						// // TODO remove
-						// logger.info(NumberConversion.id2description(getID())
-						// + " consumed mapping from left child:\n"
-						// + mapping.toString(
-						// ((QueryOperatorTask) getChildTask(
-						// 0)).getResultVariables()));
-						// }
 						long[] mappingVars = ((QueryOperatorBase) getChildTask(
 								0)).getResultVariables();
 						long[] rightVars = ((QueryOperatorBase) getChildTask(1))
@@ -326,15 +329,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 							return;
 						}
 					} else {
+						// TODO remove
+						receivedMappingsFromRight++;
 						Mapping mapping = consumeMapping(1);
-						// if (logger != null) {
-						// // TODO remove
-						// logger.info(NumberConversion.id2description(getID())
-						// + " consumed mapping from right child:\n"
-						// + mapping.toString(
-						// ((QueryOperatorTask) getChildTask(
-						// 1)).getResultVariables()));
-						// }
 						long[] mappingVars = ((QueryOperatorBase) getChildTask(
 								1)).getResultVariables();
 						long[] leftVars = ((QueryOperatorBase) getChildTask(0))
@@ -353,14 +350,23 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				i--;
 			} else {
 				Mapping resultMapping = iterator.next();
-				// if (logger != null) {
-				// // TODO remove
-				// logger.info(NumberConversion.id2description(getID())
-				// + " emit mapping:\n"
-				// + resultMapping.toString(getResultVariables()));
-				// }
 				emitMapping(resultMapping);
+				// TODO remove
+				emittedMappings++;
 			}
+		}
+	}
+
+	@Override
+	protected void tidyUp() {
+		super.tidyUp();
+		// TODO remove
+		if (logger != null) {
+			logger.info(NumberConversion.id2description(getID()) + ":\n"
+					+ toString() + "\nreceived left child: "
+					+ receivedMappingsFromLeft + " received from right: "
+					+ receivedMappingsFromRight + " emitted: "
+					+ emittedMappings);
 		}
 	}
 
