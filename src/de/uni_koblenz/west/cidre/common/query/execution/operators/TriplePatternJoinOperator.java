@@ -128,28 +128,15 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	private int[] createComparisonOrder(long[] vars) {
-		if (logger != null) {
-			// TODO remove
-			logger.info("vars: " + Arrays.toString(vars));
-			logger.info("joinVars: " + Arrays.toString(joinVars));
-		}
 		int[] ordering = new int[vars.length];
 		int nextIndex = 0;
 		for (long var : joinVars) {
 			ordering[nextIndex] = getIndexOfVar(var, vars);
-			if (logger != null) {
-				// TODO remove
-				logger.info(nextIndex + ": " + Arrays.toString(ordering));
-			}
 			nextIndex++;
 		}
 		for (int i = 0; i < vars.length; i++) {
-			if (getIndexOfVar(vars[i], joinVars) != -1) {
+			if (getIndexOfVar(vars[i], joinVars) == -1) {
 				ordering[nextIndex] = i;
-				if (logger != null) {
-					// TODO remove
-					logger.info(nextIndex + ": " + Arrays.toString(ordering));
-				}
 				nextIndex++;
 			}
 		}
