@@ -224,7 +224,7 @@ public class CidreClient {
 		VariableDictionary dictionary = new VariableDictionary();
 		SparqlParser parser = new SparqlParser(
 				new DummyDictionaryEncoder(null, null), null, (short) 0, 0, 0,
-				1, 0, null, 0, 1, 1);
+				1, 0, null, 0, null, false, true, null);
 		QueryOperatorTask task = parser.parse(query, treeType, dictionary);
 		String queryString = QueryFactory.create(query).serialize();
 		String[] vars = dictionary.decode(task.getResultVariables());

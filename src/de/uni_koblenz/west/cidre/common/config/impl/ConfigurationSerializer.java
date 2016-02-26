@@ -153,12 +153,21 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
 		return new Integer(conf.getMaxEmittedMappingsPerRound()).toString();
 	}
 
-	public String serializeMaxInMemoryMappings(Configuration conf) {
-		return new Integer(conf.getMaxInMemoryMappingsDuringJoin()).toString();
+	public String serializeJoinCacheStorageType(Configuration conf) {
+		return conf.getJoinCacheStorageType().name();
 	}
 
-	public String serializeNumberOfHashBuckets(Configuration conf) {
-		return new Integer(conf.getNumberOfHashBuckets()).toString();
+	public String serializeEnableTransactionsForJoinCache(Configuration conf) {
+		return new Boolean(conf.useTransactionsForJoinCache()).toString();
+	}
+
+	public String serializeEnableAsynchronousWritesForJoinCache(
+			Configuration conf) {
+		return new Boolean(conf.isJoinCacheAsynchronouslyWritten()).toString();
+	}
+
+	public String serializeJoinCacheType(Configuration conf) {
+		return conf.getJoinCacheType().name();
 	}
 
 }

@@ -9,6 +9,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionCoordinator;
@@ -48,9 +50,13 @@ public class ClientMessageProcessor
 
 	private final int emittedMappingsPerRound;
 
-	private final int numberOfHashBuckets;
+	private final MapDBStorageOptions storageType;
 
-	private final int maxInMemoryMappings;
+	private final boolean useTransactions;
+
+	private final boolean writeAsynchronously;
+
+	private final MapDBCacheOptions cacheType;
 
 	public ClientMessageProcessor(Configuration conf,
 			ClientConnectionManager clientConnections, CidreMaster master,
@@ -71,8 +77,10 @@ public class ClientMessageProcessor
 		this.clientConnections.registerClosedConnectionListener(this);
 		mappingReceiverQueueSize = conf.getReceiverQueueSize();
 		emittedMappingsPerRound = conf.getMaxEmittedMappingsPerRound();
-		numberOfHashBuckets = conf.getNumberOfHashBuckets();
-		maxInMemoryMappings = conf.getMaxInMemoryMappingsDuringJoin();
+		cacheType = conf.getJoinCacheType();
+		storageType = conf.getJoinCacheStorageType();
+		useTransactions = conf.useTransactionsForJoinCache();
+		writeAsynchronously = conf.isJoinCacheAsynchronouslyWritten();
 	}
 
 	/**
@@ -252,8 +260,8 @@ public class ClientMessageProcessor
 						master.getNumberOfSlaves(), mappingReceiverQueueSize,
 						tmpDir, clientID.intValue(), clientConnections,
 						master.getDictionary(), master.getStatistics(),
-						emittedMappingsPerRound, numberOfHashBuckets,
-						maxInMemoryMappings, logger);
+						emittedMappingsPerRound, storageType, useTransactions,
+						writeAsynchronously, cacheType, logger);
 				coordinator.processQueryRequest(arguments);
 				clientAddress2queryExecutionCoordinator.put(address,
 						coordinator);

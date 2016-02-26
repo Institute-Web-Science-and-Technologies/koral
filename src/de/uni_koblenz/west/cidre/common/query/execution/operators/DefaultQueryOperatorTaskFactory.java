@@ -2,6 +2,8 @@ package de.uni_koblenz.west.cidre.common.query.execution.operators;
 
 import java.io.File;
 
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTaskFactoryBase;
@@ -38,12 +40,13 @@ public class DefaultQueryOperatorTaskFactory
 	@Override
 	public QueryOperatorTask createTriplePatternJoin(long taskId,
 			int emittedMappingsPerRound, QueryOperatorTask leftChild,
-			QueryOperatorTask rightChild, int numberOfHashBuckets,
-			int maxInMemoryMappings) {
+			QueryOperatorTask rightChild, MapDBStorageOptions storageType,
+			boolean useTransactions, boolean writeAsynchronously,
+			MapDBCacheOptions cacheType) {
 		return new TriplePatternJoinOperator(taskId, coordinatorId,
 				numberOfSlaves, cacheSize, cacheDirectory,
-				emittedMappingsPerRound, leftChild, rightChild,
-				numberOfHashBuckets, maxInMemoryMappings);
+				emittedMappingsPerRound, leftChild, rightChild, storageType,
+				useTransactions, writeAsynchronously, cacheType);
 	}
 
 	@Override

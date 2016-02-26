@@ -2,6 +2,8 @@ package de.uni_koblenz.west.cidre.common.query.execution.operators.base_impl;
 
 import java.io.File;
 
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.TriplePatternJoinOperator;
@@ -11,21 +13,24 @@ public class TriplePatternJoinBaseOperator extends TriplePatternJoinOperator {
 	public TriplePatternJoinBaseOperator(long id, long coordinatorId,
 			int numberOfSlaves, int cacheSize, File cacheDirectory,
 			int emittedMappingsPerRound, QueryOperatorTask leftChild,
-			QueryOperatorTask rightChild, int numberOfHashBuckets,
-			int maxInMemoryMappings) {
+			QueryOperatorTask rightChild, MapDBStorageOptions storageType,
+			boolean useTransactions, boolean writeAsynchronously,
+			MapDBCacheOptions cacheType) {
 		super(id, coordinatorId, numberOfSlaves, cacheSize, cacheDirectory,
-				emittedMappingsPerRound, leftChild, rightChild,
-				numberOfHashBuckets, maxInMemoryMappings);
+				emittedMappingsPerRound, leftChild, rightChild, storageType,
+				useTransactions, writeAsynchronously, cacheType);
 	}
 
 	public TriplePatternJoinBaseOperator(short slaveId, int queryId,
 			short taskId, long coordinatorId, int numberOfSlaves, int cacheSize,
 			File cacheDirectory, int emittedMappingsPerRound,
 			QueryOperatorTask leftChild, QueryOperatorTask rightChild,
-			int numberOfHashBuckets, int maxInMemoryMappings) {
+			MapDBStorageOptions storageType, boolean useTransactions,
+			boolean writeAsynchronously, MapDBCacheOptions cacheType) {
 		super(slaveId, queryId, taskId, coordinatorId, numberOfSlaves,
 				cacheSize, cacheDirectory, emittedMappingsPerRound, leftChild,
-				rightChild, numberOfHashBuckets, maxInMemoryMappings);
+				rightChild, storageType, useTransactions, writeAsynchronously,
+				cacheType);
 	}
 
 	@Override

@@ -51,6 +51,8 @@ import org.apache.jena.sparql.algebra.op.OpTriple;
 import org.apache.jena.sparql.algebra.op.OpUnion;
 import org.apache.jena.sparql.core.Var;
 
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
@@ -88,26 +90,32 @@ public class SparqlParser implements OpVisitor {
 
 	private final int emittedMappingsPerRound;
 
-	private final int numberOfHashBuckets;
+	private final MapDBStorageOptions storageType;
 
-	private final int maxInMemoryMappings;
+	private final boolean useTransactions;
+
+	private final boolean writeAsynchronously;
+
+	private final MapDBCacheOptions cacheType;
 
 	public SparqlParser(DictionaryEncoder dictionary,
 			TripleStoreAccessor tripleStore, short slaveId, int queryId,
 			long coordinatorId, int numberOfSlaves, int cacheSize,
 			File cacheDirectory, int emittedMappingsPerRound,
-			int numberOfHashBuckets, int maxInMemoryMappings) {
+			MapDBStorageOptions storageType, boolean useTransactions,
+			boolean writeAsynchronously, MapDBCacheOptions cacheType) {
 		this(dictionary, tripleStore, slaveId, queryId, coordinatorId,
 				numberOfSlaves, cacheSize, cacheDirectory,
-				emittedMappingsPerRound, numberOfHashBuckets,
-				maxInMemoryMappings, false);
+				emittedMappingsPerRound, storageType, useTransactions,
+				writeAsynchronously, cacheType, false);
 	}
 
 	public SparqlParser(DictionaryEncoder dictionary,
 			TripleStoreAccessor tripleStore, short slaveId, int queryId,
 			long coordinatorId, int numberOfSlaves, int cacheSize,
 			File cacheDirectory, int emittedMappingsPerRound,
-			int numberOfHashBuckets, int maxInMemoryMappings,
+			MapDBStorageOptions storageType, boolean useTransactions,
+			boolean writeAsynchronously, MapDBCacheOptions cacheType,
 			boolean useBaseImplementation) {
 		this.dictionary = dictionary;
 		this.tripleStore = tripleStore;
@@ -122,8 +130,10 @@ public class SparqlParser implements OpVisitor {
 					numberOfSlaves, cacheSize, cacheDirectory);
 		}
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
-		this.numberOfHashBuckets = numberOfHashBuckets;
-		this.maxInMemoryMappings = maxInMemoryMappings;
+		this.cacheType = cacheType;
+		this.storageType = storageType;
+		this.useTransactions = useTransactions;
+		this.writeAsynchronously = writeAsynchronously;
 	}
 
 	public void setUseBaseImplementation(boolean useBaseOperators) {
@@ -230,8 +240,8 @@ public class SparqlParser implements OpVisitor {
 	private QueryOperatorTask createTriplePatternJoin(QueryOperatorTask left,
 			QueryOperatorTask right) {
 		QueryOperatorTask join = taskFactory.createTriplePatternJoin(slaveId,
-				queryId, emittedMappingsPerRound, left, right,
-				numberOfHashBuckets, maxInMemoryMappings);
+				queryId, emittedMappingsPerRound, left, right, storageType,
+				useTransactions, writeAsynchronously, cacheType);
 		((QueryOperatorBase) left).setParentTask(join);
 		((QueryOperatorBase) right).setParentTask(join);
 		return join;

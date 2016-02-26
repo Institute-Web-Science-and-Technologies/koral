@@ -5,6 +5,8 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.DefaultQueryOperatorTaskFactory;
@@ -23,25 +25,32 @@ public class QueryExecutionTreeDeserializer {
 
 	private final TripleStoreAccessor tripleStore;
 
-	private final int numberOfHashBuckets;
-
-	private final int maxInMemoryMappings;
-
 	private final int numberOfSlaves;
 
 	private final int cacheSize;
 
 	private final File cacheDirectory;
 
+	private final MapDBStorageOptions storageType;
+
+	private final boolean useTransactions;
+
+	private final boolean writeAsynchronously;
+
+	private final MapDBCacheOptions cacheType;
+
 	public QueryExecutionTreeDeserializer(TripleStoreAccessor tripleStore,
 			int numberOfSlaves, int cacheSize, File cacheDirectory,
-			int numberOfHashBuckets, int maxInMemoryMappings) {
+			MapDBStorageOptions storageType, boolean useTransactions,
+			boolean writeAsynchronously, MapDBCacheOptions cacheType) {
 		this.tripleStore = tripleStore;
-		this.numberOfHashBuckets = numberOfHashBuckets;
-		this.maxInMemoryMappings = maxInMemoryMappings;
 		this.numberOfSlaves = numberOfSlaves;
 		this.cacheSize = cacheSize;
 		this.cacheDirectory = cacheDirectory;
+		this.cacheType = cacheType;
+		this.storageType = storageType;
+		this.useTransactions = useTransactions;
+		this.writeAsynchronously = writeAsynchronously;
 	}
 
 	public QueryOperatorTask deserialize(byte[] serializedQET) {
@@ -109,8 +118,8 @@ public class QueryExecutionTreeDeserializer {
 
 		QueryOperatorBase result = (QueryOperatorBase) taskFactory
 				.createTriplePatternJoin(taskId, emittedMappingsPerRound,
-						leftChild, rightChild, numberOfHashBuckets,
-						maxInMemoryMappings);
+						leftChild, rightChild, storageType, useTransactions,
+						writeAsynchronously, cacheType);
 		result.setEstimatedWorkLoad(estimatedTaskLoad);
 		((QueryOperatorBase) leftChild).setParentTask(result);
 		((QueryOperatorBase) rightChild).setParentTask(result);

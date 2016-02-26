@@ -7,13 +7,15 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
+import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
-import de.uni_koblenz.west.cidre.common.utils.UnlimitedMappingHashSet;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -30,19 +32,26 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private final JoinType joinType;
 
-	private final int numberOfHashBuckets;
+	private final MapDBStorageOptions storageType;
 
-	private UnlimitedMappingHashSet leftHashSet;
+	private final boolean useTransactions;
 
-	private UnlimitedMappingHashSet rightHashSet;
+	private final boolean writeAsynchronously;
+
+	private final MapDBCacheOptions cacheType;
+
+	private JoinMappingCache leftMappingCache;
+
+	private JoinMappingCache rightMappingCache;
 
 	private JoinIterator iterator;
 
 	public TriplePatternJoinOperator(long id, long coordinatorId,
 			int numberOfSlaves, int cacheSize, File cacheDirectory,
 			int emittedMappingsPerRound, QueryOperatorTask leftChild,
-			QueryOperatorTask rightChild, int numberOfHashBuckets,
-			int maxInMemoryMappings) {
+			QueryOperatorTask rightChild, MapDBStorageOptions storageType,
+			boolean useTransactions, boolean writeAsynchronously,
+			MapDBCacheOptions cacheType) {
 		super(id, coordinatorId, numberOfSlaves, cacheSize, cacheDirectory,
 				emittedMappingsPerRound);
 		addChildTask(leftChild);
@@ -62,19 +71,18 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 			}
 		}
 
-		int numberOfInMemoryMappingsPerSet = maxInMemoryMappings / 2;
-		if (numberOfInMemoryMappingsPerSet <= 0) {
-			numberOfInMemoryMappingsPerSet = 1;
-		}
-
-		this.numberOfHashBuckets = numberOfHashBuckets;
+		this.cacheType = cacheType;
+		this.storageType = storageType;
+		this.useTransactions = useTransactions;
+		this.writeAsynchronously = writeAsynchronously;
 	}
 
 	public TriplePatternJoinOperator(short slaveId, int queryId, short taskId,
 			long coordinatorId, int numberOfSlaves, int cacheSize,
 			File cacheDirectory, int emittedMappingsPerRound,
 			QueryOperatorTask leftChild, QueryOperatorTask rightChild,
-			int numberOfHashBuckets, int maxInMemoryMappings) {
+			MapDBStorageOptions storageType, boolean useTransactions,
+			boolean writeAsynchronously, MapDBCacheOptions cacheType) {
 		super(slaveId, queryId, taskId, coordinatorId, numberOfSlaves,
 				cacheSize, cacheDirectory, emittedMappingsPerRound);
 		addChildTask(leftChild);
@@ -94,24 +102,54 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 			}
 		}
 
-		int numberOfInMemoryMappingsPerSet = maxInMemoryMappings / 2;
-		if (numberOfInMemoryMappingsPerSet <= 0) {
-			numberOfInMemoryMappingsPerSet = 1;
-		}
-
-		this.numberOfHashBuckets = numberOfHashBuckets;
+		this.cacheType = cacheType;
+		this.storageType = storageType;
+		this.useTransactions = useTransactions;
+		this.writeAsynchronously = writeAsynchronously;
 	}
 
 	@Override
 	public void setUp(MessageSenderBuffer messageSender,
 			MappingRecycleCache recycleCache, Logger logger) {
 		super.setUp(messageSender, recycleCache, logger);
-		leftHashSet = new UnlimitedMappingHashSet(numberOfHashBuckets,
-				numberOfHashBuckets, getCacheDirectory(), recycleCache,
-				getClass().getSimpleName() + getID() + "_leftChild_");
-		rightHashSet = new UnlimitedMappingHashSet(numberOfHashBuckets,
-				numberOfHashBuckets, getCacheDirectory(), recycleCache,
-				getClass().getSimpleName() + getID() + "_rightChild_");
+		long[] leftVars = ((QueryOperatorTask) getChildTask(0))
+				.getResultVariables();
+		long[] rightVars = ((QueryOperatorTask) getChildTask(1))
+				.getResultVariables();
+		leftMappingCache = new JoinMappingCache(storageType, useTransactions,
+				writeAsynchronously, cacheType, getCacheDirectory(),
+				recycleCache,
+				getClass().getSimpleName() + getID() + "_leftChild_", leftVars,
+				createComparisonOrder(leftVars), joinVars.length);
+		rightMappingCache = new JoinMappingCache(storageType, useTransactions,
+				writeAsynchronously, cacheType, getCacheDirectory(),
+				recycleCache,
+				getClass().getSimpleName() + getID() + "_rightChild_",
+				rightVars, createComparisonOrder(rightVars), joinVars.length);
+	}
+
+	private int[] createComparisonOrder(long[] vars) {
+		int[] ordering = new int[vars.length];
+		int nextIndex = 0;
+		for (long var : joinVars) {
+			ordering[nextIndex] = getIndexOfVar(var, vars);
+			nextIndex++;
+		}
+		for (int i = 0; i < vars.length; i++) {
+			if (getIndexOfVar(vars[i], joinVars) != -1) {
+				ordering[nextIndex] = i;
+			}
+		}
+		return ordering;
+	}
+
+	private int getIndexOfVar(long var, long[] vars) {
+		for (int i = 0; i < vars.length; i++) {
+			if (vars[i] == var) {
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	private void computeVars(long[] leftVars, long[] rightVars) {
@@ -210,8 +248,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	@Override
 	public long getCurrentTaskLoad() {
-		long leftSize = getSizeOfInputQueue(0) + leftHashSet.size();
-		long rightSize = getSizeOfInputQueue(1) + rightHashSet.size();
+		long leftSize = getSizeOfInputQueue(0) + leftMappingCache.size();
+		long rightSize = getSizeOfInputQueue(1) + rightMappingCache.size();
 		if (leftSize == 0) {
 			return rightSize;
 		} else if (rightSize == 0) {
@@ -247,7 +285,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					if (isInputQueueEmpty(0)) {
 						if (hasChildFinished(0)) {
 							// left child is finished
-							rightHashSet.close();
+							rightMappingCache.close();
 						}
 						if (isInputQueueEmpty(1)) {
 							// there are no mappings to consume
@@ -267,23 +305,21 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								0)).getResultVariables();
 						long[] rightVars = ((QueryOperatorBase) getChildTask(1))
 								.getResultVariables();
-						leftHashSet.add(mapping, getFirstJoinVar(),
-								mappingVars);
+						leftMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
 								mappingVars,
 								joinType == JoinType.CARTESIAN_PRODUCT
-										? rightHashSet.iterator()
-										: rightHashSet.getMatchCandidates(
-												mapping, getFirstJoinVar(),
-												mappingVars),
+										? rightMappingCache.iterator()
+										: rightMappingCache.getMatchCandidates(
+												mapping, mappingVars),
 								rightVars);
 					}
 				} else {
 					if (isInputQueueEmpty(1)) {
 						if (hasChildFinished(1)) {
 							// right child is finished
-							leftHashSet.close();
+							leftMappingCache.close();
 						}
 						if (isInputQueueEmpty(0)) {
 							// there are no mappings to consume
@@ -303,16 +339,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								1)).getResultVariables();
 						long[] leftVars = ((QueryOperatorBase) getChildTask(0))
 								.getResultVariables();
-						rightHashSet.add(mapping, getFirstJoinVar(),
-								mappingVars);
+						rightMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
 								mappingVars,
 								joinType == JoinType.CARTESIAN_PRODUCT
-										? leftHashSet.iterator()
-										: leftHashSet.getMatchCandidates(
-												mapping, getFirstJoinVar(),
-												mappingVars),
+										? leftMappingCache.iterator()
+										: leftMappingCache.getMatchCandidates(
+												mapping, mappingVars),
 								leftVars);
 					}
 				}
@@ -336,7 +370,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		} else if (isInputQueueEmpty(0)) {
 			return false;
 		} else {
-			return leftHashSet.size() < rightHashSet.size();
+			return leftMappingCache.size() < rightMappingCache.size();
 		}
 	}
 
@@ -395,8 +429,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	@Override
 	protected void closeInternal() {
-		leftHashSet.close();
-		rightHashSet.close();
+		leftMappingCache.close();
+		rightMappingCache.close();
 	}
 
 	@Override

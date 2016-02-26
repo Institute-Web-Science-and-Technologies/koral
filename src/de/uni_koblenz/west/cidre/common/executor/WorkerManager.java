@@ -12,6 +12,8 @@ import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionTreeDeserializer;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
@@ -48,9 +50,13 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
 	private final File cacheDirectory;
 
-	private final int numberOfHashBuckets;
+	private final MapDBStorageOptions storageType;
 
-	private final int maxInMemoryMappings;
+	private final boolean useTransactions;
+
+	private final boolean writeAsynchronously;
+
+	private final MapDBCacheOptions cacheType;
 
 	public WorkerManager(Configuration conf, MessageNotifier notifier,
 			MessageSender messageSender, Logger logger) {
@@ -72,8 +78,10 @@ public class WorkerManager implements Closeable, AutoCloseable {
 		this.tripleStore = tripleStore;
 		cacheSize = conf.getReceiverQueueSize();
 		cacheDirectory = new File(conf.getTmpDir());
-		numberOfHashBuckets = conf.getNumberOfHashBuckets();
-		maxInMemoryMappings = conf.getMaxInMemoryMappingsDuringJoin();
+		cacheType = conf.getJoinCacheType();
+		storageType = conf.getJoinCacheStorageType();
+		useTransactions = conf.useTransactionsForJoinCache();
+		writeAsynchronously = conf.isJoinCacheAsynchronouslyWritten();
 
 		int availableCPUs = Runtime.getRuntime().availableProcessors() - 1;
 		if (availableCPUs < 1) {
@@ -114,7 +122,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
 				receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES + 1);
 		QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(
 				tripleStore, numberOfSlaves, cacheSize, cacheDirectory,
-				numberOfHashBuckets, maxInMemoryMappings);
+				storageType, useTransactions, writeAsynchronously, cacheType);
 		try (DataInputStream input = new DataInputStream(
 				new ByteArrayInputStream(receivedQUERY_CREATEMessage,
 						Byte.BYTES + Integer.BYTES,

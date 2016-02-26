@@ -2,6 +2,8 @@ package de.uni_koblenz.west.cidre.common.query.execution;
 
 import java.io.File;
 
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
@@ -66,17 +68,19 @@ public abstract class QueryOperatorTaskFactoryBase {
 
 	public QueryOperatorTask createTriplePatternJoin(short slaveId, int queryId,
 			int emittedMappingsPerRound, QueryOperatorTask leftChild,
-			QueryOperatorTask rightChild, int numberOfHashBuckets,
-			int maxInMemoryMappings) {
+			QueryOperatorTask rightChild, MapDBStorageOptions storageType,
+			boolean useTransactions, boolean writeAsynchronously,
+			MapDBCacheOptions cacheType) {
 		return createTriplePatternJoin(getNewTaskId(slaveId, queryId),
-				emittedMappingsPerRound, leftChild, rightChild,
-				numberOfHashBuckets, maxInMemoryMappings);
+				emittedMappingsPerRound, leftChild, rightChild, storageType,
+				useTransactions, writeAsynchronously, cacheType);
 	}
 
 	public abstract QueryOperatorTask createTriplePatternJoin(long taskId,
 			int emittedMappingsPerRound, QueryOperatorTask leftChild,
-			QueryOperatorTask rightChild, int numberOfHashBuckets,
-			int maxInMemoryMappings);
+			QueryOperatorTask rightChild, MapDBStorageOptions storageType,
+			boolean useTransactions, boolean writeAsynchronously,
+			MapDBCacheOptions cacheType);
 
 	public QueryOperatorTask createProjection(short slaveId, int queryId,
 			int emittedMappingsPerRound, long[] resultVars,

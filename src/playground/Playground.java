@@ -79,16 +79,20 @@ public class Playground {
 		SparqlParser parser = new SparqlParser(encoder, accessor, (short) 0, 0,
 				0, 4, conf.getReceiverQueueSize(), workingDir,
 				conf.getMaxEmittedMappingsPerRound(),
-				conf.getNumberOfHashBuckets(),
-				conf.getMaxInMemoryMappingsDuringJoin());
+				conf.getJoinCacheStorageType(),
+				conf.useTransactionsForJoinCache(),
+				conf.isJoinCacheAsynchronouslyWritten(),
+				conf.getJoinCacheType());
 		QueryOperatorTask task = parser.parse(query,
 				QueryExecutionTreeType.LEFT_LINEAR, dictionary);
 		System.out.println(task.toString());
 
 		QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(
 				accessor, conf.getNumberOfSlaves(), conf.getReceiverQueueSize(),
-				workingDir, conf.getNumberOfHashBuckets(),
-				conf.getMaxInMemoryMappingsDuringJoin());
+				workingDir, conf.getJoinCacheStorageType(),
+				conf.useTransactionsForJoinCache(),
+				conf.isJoinCacheAsynchronouslyWritten(),
+				conf.getJoinCacheType());
 
 		for (int i = 0; i < 4; i++) {
 			System.out.println("Slave " + i + ":");

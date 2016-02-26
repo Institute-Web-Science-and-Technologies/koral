@@ -8,6 +8,8 @@ import org.apache.jena.graph.NodeFactory;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
@@ -58,8 +60,9 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			int numberOfSlaves, int cacheSize, File cacheDir, int clientID,
 			ClientConnectionManager clientConnections,
 			DictionaryEncoder dictionary, GraphStatistics statistics,
-			int emittedMappingsPerRound, int numberOfHashBuckets,
-			int maxInMemoryMappings, Logger logger) {
+			int emittedMappingsPerRound, MapDBStorageOptions storageType,
+			boolean useTransactions, boolean writeAsynchronously,
+			MapDBCacheOptions cacheType, Logger logger) {
 		super(computerID, queryID, (short) 0, numberOfSlaves, cacheSize,
 				cacheDir);
 		this.logger = logger;
@@ -77,8 +80,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		this.emittedMappingsPerRound = emittedMappingsPerRound;
 		parser = new SparqlParser(dictionary, null, computerID, getQueryId(),
 				getID(), numberOfSlaves, cacheSize, cacheDir,
-				emittedMappingsPerRound, numberOfHashBuckets,
-				maxInMemoryMappings, false);
+				emittedMappingsPerRound, storageType, useTransactions,
+				writeAsynchronously, cacheType, false);
 	}
 
 	public void processQueryRequest(byte[][] arguments) {

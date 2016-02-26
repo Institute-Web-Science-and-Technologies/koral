@@ -451,28 +451,63 @@ public class Configuration implements Configurable {
 		this.maxEmittedMappingsPerRound = maxEmittedMappingsPerRound;
 	}
 
-	@Property(name = "maxInMemoryMappings", description = "Defines the maximum amount of mappings that are kept in memory during the triple pattern join operation."
-			+ " If more mappings are stored, they are written to disk.")
-	private int maxInMemoryMappingsDuringJoin = 1024;
+	@Property(name = "joinCacheStorageType", description = "Defines how the join cache is persisted:"
+			+ "\nMEMORY = triples are only stored in memory"
+			+ "\nMEMORY_MAPPED_FILE = triples are stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required."
+			+ "\nRANDOM_ACCESS_FILE = triples are is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.")
+	private MapDBStorageOptions joinCacheStorageType = MapDBStorageOptions.MEMORY_MAPPED_FILE;
 
-	public int getMaxInMemoryMappingsDuringJoin() {
-		return maxInMemoryMappingsDuringJoin;
+	public MapDBStorageOptions getJoinCacheStorageType() {
+		return joinCacheStorageType;
 	}
 
-	public void setMaxInMemoryMappingsDuringJoin(
-			int maxInMemoryMappingsDuringJoin) {
-		this.maxInMemoryMappingsDuringJoin = maxInMemoryMappingsDuringJoin;
+	public void setJoinCacheStorageType(
+			MapDBStorageOptions joinCacheStorageType) {
+		this.joinCacheStorageType = joinCacheStorageType;
 	}
 
-	@Property(name = "numberOfHashBuckets", description = "Defines the the number of hash buckets used during the triple pattern join operation.")
-	private int numberOfHashBuckets = 16;
+	// @Property(name = "enableTransactionsForJoinCache", description = "If
+	// set
+	// to true, transactions are used. Transactions are only required if
+	// processing updates in future work.")
+	private boolean useTransactionsForJoinCache = false;
 
-	public int getNumberOfHashBuckets() {
-		return numberOfHashBuckets;
+	public boolean useTransactionsForJoinCache() {
+		return useTransactionsForJoinCache;
 	}
 
-	public void setNumberOfHashBuckets(int numberOfHashBuckets) {
-		this.numberOfHashBuckets = numberOfHashBuckets;
+	public void setUseTransactionsForJoinCache(
+			boolean useTransactionsForJoinCache) {
+		this.useTransactionsForJoinCache = useTransactionsForJoinCache;
+	}
+
+	@Property(name = "enableAsynchronousWritesForJoinCache", description = "If set to true, updates are written in a separate thread asynchronously.")
+	private boolean isJoinCacheAsynchronouslyWritten = true;
+
+	public boolean isJoinCacheAsynchronouslyWritten() {
+		return isJoinCacheAsynchronouslyWritten;
+	}
+
+	public void setJoinCacheAsynchronouslyWritten(
+			boolean isJoinCacheAsynchronouslyWritten) {
+		this.isJoinCacheAsynchronouslyWritten = isJoinCacheAsynchronouslyWritten;
+	}
+
+	@Property(name = "joinCacheType", description = "Defines how the join cache works:"
+			+ "\nNONE = no instances are cached"
+			+ "\nHASH_TABLE = a cached instance is deleted, if a hash collision occurs"
+			+ "\nLEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size"
+			+ "\nHARD_REFERENCE = no instance is removed from the cache automatically"
+			+ "\nSOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full"
+			+ "\nWEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them")
+	private MapDBCacheOptions joinCacheType = MapDBCacheOptions.HASH_TABLE;
+
+	public MapDBCacheOptions getJoinCacheType() {
+		return joinCacheType;
+	}
+
+	public void setJoinCacheType(MapDBCacheOptions joinCacheType) {
+		this.joinCacheType = joinCacheType;
 	}
 
 	/*

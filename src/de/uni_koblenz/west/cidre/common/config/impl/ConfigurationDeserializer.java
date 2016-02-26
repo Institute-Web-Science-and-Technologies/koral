@@ -258,14 +258,43 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
 		conf.setMaxEmittedMappingsPerRound(Integer.parseInt(mappingsPerRound));
 	}
 
-	public void deserializeMaxInMemoryMappings(Configuration conf,
-			String inMemoryMappings) {
-		conf.setMaxInMemoryMappingsDuringJoin(Integer.parseInt(inMemoryMappings));
+	public void deserializeJoinCacheStorageType(Configuration conf,
+			String storageType) {
+		if (storageType != null && !storageType.isEmpty()) {
+			try {
+				conf.setJoinCacheStorageType(
+						MapDBStorageOptions.valueOf(storageType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
 	}
 
-	public void deserializeNumberOfHashBuckets(Configuration conf,
-			String numberOfHashBuckets) {
-		conf.setNumberOfHashBuckets(Integer.parseInt(numberOfHashBuckets));
+	public void deserializeEnableTransactionsForJoinCache(Configuration conf,
+			String enableTransactions) {
+		if (enableTransactions != null && !enableTransactions.isEmpty()) {
+			conf.setUseTransactionsForJoinCache(
+					Boolean.parseBoolean(enableTransactions));
+		}
+	}
+
+	public void deserializeEnableAsynchronousWritesForJoinCache(
+			Configuration conf, String writeAsynchronously) {
+		if (writeAsynchronously != null && !writeAsynchronously.isEmpty()) {
+			conf.setJoinCacheAsynchronouslyWritten(
+					Boolean.parseBoolean(writeAsynchronously));
+		}
+	}
+
+	public void deserializeJoinCacheType(Configuration conf, String cacheType) {
+		if (cacheType != null && !cacheType.isEmpty()) {
+			try {
+				conf.setJoinCacheType(
+						MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
+			} catch (IllegalArgumentException e) {
+
+			}
+		}
 	}
 
 }
