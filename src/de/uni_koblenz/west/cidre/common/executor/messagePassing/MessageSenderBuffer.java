@@ -181,7 +181,6 @@ public class MessageSenderBuffer {
 	private synchronized void sendBufferedMessages(int receivingComputer,
 			MappingRecycleCache mappingCache) {
 		ByteBuffer buffer = null;
-		// synchronized (mappingBuffer[receivingComputer]) {
 		if (nextIndex[receivingComputer] == 0) {
 			// the buffer is empty
 			return;
@@ -205,7 +204,6 @@ public class MessageSenderBuffer {
 			mappingCache.releaseMapping(mapping);
 		}
 		nextIndex[receivingComputer] = 0;
-		// }
 		// send message
 		if (buffer != null) {
 			messageSender.send(receivingComputer, buffer.array());
@@ -214,7 +212,6 @@ public class MessageSenderBuffer {
 
 	private synchronized void enqueue(int receivingComputer, Mapping mapping,
 			long receiverTaskID, MappingRecycleCache mappingCache) {
-		// synchronized (mappingBuffer[receivingComputer]) {
 		if (isBufferFull(receivingComputer)) {
 			sendBufferedMessages(receivingComputer, mappingCache);
 		}
@@ -222,7 +219,6 @@ public class MessageSenderBuffer {
 		if (isBufferFull(receivingComputer)) {
 			sendBufferedMessages(receivingComputer, mappingCache);
 		}
-		// }
 	}
 
 	/**
