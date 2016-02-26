@@ -46,9 +46,11 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 	 * @param cacheDirectory
 	 * @param recycleCache
 	 * @param uniqueFileNameSuffix
+	 * @param mappingVariables
 	 * @param variableComparisonOrder
 	 *            must contain all variables of the mapping. First variable has
 	 *            index 0. The join variables must occur first!
+	 * @param numberOfJoinVars
 	 */
 	public JoinMappingCache(MapDBStorageOptions storageType,
 			boolean useTransactions, boolean writeAsynchronously,
