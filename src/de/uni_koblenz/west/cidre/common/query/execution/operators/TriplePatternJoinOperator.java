@@ -321,7 +321,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								.getResultVariables();
 						// TODO remove
 						receivedMappingsFromLeft++;
-						joinMapVars = mappingVars;
+						joinMapVars = rightVars;
 						leftMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
@@ -350,7 +350,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								.getResultVariables();
 						// TODO remove
 						receivedMappingsFromRight++;
-						joinMapVars = mappingVars;
+						joinMapVars = leftVars;
 						rightMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
