@@ -97,10 +97,6 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 		if (!isAlive()) {
 			start();
 		}
-		if (logger != null) {
-			// TODO remove
-			logger.info(tasks.toString());
-		}
 	}
 
 	/**
@@ -274,6 +270,11 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 				removeTask(iter, task);
 			}
 		}
+	}
+
+	@Override
+	public String toString() {
+		return tasks.toString();
 	}
 
 }
