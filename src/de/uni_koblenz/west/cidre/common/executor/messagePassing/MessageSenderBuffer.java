@@ -178,51 +178,51 @@ public class MessageSenderBuffer {
 		}
 	}
 
-	private void sendBufferedMessages(int receivingComputer,
+	private synchronized void sendBufferedMessages(int receivingComputer,
 			MappingRecycleCache mappingCache) {
 		ByteBuffer buffer = null;
-		synchronized (mappingBuffer[receivingComputer]) {
-			if (nextIndex[receivingComputer] == 0) {
-				// the buffer is empty
-				return;
-			}
-			// determine size of message
-			int sizeOfMessage = Byte.BYTES + Short.BYTES;
-			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
-				Mapping mapping = mappingBuffer[receivingComputer][i];
-				sizeOfMessage += mapping.getLengthOfMappingInByteArray();
-			}
-			// create message
-			buffer = ByteBuffer.allocate(sizeOfMessage);
-			buffer.put(MessageType.QUERY_MAPPING_BATCH.getValue())
-					.putShort((short) messageSender.getCurrentID());
-			for (int i = 0; i < nextIndex[receivingComputer]; i++) {
-				Mapping mapping = mappingBuffer[receivingComputer][i];
-				buffer.put(mapping.getByteArray(),
-						mapping.getFirstIndexOfMappingInByteArray(),
-						mapping.getLengthOfMappingInByteArray());
-				mappingBuffer[receivingComputer][i] = null;
-				mappingCache.releaseMapping(mapping);
-			}
-			nextIndex[receivingComputer] = 0;
+		// synchronized (mappingBuffer[receivingComputer]) {
+		if (nextIndex[receivingComputer] == 0) {
+			// the buffer is empty
+			return;
 		}
+		// determine size of message
+		int sizeOfMessage = Byte.BYTES + Short.BYTES;
+		for (int i = 0; i < nextIndex[receivingComputer]; i++) {
+			Mapping mapping = mappingBuffer[receivingComputer][i];
+			sizeOfMessage += mapping.getLengthOfMappingInByteArray();
+		}
+		// create message
+		buffer = ByteBuffer.allocate(sizeOfMessage);
+		buffer.put(MessageType.QUERY_MAPPING_BATCH.getValue())
+				.putShort((short) messageSender.getCurrentID());
+		for (int i = 0; i < nextIndex[receivingComputer]; i++) {
+			Mapping mapping = mappingBuffer[receivingComputer][i];
+			buffer.put(mapping.getByteArray(),
+					mapping.getFirstIndexOfMappingInByteArray(),
+					mapping.getLengthOfMappingInByteArray());
+			mappingBuffer[receivingComputer][i] = null;
+			mappingCache.releaseMapping(mapping);
+		}
+		nextIndex[receivingComputer] = 0;
+		// }
 		// send message
 		if (buffer != null) {
 			messageSender.send(receivingComputer, buffer.array());
 		}
 	}
 
-	private void enqueue(int receivingComputer, Mapping mapping,
+	private synchronized void enqueue(int receivingComputer, Mapping mapping,
 			long receiverTaskID, MappingRecycleCache mappingCache) {
-		synchronized (mappingBuffer[receivingComputer]) {
-			if (isBufferFull(receivingComputer)) {
-				sendBufferedMessages(receivingComputer, mappingCache);
-			}
-			mappingBuffer[receivingComputer][nextIndex[receivingComputer]++] = mapping;
-			if (isBufferFull(receivingComputer)) {
-				sendBufferedMessages(receivingComputer, mappingCache);
-			}
+		// synchronized (mappingBuffer[receivingComputer]) {
+		if (isBufferFull(receivingComputer)) {
+			sendBufferedMessages(receivingComputer, mappingCache);
 		}
+		mappingBuffer[receivingComputer][nextIndex[receivingComputer]++] = mapping;
+		if (isBufferFull(receivingComputer)) {
+			sendBufferedMessages(receivingComputer, mappingCache);
+		}
+		// }
 	}
 
 	/**
