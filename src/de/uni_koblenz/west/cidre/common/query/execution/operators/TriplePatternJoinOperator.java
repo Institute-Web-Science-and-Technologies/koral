@@ -292,7 +292,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
 				if (iterator != null && !iterator.hasNext()) {
-					if (logger != null) {
+					if (logger != null && foundJoins > 0) {
 						// TODO remove
 						try {
 							logger.info("mapping\n"
