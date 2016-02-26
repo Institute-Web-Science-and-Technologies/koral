@@ -152,12 +152,6 @@ public class WorkerManager implements Closeable, AutoCloseable {
 					computerOfQueryExecutionCoordinator, coordinatorId,
 					message + " Cause: " + e.getMessage());
 		}
-		if (logger != null) {
-			// TODO remove
-			for (WorkerThread thread : workers) {
-				logger.info(thread.toString());
-			}
-		}
 	}
 
 	private void initializeTaskTree(WorkerTask rootTask) {

@@ -365,6 +365,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		// }
 	}
 
+	// TODO join task is aborted before it is finished!
+
 	@Override
 	protected void tidyUp() {
 		super.tidyUp();
