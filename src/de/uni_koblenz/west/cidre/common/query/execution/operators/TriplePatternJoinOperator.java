@@ -303,7 +303,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						} catch (ArrayIndexOutOfBoundsException e) {
 							logger.throwing(e.getStackTrace()[0].getClassName(),
 									e.getStackTrace()[0].getMethodName(), e);
-							logger.info("real size: "
+							logger.info("found mappings: " + foundJoins
+									+ "real size: "
 									+ iterator.getJoiningMapping()
 											.getLengthOfMappingInByteArray()
 									+ " expected size: "
