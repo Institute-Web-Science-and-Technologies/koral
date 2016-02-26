@@ -17,8 +17,14 @@ import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
 /**
+ * <p>
  * Stores mappings in memory until limit is reached. Thereafter, mappings are
  * stored on disk.
+ * </p>
+ * 
+ * <p>
+ * Buggy and slow implementation
+ * </p>
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *

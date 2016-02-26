@@ -9,8 +9,14 @@ import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
 /**
+ * <p>
  * Hash set that stores mappings in memory. If a limit is reached, mappings are
  * stored on disk.
+ * </p>
+ * 
+ * <p>
+ * Buggy and slow implementation
+ * </p>
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *

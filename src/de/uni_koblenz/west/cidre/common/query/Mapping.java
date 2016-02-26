@@ -78,7 +78,7 @@ public class Mapping {
 				+ (numberOfSlaves % Byte.SIZE == 0 ? 0 : 1);
 	}
 
-	private int getHeaderSize() {
+	public static int getHeaderSize() {
 		return Byte.BYTES + Long.BYTES + Long.BYTES + Integer.BYTES;
 	}
 

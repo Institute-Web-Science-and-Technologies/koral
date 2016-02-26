@@ -1,0 +1,216 @@
+package de.uni_koblenz.west.cidre.common.utils;
+
+import java.io.Closeable;
+import java.io.File;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.NavigableSet;
+
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+
+/**
+ * Instances are used for joins. It caches the mappings received from one
+ * specific child of the join operation.
+ * 
+ * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ *
+ */
+public class JoinMappingCache implements Closeable, Iterable<Mapping> {
+
+	private final MappingRecycleCache recycleCache;
+
+	private final File mapFolder;
+
+	private final DB database;
+
+	private final NavigableSet<byte[]> multiMap;
+
+	private final int[] joinVarIndices;
+
+	private int size;
+
+	/**
+	 * @param storageType
+	 * @param useTransactions
+	 * @param writeAsynchronously
+	 * @param cacheType
+	 * @param cacheDirectory
+	 * @param recycleCache
+	 * @param uniqueFileNameSuffix
+	 * @param variableComparisonOrder
+	 *            must contain all variables of the mapping. First variable has
+	 *            index 0. The join variables must occur first!
+	 */
+	public JoinMappingCache(MapDBStorageOptions storageType,
+			boolean useTransactions, boolean writeAsynchronously,
+			MapDBCacheOptions cacheType, File cacheDirectory,
+			MappingRecycleCache recycleCache, String uniqueFileNameSuffix,
+			int[] variableComparisonOrder, int numberOfJoinVars) {
+		assert storageType != MapDBStorageOptions.MEMORY
+				|| cacheDirectory != null;
+		this.recycleCache = recycleCache;
+		joinVarIndices = new int[numberOfJoinVars];
+		for (int i = 0; i < numberOfJoinVars; i++) {
+			joinVarIndices[i] = variableComparisonOrder[i];
+		}
+		mapFolder = new File(cacheDirectory.getAbsolutePath() + File.separator
+				+ uniqueFileNameSuffix);
+		if (!mapFolder.exists()) {
+			mapFolder.mkdirs();
+		}
+		DBMaker<?> dbmaker = storageType.getDBMaker(mapFolder.getAbsolutePath()
+				+ File.separator + uniqueFileNameSuffix);
+		if (!useTransactions) {
+			dbmaker = dbmaker.transactionDisable().closeOnJvmShutdown();
+		}
+		if (writeAsynchronously) {
+			dbmaker = dbmaker.asyncWriteEnable();
+		}
+		dbmaker = cacheType.setCaching(dbmaker);
+		database = dbmaker.make();
+
+		multiMap = database.createTreeSet(uniqueFileNameSuffix)
+				.comparator(new JoinComparator(variableComparisonOrder))
+				.makeOrGet();
+
+		size = 0;
+	}
+
+	public boolean isEmpty() {
+		return size() == 0;
+	}
+
+	public long size() {
+		return size;
+	}
+
+	public void add(Mapping mapping) {
+		size++;
+		byte[] newMapping = new byte[mapping.getLengthOfMappingInByteArray()];
+		System.arraycopy(mapping.getByteArray(),
+				mapping.getFirstIndexOfMappingInByteArray(), newMapping, 0,
+				mapping.getLengthOfMappingInByteArray());
+		multiMap.add(newMapping);
+	}
+
+	public Iterator<Mapping> getMatchCandidates(Mapping mapping) {
+		byte[] min = new byte[mapping.getLengthOfMappingInByteArray()];
+		byte[] max = new byte[mapping.getLengthOfMappingInByteArray()];
+
+		byte[] original = mapping.getByteArray();
+		int offset = mapping.getFirstIndexOfMappingInByteArray();
+		// set join vars
+		for (int varIndex : joinVarIndices) {
+			int headerSize = Mapping.getHeaderSize();
+			for (int i = headerSize + varIndex * Long.BYTES; i < headerSize
+					+ varIndex * Long.BYTES + Long.BYTES; i++) {
+				min[i] = original[offset + varIndex * Long.BYTES + i];
+				max[i] = original[offset + varIndex * Long.BYTES + i];
+			}
+		}
+		// set non join vars
+		for (int i = 0; i < min.length; i++) {
+			if (isFirstIndexOfAJoinVar(i)) {
+				i += Long.BYTES - 1;
+			} else {
+				min[i] = Byte.MIN_VALUE;
+				max[i] = Byte.MAX_VALUE;
+			}
+		}
+		return new MappingIteratorWrapper(
+				multiMap.subSet(min, true, max, true).iterator(), recycleCache);
+	}
+
+	private boolean isFirstIndexOfAJoinVar(int index) {
+		int headerSize = Mapping.getHeaderSize();
+		for (int varIndex : joinVarIndices) {
+			if (index == headerSize + varIndex * Long.BYTES) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public Iterator<Mapping> iterator() {
+		return new MappingIteratorWrapper(multiMap.iterator(), recycleCache);
+	}
+
+	@Override
+	public void close() {
+		if (!database.isClosed()) {
+			database.close();
+		}
+		if (mapFolder.exists()) {
+			for (File file : mapFolder.listFiles()) {
+				file.delete();
+			}
+			mapFolder.delete();
+		}
+	}
+
+	public static class JoinComparator implements Comparator<byte[]> {
+
+		private final int offset = Mapping.getHeaderSize();
+
+		private final int[] comparisonOrder;
+
+		/**
+		 * ComparisonOrder must contain all variables of the mapping. First
+		 * variable has index 0.
+		 * 
+		 * @param comparisonOrder
+		 */
+		public JoinComparator(int[] comparisonOrder) {
+			this.comparisonOrder = comparisonOrder;
+		}
+
+		@Override
+		public int compare(byte[] thisMapping, byte[] otherMapping) {
+			if (thisMapping == otherMapping) {
+				return 0;
+			}
+			for (int var : comparisonOrder) {
+				int comparison = longCompare(getVar(var, thisMapping),
+						getVar(var, otherMapping));
+				if (comparison != 0) {
+					return comparison;
+				}
+			}
+			// compare containment information
+			final int len = Math.min(thisMapping.length, otherMapping.length);
+			for (int i = offset
+					+ comparisonOrder.length * Long.BYTES; i < len; i++) {
+				if (thisMapping[i] == otherMapping[i]) {
+					continue;
+				}
+				if (thisMapping[i] > otherMapping[i]) {
+					return 1;
+				}
+				return -1;
+			}
+			return intCompare(thisMapping.length, otherMapping.length);
+		}
+
+		private long getVar(int varIndex, byte[] mapping) {
+			return NumberConversion.bytes2long(mapping,
+					offset + varIndex * Long.BYTES);
+		}
+
+		private int intCompare(int x, int y) {
+			return (x < y) ? -1 : ((x == y) ? 0 : 1);
+		}
+
+		private int longCompare(long x, long y) {
+			return (x < y) ? -1 : ((x == y) ? 0 : 1);
+		}
+
+	}
+
+}

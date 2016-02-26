@@ -78,4 +78,8 @@ public class JoinIterator implements Iterator<Mapping> {
 		return true;
 	}
 
+	public Mapping getJoiningMapping() {
+		return joiningMapping;
+	}
+
 }

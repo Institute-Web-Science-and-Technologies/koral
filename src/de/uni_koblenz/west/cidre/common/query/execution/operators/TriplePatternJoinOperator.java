@@ -240,6 +240,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
+				if (iterator != null && !iterator.hasNext()) {
+					recycleCache.releaseMapping(iterator.getJoiningMapping());
+				}
 				if (shouldConsumefromLeftChild()) {
 					if (isInputQueueEmpty(0)) {
 						if (hasChildFinished(0)) {
