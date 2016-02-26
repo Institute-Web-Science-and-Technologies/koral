@@ -9,7 +9,6 @@ import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
@@ -227,10 +226,10 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	protected void tidyUp() {
 		super.tidyUp();
 		// TODO remove
-		if (logger != null) {
-			logger.info(NumberConversion.id2description(getID()) + ":\n"
-					+ toString() + "\nemitted: " + emittedMappings);
-		}
+		// if (logger != null) {
+		// logger.info(NumberConversion.id2description(getID()) + ":\n"
+		// + toString() + "\nemitted: " + emittedMappings);
+		// }
 	}
 
 	@Override

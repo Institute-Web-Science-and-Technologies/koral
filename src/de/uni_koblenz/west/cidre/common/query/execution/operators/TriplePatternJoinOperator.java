@@ -284,10 +284,23 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private int receivedMappingsFromRight = 0;
 
+	private int foundJoins = 0;
+
+	private long[] joinMapVars;
+
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
 				if (iterator != null && !iterator.hasNext()) {
+					if (logger != null) {
+						// TODO remove
+						logger.info("mapping\n"
+								+ iterator.getJoiningMapping().toString(
+										joinMapVars)
+								+ "\nhas produced " + foundJoins
+								+ " joined mappings");
+					}
+					foundJoins = 0;
 					recycleCache.releaseMapping(iterator.getJoiningMapping());
 				}
 				if (shouldConsumefromLeftChild()) {
@@ -301,13 +314,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 							return;
 						}
 					} else {
-						// TODO remove
-						receivedMappingsFromLeft++;
 						Mapping mapping = consumeMapping(0);
 						long[] mappingVars = ((QueryOperatorBase) getChildTask(
 								0)).getResultVariables();
 						long[] rightVars = ((QueryOperatorBase) getChildTask(1))
 								.getResultVariables();
+						// TODO remove
+						receivedMappingsFromLeft++;
+						joinMapVars = mappingVars;
 						leftMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
@@ -329,13 +343,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 							return;
 						}
 					} else {
-						// TODO remove
-						receivedMappingsFromRight++;
 						Mapping mapping = consumeMapping(1);
 						long[] mappingVars = ((QueryOperatorBase) getChildTask(
 								1)).getResultVariables();
 						long[] leftVars = ((QueryOperatorBase) getChildTask(0))
 								.getResultVariables();
+						// TODO remove
+						receivedMappingsFromRight++;
+						joinMapVars = mappingVars;
 						rightMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
@@ -353,6 +368,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				emitMapping(resultMapping);
 				// TODO remove
 				emittedMappings++;
+				foundJoins++;
 			}
 		}
 	}
