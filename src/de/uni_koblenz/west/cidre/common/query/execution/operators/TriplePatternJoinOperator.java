@@ -294,11 +294,24 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				if (iterator != null && !iterator.hasNext()) {
 					if (logger != null) {
 						// TODO remove
-						logger.info("mapping\n"
-								+ iterator.getJoiningMapping().toString(
-										joinMapVars)
-								+ "\nhas produced " + foundJoins
-								+ " joined mappings");
+						try {
+							logger.info("mapping\n"
+									+ iterator.getJoiningMapping().toString(
+											joinMapVars)
+									+ "\nhas produced " + foundJoins
+									+ " joined mappings");
+						} catch (ArrayIndexOutOfBoundsException e) {
+							logger.throwing(e.getStackTrace()[0].getClassName(),
+									e.getStackTrace()[0].getMethodName(), e);
+							logger.info("real size: "
+									+ iterator.getJoiningMapping()
+											.getLengthOfMappingInByteArray()
+									+ " expected size: "
+									+ (Mapping.getHeaderSize()
+											+ iterator.getJoiningMapping()
+													.getNumberOfContainmentBytes()
+											+ joinMapVars.length * Long.BYTES));
+						}
 					}
 					foundJoins = 0;
 					recycleCache.releaseMapping(iterator.getJoiningMapping());
