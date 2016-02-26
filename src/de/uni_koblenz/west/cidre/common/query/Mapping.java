@@ -73,7 +73,7 @@ public class Mapping {
 		length = newMapping.length;
 	}
 
-	private int getNumberOfContainmentBytes() {
+	public int getNumberOfContainmentBytes() {
 		return numberOfSlaves / Byte.SIZE
 				+ (numberOfSlaves % Byte.SIZE == 0 ? 0 : 1);
 	}

@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.common.utils;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
@@ -31,6 +32,8 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 
 	private final NavigableSet<byte[]> multiMap;
 
+	private final long[] variables;
+
 	private final int[] joinVarIndices;
 
 	private int size;
@@ -51,10 +54,12 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 			boolean useTransactions, boolean writeAsynchronously,
 			MapDBCacheOptions cacheType, File cacheDirectory,
 			MappingRecycleCache recycleCache, String uniqueFileNameSuffix,
-			int[] variableComparisonOrder, int numberOfJoinVars) {
+			long[] mappingVariables, int[] variableComparisonOrder,
+			int numberOfJoinVars) {
 		assert storageType != MapDBStorageOptions.MEMORY
 				|| cacheDirectory != null;
 		this.recycleCache = recycleCache;
+		variables = mappingVariables;
 		joinVarIndices = new int[numberOfJoinVars];
 		for (int i = 0; i < numberOfJoinVars; i++) {
 			joinVarIndices[i] = variableComparisonOrder[i];
@@ -99,20 +104,21 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 		multiMap.add(newMapping);
 	}
 
-	public Iterator<Mapping> getMatchCandidates(Mapping mapping) {
-		byte[] min = new byte[mapping.getLengthOfMappingInByteArray()];
-		byte[] max = new byte[mapping.getLengthOfMappingInByteArray()];
-
-		byte[] original = mapping.getByteArray();
-		int offset = mapping.getFirstIndexOfMappingInByteArray();
+	public Iterator<Mapping> getMatchCandidates(Mapping mapping,
+			long[] mappingVars) {
+		int headerSize = Mapping.getHeaderSize();
+		byte[] min = new byte[headerSize + variables.length * Long.BYTES
+				+ mapping.getNumberOfContainmentBytes()];
+		byte[] max = new byte[headerSize + variables.length * Long.BYTES
+				+ mapping.getNumberOfContainmentBytes()];
 		// set join vars
 		for (int varIndex : joinVarIndices) {
-			int headerSize = Mapping.getHeaderSize();
-			for (int i = headerSize + varIndex * Long.BYTES; i < headerSize
-					+ varIndex * Long.BYTES + Long.BYTES; i++) {
-				min[i] = original[offset + varIndex * Long.BYTES + i];
-				max[i] = original[offset + varIndex * Long.BYTES + i];
-			}
+			NumberConversion.long2bytes(
+					mapping.getValue(variables[varIndex], mappingVars), min,
+					headerSize + varIndex * Long.BYTES);
+			NumberConversion.long2bytes(
+					mapping.getValue(variables[varIndex], mappingVars), max,
+					headerSize + varIndex * Long.BYTES);
 		}
 		// set non join vars
 		for (int i = 0; i < min.length; i++) {
@@ -155,7 +161,10 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 		}
 	}
 
-	public static class JoinComparator implements Comparator<byte[]> {
+	public static class JoinComparator
+			implements Comparator<byte[]>, Serializable {
+
+		private static final long serialVersionUID = -7360345226100972052L;
 
 		private final int offset = Mapping.getHeaderSize();
 

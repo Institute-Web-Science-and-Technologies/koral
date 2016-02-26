@@ -1,0 +1,60 @@
+package playground;
+
+import java.io.File;
+
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.query.TriplePattern;
+import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
+import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
+import de.uni_koblenz.west.cidre.common.utils.MappingIteratorWrapper;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
+import de.uni_koblenz.west.cidre.slave.triple_store.impl.IndexType;
+
+public class JoinCacheTest {
+
+	public static void main(String[] args) {
+		MappingRecycleCache recycleCache = new MappingRecycleCache(10, 4);
+		JoinMappingCache cache = new JoinMappingCache(
+				MapDBStorageOptions.MEMORY_MAPPED_FILE, false, true,
+				MapDBCacheOptions.HASH_TABLE, new File("/tmp"), recycleCache,
+				"test", new long[] { 0, 1, 2 }, new int[] { 1, 2, 0 }, 0);
+		TriplePattern triplePattern = new TriplePattern(TriplePatternType.___,
+				0, 1, 2);
+		for (long s = 0; s < 10; s++) {
+			for (long p = 0; p < 10; p++) {
+				for (long o = 0; o < 10; o++) {
+					byte[] triple = new byte[Long.BYTES * 3 + 1];
+					NumberConversion.long2bytes(s, triple, 0 * Long.BYTES);
+					NumberConversion.long2bytes(p, triple, 1 * Long.BYTES);
+					NumberConversion.long2bytes(o, triple, 2 * Long.BYTES);
+					Mapping mapping = recycleCache.createMapping(triplePattern,
+							IndexType.SPO, triple);
+					mapping.updateContainment(0, 1);
+					cache.add(mapping);
+				}
+			}
+		}
+
+		byte[] triple = new byte[Long.BYTES * 3 + 1];
+		NumberConversion.long2bytes(0, triple, 0 * Long.BYTES);
+		NumberConversion.long2bytes(5, triple, 1 * Long.BYTES);
+		NumberConversion.long2bytes(1, triple, 2 * Long.BYTES);
+		TriplePattern pattern = new TriplePattern(TriplePatternType.SPO, 0, 1,
+				2);
+		Mapping joinMapping = recycleCache.createMapping(pattern, IndexType.SPO,
+				triple);
+		joinMapping.updateContainment(0, 1);
+
+		long[] resultVars = new long[] { 0, 1, 2 };
+		for (Mapping m : (MappingIteratorWrapper) cache
+				.getMatchCandidates(joinMapping, new long[] {})) {
+			System.out.println(m.toString(resultVars));
+		}
+
+		cache.close();
+	}
+
+}
