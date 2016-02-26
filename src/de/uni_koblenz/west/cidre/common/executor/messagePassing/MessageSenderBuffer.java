@@ -117,13 +117,14 @@ public class MessageSenderBuffer {
 		mapping.updateSender(senderTaskID);
 		// send to all remote receivers
 		for (int i = 1; i < mappingBuffer.length; i++) {
+			Mapping newMapping = mappingCache.cloneMapping(mapping);
 			long receiver = ((long) i) << (Short.SIZE + Integer.SIZE);
 			receiver |= receiverTaskID;
-			mapping.updateReceiver(receiver);
+			newMapping.updateReceiver(receiver);
 			if (i == messageSender.getCurrentID()) {
 				continue;
 			} else {
-				enqueue(i, mapping, receiver, mappingCache);
+				enqueue(i, newMapping, receiver, mappingCache);
 			}
 		}
 		// send to local receiver (byte array is potentially reused=>receiver

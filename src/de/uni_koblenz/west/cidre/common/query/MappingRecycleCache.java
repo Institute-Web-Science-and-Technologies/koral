@@ -125,4 +125,13 @@ public class MappingRecycleCache {
 		return result;
 	}
 
+	public Mapping cloneMapping(Mapping mapping) {
+		byte[] newArray = new byte[mapping.getLengthOfMappingInByteArray()];
+		System.arraycopy(mapping.getByteArray(),
+				mapping.getFirstIndexOfMappingInByteArray(), newArray, 0,
+				newArray.length);
+		Mapping newMapping = createMapping(newArray, 0, newArray.length);
+		return newMapping;
+	}
+
 }
