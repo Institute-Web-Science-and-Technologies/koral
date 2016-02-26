@@ -286,35 +286,10 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private int foundJoins = 0;
 
-	private long[] joinMapVars;
-
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
 				if (iterator != null && !iterator.hasNext()) {
-					if (logger != null && foundJoins > 0) {
-						// TODO remove
-						try {
-							logger.info("mapping\n"
-									+ iterator.getJoiningMapping().toString(
-											joinMapVars)
-									+ "\nhas produced " + foundJoins
-									+ " joined mappings");
-						} catch (ArrayIndexOutOfBoundsException e) {
-							// logger.throwing(e.getStackTrace()[0].getClassName(),
-							// e.getStackTrace()[0].getMethodName(), e);
-							logger.info("\nERROR found mappings: " + foundJoins
-									+ " real size: "
-									+ iterator.getJoiningMapping()
-											.getLengthOfMappingInByteArray()
-									+ " expected size: "
-									+ (Mapping.getHeaderSize()
-											+ iterator.getJoiningMapping()
-													.getNumberOfContainmentBytes()
-											+ joinMapVars.length * Long.BYTES));
-						}
-					}
-					foundJoins = 0;
 					recycleCache.releaseMapping(iterator.getJoiningMapping());
 				}
 				if (shouldConsumefromLeftChild()) {
@@ -335,7 +310,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								.getResultVariables();
 						// TODO remove
 						receivedMappingsFromLeft++;
-						joinMapVars = rightVars;
 						leftMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
@@ -364,7 +338,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								.getResultVariables();
 						// TODO remove
 						receivedMappingsFromRight++;
-						joinMapVars = leftVars;
 						rightMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
@@ -384,6 +357,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				emittedMappings++;
 				foundJoins++;
 			}
+		}
+		if (logger != null) {
+			// TODO remove
+			logger.info(NumberConversion.id2description(getID())
+					+ ":\nemitted Mappings: " + emittedMappings);
 		}
 	}
 
