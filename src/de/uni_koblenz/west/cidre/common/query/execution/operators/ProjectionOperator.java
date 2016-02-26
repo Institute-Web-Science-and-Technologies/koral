@@ -81,39 +81,20 @@ public class ProjectionOperator extends QueryOperatorBase {
 	protected void closeInternal() {
 	}
 
-	// TODO remove
-
-	private int emittedMappings = 0;
-
-	private int receivedMappings = 0;
-
 	@Override
 	protected void executeOperationStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound()
 				&& !isInputQueueEmpty(0); i++) {
 			Mapping mapping = consumeMapping(0);
 			if (mapping != null) {
-				receivedMappings++;
 				Mapping result = recycleCache.getMappingWithRestrictedVariables(
 						mapping, ((QueryOperatorBase) getChildTask(0))
 								.getResultVariables(),
 						resultVars);
 				emitMapping(result);
 				recycleCache.releaseMapping(mapping);
-				emittedMappings++;
 			}
 		}
-	}
-
-	@Override
-	protected void tidyUp() {
-		super.tidyUp();
-		// TODO remove
-		// if (logger != null) {
-		// logger.info(NumberConversion.id2description(getID()) + ":\n"
-		// + toString() + "\nreceived: " + receivedMappings
-		// + " emitted: " + emittedMappings);
-		// }
 	}
 
 	@Override

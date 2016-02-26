@@ -202,10 +202,6 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 	protected void closeInternal() {
 	}
 
-	// TODO remove
-
-	private int emittedMappings = 0;
-
 	@Override
 	protected void executeOperationStep() {
 		if (getEstimatedTaskLoad() == 0 || tripleStore == null) {
@@ -218,18 +214,7 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 				&& iterator.hasNext(); i++) {
 			Mapping mapping = iterator.next();
 			emitMapping(mapping);
-			emittedMappings++;
 		}
-	}
-
-	@Override
-	protected void tidyUp() {
-		super.tidyUp();
-		// TODO remove
-		// if (logger != null) {
-		// logger.info(NumberConversion.id2description(getID()) + ":\n"
-		// + toString() + "\nemitted: " + emittedMappings);
-		// }
 	}
 
 	@Override
