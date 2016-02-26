@@ -358,11 +358,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 			foundJoins++;
 		}
 		// }
-		if (logger != null) {
-			// TODO remove
-			logger.info(NumberConversion.id2description(getID())
-					+ ":\nemitted Mappings: " + emittedMappings);
-		}
+		// if (logger != null) {
+		// // TODO remove
+		// logger.info(NumberConversion.id2description(getID())
+		// + ":\nemitted Mappings: " + emittedMappings);
+		// }
 	}
 
 	@Override
