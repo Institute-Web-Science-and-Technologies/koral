@@ -292,28 +292,28 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
 				if (iterator != null && !iterator.hasNext()) {
-					// if (logger != null) {
-					// // TODO remove
-					// try {
-					// logger.info("mapping\n"
-					// + iterator.getJoiningMapping().toString(
-					// joinMapVars)
-					// + "\nhas produced " + foundJoins
-					// + " joined mappings");
-					// } catch (ArrayIndexOutOfBoundsException e) {
-					// logger.throwing(e.getStackTrace()[0].getClassName(),
-					// e.getStackTrace()[0].getMethodName(), e);
-					// logger.info("found mappings: " + foundJoins
-					// + "real size: "
-					// + iterator.getJoiningMapping()
-					// .getLengthOfMappingInByteArray()
-					// + " expected size: "
-					// + (Mapping.getHeaderSize()
-					// + iterator.getJoiningMapping()
-					// .getNumberOfContainmentBytes()
-					// + joinMapVars.length * Long.BYTES));
-					// }
-					// }
+					if (logger != null) {
+						// TODO remove
+						try {
+							logger.info("mapping\n"
+									+ iterator.getJoiningMapping().toString(
+											joinMapVars)
+									+ "\nhas produced " + foundJoins
+									+ " joined mappings");
+						} catch (ArrayIndexOutOfBoundsException e) {
+							// logger.throwing(e.getStackTrace()[0].getClassName(),
+							// e.getStackTrace()[0].getMethodName(), e);
+							logger.info("\nERROR found mappings: " + foundJoins
+									+ " real size: "
+									+ iterator.getJoiningMapping()
+											.getLengthOfMappingInByteArray()
+									+ " expected size: "
+									+ (Mapping.getHeaderSize()
+											+ iterator.getJoiningMapping()
+													.getNumberOfContainmentBytes()
+											+ joinMapVars.length * Long.BYTES));
+						}
+					}
 					foundJoins = 0;
 					recycleCache.releaseMapping(iterator.getJoiningMapping());
 				}
@@ -336,17 +336,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						// TODO remove
 						receivedMappingsFromLeft++;
 						joinMapVars = rightVars;
-						if (mapping.getLengthOfMappingInByteArray() != Mapping
-								.getHeaderSize()
-								+ ((QueryOperatorBase) getChildTask(0))
-										.getResultVariables().length
-										* Long.BYTES
-								+ mapping.getNumberOfContainmentBytes()) {
-							if (logger != null) {
-								logger.info(
-										"Mapping from left child has wrong size");
-							}
-						}
 						leftMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
@@ -376,17 +365,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						// TODO remove
 						receivedMappingsFromRight++;
 						joinMapVars = leftVars;
-						if (mapping.getLengthOfMappingInByteArray() != Mapping
-								.getHeaderSize()
-								+ ((QueryOperatorBase) getChildTask(1))
-										.getResultVariables().length
-										* Long.BYTES
-								+ mapping.getNumberOfContainmentBytes()) {
-							if (logger != null) {
-								logger.info(
-										"Mapping from right child has wrong size");
-							}
-						}
 						rightMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
