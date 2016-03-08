@@ -414,6 +414,17 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	@Override
+	protected void executeFinalStep() {
+		// TODO Auto-generated method stub
+		super.executeFinalStep();
+		if (logger != null) {
+			// TODO remove
+			logger.info("\n" + NumberConversion.id2description(getID())
+					+ " executes final step");
+		}
+	}
+
+	@Override
 	protected boolean isFinishedLocally() {
 		return super.isFinishedLocally()
 				&& (iterator == null || !iterator.hasNext());
