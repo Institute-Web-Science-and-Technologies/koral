@@ -8,6 +8,7 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuf
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * Common superclass for query cordinator and all query operations.
@@ -128,7 +129,13 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
 	protected abstract void executeFinalStep();
 
-	protected abstract void tidyUp();
+	protected void tidyUp() {
+		if (logger != null) {
+			// TODO remove
+			logger.info(NumberConversion.id2description(getID())
+					+ " has finished.");
+		}
+	}
 
 	/**
 	 * Called by subclasses of {@link QueryOperatorBase}.
