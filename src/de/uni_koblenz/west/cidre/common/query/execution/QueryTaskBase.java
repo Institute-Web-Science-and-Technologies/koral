@@ -8,6 +8,7 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuf
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.query.execution.operators.TriplePatternJoinOperator;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
@@ -121,7 +122,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 				tidyUp();
 			}
 		}
-		if (logger != null) {
+		if (logger != null && (this instanceof TriplePatternJoinOperator)) {
 			// TODO remove
 			logger.info("\n" + NumberConversion.id2description(getID())
 					+ " is in state " + state);
