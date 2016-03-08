@@ -137,7 +137,6 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 
 	@Override
 	protected void tidyUp() {
-		super.tidyUp();
 	}
 
 	/**

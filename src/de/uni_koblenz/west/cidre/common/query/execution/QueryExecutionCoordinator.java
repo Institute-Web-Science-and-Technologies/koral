@@ -261,7 +261,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void tidyUp() {
-		super.tidyUp();
 		sendMessageToClient(
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 		if (logger != null) {
