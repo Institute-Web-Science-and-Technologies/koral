@@ -296,7 +296,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
 				if (iterator != null && !iterator.hasNext()) {
-					recycleCache.releaseMapping(iterator.getJoiningMapping());
+					// recycleCache.releaseMapping(iterator.getJoiningMapping());
 					// TODO remove
 					numberOfComparisons += iterator.getNumberOfComparisons();
 					if (logger != null) {
