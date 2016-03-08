@@ -59,7 +59,9 @@ public class JeromqStreamHandler extends Handler {
 
 	private void send(String message) {
 		if (message != null && !message.isEmpty()) {
-			socket.send(message);
+			synchronized (socket) {
+				socket.send(message);
+			}
 		}
 	}
 
