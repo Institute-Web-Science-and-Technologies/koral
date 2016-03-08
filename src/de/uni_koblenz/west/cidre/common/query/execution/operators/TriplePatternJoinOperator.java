@@ -289,6 +289,10 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private int numberOfComparisons = 0;
 
 	private void executeJoinStep() {
+		// TODO remove
+		if (JoinIterator.logger == null) {
+			JoinIterator.logger = logger;
+		}
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
 				if (iterator != null && !iterator.hasNext()) {

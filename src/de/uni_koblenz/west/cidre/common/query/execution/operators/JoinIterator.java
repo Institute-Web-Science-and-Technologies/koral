@@ -1,12 +1,17 @@
 package de.uni_koblenz.west.cidre.common.query.execution.operators;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
 public class JoinIterator implements Iterator<Mapping> {
+
+	// TODO remove
+	public static Logger logger;
 
 	private final MappingRecycleCache recycleCache;
 
@@ -75,6 +80,12 @@ public class JoinIterator implements Iterator<Mapping> {
 		for (long var : joinVars) {
 			if (mapping1.getValue(var, vars1) != mapping2.getValue(var,
 					vars2)) {
+				if (logger != null) {
+					// TODO remove
+					logger.info("Comparison of \n" + mapping1.toString(vars1)
+							+ "\n" + mapping2.toString(vars2) + "\njoinVars="
+							+ Arrays.toString(joinVars) + " is NOT equal!!!!");
+				}
 				return false;
 			}
 		}
