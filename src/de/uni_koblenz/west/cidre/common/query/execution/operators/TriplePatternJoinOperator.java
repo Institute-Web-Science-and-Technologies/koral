@@ -445,6 +445,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	@Override
+	protected boolean isFinishedLocally() {
+		return super.isFinishedLocally()
+				&& (iterator == null || !iterator.hasNext());
+	}
+
+	@Override
 	protected void closeInternal() {
 		leftMappingCache.close();
 		rightMappingCache.close();
