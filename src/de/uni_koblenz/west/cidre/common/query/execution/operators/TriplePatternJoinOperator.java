@@ -286,11 +286,25 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private int foundJoins = 0;
 
+	private int numberOfComparisons = 0;
+
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
 				if (iterator != null && !iterator.hasNext()) {
 					recycleCache.releaseMapping(iterator.getJoiningMapping());
+					// TODO remove
+					numberOfComparisons += iterator.getNumberOfComparisons();
+					if (logger != null) {
+						// TODO remove
+						logger.info(NumberConversion.id2description(getID())
+								+ ":\nnumber of comparisons: "
+								+ numberOfComparisons + " found joins: "
+								+ foundJoins + " received from left: "
+								+ receivedMappingsFromLeft
+								+ " received from right: "
+								+ receivedMappingsFromRight);
+					}
 				}
 				if (shouldConsumefromLeftChild()) {
 					if (isInputQueueEmpty(0)) {

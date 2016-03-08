@@ -24,6 +24,8 @@ public class JoinIterator implements Iterator<Mapping> {
 
 	private Mapping next;
 
+	private long numberOfComparisons;
+
 	public JoinIterator(MappingRecycleCache recycleCache, long[] resultVars,
 			long[] joinVars, Mapping joiningMapping,
 			long[] varsOfJoiningMapping, Iterator<Mapping> joinCandidates,
@@ -69,6 +71,7 @@ public class JoinIterator implements Iterator<Mapping> {
 
 	private boolean areJoinVarValuesEqual(Mapping mapping1, long[] vars1,
 			Mapping mapping2, long[] vars2) {
+		numberOfComparisons++;
 		for (long var : joinVars) {
 			if (mapping1.getValue(var, vars1) != mapping2.getValue(var,
 					vars2)) {
@@ -80,6 +83,10 @@ public class JoinIterator implements Iterator<Mapping> {
 
 	public Mapping getJoiningMapping() {
 		return joiningMapping;
+	}
+
+	public long getNumberOfComparisons() {
+		return numberOfComparisons;
 	}
 
 }
