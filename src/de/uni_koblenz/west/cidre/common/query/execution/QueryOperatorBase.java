@@ -8,7 +8,6 @@ import java.io.IOException;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOperator;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -90,12 +89,6 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	@Override
 	protected void handleFinishNotification(long sender, Object object,
 			int firstIndex, int messageLength) {
-		if (logger != null) {
-			// TODO remove
-			logger.info("\n" + NumberConversion.id2description(getID())
-					+ ": received finish notification from "
-					+ NumberConversion.id2description(sender));
-		}
 	}
 
 	@Override
@@ -105,12 +98,6 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 				| (getID() & 0xff_ff_00_00_00_00_00_00l);
 		int childIndex = getIndexOfChild(taskId);
 		enqueuMessage(childIndex, message, firstIndex, length);
-		if (logger != null) {
-			// TODO remove
-			logger.info("\n" + NumberConversion.id2description(getID())
-					+ ": received mapping from "
-					+ NumberConversion.id2description(sender));
-		}
 	}
 
 	@Override
