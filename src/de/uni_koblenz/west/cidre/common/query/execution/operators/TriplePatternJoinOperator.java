@@ -281,7 +281,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private long emittedMappings = 0;
 
 	private void executeJoinStep() {
-		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
+		for (int i = 0; i < getEmittedMappingsPerRound()
+				&& !isFinishedLocally(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
 				if (shouldConsumefromLeftChild()) {
 					if (isInputQueueEmpty(0)) {
@@ -339,6 +340,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				i--;
 			} else {
 				Mapping resultMapping = iterator.next();
+				if (logger != null) {
+					// TODO remove
+					logger.info("\n" + NumberConversion.id2description(getID())
+							+ " emits\n"
+							+ resultMapping.toString(getResultVariables()));
+				}
 				emitMapping(resultMapping);
 				emittedMappings++;
 			}
