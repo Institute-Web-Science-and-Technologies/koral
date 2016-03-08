@@ -15,7 +15,6 @@ import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -276,40 +275,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		}
 	}
 
-	// TODO remove
-
-	private int emittedMappings = 0;
-
-	private int receivedMappingsFromLeft = 0;
-
-	private int receivedMappingsFromRight = 0;
-
-	private int foundJoins = 0;
-
-	private int numberOfComparisons = 0;
-
 	private void executeJoinStep() {
-		// TODO remove
-		if (JoinIterator.logger == null) {
-			JoinIterator.logger = logger;
-		}
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
-				if (iterator != null && !iterator.hasNext()) {
-					// recycleCache.releaseMapping(iterator.getJoiningMapping());
-					// TODO remove
-					numberOfComparisons += iterator.getNumberOfComparisons();
-					if (logger != null) {
-						// TODO remove
-						logger.info(NumberConversion.id2description(getID())
-								+ ":\nnumber of comparisons: "
-								+ numberOfComparisons + " found joins: "
-								+ foundJoins + " received from left: "
-								+ receivedMappingsFromLeft
-								+ " received from right: "
-								+ receivedMappingsFromRight);
-					}
-				}
 				if (shouldConsumefromLeftChild()) {
 					if (isInputQueueEmpty(0)) {
 						if (hasChildFinished(0)) {
@@ -326,8 +294,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								0)).getResultVariables();
 						long[] rightVars = ((QueryOperatorBase) getChildTask(1))
 								.getResultVariables();
-						// TODO remove
-						receivedMappingsFromLeft++;
 						leftMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
@@ -354,8 +320,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 								1)).getResultVariables();
 						long[] leftVars = ((QueryOperatorBase) getChildTask(0))
 								.getResultVariables();
-						// TODO remove
-						receivedMappingsFromRight++;
 						rightMappingCache.add(mapping);
 						iterator = new JoinIterator(recycleCache,
 								getResultVariables(), joinVars, mapping,
@@ -371,20 +335,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 			} else {
 				Mapping resultMapping = iterator.next();
 				emitMapping(resultMapping);
-				// TODO remove
-				emittedMappings++;
-				foundJoins++;
 			}
 		}
-		// if (logger != null) {
-		// // TODO remove
-		// logger.info(NumberConversion.id2description(getID())
-		// + ":\nemitted Mappings: " + emittedMappings);
-		// }
 	}
-
-	// TODO join task is aborted before it is finished! 103 result mappings is
-	// correct
 
 	private boolean shouldConsumefromLeftChild() {
 		if (isInputQueueEmpty(1)) {
@@ -453,19 +406,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	protected boolean isFinishedLocally() {
 		return super.isFinishedLocally()
 				&& (iterator == null || !iterator.hasNext());
-	}
-
-	@Override
-	protected void tidyUp() {
-		super.tidyUp();
-		// TODO remove
-		if (logger != null) {
-			logger.info(NumberConversion.id2description(getID()) + ":\n"
-					+ toString() + "\nreceived left child: "
-					+ receivedMappingsFromLeft + " received from right: "
-					+ receivedMappingsFromRight + " emitted: "
-					+ emittedMappings);
-		}
 	}
 
 	@Override
