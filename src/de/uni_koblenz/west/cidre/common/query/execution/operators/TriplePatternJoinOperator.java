@@ -426,6 +426,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	@Override
 	protected boolean isFinishedLocally() {
+		if (logger != null) {
+			// TODO remove
+			logger.info("\n" + NumberConversion.id2description(getID())
+					+ " isFinishedLocally() " + (super.isFinishedLocally()
+							&& (iterator == null || !iterator.hasNext())));
+		}
 		return super.isFinishedLocally()
 				&& (iterator == null || !iterator.hasNext());
 	}
