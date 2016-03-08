@@ -8,6 +8,7 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSenderBuf
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 /**
  * Common superclass for query cordinator and all query operations.
@@ -119,6 +120,11 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 				state = QueryTaskState.FINISHED;
 				tidyUp();
 			}
+		}
+		if (logger != null) {
+			// TODO remove
+			logger.info("\n" + NumberConversion.id2description(getID())
+					+ " is in state " + state);
 		}
 	}
 
