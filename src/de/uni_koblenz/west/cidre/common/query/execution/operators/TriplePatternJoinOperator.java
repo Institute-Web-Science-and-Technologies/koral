@@ -300,7 +300,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						}
 						if (isInputQueueEmpty(1)) {
 							// there are no mappings to consume
-							return;
+							break;
 						}
 					} else {
 						Mapping mapping = consumeMapping(0);
@@ -328,7 +328,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 						}
 						if (isInputQueueEmpty(0)) {
 							// there are no mappings to consume
-							return;
+							break;
 						}
 					} else {
 						Mapping mapping = consumeMapping(1);
