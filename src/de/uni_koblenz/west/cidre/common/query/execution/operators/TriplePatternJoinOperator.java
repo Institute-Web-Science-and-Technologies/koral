@@ -294,10 +294,10 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				}
 				if (shouldConsumefromLeftChild()) {
 					if (isInputQueueEmpty(0)) {
-						// if (hasChildFinished(0)) {
-						// // left child is finished
-						// rightMappingCache.close();
-						// }
+						if (hasChildFinished(0)) {
+							// left child is finished
+							rightMappingCache.close();
+						}
 						if (isInputQueueEmpty(1)) {
 							// there are no mappings to consume
 							break;
@@ -322,10 +322,10 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					}
 				} else {
 					if (isInputQueueEmpty(1)) {
-						// if (hasChildFinished(1)) {
-						// // right child is finished
-						// leftMappingCache.close();
-						// }
+						if (hasChildFinished(1)) {
+							// right child is finished
+							leftMappingCache.close();
+						}
 						if (isInputQueueEmpty(0)) {
 							// there are no mappings to consume
 							break;
