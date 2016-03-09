@@ -279,6 +279,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound()
 		/* && !isFinishedLocally() */; i++) {
+			if (logger != null) {
+				// TODO remove
+				logger.info("\n" + NumberConversion.id2description(getID())
+						+ " round=" + i);
+			}
 			if (iterator == null || !iterator.hasNext()) {
 				// TODO infinite loop check emptyness and finished of
 				// children
