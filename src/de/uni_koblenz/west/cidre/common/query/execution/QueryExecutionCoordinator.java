@@ -69,6 +69,14 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	 */
 	private long length;
 
+	/*
+	 * Time measurements
+	 */
+
+	private long querySetUpTime;
+
+	private long queryExecutionTime;
+
 	public QueryExecutionCoordinator(short computerID, int queryID,
 			int numberOfSlaves, int cacheSize, File cacheDir, int clientID,
 			ClientConnectionManager clientConnections,
@@ -162,6 +170,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 						MessageType.MASTER_WORK_IN_PROGRESS,
 						"Query execution tree has been created on all slaves. Start of execution.",
 						logger));
+				querySetUpTime = System.currentTimeMillis() - querySetUpTime;
+				queryExecutionTime = System.currentTimeMillis();
 			}
 			break;
 		case QUERY_TASK_FAILED:
@@ -196,6 +206,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	@Override
 	protected void executePreStartStep() {
 		if (parser != null) {
+			querySetUpTime = System.currentTimeMillis();
 			QueryOperatorBase queryExecutionTree = (QueryOperatorBase) parser
 					.parse(queryString, treeType, varDictionary);
 			if (queryExecutionTree instanceof SliceOperator) {
@@ -299,10 +310,13 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
 	@Override
 	protected void tidyUp() {
+		queryExecutionTime = System.currentTimeMillis() - queryExecutionTime;
 		sendMessageToClient(
 				new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
 		if (logger != null) {
-			logger.fine("Query " + getQueryId() + " is finished.");
+			logger.fine("Query " + getQueryId() + " is finished. Set up time: "
+					+ querySetUpTime + "ms Execution time: "
+					+ queryExecutionTime + "ms");
 		}
 	}
 
