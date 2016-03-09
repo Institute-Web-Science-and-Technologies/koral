@@ -115,13 +115,12 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 				mapping.getLengthOfMappingInByteArray());
 		if (logger != null) {
 			// TODO remove
-			logger.info(
-					"\nadding=" + mapping.toString() + " from="
-							+ NumberConversion.id2description(NumberConversion
-									.bytes2long(mapping.getByteArray(),
-											mapping.getFirstIndexOfMappingInByteArray()
-													+ Byte.BYTES
-													+ Long.BYTES)));
+			logger.info("\nadding=" + mapping.toString() + " from="
+					+ NumberConversion.id2description(
+							NumberConversion.bytes2long(mapping.getByteArray(),
+									mapping.getFirstIndexOfMappingInByteArray()
+											+ Byte.BYTES + Long.BYTES))
+					+ " isClosed=" + database.isClosed());
 		}
 		multiMap.add(newMapping);
 		if (logger != null) {
