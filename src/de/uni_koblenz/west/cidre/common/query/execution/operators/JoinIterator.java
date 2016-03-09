@@ -2,15 +2,11 @@ package de.uni_koblenz.west.cidre.common.query.execution.operators;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.logging.Logger;
 
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
 public class JoinIterator implements Iterator<Mapping> {
-
-	// TODO remove
-	public static Logger logger;
 
 	private final MappingRecycleCache recycleCache;
 
@@ -63,11 +59,6 @@ public class JoinIterator implements Iterator<Mapping> {
 	private Mapping getNext() {
 		while (joinCandidates.hasNext()) {
 			Mapping joinCandidate = joinCandidates.next();
-			if (logger != null) {
-				// TODO remove
-				logger.info("\njoin candidate="
-						+ joinCandidate.toString(varsOfJoinCandidates));
-			}
 			if (areJoinVarValuesEqual(joiningMapping, varsOfJoiningMapping,
 					joinCandidate, varsOfJoinCandidates)) {
 				return recycleCache.mergeMappings(resultVars, joiningMapping,

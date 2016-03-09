@@ -3,11 +3,9 @@ package de.uni_koblenz.west.cidre.common.utils;
 import java.io.Closeable;
 import java.io.File;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
-import java.util.logging.Logger;
 
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -25,9 +23,6 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
  *
  */
 public class JoinMappingCache implements Closeable, Iterable<Mapping> {
-
-	// TODO remove
-	public static Logger logger;
 
 	private final MappingRecycleCache recycleCache;
 
@@ -87,11 +82,6 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 		dbmaker = cacheType.setCaching(dbmaker);
 		database = dbmaker.make();
 
-		if (logger != null) {
-			// TODO remove
-			JoinComparator.logger = logger;
-		}
-
 		multiMap = database.createTreeSet(uniqueFileNameSuffix)
 				.comparator(new JoinComparator(variableComparisonOrder))
 				.makeOrGet();
@@ -108,25 +98,18 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 	}
 
 	public void add(Mapping mapping) {
+		if (database.isClosed()) {
+			throw new RuntimeException(
+					"Adding a mapping not possible because the "
+							+ JoinMappingCache.class.getSimpleName()
+							+ " is already closed.");
+		}
 		size++;
 		byte[] newMapping = new byte[mapping.getLengthOfMappingInByteArray()];
 		System.arraycopy(mapping.getByteArray(),
 				mapping.getFirstIndexOfMappingInByteArray(), newMapping, 0,
 				mapping.getLengthOfMappingInByteArray());
-		if (logger != null) {
-			// TODO remove
-			logger.info("\nadding=" + mapping.toString() + " from="
-					+ NumberConversion.id2description(
-							NumberConversion.bytes2long(mapping.getByteArray(),
-									mapping.getFirstIndexOfMappingInByteArray()
-											+ Byte.BYTES + Long.BYTES))
-					+ " isClosed=" + database.isClosed());
-		}
 		multiMap.add(newMapping);
-		if (logger != null) {
-			// TODO remove
-			logger.info("\nadded=" + mapping.toString());
-		}
 	}
 
 	public Iterator<Mapping> getMatchCandidates(Mapping mapping,
@@ -154,16 +137,7 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 				max[i] = Byte.MAX_VALUE;
 			}
 		}
-		if (logger != null) {
-			// TODO remove
-			logger.info("\nfind match candidates for="
-					+ mapping.toString(mappingVars));
-		}
 		NavigableSet<byte[]> subset = multiMap.subSet(min, true, max, true);
-		if (logger != null) {
-			// TODO remove
-			logger.info("\nsubset created=" + subset.toString());
-		}
 		return new MappingIteratorWrapper(subset.iterator(), recycleCache);
 	}
 
@@ -198,9 +172,6 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 	public static class JoinComparator
 			implements Comparator<byte[]>, Serializable {
 
-		// TODO remove
-		public static Logger logger;
-
 		private static final long serialVersionUID = -7360345226100972052L;
 
 		private final int offset = Mapping.getHeaderSize();
@@ -220,23 +191,12 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 		@Override
 		public int compare(byte[] thisMapping, byte[] otherMapping) {
 			if (thisMapping == otherMapping) {
-				if (logger != null) {
-					// TODO remove
-					logger.info("\n" + Arrays.toString(thisMapping) + "\n==\n"
-							+ Arrays.toString(otherMapping));
-				}
 				return 0;
 			}
 			for (int var : comparisonOrder) {
 				int comparison = longCompare(getVar(var, thisMapping),
 						getVar(var, otherMapping));
 				if (comparison != 0) {
-					if (logger != null) {
-						// TODO remove
-						logger.info("\n" + Arrays.toString(thisMapping) + "\n"
-								+ (comparison < 0 ? "<" : ">") + "\n"
-								+ Arrays.toString(otherMapping));
-					}
 					return comparison;
 				}
 			}
@@ -245,31 +205,14 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 			for (int i = offset
 					+ comparisonOrder.length * Long.BYTES; i < len; i++) {
 				if (thisMapping[i] < otherMapping[i]) {
-					if (logger != null) {
-						// TODO remove
-						logger.info("\n" + Arrays.toString(thisMapping)
-								+ "\n<\n" + Arrays.toString(otherMapping));
-					}
 					return -1;
 				}
 				if (thisMapping[i] > otherMapping[i]) {
-					if (logger != null) {
-						// TODO remove
-						logger.info("\n" + Arrays.toString(thisMapping)
-								+ "\n>\n" + Arrays.toString(otherMapping));
-					}
 					return 1;
 				}
 			}
 			int comparison = intCompare(thisMapping.length,
 					otherMapping.length);
-			if (logger != null) {
-				// TODO remove
-				logger.info("\n" + Arrays.toString(thisMapping) + "\n"
-						+ (comparison < 0 ? "<"
-								: (comparison == 0 ? "==" : ">"))
-						+ "\n" + Arrays.toString(otherMapping));
-			}
 			return comparison;
 		}
 

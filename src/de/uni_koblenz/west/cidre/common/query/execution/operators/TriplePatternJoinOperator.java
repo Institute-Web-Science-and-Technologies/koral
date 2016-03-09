@@ -15,7 +15,6 @@ import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -116,10 +115,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				.getResultVariables();
 		long[] rightVars = ((QueryOperatorTask) getChildTask(1))
 				.getResultVariables();
-		// TODO remove
-		if (logger != null) {
-			JoinMappingCache.logger = logger;
-		}
 		leftMappingCache = new JoinMappingCache(storageType, useTransactions,
 				writeAsynchronously, cacheType, getCacheDirectory(),
 				recycleCache,
@@ -281,36 +276,10 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	private void executeJoinStep() {
-		// TODO remove
-		if (JoinIterator.logger == null && logger != null) {
-			JoinIterator.logger = logger;
-		}
-		for (int i = 0; i < getEmittedMappingsPerRound()
-		/* && !isFinishedLocally() */; i++) {
-			if (logger != null) {
-				// TODO remove
-				logger.info("\n" + NumberConversion.id2description(getID())
-						+ " round=" + i);
-			}
+		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
-				// TODO infinite loop check emptyness and finished of
-				// children
-				if (logger != null) {
-					// TODO remove
-					logger.info("\n" + NumberConversion.id2description(getID())
-							+ "\nleft: isEmpty=" + isInputQueueEmpty(0)
-							+ " size=" + getSizeOfInputQueue(0) + " isFinished="
-							+ hasChildFinished(0) + "\nright: isEmpty="
-							+ isInputQueueEmpty(1) + " size="
-							+ getSizeOfInputQueue(1) + " isFinished="
-							+ hasChildFinished(1));
-				}
 				if (shouldConsumefromLeftChild()) {
 					if (isInputQueueEmpty(0)) {
-						if (hasChildFinished(0)) {
-							// left child is finished
-							// rightMappingCache.close();
-						}
 						if (isInputQueueEmpty(1)) {
 							// there are no mappings to consume
 							break;
@@ -333,10 +302,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					}
 				} else {
 					if (isInputQueueEmpty(1)) {
-						if (hasChildFinished(1)) {
-							// right child is finished
-							// leftMappingCache.close();
-						}
 						if (isInputQueueEmpty(0)) {
 							// there are no mappings to consume
 							break;
