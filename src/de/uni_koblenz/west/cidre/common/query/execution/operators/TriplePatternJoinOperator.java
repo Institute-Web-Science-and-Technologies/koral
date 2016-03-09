@@ -309,7 +309,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					if (isInputQueueEmpty(0)) {
 						if (hasChildFinished(0)) {
 							// left child is finished
-							rightMappingCache.close();
+							// rightMappingCache.close();
 						}
 						if (isInputQueueEmpty(1)) {
 							// there are no mappings to consume
@@ -335,7 +335,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					if (isInputQueueEmpty(1)) {
 						if (hasChildFinished(1)) {
 							// right child is finished
-							leftMappingCache.close();
+							// leftMappingCache.close();
 						}
 						if (isInputQueueEmpty(0)) {
 							// there are no mappings to consume
