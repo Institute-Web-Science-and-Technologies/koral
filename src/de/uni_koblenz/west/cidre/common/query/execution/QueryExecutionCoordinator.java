@@ -264,8 +264,6 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 					length--;
 				}
 			} else if (length == 0) {
-				tidyUp();
-				closeInternal();
 				break;
 			}
 		}
@@ -275,6 +273,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			lastContactWithClient = System.currentTimeMillis();
 		} else {
 			sendKeepAliveMessageToClient();
+		}
+		if (length == 0) {
+			tidyUp();
+			closeInternal();
 		}
 	}
 
