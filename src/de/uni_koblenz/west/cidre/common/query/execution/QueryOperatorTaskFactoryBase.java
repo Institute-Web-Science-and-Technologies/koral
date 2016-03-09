@@ -93,4 +93,15 @@ public abstract class QueryOperatorTaskFactoryBase {
 			int emittedMappingsPerRound, long[] resultVars,
 			QueryOperatorTask subOperation);
 
+	public QueryOperatorTask createSlice(short slaveId, int queryId,
+			int emittedMappingsPerRound, QueryOperatorTask subOperation,
+			long offset, long length) {
+		return createSlice(getNewTaskId(slaveId, queryId),
+				emittedMappingsPerRound, subOperation, offset, length);
+	}
+
+	public abstract QueryOperatorTask createSlice(long taskId,
+			int emittedMappingsPerRound, QueryOperatorTask subOperation,
+			long offset, long length);
+
 }

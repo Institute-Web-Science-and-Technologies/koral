@@ -58,4 +58,13 @@ public class DefaultQueryOperatorTaskFactory
 				subOperation);
 	}
 
+	@Override
+	public QueryOperatorTask createSlice(long taskId,
+			int emittedMappingsPerRound, QueryOperatorTask subOperation,
+			long offset, long length) {
+		return new SliceOperator(taskId, coordinatorId, numberOfSlaves,
+				cacheSize, cacheDirectory, emittedMappingsPerRound,
+				subOperation, offset, length);
+	}
+
 }

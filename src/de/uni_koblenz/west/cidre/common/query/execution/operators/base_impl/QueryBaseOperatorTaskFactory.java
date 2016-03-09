@@ -7,6 +7,7 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTaskFactoryBase;
+import de.uni_koblenz.west.cidre.common.query.execution.operators.SliceOperator;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
 public class QueryBaseOperatorTaskFactory extends QueryOperatorTaskFactoryBase {
@@ -49,6 +50,15 @@ public class QueryBaseOperatorTaskFactory extends QueryOperatorTaskFactoryBase {
 		return new ProjectionBaseOperator(taskId, coordinatorId, numberOfSlaves,
 				cacheSize, cacheDirectory, emittedMappingsPerRound, resultVars,
 				subOperation);
+	}
+
+	@Override
+	public QueryOperatorTask createSlice(long taskId,
+			int emittedMappingsPerRound, QueryOperatorTask subOperation,
+			long offset, long length) {
+		return new SliceOperator(taskId, coordinatorId, numberOfSlaves,
+				cacheSize, cacheDirectory, emittedMappingsPerRound,
+				subOperation, offset, length);
 	}
 
 }

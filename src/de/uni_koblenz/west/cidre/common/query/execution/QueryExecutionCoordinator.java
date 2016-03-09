@@ -13,6 +13,7 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.execution.operators.SliceOperator;
 import de.uni_koblenz.west.cidre.common.query.parser.QueryExecutionTreeType;
 import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
 import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
@@ -55,6 +56,18 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 	private long[] resultVariables;
 
 	private int numberOfMissingFinishNotificationsFromSlaves;
+
+	/**
+	 * index of first result that is returned
+	 */
+	private long offset;
+
+	/**
+	 * number of results that are returned<br>
+	 * &lt;0 = return all results<br>
+	 * &gt;=0 = number of results to be returned
+	 */
+	private long length;
 
 	public QueryExecutionCoordinator(short computerID, int queryID,
 			int numberOfSlaves, int cacheSize, File cacheDir, int clientID,
@@ -185,6 +198,13 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 		if (parser != null) {
 			QueryOperatorBase queryExecutionTree = (QueryOperatorBase) parser
 					.parse(queryString, treeType, varDictionary);
+			if (queryExecutionTree instanceof SliceOperator) {
+				offset = ((SliceOperator) queryExecutionTree).getOffset();
+				length = ((SliceOperator) queryExecutionTree).getLength();
+			} else {
+				offset = 0;
+				length = -1;
+			}
 			resultVariables = queryExecutionTree.getResultVariables();
 			messageSender.sendQueryCreate(statistics, getQueryId(),
 					queryExecutionTree, parser.isBaseImplementationUsed());
@@ -201,36 +221,45 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 			Mapping mapping = consumeMapping(0);
 			if (mapping == null) {
 				break;
-			}
-			// the result has always to start with a new row, since the client
-			// already writes the header without row separator
-			result.append(Configuration.QUERY_RESULT_ROW_SEPARATOR_CHAR);
-			String delim = "";
-			for (long var : resultVariables) {
-				long varResult = mapping.getValue(var, resultVariables);
-				if (varResult == -1) {
-					throw new RuntimeException(
-							"The mapping " + mapping.toString(resultVariables)
-									+ " does not contain a mapping for variable "
-									+ var + ".");
+			} else if (offset > 0) {
+				offset--;
+				numberOfAlreadyEmittedMessages--;
+				continue;
+			} else if (offset == 0 && (length > 0 || length < 0)) {
+				// the result has always to start with a new row, since the
+				// client already writes the header without row separator
+				result.append(Configuration.QUERY_RESULT_ROW_SEPARATOR_CHAR);
+				String delim = "";
+				for (long var : resultVariables) {
+					long varResult = mapping.getValue(var, resultVariables);
+					if (varResult == -1) {
+						throw new RuntimeException("The mapping "
+								+ mapping.toString(resultVariables)
+								+ " does not contain a mapping for variable "
+								+ var + ".");
+					}
+					Node resultNode = dictionary.decode(varResult);
+					if (resultNode == null) {
+						throw new RuntimeException("The value " + varResult
+								+ " of variable " + var
+								+ " could not be found in the dictionary.");
+					}
+					if (resultNode.isURI() && resultNode.getURI()
+							.startsWith(Configuration.BLANK_NODE_URI_PREFIX)) {
+						// this is a replacement of a blank node
+						resultNode = NodeFactory
+								.createBlankNode(resultNode.getURI().substring(
+										Configuration.BLANK_NODE_URI_PREFIX
+												.length()));
+					}
+					String resultResourceString = DeSerializer
+							.serializeNode(resultNode);
+					result.append(delim).append(resultResourceString);
+					delim = Configuration.QUERY_RESULT_COLUMN_SEPARATOR_CHAR;
 				}
-				Node resultNode = dictionary.decode(varResult);
-				if (resultNode == null) {
-					throw new RuntimeException(
-							"The value " + varResult + " of variable " + var
-									+ " could not be found in the dictionary.");
+				if (length > 0) {
+					length--;
 				}
-				if (resultNode.isURI() && resultNode.getURI()
-						.startsWith(Configuration.BLANK_NODE_URI_PREFIX)) {
-					// this is a replacement of a blank node
-					resultNode = NodeFactory.createBlankNode(resultNode.getURI()
-							.substring(Configuration.BLANK_NODE_URI_PREFIX
-									.length()));
-				}
-				String resultResourceString = DeSerializer
-						.serializeNode(resultNode);
-				result.append(delim).append(resultResourceString);
-				delim = Configuration.QUERY_RESULT_COLUMN_SEPARATOR_CHAR;
 			}
 		}
 		if (result.length() > 0) {

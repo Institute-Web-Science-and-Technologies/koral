@@ -545,9 +545,15 @@ public class SparqlParser implements OpVisitor {
 
 	@Override
 	public void visit(OpSlice opSlice) {
-		throw new UnsupportedOperationException(
-				"Currently, CIDRE does not support slice. Cause:\n"
-						+ opSlice.toString());
+		opSlice.getSubOp().visit(this);
+		long offset = opSlice.getStart();
+		long length = opSlice.getLength();
+
+		QueryOperatorTask subTask = stack.pop();
+		QueryOperatorTask slice = taskFactory.createSlice(slaveId, queryId,
+				emittedMappingsPerRound, subTask, offset, length);
+		((QueryOperatorBase) subTask).setParentTask(slice);
+		stack.push(slice);
 	}
 
 	@Override
