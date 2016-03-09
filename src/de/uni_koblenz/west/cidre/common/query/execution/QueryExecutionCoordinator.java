@@ -263,6 +263,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 				if (length > 0) {
 					length--;
 				}
+			} else if (length == 0) {
+				tidyUp();
+				closeInternal();
+				break;
 			}
 		}
 		if (result.length() > 0) {
