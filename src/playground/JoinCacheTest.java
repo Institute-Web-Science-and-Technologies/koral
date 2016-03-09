@@ -9,6 +9,7 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
 import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
 import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
+import de.uni_koblenz.west.cidre.common.utils.MapDBJoinMappingCache;
 import de.uni_koblenz.west.cidre.common.utils.MappingIteratorWrapper;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.slave.triple_store.impl.IndexType;
@@ -17,7 +18,7 @@ public class JoinCacheTest {
 
 	public static void main(String[] args) {
 		MappingRecycleCache recycleCache = new MappingRecycleCache(10, 4);
-		JoinMappingCache cache = new JoinMappingCache(
+		JoinMappingCache cache = new MapDBJoinMappingCache(
 				MapDBStorageOptions.MEMORY_MAPPED_FILE, false, true,
 				MapDBCacheOptions.HASH_TABLE, new File("/tmp"), recycleCache,
 				"test", new long[] { 0, 1, 2 }, new int[] { 1, 2, 0 }, 0);

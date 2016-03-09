@@ -15,6 +15,7 @@ import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
+import de.uni_koblenz.west.cidre.common.utils.MapDBJoinMappingCache;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -115,14 +116,14 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				.getResultVariables();
 		long[] rightVars = ((QueryOperatorTask) getChildTask(1))
 				.getResultVariables();
-		leftMappingCache = new JoinMappingCache(storageType, useTransactions,
-				writeAsynchronously, cacheType, getCacheDirectory(),
-				recycleCache,
+		leftMappingCache = new MapDBJoinMappingCache(storageType,
+				useTransactions, writeAsynchronously, cacheType,
+				getCacheDirectory(), recycleCache,
 				getClass().getSimpleName() + getID() + "_leftChild_", leftVars,
 				createComparisonOrder(leftVars), joinVars.length);
-		rightMappingCache = new JoinMappingCache(storageType, useTransactions,
-				writeAsynchronously, cacheType, getCacheDirectory(),
-				recycleCache,
+		rightMappingCache = new MapDBJoinMappingCache(storageType,
+				useTransactions, writeAsynchronously, cacheType,
+				getCacheDirectory(), recycleCache,
 				getClass().getSimpleName() + getID() + "_rightChild_",
 				rightVars, createComparisonOrder(rightVars), joinVars.length);
 	}

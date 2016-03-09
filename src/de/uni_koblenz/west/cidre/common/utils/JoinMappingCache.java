@@ -1,19 +1,11 @@
 package de.uni_koblenz.west.cidre.common.utils;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.NavigableSet;
 
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-
-import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
-import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
-import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
 /**
  * Instances are used for joins. It caches the mappings received from one
@@ -22,152 +14,19 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class JoinMappingCache implements Closeable, Iterable<Mapping> {
+public interface JoinMappingCache extends Closeable, Iterable<Mapping> {
 
-	private final MappingRecycleCache recycleCache;
+	public boolean isEmpty();
 
-	private final File mapFolder;
+	public long size();
 
-	private final DB database;
-
-	private final NavigableSet<byte[]> multiMap;
-
-	private final long[] variables;
-
-	private final int[] joinVarIndices;
-
-	private int size;
-
-	/**
-	 * @param storageType
-	 * @param useTransactions
-	 * @param writeAsynchronously
-	 * @param cacheType
-	 * @param cacheDirectory
-	 * @param recycleCache
-	 * @param uniqueFileNameSuffix
-	 * @param mappingVariables
-	 * @param variableComparisonOrder
-	 *            must contain all variables of the mapping. First variable has
-	 *            index 0. The join variables must occur first!
-	 * @param numberOfJoinVars
-	 */
-	public JoinMappingCache(MapDBStorageOptions storageType,
-			boolean useTransactions, boolean writeAsynchronously,
-			MapDBCacheOptions cacheType, File cacheDirectory,
-			MappingRecycleCache recycleCache, String uniqueFileNameSuffix,
-			long[] mappingVariables, int[] variableComparisonOrder,
-			int numberOfJoinVars) {
-		assert storageType != MapDBStorageOptions.MEMORY
-				|| cacheDirectory != null;
-		this.recycleCache = recycleCache;
-		variables = mappingVariables;
-		joinVarIndices = new int[numberOfJoinVars];
-		for (int i = 0; i < numberOfJoinVars; i++) {
-			joinVarIndices[i] = variableComparisonOrder[i];
-		}
-		mapFolder = new File(cacheDirectory.getAbsolutePath() + File.separator
-				+ uniqueFileNameSuffix);
-		if (!mapFolder.exists()) {
-			mapFolder.mkdirs();
-		}
-		DBMaker<?> dbmaker = storageType.getDBMaker(mapFolder.getAbsolutePath()
-				+ File.separator + uniqueFileNameSuffix);
-		if (!useTransactions) {
-			dbmaker = dbmaker.transactionDisable().closeOnJvmShutdown();
-		}
-		if (writeAsynchronously) {
-			dbmaker = dbmaker.asyncWriteEnable();
-		}
-		dbmaker = cacheType.setCaching(dbmaker);
-		database = dbmaker.make();
-
-		multiMap = database.createTreeSet(uniqueFileNameSuffix)
-				.comparator(new JoinComparator(variableComparisonOrder))
-				.makeOrGet();
-
-		size = 0;
-	}
-
-	public boolean isEmpty() {
-		return size() == 0;
-	}
-
-	public long size() {
-		return size;
-	}
-
-	public void add(Mapping mapping) {
-		if (database.isClosed()) {
-			throw new RuntimeException(
-					"Adding a mapping not possible because the "
-							+ JoinMappingCache.class.getSimpleName()
-							+ " is already closed.");
-		}
-		size++;
-		byte[] newMapping = new byte[mapping.getLengthOfMappingInByteArray()];
-		System.arraycopy(mapping.getByteArray(),
-				mapping.getFirstIndexOfMappingInByteArray(), newMapping, 0,
-				mapping.getLengthOfMappingInByteArray());
-		multiMap.add(newMapping);
-	}
+	public void add(Mapping mapping);
 
 	public Iterator<Mapping> getMatchCandidates(Mapping mapping,
-			long[] mappingVars) {
-		int headerSize = Mapping.getHeaderSize();
-		byte[] min = new byte[headerSize + variables.length * Long.BYTES
-				+ mapping.getNumberOfContainmentBytes()];
-		byte[] max = new byte[headerSize + variables.length * Long.BYTES
-				+ mapping.getNumberOfContainmentBytes()];
-		// set join vars
-		for (int varIndex : joinVarIndices) {
-			NumberConversion.long2bytes(
-					mapping.getValue(variables[varIndex], mappingVars), min,
-					headerSize + varIndex * Long.BYTES);
-			NumberConversion.long2bytes(
-					mapping.getValue(variables[varIndex], mappingVars), max,
-					headerSize + varIndex * Long.BYTES);
-		}
-		// set non join vars
-		for (int i = 0; i < min.length; i++) {
-			if (isFirstIndexOfAJoinVar(i)) {
-				i += Long.BYTES - 1;
-			} else {
-				min[i] = Byte.MIN_VALUE;
-				max[i] = Byte.MAX_VALUE;
-			}
-		}
-		NavigableSet<byte[]> subset = multiMap.subSet(min, true, max, true);
-		return new MappingIteratorWrapper(subset.iterator(), recycleCache);
-	}
-
-	private boolean isFirstIndexOfAJoinVar(int index) {
-		int headerSize = Mapping.getHeaderSize();
-		for (int varIndex : joinVarIndices) {
-			if (index == headerSize + varIndex * Long.BYTES) {
-				return true;
-			}
-		}
-		return false;
-	}
+			long[] mappingVars);
 
 	@Override
-	public Iterator<Mapping> iterator() {
-		return new MappingIteratorWrapper(multiMap.iterator(), recycleCache);
-	}
-
-	@Override
-	public void close() {
-		if (!database.isClosed()) {
-			database.close();
-		}
-		if (mapFolder.exists()) {
-			for (File file : mapFolder.listFiles()) {
-				file.delete();
-			}
-			mapFolder.delete();
-		}
-	}
+	public void close();
 
 	public static class JoinComparator
 			implements Comparator<byte[]>, Serializable {
