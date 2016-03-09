@@ -8,6 +8,7 @@ import java.io.IOException;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.execution.operators.ProjectionOperator;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -25,6 +26,12 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	private QueryOperatorBase parent;
 
 	private final int emittedMappingsPerRound;
+
+	/*
+	 * Time measurements
+	 */
+
+	private long operatorExecutionTime;
 
 	public QueryOperatorBase(short slaveId, int queryId, short taskId,
 			long coordinatorId, int numberOfSlaves, int cacheSize,
@@ -87,6 +94,12 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 	}
 
 	@Override
+	public void start() {
+		super.start();
+		operatorExecutionTime = System.currentTimeMillis();
+	}
+
+	@Override
 	protected void handleFinishNotification(long sender, Object object,
 			int firstIndex, int messageLength) {
 	}
@@ -131,8 +144,14 @@ public abstract class QueryOperatorBase extends QueryTaskBase
 
 	@Override
 	protected void executeFinalStep() {
+		operatorExecutionTime = System.currentTimeMillis()
+				- operatorExecutionTime;
 		messageSender.sendQueryTaskFinished(getID(), getParentTask() == null,
 				getCoordinatorID(), recycleCache);
+		if (logger != null) {
+			logger.finest(NumberConversion.id2description(getID())
+					+ " required " + operatorExecutionTime + "ms");
+		}
 	}
 
 	@Override
