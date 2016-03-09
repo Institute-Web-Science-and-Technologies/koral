@@ -276,14 +276,22 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		}
 	}
 
-	// TODO remove
-
-	private long emittedMappings = 0;
-
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound()
-				&& !isFinishedLocally(); i++) {
+		/* && !isFinishedLocally() */; i++) {
 			if (iterator == null || !iterator.hasNext()) {
+				// TODO infinite loop check emptyness and finished of
+				// children
+				if (logger != null) {
+					// TODO remove
+					logger.info("\n" + NumberConversion.id2description(getID())
+							+ "\nleft: isEmpty=" + isInputQueueEmpty(0)
+							+ " size=" + getSizeOfInputQueue(0) + " isFinished="
+							+ hasChildFinished(0) + "\nright: isEmpty="
+							+ isInputQueueEmpty(1) + " size="
+							+ getSizeOfInputQueue(1) + " isFinished="
+							+ hasChildFinished(1));
+				}
 				if (shouldConsumefromLeftChild()) {
 					if (isInputQueueEmpty(0)) {
 						if (hasChildFinished(0)) {
@@ -340,20 +348,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				i--;
 			} else {
 				Mapping resultMapping = iterator.next();
-				if (logger != null) {
-					// TODO remove
-					logger.info("\n" + NumberConversion.id2description(getID())
-							+ " emits\n"
-							+ resultMapping.toString(getResultVariables()));
-				}
 				emitMapping(resultMapping);
-				emittedMappings++;
 			}
-		}
-		if (logger != null) {
-			// TODO remove
-			logger.info("\n" + NumberConversion.id2description(getID())
-					+ " emitted " + emittedMappings + " mappings.");
 		}
 	}
 
@@ -417,17 +413,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					recycleCache.releaseMapping(mapping);
 				}
 			}
-		}
-	}
-
-	@Override
-	protected void executeFinalStep() {
-		// TODO Auto-generated method stub
-		super.executeFinalStep();
-		if (logger != null) {
-			// TODO remove
-			logger.info("\n" + NumberConversion.id2description(getID())
-					+ " executes final step");
 		}
 	}
 
