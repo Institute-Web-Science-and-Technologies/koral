@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
+import java.util.logging.Logger;
 
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -23,6 +24,9 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
  *
  */
 public class JoinMappingCache implements Closeable, Iterable<Mapping> {
+
+	// TODO remove
+	public static Logger logger;
 
 	private final MappingRecycleCache recycleCache;
 
@@ -103,7 +107,15 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 		System.arraycopy(mapping.getByteArray(),
 				mapping.getFirstIndexOfMappingInByteArray(), newMapping, 0,
 				mapping.getLengthOfMappingInByteArray());
+		if (logger != null) {
+			// TODO remove
+			logger.info("\nadding=" + mapping.toString());
+		}
 		multiMap.add(newMapping);
+		if (logger != null) {
+			// TODO remove
+			logger.info("\nadded=" + mapping.toString());
+		}
 	}
 
 	public Iterator<Mapping> getMatchCandidates(Mapping mapping,
@@ -131,8 +143,17 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 				max[i] = Byte.MAX_VALUE;
 			}
 		}
-		return new MappingIteratorWrapper(
-				multiMap.subSet(min, true, max, true).iterator(), recycleCache);
+		if (logger != null) {
+			// TODO remove
+			logger.info("\nfind match candidates for="
+					+ mapping.toString(mappingVars));
+		}
+		NavigableSet<byte[]> subset = multiMap.subSet(min, true, max, true);
+		if (logger != null) {
+			// TODO remove
+			logger.info("\nsubset created=" + subset.toString());
+		}
+		return new MappingIteratorWrapper(subset.iterator(), recycleCache);
 	}
 
 	private boolean isFirstIndexOfAJoinVar(int index) {

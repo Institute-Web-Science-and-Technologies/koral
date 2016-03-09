@@ -116,6 +116,10 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				.getResultVariables();
 		long[] rightVars = ((QueryOperatorTask) getChildTask(1))
 				.getResultVariables();
+		// TODO remove
+		if (logger != null) {
+			JoinMappingCache.logger = logger;
+		}
 		leftMappingCache = new JoinMappingCache(storageType, useTransactions,
 				writeAsynchronously, cacheType, getCacheDirectory(),
 				recycleCache,
