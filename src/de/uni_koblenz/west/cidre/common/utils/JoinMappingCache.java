@@ -3,6 +3,7 @@ package de.uni_koblenz.west.cidre.common.utils;
 import java.io.Closeable;
 import java.io.File;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
@@ -85,6 +86,11 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 		}
 		dbmaker = cacheType.setCaching(dbmaker);
 		database = dbmaker.make();
+
+		if (logger != null) {
+			// TODO remove
+			JoinComparator.logger = logger;
+		}
 
 		multiMap = database.createTreeSet(uniqueFileNameSuffix)
 				.comparator(new JoinComparator(variableComparisonOrder))
@@ -193,6 +199,9 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 	public static class JoinComparator
 			implements Comparator<byte[]>, Serializable {
 
+		// TODO remove
+		public static Logger logger;
+
 		private static final long serialVersionUID = -7360345226100972052L;
 
 		private final int offset = Mapping.getHeaderSize();
@@ -212,12 +221,23 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 		@Override
 		public int compare(byte[] thisMapping, byte[] otherMapping) {
 			if (thisMapping == otherMapping) {
+				if (logger != null) {
+					// TODO remove
+					logger.info("\n" + Arrays.toString(thisMapping) + "\n==\n"
+							+ Arrays.toString(otherMapping));
+				}
 				return 0;
 			}
 			for (int var : comparisonOrder) {
 				int comparison = longCompare(getVar(var, thisMapping),
 						getVar(var, otherMapping));
 				if (comparison != 0) {
+					if (logger != null) {
+						// TODO remove
+						logger.info("\n" + Arrays.toString(thisMapping) + "\n"
+								+ (comparison < 0 ? "<" : ">") + "\n"
+								+ Arrays.toString(otherMapping));
+					}
 					return comparison;
 				}
 			}
@@ -225,15 +245,33 @@ public class JoinMappingCache implements Closeable, Iterable<Mapping> {
 			final int len = Math.min(thisMapping.length, otherMapping.length);
 			for (int i = offset
 					+ comparisonOrder.length * Long.BYTES; i < len; i++) {
-				if (thisMapping[i] == otherMapping[i]) {
-					continue;
+				if (thisMapping[i] < otherMapping[i]) {
+					if (logger != null) {
+						// TODO remove
+						logger.info("\n" + Arrays.toString(thisMapping)
+								+ "\n<\n" + Arrays.toString(otherMapping));
+					}
+					return -1;
 				}
 				if (thisMapping[i] > otherMapping[i]) {
+					if (logger != null) {
+						// TODO remove
+						logger.info("\n" + Arrays.toString(thisMapping)
+								+ "\n>\n" + Arrays.toString(otherMapping));
+					}
 					return 1;
 				}
-				return -1;
 			}
-			return intCompare(thisMapping.length, otherMapping.length);
+			int comparison = intCompare(thisMapping.length,
+					otherMapping.length);
+			if (logger != null) {
+				// TODO remove
+				logger.info("\n" + Arrays.toString(thisMapping) + "\n"
+						+ (comparison < 0 ? "<"
+								: (comparison == 0 ? "==" : ">"))
+						+ "\n" + Arrays.toString(otherMapping));
+			}
+			return comparison;
 		}
 
 		private long getVar(int varIndex, byte[] mapping) {
