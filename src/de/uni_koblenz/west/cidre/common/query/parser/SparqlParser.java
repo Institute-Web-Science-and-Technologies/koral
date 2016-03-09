@@ -156,8 +156,6 @@ public class SparqlParser implements OpVisitor {
 	 * https://jena.apache.org/documentation/notes/sse.html
 	 */
 
-	// TODO implement limit operation
-
 	public QueryOperatorTask parse(String queryString,
 			QueryExecutionTreeType treeType, VariableDictionary dictionary) {
 		this.treeType = treeType;
