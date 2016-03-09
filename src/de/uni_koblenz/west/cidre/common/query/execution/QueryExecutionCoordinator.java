@@ -200,6 +200,9 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 					.parse(queryString, treeType, varDictionary);
 			if (queryExecutionTree instanceof SliceOperator) {
 				offset = ((SliceOperator) queryExecutionTree).getOffset();
+				if (offset < 0) {
+					offset = 0;
+				}
 				length = ((SliceOperator) queryExecutionTree).getLength();
 			} else {
 				offset = 0;
@@ -225,7 +228,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 				offset--;
 				numberOfAlreadyEmittedMessages--;
 				continue;
-			} else if (offset == 0 && (length > 0 || length < 0)) {
+			} else if (offset <= 0 && (length > 0 || length < 0)) {
 				// the result has always to start with a new row, since the
 				// client already writes the header without row separator
 				result.append(Configuration.QUERY_RESULT_ROW_SEPARATOR_CHAR);
