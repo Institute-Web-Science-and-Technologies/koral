@@ -85,6 +85,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 				}
 				e.printStackTrace();
 			}
+			networkManager.setLogger(logger);
 		}
 
 		this.networkManager = networkManager;

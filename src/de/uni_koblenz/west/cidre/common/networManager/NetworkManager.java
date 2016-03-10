@@ -2,6 +2,7 @@ package de.uni_koblenz.west.cidre.common.networManager;
 
 import java.io.Closeable;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -20,6 +21,8 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
  *
  */
 public class NetworkManager implements Closeable, MessageSender {
+
+	private Logger logger;
 
 	private final ZContext context;
 
@@ -53,6 +56,10 @@ public class NetworkManager implements Closeable, MessageSender {
 		}
 	}
 
+	public void setLogger(Logger logger) {
+		this.logger = logger;
+	}
+
 	@Override
 	public int getCurrentID() {
 		return currentID;
@@ -72,6 +79,11 @@ public class NetworkManager implements Closeable, MessageSender {
 		Socket out = senders[receiver];
 		if (out != null) {
 			synchronized (out) {
+				if (logger != null) {
+					// TODO remove
+					logger.finest("send message " + Arrays.hashCode(message)
+							+ " at " + System.currentTimeMillis());
+				}
 				out.send(message);
 			}
 		}
@@ -101,6 +113,11 @@ public class NetworkManager implements Closeable, MessageSender {
 			Socket out = senders[i];
 			if (out != null) {
 				synchronized (out) {
+					if (logger != null) {
+						// TODO remove
+						logger.finest("send message " + Arrays.hashCode(message)
+								+ " at " + System.currentTimeMillis());
+					}
 					out.send(message);
 				}
 			}
@@ -115,11 +132,25 @@ public class NetworkManager implements Closeable, MessageSender {
 		if (receiver != null) {
 			if (waitForResponse) {
 				synchronized (receiver) {
-					return receiver.recv();
+					byte[] message = receiver.recv();
+					if (logger != null && message != null) {
+						// TODO remove
+						logger.finest(
+								"received message " + Arrays.hashCode(message)
+										+ " at " + System.currentTimeMillis());
+					}
+					return message;
 				}
 			} else {
 				synchronized (receiver) {
-					return receiver.recv(ZMQ.DONTWAIT);
+					byte[] message = receiver.recv(ZMQ.DONTWAIT);
+					if (logger != null && message != null) {
+						// TODO remove
+						logger.finest(
+								"received message " + Arrays.hashCode(message)
+										+ " at " + System.currentTimeMillis());
+					}
+					return message;
 				}
 			}
 		} else {
