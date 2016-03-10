@@ -14,6 +14,7 @@ import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
+import de.uni_koblenz.west.cidre.common.utils.InMemoryJoinMappingCache;
 import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
 import de.uni_koblenz.west.cidre.common.utils.MapDBJoinMappingCache;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
@@ -116,16 +117,24 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				.getResultVariables();
 		long[] rightVars = ((QueryOperatorTask) getChildTask(1))
 				.getResultVariables();
-		leftMappingCache = new MapDBJoinMappingCache(storageType,
-				useTransactions, writeAsynchronously, cacheType,
-				getCacheDirectory(), recycleCache,
-				getClass().getSimpleName() + getID() + "_leftChild_", leftVars,
-				createComparisonOrder(leftVars), joinVars.length);
-		rightMappingCache = new MapDBJoinMappingCache(storageType,
-				useTransactions, writeAsynchronously, cacheType,
-				getCacheDirectory(), recycleCache,
-				getClass().getSimpleName() + getID() + "_rightChild_",
-				rightVars, createComparisonOrder(rightVars), joinVars.length);
+		if (storageType == MapDBStorageOptions.MEMORY) {
+			leftMappingCache = new InMemoryJoinMappingCache(leftVars,
+					createComparisonOrder(leftVars), joinVars.length);
+			rightMappingCache = new InMemoryJoinMappingCache(rightVars,
+					createComparisonOrder(rightVars), joinVars.length);
+		} else {
+			leftMappingCache = new MapDBJoinMappingCache(storageType,
+					useTransactions, writeAsynchronously, cacheType,
+					getCacheDirectory(), recycleCache,
+					getClass().getSimpleName() + getID() + "_leftChild_",
+					leftVars, createComparisonOrder(leftVars), joinVars.length);
+			rightMappingCache = new MapDBJoinMappingCache(storageType,
+					useTransactions, writeAsynchronously, cacheType,
+					getCacheDirectory(), recycleCache,
+					getClass().getSimpleName() + getID() + "_rightChild_",
+					rightVars, createComparisonOrder(rightVars),
+					joinVars.length);
+		}
 	}
 
 	private int[] createComparisonOrder(long[] vars) {
