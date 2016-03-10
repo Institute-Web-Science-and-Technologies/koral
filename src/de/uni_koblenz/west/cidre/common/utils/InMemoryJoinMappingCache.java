@@ -129,7 +129,7 @@ public class InMemoryJoinMappingCache implements JoinMappingCache {
 	@Override
 	public Iterator<Mapping> getMatchCandidates(Mapping mapping,
 			long[] mappingVars) {
-		ByteArrayWrapper mappingKey = getJoinVars(mapping, variables);
+		ByteArrayWrapper mappingKey = getJoinVars(mapping, mappingVars);
 		Collection<Mapping> mappingSet = mappings.get(mappingKey);
 		if (mappingSet != null) {
 			return mappingSet.iterator();
