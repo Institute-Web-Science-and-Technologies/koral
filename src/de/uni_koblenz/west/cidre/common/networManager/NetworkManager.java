@@ -81,8 +81,8 @@ public class NetworkManager implements Closeable, MessageSender {
 			synchronized (out) {
 				if (logger != null) {
 					// TODO remove
-					logger.finest("send message " + Arrays.hashCode(message)
-							+ " at " + System.currentTimeMillis());
+					logger.finest("#;send;" + Arrays.hashCode(message) + ";"
+							+ System.currentTimeMillis());
 				}
 				out.send(message);
 			}
@@ -115,8 +115,8 @@ public class NetworkManager implements Closeable, MessageSender {
 				synchronized (out) {
 					if (logger != null) {
 						// TODO remove
-						logger.finest("send message " + Arrays.hashCode(message)
-								+ " at " + System.currentTimeMillis());
+						logger.finest("#;sendAll;" + Arrays.hashCode(message)
+								+ ";" + System.currentTimeMillis());
 					}
 					out.send(message);
 				}
@@ -135,9 +135,8 @@ public class NetworkManager implements Closeable, MessageSender {
 					byte[] message = receiver.recv();
 					if (logger != null && message != null) {
 						// TODO remove
-						logger.finest(
-								"received message " + Arrays.hashCode(message)
-										+ " at " + System.currentTimeMillis());
+						logger.finest("#;received;" + Arrays.hashCode(message)
+								+ ";" + System.currentTimeMillis());
 					}
 					return message;
 				}
@@ -146,9 +145,8 @@ public class NetworkManager implements Closeable, MessageSender {
 					byte[] message = receiver.recv(ZMQ.DONTWAIT);
 					if (logger != null && message != null) {
 						// TODO remove
-						logger.finest(
-								"received message " + Arrays.hashCode(message)
-										+ " at " + System.currentTimeMillis());
+						logger.finest("#;received;" + Arrays.hashCode(message)
+								+ ";" + System.currentTimeMillis());
 					}
 					return message;
 				}
