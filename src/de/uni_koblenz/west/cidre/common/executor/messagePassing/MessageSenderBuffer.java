@@ -61,10 +61,6 @@ public class MessageSenderBuffer {
 		mappingBuffer = new Mapping[numberOfSlaves + 1][bundleSize];
 		nextIndex = new int[numberOfSlaves + 1];
 		this.numberOfSlaves = numberOfSlaves;
-		if (logger != null) {
-			// TODO remove
-			logger.info("mapping bundle size = " + bundleSize);
-		}
 	}
 
 	public void sendQueryCreate(GraphStatistics statistics, int queryId,
@@ -156,10 +152,6 @@ public class MessageSenderBuffer {
 	 */
 	public void sendQueryTaskFinished(long finishedTaskID, boolean isRoot,
 			long coordinatorID, MappingRecycleCache mappingCache) {
-		if (logger != null) {
-			// TODO remove
-			logger.info("send query task finished");
-		}
 		sendAllBufferedMessages(mappingCache);
 		ByteBuffer message = ByteBuffer
 				.allocate(Byte.BYTES + Short.BYTES + Long.BYTES);
@@ -182,10 +174,6 @@ public class MessageSenderBuffer {
 	}
 
 	public void sendAllBufferedMessages(MappingRecycleCache mappingCache) {
-		if (logger != null) {
-			// TODO remove
-			logger.info("send all buffered messages");
-		}
 		for (int i = 0; i < mappingBuffer.length; i++) {
 			sendBufferedMessages(i, mappingCache);
 		}
@@ -216,11 +204,6 @@ public class MessageSenderBuffer {
 			mappingBuffer[receivingComputer][i] = null;
 			mappingCache.releaseMapping(mapping);
 		}
-		if (logger != null) {
-			// TODO remove
-			logger.info("Send " + nextIndex[receivingComputer]
-					+ " mappings to computer " + receivingComputer);
-		}
 		nextIndex[receivingComputer] = 0;
 		// send message
 		if (buffer != null) {
@@ -231,22 +214,10 @@ public class MessageSenderBuffer {
 	private synchronized void enqueue(int receivingComputer, Mapping mapping,
 			long receiverTaskID, MappingRecycleCache mappingCache) {
 		if (isBufferFull(receivingComputer)) {
-			if (logger != null) {
-				// TODO remove
-				logger.info("enqueue before: buffer is full: "
-						+ nextIndex[receivingComputer] + "/"
-						+ mappingBuffer[receivingComputer].length);
-			}
 			sendBufferedMessages(receivingComputer, mappingCache);
 		}
 		mappingBuffer[receivingComputer][nextIndex[receivingComputer]++] = mapping;
 		if (isBufferFull(receivingComputer)) {
-			if (logger != null) {
-				// TODO remove
-				logger.info("enqueue after: buffer is full: "
-						+ nextIndex[receivingComputer] + "/"
-						+ mappingBuffer[receivingComputer].length);
-			}
 			sendBufferedMessages(receivingComputer, mappingCache);
 		}
 	}
@@ -300,10 +271,6 @@ public class MessageSenderBuffer {
 	}
 
 	public void close(MappingRecycleCache mappingCache) {
-		if (logger != null) {
-			// TODO remove
-			logger.info("close");
-		}
 		sendAllBufferedMessages(mappingCache);
 	}
 
