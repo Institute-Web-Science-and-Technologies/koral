@@ -61,6 +61,10 @@ public class MessageSenderBuffer {
 		mappingBuffer = new Mapping[numberOfSlaves + 1][bundleSize];
 		nextIndex = new int[numberOfSlaves + 1];
 		this.numberOfSlaves = numberOfSlaves;
+		if (logger != null) {
+			// TODO remove
+			logger.info("mapping bundle size = " + bundleSize);
+		}
 	}
 
 	public void sendQueryCreate(GraphStatistics statistics, int queryId,
@@ -219,10 +223,22 @@ public class MessageSenderBuffer {
 	private synchronized void enqueue(int receivingComputer, Mapping mapping,
 			long receiverTaskID, MappingRecycleCache mappingCache) {
 		if (isBufferFull(receivingComputer)) {
+			if (logger != null) {
+				// TODO remove
+				logger.info("enqueue before: buffer is full: "
+						+ nextIndex[receivingComputer] + "/"
+						+ mappingBuffer[receivingComputer].length);
+			}
 			sendBufferedMessages(receivingComputer, mappingCache);
 		}
 		mappingBuffer[receivingComputer][nextIndex[receivingComputer]++] = mapping;
 		if (isBufferFull(receivingComputer)) {
+			if (logger != null) {
+				// TODO remove
+				logger.info("enqueue after: buffer is full: "
+						+ nextIndex[receivingComputer] + "/"
+						+ mappingBuffer[receivingComputer].length);
+			}
 			sendBufferedMessages(receivingComputer, mappingCache);
 		}
 	}
