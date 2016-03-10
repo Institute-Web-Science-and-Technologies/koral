@@ -156,7 +156,9 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 				}
 			}
 			this.currentLoad = currentLoad;
-			messageSender.sendAllBufferedMessages(mappingCache);
+			if (isInterrupted()) {
+				messageSender.sendAllBufferedMessages(mappingCache);
+			}
 			rebalance();
 			if (tasks.isEmpty()) {
 				try {

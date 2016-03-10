@@ -156,6 +156,10 @@ public class MessageSenderBuffer {
 	 */
 	public void sendQueryTaskFinished(long finishedTaskID, boolean isRoot,
 			long coordinatorID, MappingRecycleCache mappingCache) {
+		if (logger != null) {
+			// TODO remove
+			logger.info("send query task finished");
+		}
 		sendAllBufferedMessages(mappingCache);
 		ByteBuffer message = ByteBuffer
 				.allocate(Byte.BYTES + Short.BYTES + Long.BYTES);
@@ -178,6 +182,10 @@ public class MessageSenderBuffer {
 	}
 
 	public void sendAllBufferedMessages(MappingRecycleCache mappingCache) {
+		if (logger != null) {
+			// TODO remove
+			logger.info("send all buffered messages");
+		}
 		for (int i = 0; i < mappingBuffer.length; i++) {
 			sendBufferedMessages(i, mappingCache);
 		}
@@ -292,6 +300,10 @@ public class MessageSenderBuffer {
 	}
 
 	public void close(MappingRecycleCache mappingCache) {
+		if (logger != null) {
+			// TODO remove
+			logger.info("close");
+		}
 		sendAllBufferedMessages(mappingCache);
 	}
 
