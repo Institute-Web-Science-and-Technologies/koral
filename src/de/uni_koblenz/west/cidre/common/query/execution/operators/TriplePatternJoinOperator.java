@@ -304,8 +304,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		}
 	}
 
-	// TODO measure time waiting for mappings from network
-
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
