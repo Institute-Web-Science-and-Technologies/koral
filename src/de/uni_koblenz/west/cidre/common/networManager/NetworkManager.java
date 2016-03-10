@@ -10,6 +10,7 @@ import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
+import de.uni_koblenz.west.cidre.common.messages.MessageType;
 
 /**
  * Creates connections between the CIDRE components, i.e, master and slaves.
@@ -81,7 +82,8 @@ public class NetworkManager implements Closeable, MessageSender {
 			synchronized (out) {
 				if (logger != null) {
 					// TODO remove
-					logger.finest("#;send;" + Arrays.hashCode(message) + ";"
+					logger.finest("#;send;" + MessageType.valueOf(message[0])
+							+ ";" + Arrays.hashCode(message) + ";"
 							+ System.currentTimeMillis());
 				}
 				out.send(message);
@@ -115,8 +117,10 @@ public class NetworkManager implements Closeable, MessageSender {
 				synchronized (out) {
 					if (logger != null) {
 						// TODO remove
-						logger.finest("#;sendAll;" + Arrays.hashCode(message)
-								+ ";" + System.currentTimeMillis());
+						logger.finest(
+								"#;sendAll;" + MessageType.valueOf(message[0])
+										+ ";" + Arrays.hashCode(message) + ";"
+										+ System.currentTimeMillis());
 					}
 					out.send(message);
 				}
@@ -135,8 +139,10 @@ public class NetworkManager implements Closeable, MessageSender {
 					byte[] message = receiver.recv();
 					if (logger != null && message != null) {
 						// TODO remove
-						logger.finest("#;received;" + Arrays.hashCode(message)
-								+ ";" + System.currentTimeMillis());
+						logger.finest(
+								"#;received;" + MessageType.valueOf(message[0])
+										+ ";" + Arrays.hashCode(message) + ";"
+										+ System.currentTimeMillis());
 					}
 					return message;
 				}
@@ -145,8 +151,10 @@ public class NetworkManager implements Closeable, MessageSender {
 					byte[] message = receiver.recv(ZMQ.DONTWAIT);
 					if (logger != null && message != null) {
 						// TODO remove
-						logger.finest("#;received;" + Arrays.hashCode(message)
-								+ ";" + System.currentTimeMillis());
+						logger.finest(
+								"#;received;" + MessageType.valueOf(message[0])
+										+ ";" + Arrays.hashCode(message) + ";"
+										+ System.currentTimeMillis());
 					}
 					return message;
 				}
