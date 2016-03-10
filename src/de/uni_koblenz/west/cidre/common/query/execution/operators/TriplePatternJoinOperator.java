@@ -446,7 +446,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private void startJoinTime() {
 		if (currentWaitStart > 0) {
-			totalWaitTime = System.currentTimeMillis() - currentWaitStart;
+			totalWaitTime += System.currentTimeMillis() - currentWaitStart;
 			currentWaitStart = 0;
 		}
 		if (currentJoinStart <= 0) {
@@ -456,7 +456,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
 	private void startWaitTime() {
 		if (currentWaitStart > 0) {
-			totalJoinTime = System.currentTimeMillis() - currentWaitStart;
+			totalJoinTime += System.currentTimeMillis() - currentWaitStart;
 			currentJoinStart = 0;
 		}
 		if (currentWaitStart <= 0) {
@@ -467,11 +467,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	@Override
 	protected void executeFinalStep() {
 		if (currentWaitStart > 0) {
-			totalWaitTime = System.currentTimeMillis() - currentWaitStart;
+			totalWaitTime += System.currentTimeMillis() - currentWaitStart;
 			currentWaitStart = 0;
 		}
 		if (currentWaitStart > 0) {
-			totalJoinTime = System.currentTimeMillis() - currentWaitStart;
+			totalJoinTime += System.currentTimeMillis() - currentWaitStart;
 			currentJoinStart = 0;
 		}
 		if (logger != null) {
