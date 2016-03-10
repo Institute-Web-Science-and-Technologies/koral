@@ -17,6 +17,7 @@ import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.cidre.common.utils.InMemoryJoinMappingCache;
 import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
 import de.uni_koblenz.west.cidre.common.utils.MapDBJoinMappingCache;
+import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 /**
@@ -46,6 +47,18 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	private JoinMappingCache rightMappingCache;
 
 	private JoinIterator iterator;
+
+	/*
+	 * Time measurement specific fields
+	 */
+
+	private long totalJoinTime;
+
+	private long currentJoinStart;
+
+	private long totalWaitTime;
+
+	private long currentWaitStart;
 
 	public TriplePatternJoinOperator(long id, long coordinatorId,
 			int numberOfSlaves, int cacheSize, File cacheDirectory,
@@ -270,6 +283,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	}
 
 	@Override
+	public void start() {
+		super.start();
+		startWaitTime();
+	}
+
+	@Override
 	protected void executeOperationStep() {
 		switch (joinType) {
 		case JOIN:
@@ -285,6 +304,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 		}
 	}
 
+	// TODO measure time waiting for mappings from network
+
 	private void executeJoinStep() {
 		for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
 			if (iterator == null || !iterator.hasNext()) {
@@ -292,9 +313,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					if (isInputQueueEmpty(0)) {
 						if (isInputQueueEmpty(1)) {
 							// there are no mappings to consume
+							startWaitTime();
 							break;
 						}
 					} else {
+						startJoinTime();
 						Mapping mapping = consumeMapping(0);
 						long[] mappingVars = ((QueryOperatorBase) getChildTask(
 								0)).getResultVariables();
@@ -314,9 +337,11 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 					if (isInputQueueEmpty(1)) {
 						if (isInputQueueEmpty(0)) {
 							// there are no mappings to consume
+							startWaitTime();
 							break;
 						}
 					} else {
+						startJoinTime();
 						Mapping mapping = consumeMapping(1);
 						long[] mappingVars = ((QueryOperatorBase) getChildTask(
 								1)).getResultVariables();
@@ -363,9 +388,17 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				}
 			} else {
 				// the right child has matched
-				for (int i = 0; i < getEmittedMappingsPerRound()
-						&& !isInputQueueEmpty(0); i++) {
-					emitMapping(consumeMapping(0));
+				if (!isInputQueueEmpty(0)) {
+					startJoinTime();
+					for (int i = 0; i < getEmittedMappingsPerRound()
+							&& !isInputQueueEmpty(0); i++) {
+						Mapping mapping = consumeMapping(0);
+						if (mapping == null) {
+							startWaitTime();
+							break;
+						}
+						emitMapping(mapping);
+					}
 				}
 				if (hasChildFinished(0) && isInputQueueEmpty(0)) {
 					// as a final step, discard the empty mapping from the right
@@ -389,10 +422,17 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				}
 			} else {
 				// the left child has matched
-				for (int i = 0; i < getEmittedMappingsPerRound()
-						&& !isInputQueueEmpty(1); i++) {
-					Mapping mapping = consumeMapping(1);
-					emitMapping(mapping);
+				if (!isInputQueueEmpty(1)) {
+					startJoinTime();
+					for (int i = 0; i < getEmittedMappingsPerRound()
+							&& !isInputQueueEmpty(1); i++) {
+						Mapping mapping = consumeMapping(1);
+						if (mapping == null) {
+							startWaitTime();
+							break;
+						}
+						emitMapping(mapping);
+					}
 				}
 				if (hasChildFinished(1) && isInputQueueEmpty(1)) {
 					// as a final step, discard the empty mapping from the left
@@ -402,6 +442,44 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 				}
 			}
 		}
+	}
+
+	private void startJoinTime() {
+		if (currentWaitStart > 0) {
+			totalWaitTime = System.currentTimeMillis() - currentWaitStart;
+			currentWaitStart = 0;
+		}
+		if (currentJoinStart <= 0) {
+			currentJoinStart = System.currentTimeMillis();
+		}
+	}
+
+	private void startWaitTime() {
+		if (currentWaitStart > 0) {
+			totalJoinTime = System.currentTimeMillis() - currentWaitStart;
+			currentJoinStart = 0;
+		}
+		if (currentWaitStart <= 0) {
+			currentWaitStart = System.currentTimeMillis();
+		}
+	}
+
+	@Override
+	protected void executeFinalStep() {
+		if (currentWaitStart > 0) {
+			totalWaitTime = System.currentTimeMillis() - currentWaitStart;
+			currentWaitStart = 0;
+		}
+		if (currentWaitStart > 0) {
+			totalJoinTime = System.currentTimeMillis() - currentWaitStart;
+			currentJoinStart = 0;
+		}
+		if (logger != null) {
+			logger.finest(NumberConversion.id2description(getID())
+					+ " joinTime: " + totalJoinTime + "ms" + " waitTime: "
+					+ totalWaitTime + "ms");
+		}
+		super.executeFinalStep();
 	}
 
 	@Override
