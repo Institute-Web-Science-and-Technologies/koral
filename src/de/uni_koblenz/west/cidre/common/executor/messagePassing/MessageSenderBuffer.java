@@ -204,6 +204,11 @@ public class MessageSenderBuffer {
 			mappingBuffer[receivingComputer][i] = null;
 			mappingCache.releaseMapping(mapping);
 		}
+		if (logger != null) {
+			// TODO remove
+			logger.info("Send " + nextIndex[receivingComputer]
+					+ " mappings to computer " + receivingComputer);
+		}
 		nextIndex[receivingComputer] = 0;
 		// send message
 		if (buffer != null) {

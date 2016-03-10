@@ -10,7 +10,6 @@ import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
-import de.uni_koblenz.west.cidre.common.messages.MessageType;
 
 /**
  * Creates connections between the CIDRE components, i.e, master and slaves.
@@ -80,13 +79,13 @@ public class NetworkManager implements Closeable, MessageSender {
 		Socket out = senders[receiver];
 		if (out != null) {
 			synchronized (out) {
-				if (logger != null) {
-					// TODO remove
-					logger.finest("#;send;" + MessageType.valueOf(message[0])
-							+ ";" + message.length + ";"
-							+ Arrays.hashCode(message) + ";"
-							+ System.currentTimeMillis());
-				}
+				// if (logger != null) {
+				// // TODO remove
+				// logger.finest("#;send;" + MessageType.valueOf(message[0])
+				// + ";" + message.length + ";"
+				// + Arrays.hashCode(message) + ";"
+				// + System.currentTimeMillis());
+				// }
 				out.send(message);
 			}
 		}
@@ -116,14 +115,14 @@ public class NetworkManager implements Closeable, MessageSender {
 			Socket out = senders[i];
 			if (out != null) {
 				synchronized (out) {
-					if (logger != null) {
-						// TODO remove
-						logger.finest(
-								"#;sendAll;" + MessageType.valueOf(message[0])
-										+ ";" + message.length + ";"
-										+ Arrays.hashCode(message) + ";"
-										+ System.currentTimeMillis());
-					}
+					// if (logger != null) {
+					// // TODO remove
+					// logger.finest(
+					// "#;sendAll;" + MessageType.valueOf(message[0])
+					// + ";" + message.length + ";"
+					// + Arrays.hashCode(message) + ";"
+					// + System.currentTimeMillis());
+					// }
 					out.send(message);
 				}
 			}
@@ -139,27 +138,27 @@ public class NetworkManager implements Closeable, MessageSender {
 			if (waitForResponse) {
 				synchronized (receiver) {
 					byte[] message = receiver.recv();
-					if (logger != null && message != null) {
-						// TODO remove
-						logger.finest(
-								"#;received;" + MessageType.valueOf(message[0])
-										+ ";" + message.length + ";"
-										+ Arrays.hashCode(message) + ";"
-										+ System.currentTimeMillis());
-					}
+					// if (logger != null && message != null) {
+					// // TODO remove
+					// logger.finest(
+					// "#;received;" + MessageType.valueOf(message[0])
+					// + ";" + message.length + ";"
+					// + Arrays.hashCode(message) + ";"
+					// + System.currentTimeMillis());
+					// }
 					return message;
 				}
 			} else {
 				synchronized (receiver) {
 					byte[] message = receiver.recv(ZMQ.DONTWAIT);
-					if (logger != null && message != null) {
-						// TODO remove
-						logger.finest(
-								"#;received;" + MessageType.valueOf(message[0])
-										+ ";" + message.length + ";"
-										+ Arrays.hashCode(message) + ";"
-										+ System.currentTimeMillis());
-					}
+					// if (logger != null && message != null) {
+					// // TODO remove
+					// logger.finest(
+					// "#;received;" + MessageType.valueOf(message[0])
+					// + ";" + message.length + ";"
+					// + Arrays.hashCode(message) + ";"
+					// + System.currentTimeMillis());
+					// }
 					return message;
 				}
 			}
