@@ -83,7 +83,8 @@ public class NetworkManager implements Closeable, MessageSender {
 				if (logger != null) {
 					// TODO remove
 					logger.finest("#;send;" + MessageType.valueOf(message[0])
-							+ ";" + Arrays.hashCode(message) + ";"
+							+ ";" + message.length + ";"
+							+ Arrays.hashCode(message) + ";"
 							+ System.currentTimeMillis());
 				}
 				out.send(message);
@@ -119,7 +120,8 @@ public class NetworkManager implements Closeable, MessageSender {
 						// TODO remove
 						logger.finest(
 								"#;sendAll;" + MessageType.valueOf(message[0])
-										+ ";" + Arrays.hashCode(message) + ";"
+										+ ";" + message.length + ";"
+										+ Arrays.hashCode(message) + ";"
 										+ System.currentTimeMillis());
 					}
 					out.send(message);
@@ -141,7 +143,8 @@ public class NetworkManager implements Closeable, MessageSender {
 						// TODO remove
 						logger.finest(
 								"#;received;" + MessageType.valueOf(message[0])
-										+ ";" + Arrays.hashCode(message) + ";"
+										+ ";" + message.length + ";"
+										+ Arrays.hashCode(message) + ";"
 										+ System.currentTimeMillis());
 					}
 					return message;
@@ -153,7 +156,8 @@ public class NetworkManager implements Closeable, MessageSender {
 						// TODO remove
 						logger.finest(
 								"#;received;" + MessageType.valueOf(message[0])
-										+ ";" + Arrays.hashCode(message) + ";"
+										+ ";" + message.length + ";"
+										+ Arrays.hashCode(message) + ";"
 										+ System.currentTimeMillis());
 					}
 					return message;
