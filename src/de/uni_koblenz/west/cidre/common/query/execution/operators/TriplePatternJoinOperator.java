@@ -472,11 +472,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 			totalJoinTime += System.currentTimeMillis() - currentWaitStart;
 			currentJoinStart = 0;
 		}
-		if (logger != null) {
-			logger.finest(NumberConversion.id2description(getID())
-					+ " joinTime: " + totalJoinTime + "ms" + " waitTime: "
-					+ totalWaitTime + "ms");
-		}
 		super.executeFinalStep();
 	}
 
@@ -484,6 +479,16 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 	protected boolean isFinishedLocally() {
 		return super.isFinishedLocally()
 				&& (iterator == null || !iterator.hasNext());
+	}
+
+	@Override
+	protected void tidyUp() {
+		if (logger != null) {
+			logger.finest(NumberConversion.id2description(getID())
+					+ " joinTime: " + totalJoinTime + "ms" + " waitTime: "
+					+ totalWaitTime + "ms");
+		}
+		super.tidyUp();
 	}
 
 	@Override
