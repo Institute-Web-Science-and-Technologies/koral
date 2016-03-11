@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -152,6 +153,12 @@ public class InMemoryJoinMappingCache implements JoinMappingCache {
 
 	@Override
 	public void close() {
+		Iterator<Entry<ByteArrayWrapper, Collection<Mapping>>> iter = mappings
+				.entrySet().iterator();
+		while (iter.hasNext()) {
+			iter.next();
+			iter.remove();
+		}
 	}
 
 	private static class ByteArrayWrapper {
