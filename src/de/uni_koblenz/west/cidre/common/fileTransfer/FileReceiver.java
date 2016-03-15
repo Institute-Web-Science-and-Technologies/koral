@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class FileReceiver implements Closeable {
 
-	public static final int NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS = 10;// 200;
+	public static final int NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS = 200;
 
 	public static final int FILE_CHUNK_REQUEST_TIMEOUT = 1000;
 
@@ -56,8 +56,10 @@ public class FileReceiver implements Closeable {
 		totalNumberOfFiles = numberOfFiles;
 		this.fileExtensions = fileExtensions;
 		this.logger = logger;
-		maxNumberOfParallelRequests = Math.max(10,
-				NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS / numberOfSlaves);
+		maxNumberOfParallelRequests = numberOfSlaves == 1
+				? NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS : 10;
+		// Math.max(10,
+		// NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS / numberOfSlaves);
 		unprocessedChunks = new PriorityQueue<>(
 				NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS);
 	}
