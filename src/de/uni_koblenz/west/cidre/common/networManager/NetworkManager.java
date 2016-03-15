@@ -2,7 +2,6 @@ package de.uni_koblenz.west.cidre.common.networManager;
 
 import java.io.Closeable;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -21,9 +20,6 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
  *
  */
 public class NetworkManager implements Closeable, MessageSender {
-
-	// TODO remove
-	public Logger logger;
 
 	private final static int SEND_TIMEOUT = 100;
 
@@ -66,11 +62,6 @@ public class NetworkManager implements Closeable, MessageSender {
 	}
 
 	public void sendMore(int receiver, byte[] message) {
-		// if (logger != null) {
-		// // TODO remove
-		// logger.info("sendMore() started "
-		// + Arrays.toString(Thread.currentThread().getStackTrace()));
-		// }
 		Socket out = senders[receiver];
 		if (out != null) {
 			synchronized (out) {
@@ -80,19 +71,10 @@ public class NetworkManager implements Closeable, MessageSender {
 				}
 			}
 		}
-		// if (logger != null) {
-		// // TODO remove
-		// logger.info("sendMore() finished");
-		// }
 	}
 
 	@Override
 	public void send(int receiver, byte[] message) {
-		// if (logger != null) {
-		// // TODO remove
-		// logger.info("send() started "
-		// + Arrays.toString(Thread.currentThread().getStackTrace()));
-		// }
 		Socket out = senders[receiver];
 		if (out != null) {
 			synchronized (out) {
@@ -102,10 +84,6 @@ public class NetworkManager implements Closeable, MessageSender {
 				}
 			}
 		}
-		// if (logger != null) {
-		// // TODO remove
-		// logger.info("send() finished");
-		// }
 	}
 
 	public void sendToAll(byte[] message) {
@@ -129,11 +107,6 @@ public class NetworkManager implements Closeable, MessageSender {
 				// do not broadcast a message to excluded slave
 				continue;
 			}
-			// if (logger != null) {
-			// // TODO remove
-			// logger.info("sendToAll() started " + Arrays
-			// .toString(Thread.currentThread().getStackTrace()));
-			// }
 			Socket out = senders[i];
 			if (out != null) {
 				synchronized (out) {
@@ -143,10 +116,6 @@ public class NetworkManager implements Closeable, MessageSender {
 					}
 				}
 			}
-			// if (logger != null) {
-			// // TODO remove
-			// logger.info("sendToAll() finished");
-			// }
 		}
 	}
 
@@ -157,19 +126,8 @@ public class NetworkManager implements Closeable, MessageSender {
 	public byte[] receive(boolean waitForResponse) {
 		if (receiver != null) {
 			if (waitForResponse) {
-				// if (logger != null) {
-				// // TODO remove
-				// logger.info("receive(" + waitForResponse + ") started "
-				// + Arrays.toString(
-				// Thread.currentThread().getStackTrace()));
-				// }
 				synchronized (receiver) {
 					byte[] message = receiver.recv();
-					// if (logger != null) {
-					// // TODO remove
-					// logger.info(
-					// "receive(" + waitForResponse + ") finished");
-					// }
 					return message;
 				}
 			} else {

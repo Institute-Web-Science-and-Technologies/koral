@@ -92,10 +92,6 @@ public class ClientMessageProcessor
 		if (message != null && message.length > 0) {
 			try {
 				MessageType messageType = MessageType.valueOf(message[0]);
-				if (logger != null) {
-					// TODO remove
-					logger.info("Received message from client " + messageType);
-				}
 				switch (messageType) {
 				case CLIENT_CONNECTION_CREATION:
 					processCreateConnection(message);

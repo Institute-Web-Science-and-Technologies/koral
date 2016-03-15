@@ -77,9 +77,6 @@ public class CidreMaster extends CidreSystem {
 		getWorkerManager().addTask(rootTask);
 	}
 
-	// TODO remove
-	private long timeSinceLastMessageReceiption = -1;
-
 	@Override
 	public void runOneIteration() {
 		boolean messageReceived = false;
@@ -98,14 +95,6 @@ public class CidreMaster extends CidreSystem {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 			}
-		} else {
-			// TODO remove
-			if (timeSinceLastMessageReceiption > 0 && logger != null) {
-				logger.info((System.currentTimeMillis()
-						- timeSinceLastMessageReceiption)
-						+ "msec since last message");
-			}
-			timeSinceLastMessageReceiption = System.currentTimeMillis();
 		}
 	}
 
