@@ -176,7 +176,9 @@ public class CidreSlave extends CidreSystem {
 			MessageType messageType, int slaveID) {
 		byte[][] message = new byte[5][];
 		message[0] = new byte[] { receivedMessage[0] };
-		message[1] = getNetworkManager().receive(true);
+		while (message[1] == null) {
+			message[1] = getNetworkManager().receive();
+		}
 		if (message[1] == null || message[1].length != 4) {
 			if (logger != null) {
 				logger.finest(
@@ -184,14 +186,18 @@ public class CidreSlave extends CidreSystem {
 			}
 			return;
 		}
-		message[2] = getNetworkManager().receive(true);
+		while (message[2] == null) {
+			message[2] = getNetworkManager().receive();
+		}
 		if (message[2] == null || message[2].length != 8) {
 			if (logger != null) {
 				logger.finest("Master has not sent the id of the sent chunk.");
 			}
 			return;
 		}
-		message[3] = getNetworkManager().receive(true);
+		while (message[3] == null) {
+			message[3] = getNetworkManager().receive();
+		}
 		if (message[3] == null || message[3].length != 8) {
 			if (logger != null) {
 				logger.finest(
@@ -199,7 +205,9 @@ public class CidreSlave extends CidreSystem {
 			}
 			return;
 		}
-		message[4] = getNetworkManager().receive(true);
+		while (message[4] == null) {
+			message[4] = getNetworkManager().receive();
+		}
 		if (message[4] == null) {
 			if (logger != null) {
 				logger.finest("Master has not sent the content of the chunk.");

@@ -87,6 +87,8 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 			}
 		}
 
+		// TODO remove
+		networkManager.logger = logger;
 		this.networkManager = networkManager;
 
 		listeners = new HashMap<>();
