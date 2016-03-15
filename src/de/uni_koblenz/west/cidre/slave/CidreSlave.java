@@ -115,7 +115,7 @@ public class CidreSlave extends CidreSystem {
 					File workingDir = new File(tmpDir.getAbsolutePath()
 							+ File.separatorChar + "graphLoader" + slaveID);
 					GraphChunkListener loader = new GraphChunkLoader(slaveID,
-							workingDir,
+							getNetworkManager().getNumberOfSlaves(), workingDir,
 							(SlaveNetworkManager) getNetworkManager(),
 							tripleStore, this, logger);
 					registerMessageListener(GraphChunkListener.class, loader);

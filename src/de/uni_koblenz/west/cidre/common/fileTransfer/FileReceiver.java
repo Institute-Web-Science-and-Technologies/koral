@@ -47,7 +47,7 @@ public class FileReceiver implements Closeable {
 
 	private int maxNumberOfParallelRequests;
 
-	public FileReceiver(File workingDir, int clientID,
+	public FileReceiver(File workingDir, int clientID, int numberOfSlaves,
 			FileReceiverConnection connectionToSender, int numberOfFiles,
 			String[] fileExtensions, Logger logger) {
 		this.workingDir = workingDir;
@@ -56,9 +56,14 @@ public class FileReceiver implements Closeable {
 		totalNumberOfFiles = numberOfFiles;
 		this.fileExtensions = fileExtensions;
 		this.logger = logger;
-		maxNumberOfParallelRequests = NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS;
+		maxNumberOfParallelRequests = Math.max(10,
+				NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS / numberOfSlaves);
 		unprocessedChunks = new PriorityQueue<>(
 				NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS);
+	}
+
+	public int getMaximalNumberOfParallelRequests() {
+		return maxNumberOfParallelRequests;
 	}
 
 	public void adjustMaximalNumberOfParallelRequests(int max) {

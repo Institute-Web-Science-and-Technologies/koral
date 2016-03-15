@@ -148,8 +148,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 		this.replicationPathLength = replicationPathLength;
 		this.numberOfGraphChunks = numberOfGraphChunks;
 		this.fileSenderConnection = fileSenderConnection;
-		fileReceiver = new FileReceiver(workingDir, clientId, clientConnections,
-				numberOfFiles, fileExtensions, logger);
+		fileReceiver = new FileReceiver(workingDir, clientId, 1,
+				clientConnections, numberOfFiles, fileExtensions, logger);
 		fileReceiver.requestFiles();
 	}
 

@@ -41,7 +41,7 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 
 	private final MessageNotifier messageNotifier;
 
-	public GraphChunkLoader(int slaveID, File workingDir,
+	public GraphChunkLoader(int slaveID, int numberOfSlaves, File workingDir,
 			FileReceiverConnection connection, TripleStoreAccessor tripleStore,
 			MessageNotifier messageNotifier, Logger logger) {
 		this.logger = logger;
@@ -59,8 +59,8 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 								+ " could not be created!");
 			}
 		}
-		receiver = new FileReceiver(workingDir, slaveID, connection, 1,
-				new String[] { "enc.gz" }, logger);
+		receiver = new FileReceiver(workingDir, slaveID, numberOfSlaves,
+				connection, 1, new String[] { "enc.gz" }, logger);
 		receivedGraphChunks = new HashSet<>();
 	}
 
@@ -77,7 +77,8 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 				case START_FILE_TRANSFER:
 					long totalNumberOfChunks = NumberConversion
 							.bytes2long(message[1]);
-					if (totalNumberOfChunks < FileReceiver.NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS) {
+					if (totalNumberOfChunks < receiver
+							.getMaximalNumberOfParallelRequests()) {
 						receiver.adjustMaximalNumberOfParallelRequests(
 								(int) totalNumberOfChunks);
 					}
