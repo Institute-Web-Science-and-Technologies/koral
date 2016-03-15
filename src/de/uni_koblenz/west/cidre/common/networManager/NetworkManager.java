@@ -155,13 +155,14 @@ public class NetworkManager implements Closeable, MessageSender {
 	}
 
 	public byte[] receive(boolean waitForResponse) {
-		if (logger != null) {
-			// TODO remove
-			logger.info("receive(" + waitForResponse + ") started "
-					+ Arrays.toString(Thread.currentThread().getStackTrace()));
-		}
 		if (receiver != null) {
 			if (waitForResponse) {
+				if (logger != null) {
+					// TODO remove
+					logger.info("receive(" + waitForResponse + ") started "
+							+ Arrays.toString(
+									Thread.currentThread().getStackTrace()));
+				}
 				synchronized (receiver) {
 					byte[] message = receiver.recv();
 					if (logger != null) {
@@ -174,11 +175,6 @@ public class NetworkManager implements Closeable, MessageSender {
 			} else {
 				synchronized (receiver) {
 					byte[] message = receiver.recv(ZMQ.DONTWAIT);
-					if (logger != null) {
-						// TODO remove
-						logger.info(
-								"receive(" + waitForResponse + ") finished");
-					}
 					return message;
 				}
 			}
