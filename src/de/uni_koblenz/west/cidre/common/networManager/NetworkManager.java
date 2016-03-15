@@ -21,6 +21,8 @@ import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageSender;
  */
 public class NetworkManager implements Closeable, MessageSender {
 
+	private final static int SEND_TIMEOUT = 100;
+
 	private final ZContext context;
 
 	private Socket receiver;
@@ -38,7 +40,7 @@ public class NetworkManager implements Closeable, MessageSender {
 		senders = new Socket[conf.getNumberOfSlaves() + 1];
 		String[] master = conf.getMaster();
 		senders[0] = context.createSocket(ZMQ.PUSH);
-
+		senders[0].setSendTimeOut(SEND_TIMEOUT);
 		senders[0].connect("tcp://" + master[0] + ":" + master[1]);
 		if (Arrays.equals(currentServer, master)) {
 			currentID = 0;
@@ -46,6 +48,7 @@ public class NetworkManager implements Closeable, MessageSender {
 		for (int i = 1; i < senders.length; i++) {
 			String[] slave = conf.getSlave(i - 1);
 			senders[i] = context.createSocket(ZMQ.PUSH);
+			senders[i].setSendTimeOut(SEND_TIMEOUT);
 			senders[i].connect("tcp://" + slave[0] + ":" + slave[1]);
 			if (Arrays.equals(currentServer, slave)) {
 				currentID = i;
@@ -62,7 +65,10 @@ public class NetworkManager implements Closeable, MessageSender {
 		Socket out = senders[receiver];
 		if (out != null) {
 			synchronized (out) {
-				out.sendMore(message);
+				boolean wasSent = false;
+				while (!wasSent) {
+					wasSent = out.sendMore(message);
+				}
 			}
 		}
 	}
@@ -72,7 +78,10 @@ public class NetworkManager implements Closeable, MessageSender {
 		Socket out = senders[receiver];
 		if (out != null) {
 			synchronized (out) {
-				out.send(message);
+				boolean wasSent = false;
+				while (!wasSent) {
+					wasSent = out.send(message);
+				}
 			}
 		}
 	}
@@ -101,7 +110,10 @@ public class NetworkManager implements Closeable, MessageSender {
 			Socket out = senders[i];
 			if (out != null) {
 				synchronized (out) {
-					out.send(message);
+					boolean wasSent = false;
+					while (!wasSent) {
+						wasSent = out.send(message);
+					}
 				}
 			}
 		}
