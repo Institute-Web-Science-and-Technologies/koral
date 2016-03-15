@@ -105,6 +105,10 @@ public class CidreMaster extends CidreSystem {
 		MessageType messageType = null;
 		try {
 			messageType = MessageType.valueOf(receivedMessage[0]);
+			if (logger != null) {
+				// TODO remove
+				logger.info("Received message from slave " + messageType);
+			}
 			switch (messageType) {
 			case FILE_CHUNK_REQUEST:
 				byte[][] message = new byte[4][];
