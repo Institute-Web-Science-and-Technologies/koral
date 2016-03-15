@@ -100,11 +100,11 @@ public class CidreMaster extends CidreSystem {
 			}
 		} else {
 			// TODO remove
-			// if (timeSinceLastMessageReceiption > 0 && logger != null) {
-			// logger.info((System.currentTimeMillis()
-			// - timeSinceLastMessageReceiption)
-			// + "msec since last message");
-			// }
+			if (timeSinceLastMessageReceiption > 0 && logger != null) {
+				logger.info((System.currentTimeMillis()
+						- timeSinceLastMessageReceiption)
+						+ "msec since last message");
+			}
 			timeSinceLastMessageReceiption = System.currentTimeMillis();
 		}
 	}

@@ -66,11 +66,11 @@ public class NetworkManager implements Closeable, MessageSender {
 	}
 
 	public void sendMore(int receiver, byte[] message) {
-		if (logger != null) {
-			// TODO remove
-			logger.info("sendMore() started "
-					+ Arrays.toString(Thread.currentThread().getStackTrace()));
-		}
+		// if (logger != null) {
+		// // TODO remove
+		// logger.info("sendMore() started "
+		// + Arrays.toString(Thread.currentThread().getStackTrace()));
+		// }
 		Socket out = senders[receiver];
 		if (out != null) {
 			synchronized (out) {
@@ -80,19 +80,19 @@ public class NetworkManager implements Closeable, MessageSender {
 				}
 			}
 		}
-		if (logger != null) {
-			// TODO remove
-			logger.info("sendMore() finished");
-		}
+		// if (logger != null) {
+		// // TODO remove
+		// logger.info("sendMore() finished");
+		// }
 	}
 
 	@Override
 	public void send(int receiver, byte[] message) {
-		if (logger != null) {
-			// TODO remove
-			logger.info("send() started "
-					+ Arrays.toString(Thread.currentThread().getStackTrace()));
-		}
+		// if (logger != null) {
+		// // TODO remove
+		// logger.info("send() started "
+		// + Arrays.toString(Thread.currentThread().getStackTrace()));
+		// }
 		Socket out = senders[receiver];
 		if (out != null) {
 			synchronized (out) {
@@ -102,10 +102,10 @@ public class NetworkManager implements Closeable, MessageSender {
 				}
 			}
 		}
-		if (logger != null) {
-			// TODO remove
-			logger.info("send() finished");
-		}
+		// if (logger != null) {
+		// // TODO remove
+		// logger.info("send() finished");
+		// }
 	}
 
 	public void sendToAll(byte[] message) {
@@ -129,11 +129,11 @@ public class NetworkManager implements Closeable, MessageSender {
 				// do not broadcast a message to excluded slave
 				continue;
 			}
-			if (logger != null) {
-				// TODO remove
-				logger.info("sendToAll() started " + Arrays
-						.toString(Thread.currentThread().getStackTrace()));
-			}
+			// if (logger != null) {
+			// // TODO remove
+			// logger.info("sendToAll() started " + Arrays
+			// .toString(Thread.currentThread().getStackTrace()));
+			// }
 			Socket out = senders[i];
 			if (out != null) {
 				synchronized (out) {
@@ -143,10 +143,10 @@ public class NetworkManager implements Closeable, MessageSender {
 					}
 				}
 			}
-			if (logger != null) {
-				// TODO remove
-				logger.info("sendToAll() finished");
-			}
+			// if (logger != null) {
+			// // TODO remove
+			// logger.info("sendToAll() finished");
+			// }
 		}
 	}
 
@@ -157,19 +157,19 @@ public class NetworkManager implements Closeable, MessageSender {
 	public byte[] receive(boolean waitForResponse) {
 		if (receiver != null) {
 			if (waitForResponse) {
-				if (logger != null) {
-					// TODO remove
-					logger.info("receive(" + waitForResponse + ") started "
-							+ Arrays.toString(
-									Thread.currentThread().getStackTrace()));
-				}
+				// if (logger != null) {
+				// // TODO remove
+				// logger.info("receive(" + waitForResponse + ") started "
+				// + Arrays.toString(
+				// Thread.currentThread().getStackTrace()));
+				// }
 				synchronized (receiver) {
 					byte[] message = receiver.recv();
-					if (logger != null) {
-						// TODO remove
-						logger.info(
-								"receive(" + waitForResponse + ") finished");
-					}
+					// if (logger != null) {
+					// // TODO remove
+					// logger.info(
+					// "receive(" + waitForResponse + ") finished");
+					// }
 					return message;
 				}
 			} else {
