@@ -68,7 +68,8 @@ public class NetworkManager implements Closeable, MessageSender {
 	public void sendMore(int receiver, byte[] message) {
 		if (logger != null) {
 			// TODO remove
-			logger.info("sendMore() started");
+			logger.info("sendMore() started "
+					+ Arrays.toString(Thread.currentThread().getStackTrace()));
 		}
 		Socket out = senders[receiver];
 		if (out != null) {
@@ -89,7 +90,8 @@ public class NetworkManager implements Closeable, MessageSender {
 	public void send(int receiver, byte[] message) {
 		if (logger != null) {
 			// TODO remove
-			logger.info("send() started");
+			logger.info("send() started "
+					+ Arrays.toString(Thread.currentThread().getStackTrace()));
 		}
 		Socket out = senders[receiver];
 		if (out != null) {
@@ -129,7 +131,8 @@ public class NetworkManager implements Closeable, MessageSender {
 			}
 			if (logger != null) {
 				// TODO remove
-				logger.info("sendToAll() started");
+				logger.info("sendToAll() started " + Arrays
+						.toString(Thread.currentThread().getStackTrace()));
 			}
 			Socket out = senders[i];
 			if (out != null) {
@@ -154,7 +157,8 @@ public class NetworkManager implements Closeable, MessageSender {
 	public byte[] receive(boolean waitForResponse) {
 		if (logger != null) {
 			// TODO remove
-			logger.info("receive(" + waitForResponse + ") started");
+			logger.info("receive(" + waitForResponse + ") started "
+					+ Arrays.toString(Thread.currentThread().getStackTrace()));
 		}
 		if (receiver != null) {
 			if (waitForResponse) {
