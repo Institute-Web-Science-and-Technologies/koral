@@ -66,9 +66,9 @@ public class NetworkManager implements Closeable, MessageSender {
 		if (out != null) {
 			synchronized (out) {
 				boolean wasSent = false;
-				while (!wasSent) {
-					wasSent = out.sendMore(message);
-				}
+				// while (!wasSent) {
+				wasSent = out.sendMore(message);
+				// }
 			}
 		}
 	}
@@ -79,9 +79,9 @@ public class NetworkManager implements Closeable, MessageSender {
 		if (out != null) {
 			synchronized (out) {
 				boolean wasSent = false;
-				while (!wasSent) {
-					wasSent = out.send(message);
-				}
+				// while (!wasSent) {
+				wasSent = out.send(message);
+				// }
 			}
 		}
 	}
@@ -111,9 +111,9 @@ public class NetworkManager implements Closeable, MessageSender {
 			if (out != null) {
 				synchronized (out) {
 					boolean wasSent = false;
-					while (!wasSent) {
-						wasSent = out.send(message);
-					}
+					// while (!wasSent) {
+					wasSent = out.send(message);
+					// }
 				}
 			}
 		}

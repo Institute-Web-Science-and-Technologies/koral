@@ -56,10 +56,10 @@ public class FileReceiver implements Closeable {
 		totalNumberOfFiles = numberOfFiles;
 		this.fileExtensions = fileExtensions;
 		this.logger = logger;
-		maxNumberOfParallelRequests = numberOfSlaves == 1
-				? NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS : 10;
-		// Math.max(10,
-		// NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS / numberOfSlaves);
+		// maxNumberOfParallelRequests = numberOfSlaves == 1
+		// ? NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS : 10;
+		maxNumberOfParallelRequests = Math.max(10,
+				NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS / numberOfSlaves);
 		unprocessedChunks = new PriorityQueue<>(
 				NUMBER_OF_PARALLELY_REQUESTED_FILE_CHUNKS);
 	}
