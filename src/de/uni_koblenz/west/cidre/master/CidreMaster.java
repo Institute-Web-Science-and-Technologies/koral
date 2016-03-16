@@ -101,7 +101,8 @@ public class CidreMaster extends CidreSystem {
 		} else {
 			// TODO remove
 			if (logger != null && timeOfLastMessage > 0) {
-				logger.finest("Time since last message: " + timeOfLastMessage);
+				logger.finest((System.currentTimeMillis() - timeOfLastMessage)
+						+ "ms since last message");
 			}
 			timeOfLastMessage = System.currentTimeMillis();
 		}
