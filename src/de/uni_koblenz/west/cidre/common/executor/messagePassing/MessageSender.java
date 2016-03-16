@@ -11,10 +11,10 @@ public interface MessageSender {
 
 	public int getCurrentID();
 
-	public void send(int receiver, byte[] array);
+	public boolean send(int receiver, byte[] array);
 
-	public void sendToAllOtherSlaves(byte[] message);
+	public boolean sendToAllOtherSlaves(byte[] message);
 
-	public void sendToAllSlaves(byte[] message);
+	public boolean sendToAllSlaves(byte[] message);
 
 }

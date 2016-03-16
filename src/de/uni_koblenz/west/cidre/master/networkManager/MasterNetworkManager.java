@@ -25,14 +25,29 @@ public class MasterNetworkManager extends NetworkManager
 
 	@Override
 	public void sendFileChunk(int slaveID, FileChunk fileChunk) {
-		sendMore(slaveID,
-				new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() });
-		sendMore(slaveID, NumberConversion.int2bytes(fileChunk.getFileID()));
-		sendMore(slaveID,
-				NumberConversion.long2bytes(fileChunk.getSequenceNumber()));
-		sendMore(slaveID, NumberConversion
-				.long2bytes(fileChunk.getTotalNumberOfSequences()));
-		send(slaveID, fileChunk.getContent());
+		boolean wasMessageSent = sendMore(slaveID,
+				new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() },
+				false);
+		if (!wasMessageSent) {
+			return;
+		}
+		wasMessageSent = sendMore(slaveID,
+				NumberConversion.int2bytes(fileChunk.getFileID()), false);
+		if (!wasMessageSent) {
+			return;
+		}
+		wasMessageSent = sendMore(slaveID,
+				NumberConversion.long2bytes(fileChunk.getSequenceNumber()),
+				false);
+		if (!wasMessageSent) {
+			return;
+		}
+		wasMessageSent = sendMore(slaveID, NumberConversion
+				.long2bytes(fileChunk.getTotalNumberOfSequences()), false);
+		if (!wasMessageSent) {
+			return;
+		}
+		send(slaveID, fileChunk.getContent(), false);
 	}
 
 	@Override
