@@ -1,6 +1,11 @@
 package de.uni_koblenz.west.cidre.master.graph_cover_creator;
 
 import org.apache.jena.graph.Node;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.DatasetGraphFactory;
+import org.apache.jena.sparql.core.Quad;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -10,7 +15,11 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -52,7 +61,7 @@ public class NHopReplicator {
         performHopStep(database, cover, moleculeMap);
       }
 
-      nHopReplicatedFiles = convertToFiles(cover, workingDir);
+      nHopReplicatedFiles = convertToFiles(cover, moleculeMap, workingDir);
 
       // clean up
       moleculeMap.close();
@@ -172,9 +181,42 @@ public class NHopReplicator {
     return 0;
   }
 
-  private File[] convertToFiles(Set<String>[] cover, File workingDir) {
-    // TODO Auto-generated method stub
-    return null;
+  private File[] convertToFiles(Set<String>[] cover, HTreeMap<String, Set<String[]>> moleculeMap,
+          File workingDir) {
+    File[] chunks = new File[cover.length];
+    for (int i = 0; i < cover.length; i++) {
+      chunks[i] = convertToFile(cover[i], i, moleculeMap, workingDir);
+    }
+    return chunks;
+  }
+
+  private File convertToFile(Set<String> subjects, int chunkIndex,
+          HTreeMap<String, Set<String[]>> moleculeMap, File workingDir) {
+    if (subjects == null) {
+      return null;
+    }
+    File chunkFile = new File(
+            workingDir.getAbsolutePath() + File.separatorChar + "chunk_" + chunkIndex);
+    try (OutputStream output = new BufferedOutputStream(new FileOutputStream(chunkFile));) {
+      DatasetGraph graph = DatasetGraphFactory.createMem();
+      for (String subject : subjects) {
+        Set<String[]> molecule = moleculeMap.get(subject);
+        if (molecule != null) {
+          for (String[] triple : molecule) {
+            Node[] statement = new Node[triple.length];
+            for (int i = 0; i < triple.length; i++) {
+              statement[i] = DeSerializer.deserializeNode(triple[i]);
+            }
+            graph.add(new Quad(statement[3], statement[0], statement[1], statement[2]));
+            RDFDataMgr.write(output, graph, RDFFormat.NQ);
+            graph.clear();
+          }
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return chunkFile;
   }
 
   private void deleteFolder(File mapFolder) {
