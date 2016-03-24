@@ -9,12 +9,12 @@ package de.uni_koblenz.west.cidre.common.executor.messagePassing;
  */
 public interface MessageSender {
 
-	public int getCurrentID();
+  public int getCurrentID();
 
-	public boolean send(int receiver, byte[] array);
+  public boolean send(int receiver, byte[] array);
 
-	public boolean sendToAllOtherSlaves(byte[] message);
+  public boolean sendToAllOtherSlaves(byte[] message);
 
-	public boolean sendToAllSlaves(byte[] message);
+  public boolean sendToAllSlaves(byte[] message);
 
 }

@@ -20,8 +20,8 @@ import java.lang.annotation.Target;
 @Inherited
 public @interface Property {
 
-	public String name();
+  public String name();
 
-	public String description();
+  public String description();
 
 }

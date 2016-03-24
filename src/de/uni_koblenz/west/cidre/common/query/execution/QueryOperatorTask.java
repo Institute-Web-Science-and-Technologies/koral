@@ -1,9 +1,9 @@
 package de.uni_koblenz.west.cidre.common.query.execution;
 
+import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
-
-import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 
 /**
  * Supertype of all query operations.
@@ -13,16 +13,16 @@ import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
  */
 public interface QueryOperatorTask extends WorkerTask {
 
-	public long[] getResultVariables();
+  public long[] getResultVariables();
 
-	/**
-	 * @return -1 iff no join var exists
-	 */
-	public long getFirstJoinVar();
+  /**
+   * @return -1 iff no join var exists
+   */
+  public long getFirstJoinVar();
 
-	public byte[] serialize(boolean useBaseImplementation, int slaveId);
+  public byte[] serialize(boolean useBaseImplementation, int slaveId);
 
-	public void serialize(DataOutputStream output,
-			boolean useBaseImplementation, int slaveId) throws IOException;
+  public void serialize(DataOutputStream output, boolean useBaseImplementation, int slaveId)
+          throws IOException;
 
 }

@@ -1,12 +1,5 @@
 package de.uni_koblenz.west.cidre.slave;
 
-import java.io.File;
-import java.net.Inet4Address;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.nio.BufferUnderflowException;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -22,6 +15,13 @@ import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.impl.GraphChunkLoader;
 
+import java.io.File;
+import java.net.Inet4Address;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.nio.BufferUnderflowException;
+
 /**
  * The implementation of the CIDRE slaves.
  * 
@@ -30,230 +30,214 @@ import de.uni_koblenz.west.cidre.slave.triple_store.loader.impl.GraphChunkLoader
  */
 public class CidreSlave extends CidreSystem {
 
-	private final File tmpDir;
+  private final File tmpDir;
 
-	private TripleStoreAccessor tripleStore;
+  private TripleStoreAccessor tripleStore;
 
-	public CidreSlave(Configuration conf) throws ConfigurationException {
-		super(conf, getCurrentIP(conf),
-				new SlaveNetworkManager(conf, getCurrentIP(conf)));
-		try {
-			tmpDir = new File(conf.getTmpDir());
-			if (!tmpDir.exists()) {
-				tmpDir.mkdirs();
-			}
-			setTripleStore(new TripleStoreAccessor(conf, logger));
-		} catch (Throwable t) {
-			if (logger != null) {
-				logger.throwing(t.getStackTrace()[0].getClassName(),
-						t.getStackTrace()[0].getMethodName(), t);
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-				}
-			}
-			throw t;
-		}
-	}
+  public CidreSlave(Configuration conf) throws ConfigurationException {
+    super(conf, getCurrentIP(conf), new SlaveNetworkManager(conf, getCurrentIP(conf)));
+    try {
+      tmpDir = new File(conf.getTmpDir());
+      if (!tmpDir.exists()) {
+        tmpDir.mkdirs();
+      }
+      setTripleStore(new TripleStoreAccessor(conf, logger));
+    } catch (Throwable t) {
+      if (logger != null) {
+        logger.throwing(t.getStackTrace()[0].getClassName(), t.getStackTrace()[0].getMethodName(),
+                t);
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+        }
+      }
+      throw t;
+    }
+  }
 
-	@Override
-	protected void setTripleStore(TripleStoreAccessor tripleStore) {
-		this.tripleStore = tripleStore;
-		super.setTripleStore(tripleStore);
-	}
+  @Override
+  protected void setTripleStore(TripleStoreAccessor tripleStore) {
+    this.tripleStore = tripleStore;
+    super.setTripleStore(tripleStore);
+  }
 
-	private static String[] getCurrentIP(Configuration conf)
-			throws ConfigurationException {
-		for (int i = 0; i < conf.getNumberOfSlaves(); i++) {
-			String[] slave = conf.getSlave(i);
-			try {
-				NetworkInterface ni = NetworkInterface
-						.getByInetAddress(Inet4Address.getByName(slave[0]));
-				if (ni != null) {
-					return slave;
-				}
-			} catch (SocketException | UnknownHostException e) {
-			}
-		}
-		throw new ConfigurationException(
-				"The current slave cannot be found in the configuration file.");
-	}
+  private static String[] getCurrentIP(Configuration conf) throws ConfigurationException {
+    for (int i = 0; i < conf.getNumberOfSlaves(); i++) {
+      String[] slave = conf.getSlave(i);
+      try {
+        NetworkInterface ni = NetworkInterface.getByInetAddress(Inet4Address.getByName(slave[0]));
+        if (ni != null) {
+          return slave;
+        }
+      } catch (SocketException | UnknownHostException e) {
+      }
+    }
+    throw new ConfigurationException(
+            "The current slave cannot be found in the configuration file.");
+  }
 
-	@Override
-	public void runOneIteration() {
-		byte[] receive = getNetworkManager().receive();
-		if (receive != null) {
-			processMessage(receive);
-			if (!isInterrupted()) {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-				}
-			}
-		}
-	}
+  @Override
+  public void runOneIteration() {
+    byte[] receive = getNetworkManager().receive();
+    if (receive != null) {
+      processMessage(receive);
+      if (!isInterrupted()) {
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+        }
+      }
+    }
+  }
 
-	private void processMessage(byte[] receivedMessage) {
-		if (receivedMessage == null || receivedMessage.length == 0) {
-			return;
-		}
-		try {
-			MessageType messageType = null;
-			try {
-				messageType = MessageType.valueOf(receivedMessage[0]);
-				int slaveID = getNetworkManager().getCurrentID();
-				switch (messageType) {
-				case CLEAR:
-					clear();
-					break;
-				case START_FILE_TRANSFER:
-					byte[][] message = new byte[2][];
-					message[0] = new byte[] { receivedMessage[0] };
-					message[1] = new byte[8];
-					System.arraycopy(receivedMessage, 1, message[1], 0,
-							message[1].length);
-					File workingDir = new File(tmpDir.getAbsolutePath()
-							+ File.separatorChar + "graphLoader" + slaveID);
-					GraphChunkListener loader = new GraphChunkLoader(slaveID,
-							getNetworkManager().getNumberOfSlaves(), workingDir,
-							(SlaveNetworkManager) getNetworkManager(),
-							tripleStore, this, logger);
-					registerMessageListener(GraphChunkListener.class, loader);
-					notifyMessageListener(messageType.getListenerType(),
-							slaveID, message);
-					break;
-				case FILE_CHUNK_RESPONSE:
-					receiveFileChunkResponse(receivedMessage, messageType,
-							slaveID);
-					break;
-				case QUERY_CREATE:
-					getWorkerManager().createQuery(receivedMessage);
-					break;
-				case QUERY_START:
-					getWorkerManager().startQuery(receivedMessage);
-					break;
-				case QUERY_ABORTION:
-					getWorkerManager().abortQuery(receivedMessage);
-					break;
-				case QUERY_MAPPING_BATCH:
-				case QUERY_TASK_FINISHED:
-					short senderID = NumberConversion
-							.bytes2short(receivedMessage, 1);
-					notifyMessageListener(MessageReceiverListener.class,
-							senderID, receivedMessage);
-					break;
-				default:
-					if (logger != null) {
-						logger.finer(
-								"Unknown message type received from slave: "
-										+ messageType.name());
-					}
-				}
-			} catch (IllegalArgumentException e) {
-				if (logger != null) {
-					logger.finer("Unknown message type: " + receivedMessage[0]);
-					logger.throwing(e.getStackTrace()[0].getClassName(),
-							e.getStackTrace()[0].getMethodName(), e);
-				}
-			} catch (BufferUnderflowException | IndexOutOfBoundsException e) {
-				if (logger != null) {
-					logger.finer("Message of type " + messageType
-							+ " is too short with only "
-							+ receivedMessage.length + " received bytes.");
-					logger.throwing(e.getStackTrace()[0].getClassName(),
-							e.getStackTrace()[0].getMethodName(), e);
-				}
-			}
-		} catch (RuntimeException e) {
-			if (logger != null) {
-				logger.throwing(e.getStackTrace()[0].getClassName(),
-						e.getStackTrace()[0].getMethodName(), e);
-			}
-		}
-	}
+  private void processMessage(byte[] receivedMessage) {
+    if (receivedMessage == null || receivedMessage.length == 0) {
+      return;
+    }
+    try {
+      MessageType messageType = null;
+      try {
+        messageType = MessageType.valueOf(receivedMessage[0]);
+        int slaveID = getNetworkManager().getCurrentID();
+        switch (messageType) {
+          case CLEAR:
+            clear();
+            break;
+          case START_FILE_TRANSFER:
+            byte[][] message = new byte[2][];
+            message[0] = new byte[] { receivedMessage[0] };
+            message[1] = new byte[8];
+            System.arraycopy(receivedMessage, 1, message[1], 0, message[1].length);
+            File workingDir = new File(
+                    tmpDir.getAbsolutePath() + File.separatorChar + "graphLoader" + slaveID);
+            GraphChunkListener loader = new GraphChunkLoader(slaveID,
+                    getNetworkManager().getNumberOfSlaves(), workingDir,
+                    (SlaveNetworkManager) getNetworkManager(), tripleStore, this, logger);
+            registerMessageListener(GraphChunkListener.class, loader);
+            notifyMessageListener(messageType.getListenerType(), slaveID, message);
+            break;
+          case FILE_CHUNK_RESPONSE:
+            receiveFileChunkResponse(receivedMessage, messageType, slaveID);
+            break;
+          case QUERY_CREATE:
+            getWorkerManager().createQuery(receivedMessage);
+            break;
+          case QUERY_START:
+            getWorkerManager().startQuery(receivedMessage);
+            break;
+          case QUERY_ABORTION:
+            getWorkerManager().abortQuery(receivedMessage);
+            break;
+          case QUERY_MAPPING_BATCH:
+          case QUERY_TASK_FINISHED:
+            short senderID = NumberConversion.bytes2short(receivedMessage, 1);
+            notifyMessageListener(MessageReceiverListener.class, senderID, receivedMessage);
+            break;
+          default:
+            if (logger != null) {
+              logger.finer("Unknown message type received from slave: " + messageType.name());
+            }
+        }
+      } catch (IllegalArgumentException e) {
+        if (logger != null) {
+          logger.finer("Unknown message type: " + receivedMessage[0]);
+          logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
+                  e);
+        }
+      } catch (BufferUnderflowException | IndexOutOfBoundsException e) {
+        if (logger != null) {
+          logger.finer("Message of type " + messageType + " is too short with only "
+                  + receivedMessage.length + " received bytes.");
+          logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
+                  e);
+        }
+      }
+    } catch (RuntimeException e) {
+      if (logger != null) {
+        logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
+                e);
+      }
+    }
+  }
 
-	private void receiveFileChunkResponse(byte[] receivedMessage,
-			MessageType messageType, int slaveID) {
-		byte[][] message = new byte[5][];
-		message[0] = new byte[] { receivedMessage[0] };
-		while (message[1] == null) {
-			message[1] = getNetworkManager().receive();
-		}
-		if (message[1] == null || message[1].length != 4) {
-			if (logger != null) {
-				logger.finest(
-						"Master has not sent the id of the file this chunk belongs to.");
-			}
-			return;
-		}
-		while (message[2] == null) {
-			message[2] = getNetworkManager().receive();
-		}
-		if (message[2] == null || message[2].length != 8) {
-			if (logger != null) {
-				logger.finest("Master has not sent the id of the sent chunk.");
-			}
-			return;
-		}
-		while (message[3] == null) {
-			message[3] = getNetworkManager().receive();
-		}
-		if (message[3] == null || message[3].length != 8) {
-			if (logger != null) {
-				logger.finest(
-						"Master has not sent the number of total chunks.");
-			}
-			return;
-		}
-		while (message[4] == null) {
-			message[4] = getNetworkManager().receive();
-		}
-		if (message[4] == null) {
-			if (logger != null) {
-				logger.finest("Master has not sent the content of the chunk.");
-			}
-			return;
-		}
-		notifyMessageListener(messageType.getListenerType(), slaveID, message);
-	}
+  private void receiveFileChunkResponse(byte[] receivedMessage, MessageType messageType,
+          int slaveID) {
+    byte[][] message = new byte[5][];
+    message[0] = new byte[] { receivedMessage[0] };
+    while (message[1] == null) {
+      message[1] = getNetworkManager().receive();
+    }
+    if (message[1] == null || message[1].length != 4) {
+      if (logger != null) {
+        logger.finest("Master has not sent the id of the file this chunk belongs to.");
+      }
+      return;
+    }
+    while (message[2] == null) {
+      message[2] = getNetworkManager().receive();
+    }
+    if (message[2] == null || message[2].length != 8) {
+      if (logger != null) {
+        logger.finest("Master has not sent the id of the sent chunk.");
+      }
+      return;
+    }
+    while (message[3] == null) {
+      message[3] = getNetworkManager().receive();
+    }
+    if (message[3] == null || message[3].length != 8) {
+      if (logger != null) {
+        logger.finest("Master has not sent the number of total chunks.");
+      }
+      return;
+    }
+    while (message[4] == null) {
+      message[4] = getNetworkManager().receive();
+    }
+    if (message[4] == null) {
+      if (logger != null) {
+        logger.finest("Master has not sent the content of the chunk.");
+      }
+      return;
+    }
+    notifyMessageListener(messageType.getListenerType(), slaveID, message);
+  }
 
-	@Override
-	public void shutDown() {
-		super.shutDown();
-		tripleStore.close();
-	}
+  @Override
+  public void shutDown() {
+    super.shutDown();
+    tripleStore.close();
+  }
 
-	@Override
-	public void clear() {
-		super.clear();
-		tripleStore.clear();
-		if (logger != null) {
-			logger.info("slave " + getNetworkManager().getCurrentID()
-					+ " cleared.");
-		}
-	}
+  @Override
+  public void clear() {
+    super.clear();
+    tripleStore.clear();
+    if (logger != null) {
+      logger.info("slave " + getNetworkManager().getCurrentID() + " cleared.");
+    }
+  }
 
-	public static void main(String[] args) {
-		String className = CidreSlave.class.getName();
-		String additionalArgs = "";
-		Options options = createCommandLineOptions();
-		try {
-			CommandLine line = parseCommandLineArgs(options, args);
-			Configuration conf = initializeConfiguration(options, line,
-					className, additionalArgs);
+  public static void main(String[] args) {
+    String className = CidreSlave.class.getName();
+    String additionalArgs = "";
+    Options options = createCommandLineOptions();
+    try {
+      CommandLine line = parseCommandLineArgs(options, args);
+      Configuration conf = initializeConfiguration(options, line, className, additionalArgs);
 
-			CidreSlave slave;
-			try {
-				slave = new CidreSlave(conf);
-				slave.start();
-			} catch (ConfigurationException e) {
-				e.printStackTrace();
-			}
+      CidreSlave slave;
+      try {
+        slave = new CidreSlave(conf);
+        slave.start();
+      } catch (ConfigurationException e) {
+        e.printStackTrace();
+      }
 
-		} catch (ParseException e) {
-			e.printStackTrace();
-			printUsage(className, options, additionalArgs);
-		}
-	}
+    } catch (ParseException e) {
+      e.printStackTrace();
+      printUsage(className, options, additionalArgs);
+    }
+  }
 
 }

@@ -1,10 +1,10 @@
 package de.uni_koblenz.west.cidre.slave.triple_store.impl;
 
-import java.util.Iterator;
-
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.cidre.common.query.TriplePattern;
+
+import java.util.Iterator;
 
 /**
  * Index look ups in the indices of {@link MapDBTripleStore} would result in
@@ -14,39 +14,38 @@ import de.uni_koblenz.west.cidre.common.query.TriplePattern;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class MappingIteratorWrapper
-		implements Iterable<Mapping>, Iterator<Mapping> {
+public class MappingIteratorWrapper implements Iterable<Mapping>, Iterator<Mapping> {
 
-	private final MappingRecycleCache cache;
+  private final MappingRecycleCache cache;
 
-	private final TriplePattern pattern;
+  private final TriplePattern pattern;
 
-	private final IndexType indexType;
+  private final IndexType indexType;
 
-	private final Iterator<byte[]> iter;
+  private final Iterator<byte[]> iter;
 
-	public MappingIteratorWrapper(MappingRecycleCache cache,
-			TriplePattern pattern, IndexType indexType, Iterator<byte[]> iter) {
-		this.cache = cache;
-		this.pattern = pattern;
-		this.indexType = indexType;
-		this.iter = iter;
-	}
+  public MappingIteratorWrapper(MappingRecycleCache cache, TriplePattern pattern,
+          IndexType indexType, Iterator<byte[]> iter) {
+    this.cache = cache;
+    this.pattern = pattern;
+    this.indexType = indexType;
+    this.iter = iter;
+  }
 
-	@Override
-	public boolean hasNext() {
-		return iter.hasNext();
-	}
+  @Override
+  public boolean hasNext() {
+    return iter.hasNext();
+  }
 
-	@Override
-	public Mapping next() {
-		byte[] triple = iter.next();
-		return cache.createMapping(pattern, indexType, triple);
-	}
+  @Override
+  public Mapping next() {
+    byte[] triple = iter.next();
+    return cache.createMapping(pattern, indexType, triple);
+  }
 
-	@Override
-	public Iterator<Mapping> iterator() {
-		return this;
-	}
+  @Override
+  public Iterator<Mapping> iterator() {
+    return this;
+  }
 
 }

@@ -1,8 +1,8 @@
 package de.uni_koblenz.west.cidre.common.messages;
 
-import java.io.Closeable;
-
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
+
+import java.io.Closeable;
 
 /**
  * In order to write a component that receives a message from
@@ -15,16 +15,16 @@ import de.uni_koblenz.west.cidre.common.system.CidreSystem;
  */
 public interface MessageListener extends Closeable, AutoCloseable {
 
-	public void processMessage(byte[][] message);
+  public void processMessage(byte[][] message);
 
-	public void processMessage(byte[] message);
+  public void processMessage(byte[] message);
 
-	/**
-	 * @return {@link Integer#MAX_VALUE}, if it should listen for all slaves
-	 */
-	public int getSlaveID();
+  /**
+   * @return {@link Integer#MAX_VALUE}, if it should listen for all slaves
+   */
+  public int getSlaveID();
 
-	@Override
-	public void close();
+  @Override
+  public void close();
 
 }

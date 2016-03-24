@@ -1,8 +1,8 @@
 package de.uni_koblenz.west.cidre.common.mapDB;
 
-import java.io.File;
-
 import org.mapdb.DBMaker;
+
+import java.io.File;
 
 /**
  * Configures the persistence of MapDB.
@@ -12,28 +12,27 @@ import org.mapdb.DBMaker;
  */
 public enum MapDBStorageOptions {
 
-	RANDOM_ACCESS_FILE {
-		@Override
-		public DBMaker<?> getDBMaker(String file) {
-			return DBMaker.newFileDB(new File(file));
-		}
-	},
+  RANDOM_ACCESS_FILE {
+    @Override
+    public DBMaker<?> getDBMaker(String file) {
+      return DBMaker.newFileDB(new File(file));
+    }
+  },
 
-	MEMORY_MAPPED_FILE {
-		@Override
-		public DBMaker<?> getDBMaker(String file) {
-			return DBMaker.newFileDB(new File(file))
-					.mmapFileEnableIfSupported();
-		}
-	},
+  MEMORY_MAPPED_FILE {
+    @Override
+    public DBMaker<?> getDBMaker(String file) {
+      return DBMaker.newFileDB(new File(file)).mmapFileEnableIfSupported();
+    }
+  },
 
-	MEMORY {
-		@Override
-		public DBMaker<?> getDBMaker(String file) {
-			return DBMaker.newMemoryDB();
-		}
-	};
+  MEMORY {
+    @Override
+    public DBMaker<?> getDBMaker(String file) {
+      return DBMaker.newMemoryDB();
+    }
+  };
 
-	public abstract DBMaker<?> getDBMaker(String file);
+  public abstract DBMaker<?> getDBMaker(String file);
 
 }

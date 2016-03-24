@@ -1,37 +1,35 @@
 package de.uni_koblenz.west.cidre.common.utils;
 
-import java.util.Iterator;
-
 import de.uni_koblenz.west.cidre.common.query.Mapping;
 import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
 
-public class MappingIteratorWrapper
-		implements Iterable<Mapping>, Iterator<Mapping> {
+import java.util.Iterator;
 
-	private final Iterator<byte[]> iter;
+public class MappingIteratorWrapper implements Iterable<Mapping>, Iterator<Mapping> {
 
-	private final MappingRecycleCache recycleCache;
+  private final Iterator<byte[]> iter;
 
-	public MappingIteratorWrapper(Iterator<byte[]> iter,
-			MappingRecycleCache recycleCache) {
-		this.recycleCache = recycleCache;
-		this.iter = iter;
-	}
+  private final MappingRecycleCache recycleCache;
 
-	@Override
-	public boolean hasNext() {
-		return iter.hasNext();
-	}
+  public MappingIteratorWrapper(Iterator<byte[]> iter, MappingRecycleCache recycleCache) {
+    this.recycleCache = recycleCache;
+    this.iter = iter;
+  }
 
-	@Override
-	public Mapping next() {
-		byte[] next = iter.next();
-		return recycleCache.createMapping(next, 0, next.length);
-	}
+  @Override
+  public boolean hasNext() {
+    return iter.hasNext();
+  }
 
-	@Override
-	public Iterator<Mapping> iterator() {
-		return this;
-	}
+  @Override
+  public Mapping next() {
+    byte[] next = iter.next();
+    return recycleCache.createMapping(next, 0, next.length);
+  }
+
+  @Override
+  public Iterator<Mapping> iterator() {
+    return this;
+  }
 
 }

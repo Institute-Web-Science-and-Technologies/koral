@@ -8,6 +8,6 @@ package de.uni_koblenz.west.cidre.common.query.execution;
  */
 public enum QueryTaskState {
 
-	CREATED, STARTED, WAITING_FOR_OTHERS_TO_FINISH, FINISHED, ABORTED;
+  CREATED, STARTED, WAITING_FOR_OTHERS_TO_FINISH, FINISHED, ABORTED;
 
 }

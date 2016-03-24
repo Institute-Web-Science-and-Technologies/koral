@@ -8,6 +8,6 @@ package de.uni_koblenz.west.cidre.common.query.parser;
  */
 public enum QueryExecutionTreeType {
 
-	LEFT_LINEAR, RIGHT_LINEAR, BUSHY;
+  LEFT_LINEAR, RIGHT_LINEAR, BUSHY;
 
 }
