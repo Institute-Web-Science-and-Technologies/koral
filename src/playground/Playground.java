@@ -3,6 +3,10 @@ package playground;
 import org.apache.jena.query.QueryFactory;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
+import de.uni_koblenz.west.cidre.common.query.Mapping;
+import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.cidre.common.query.TriplePattern;
+import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionTreeDeserializer;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
@@ -11,6 +15,7 @@ import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
 import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.NHopReplicator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HashCoverCreator;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
@@ -38,12 +43,14 @@ public class Playground {
     Configuration conf = new Configuration();
     conf.setDictionaryDir(workingDir.getAbsolutePath() + File.separator + "dictionary");
     conf.setStatisticsDir(workingDir.getAbsolutePath() + File.separator + "statistics");
-    conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
 
     // create cover
     RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
     HashCoverCreator coverCreator = new HashCoverCreator(null);
     File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
+
+    NHopReplicator replicator = new NHopReplicator(null);
+    cover = replicator.createNHopReplication(cover, workingDir, 1);
 
     // encode cover and collect statistics
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null);
@@ -52,7 +59,10 @@ public class Playground {
 
     System.out.println(statistics.toString());
 
+    Playground.printContentOfChunks(encodedFiles, encoder, conf, workingDir);
+
     // store triples
+    conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
     TripleStoreAccessor accessor = new TripleStoreAccessor(conf, null);
     for (File file : encodedFiles) {
       if (file != null) {
@@ -60,15 +70,21 @@ public class Playground {
       }
     }
 
-    // MappingRecycleCache cache = new MappingRecycleCache(10, 4);
-    // long[] resultVars = new long[] { 1 };
-    // for (Mapping result : accessor.lookup(cache, new TriplePattern(
-    // TriplePatternType.SP_, 0, 562949953421315l, 4))) {
-    // System.out.println(result.toString(resultVars));
-    // }
+    // Playground.printQET(args, workingDir, conf, encoder, statistics,
+    // accessor);
 
+    encoder.close();
+    statistics.close();
+    accessor.close();
+
+    Playground.delete(workingDir);
+  }
+
+  @SuppressWarnings("unused")
+  private static void printQET(String[] args, File workingDir, Configuration conf,
+          DictionaryEncoder encoder, GraphStatistics statistics, TripleStoreAccessor accessor) {
     // process query
-    String query = readQueryFromFile(new File(args[1]));
+    String query = Playground.readQueryFromFile(new File(args[1]));
     query = QueryFactory.create(query).serialize();
     System.out.println(query);
 
@@ -93,18 +109,45 @@ public class Playground {
       System.out.println();
       System.out.println(deserializer.deserialize(serializedTask));
     }
+  }
 
-    encoder.close();
-    statistics.close();
-    accessor.close();
+  private static void printContentOfChunks(File[] encodedFiles, DictionaryEncoder encoder,
+          Configuration conf, File workingDir) {
 
-    delete(workingDir);
+    TripleStoreAccessor[] accessors = new TripleStoreAccessor[encodedFiles.length];
+    for (int i = 0; i < encodedFiles.length; i++) {
+      if (encodedFiles[i] != null) {
+        conf.setTripleStoreDir(
+                workingDir.getAbsolutePath() + File.separator + "tripleStore_chunk" + i);
+        accessors[i] = new TripleStoreAccessor(conf, null);
+        accessors[i].storeTriples(encodedFiles[i]);
+      }
+    }
+
+    MappingRecycleCache cache = new MappingRecycleCache(10, 4);
+    long[] resultVars = new long[] { 0, 1, 2 };
+    for (int i = 0; i < accessors.length; i++) {
+      if (accessors[i] != null) {
+        System.out.println("\nChunk " + i + "\n");
+        TripleStoreAccessor accessor = accessors[i];
+        for (Mapping result : accessor.lookup(cache,
+                new TriplePattern(TriplePatternType.___, 0, 1, 2))) {
+          System.out.print(result.printContainment());
+          for (long var : resultVars) {
+            System.out.print(" " + encoder.decode(result.getValue(var, resultVars)));
+          }
+          System.out.println();
+        }
+        accessor.close();
+      }
+    }
+
   }
 
   private static void delete(File dir) {
     for (File file : dir.listFiles()) {
       if (file.isDirectory()) {
-        delete(file);
+        Playground.delete(file);
       } else {
         file.delete();
       }
