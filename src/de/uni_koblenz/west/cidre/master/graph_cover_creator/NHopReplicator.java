@@ -65,7 +65,6 @@ public class NHopReplicator {
       nHopReplicatedFiles = convertToFiles(cover, moleculeMap, workingDir);
 
       // clean up
-      moleculeMap.close();
       database.close();
       deleteFolder(mapFolder);
     } else {
