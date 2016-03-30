@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
 
 public class NHopReplicator {
 
@@ -196,8 +197,9 @@ public class NHopReplicator {
       return null;
     }
     File chunkFile = new File(
-            workingDir.getAbsolutePath() + File.separatorChar + "chunk_" + chunkIndex);
-    try (OutputStream output = new BufferedOutputStream(new FileOutputStream(chunkFile));) {
+            workingDir.getAbsolutePath() + File.separatorChar + "chunk_" + chunkIndex + ".nq.gz");
+    try (OutputStream output = new BufferedOutputStream(
+            new GZIPOutputStream(new FileOutputStream(chunkFile)));) {
       DatasetGraph graph = DatasetGraphFactory.createMem();
       for (String subject : subjects) {
         Set<String[]> molecule = moleculeMap.get(subject);
