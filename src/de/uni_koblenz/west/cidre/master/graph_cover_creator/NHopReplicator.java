@@ -62,6 +62,11 @@ public class NHopReplicator {
         performHopStep(database, cover, moleculeMap);
       }
 
+      // update containment information
+      for (int i = 0; i < cover.length; i++) {
+        adjustContainment(i, cover[i], moleculeMap);
+      }
+
       nHopReplicatedFiles = convertToFiles(cover, moleculeMap, workingDir);
 
       // clean up
@@ -118,11 +123,11 @@ public class NHopReplicator {
   private void performHopStep(DB database, Set<String>[] cover,
           HTreeMap<String, Set<String[]>> moleculeMap) {
     for (int currentCoverIndex = 0; currentCoverIndex < cover.length; currentCoverIndex++) {
-      replicateTriples(database, currentCoverIndex, cover[currentCoverIndex], moleculeMap);
+      replicateTriples(database, cover[currentCoverIndex], moleculeMap);
     }
   }
 
-  private void replicateTriples(DB database, int currentChunkIndex, Set<String> chunk,
+  private void replicateTriples(DB database, Set<String> chunk,
           HTreeMap<String, Set<String[]>> moleculeMap) {
     if (chunk == null) {
       return;
@@ -130,11 +135,29 @@ public class NHopReplicator {
     Set<String> addedSubject = database.createHashSet("addedSubjects").makeOrGet();
     for (String subject : chunk) {
       Set<String[]> molecule = moleculeMap.get(subject);
-      Set<String[]> updatedMolecule = new HashSet<>();
       if (molecule != null) {
         for (String[] triple : molecule) {
           // add object to current chunk
           addedSubject.add(triple[2]);
+        }
+      }
+    }
+    for (String subject : addedSubject) {
+      chunk.add(subject);
+    }
+    addedSubject.clear();
+  }
+
+  private void adjustContainment(int currentChunkIndex, Set<String> chunk,
+          HTreeMap<String, Set<String[]>> moleculeMap) {
+    if (chunk == null) {
+      return;
+    }
+    for (String subject : chunk) {
+      Set<String[]> molecule = moleculeMap.get(subject);
+      if (molecule != null) {
+        Set<String[]> updatedMolecule = new HashSet<>();
+        for (String[] triple : molecule) {
           // update containment information
           updateContainment(triple, currentChunkIndex);
           updatedMolecule.add(triple);
@@ -142,10 +165,6 @@ public class NHopReplicator {
         moleculeMap.put(subject, updatedMolecule);
       }
     }
-    for (String subject : addedSubject) {
-      chunk.add(subject);
-    }
-    addedSubject.clear();
   }
 
   private void updateContainment(String[] triple, int targetChunk) {
