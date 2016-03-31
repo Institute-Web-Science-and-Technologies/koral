@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.cidre.master.graph_cover_creator;
 
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HashCoverCreator;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HierarchicalCoverCreator;
 
 import java.util.logging.Logger;
 
@@ -18,7 +19,7 @@ public class GraphCoverCreatorFactory {
       case HASH:
         return new HashCoverCreator(logger);
       case HIERARCHICAL:
-        // TODO implement hierarchical hash cover
+        return new HierarchicalCoverCreator(logger);
       case MIN_EDGE_CUT:
         // TODO implement min edge-cut cover
       default:

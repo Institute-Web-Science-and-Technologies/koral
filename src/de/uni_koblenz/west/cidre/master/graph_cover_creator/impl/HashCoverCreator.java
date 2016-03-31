@@ -38,19 +38,24 @@ public class HashCoverCreator extends GraphCoverCreatorBase {
   protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
           OutputStream[] outputs, boolean[] writtenFiles) {
     for (Node[] statement : rdfFiles) {
-      transformBlankNodes(statement);
-      // assign to triple to chunk according to hash on subject
-      String subjectString = statement[0].toString();
-      int targetChunk = computeHash(subjectString) % outputs.length;
-      if (targetChunk < 0) {
-        targetChunk *= -1;
-      }
-
-      writeStatementToChunk(targetChunk, numberOfGraphChunks, statement, outputs, writtenFiles);
+      processStatement(numberOfGraphChunks, outputs, writtenFiles, statement);
     }
   }
 
-  private int computeHash(String string) {
+  protected void processStatement(int numberOfGraphChunks, OutputStream[] outputs,
+          boolean[] writtenFiles, Node[] statement) {
+    transformBlankNodes(statement);
+    // assign to triple to chunk according to hash on subject
+    String subjectString = statement[0].toString();
+    int targetChunk = computeHash(subjectString) % outputs.length;
+    if (targetChunk < 0) {
+      targetChunk *= -1;
+    }
+
+    writeStatementToChunk(targetChunk, numberOfGraphChunks, statement, outputs, writtenFiles);
+  }
+
+  protected int computeHash(String string) {
     byte[] hash = null;
     try {
       hash = digest.digest(string.getBytes("UTF-8"));
@@ -65,7 +70,7 @@ public class HashCoverCreator extends GraphCoverCreatorBase {
     }
     int result = 0;
     for (int i = 0; i < hash.length; i += 4) {
-      if (i + 3 < hash.length) {
+      if ((i + 3) < hash.length) {
         result ^= NumberConversion.bytes2int(hash, i);
       } else {
         while (i < hash.length) {
