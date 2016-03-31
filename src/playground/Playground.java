@@ -50,7 +50,7 @@ public class Playground {
     File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 
     NHopReplicator replicator = new NHopReplicator(null);
-    cover = replicator.createNHopReplication(cover, workingDir, 1);
+    cover = replicator.createNHopReplication(cover, workingDir, 2);
 
     // encode cover and collect statistics
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null);

@@ -20,8 +20,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashSet;
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
@@ -29,8 +31,11 @@ public class NHopReplicator {
 
   private final Logger logger;
 
+  private final ArrayComparator<String> comparator;
+
   public NHopReplicator(Logger logger) {
     this.logger = logger;
+    comparator = new ArrayComparator<>();
   }
 
   public File[] createNHopReplication(File[] graphCover, File workingDir, int numberOfHops) {
@@ -114,7 +119,7 @@ public class NHopReplicator {
   private void addTripleToMap(HTreeMap<String, Set<String[]>> map, String[] triple) {
     Set<String[]> molecule = map.get(triple[0]);
     if (molecule == null) {
-      molecule = new HashSet<>();
+      molecule = new ConcurrentSkipListSet<>(comparator);
     }
     molecule.add(triple);
     map.put(triple[0], molecule);
@@ -156,7 +161,7 @@ public class NHopReplicator {
     for (String subject : chunk) {
       Set<String[]> molecule = moleculeMap.get(subject);
       if (molecule != null) {
-        Set<String[]> updatedMolecule = new HashSet<>();
+        Set<String[]> updatedMolecule = new ConcurrentSkipListSet<>(comparator);
         for (String[] triple : molecule) {
           // update containment information
           updateContainment(triple, currentChunkIndex);
@@ -249,6 +254,33 @@ public class NHopReplicator {
       }
     }
     mapFolder.delete();
+  }
+
+  private static class ArrayComparator<V extends Comparable<V>>
+          implements Comparator<V[]>, Serializable {
+
+    private static final long serialVersionUID = 4931864666201142295L;
+
+    @Override
+    public int compare(V[] o1, V[] o2) {
+      if ((o1 == null) && (o2 == null)) {
+        return 0;
+      } else if (o1 == null) {
+        return -1;
+      } else if (o2 == null) {
+        return 1;
+      } else {
+        int minLength = o1.length < o2.length ? o1.length : o2.length;
+        for (int i = 0; i < minLength; i++) {
+          int comparison = o1[i].compareTo(o2[i]);
+          if (comparison != 0) {
+            return comparison;
+          }
+        }
+        return o1.length - o2.length;
+      }
+    }
+
   }
 
 }
