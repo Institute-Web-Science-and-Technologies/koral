@@ -7,9 +7,7 @@ import org.apache.jena.riot.system.IRIResolver;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 
-import java.io.File;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -23,7 +21,6 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
 
   public HierarchicalCoverCreator(Logger logger) {
     super(logger);
-    // TODO Auto-generated constructor stub
   }
 
   @Override
@@ -65,12 +62,35 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
     long[][][] tripleOccurences = new long[1][numberOfGraphChunks][2];
     tripleOccurences = computeTripleFrequencyPerHierarchyLevel(tripleOccurences, rdfFiles,
             numberOfGraphChunks);
-    for (long[][] array : tripleOccurences) {
-      System.out.println(Arrays.deepToString(array));
+
+    int balancedHierarchyLevel = Integer.MAX_VALUE;
+    double minBalance = Double.MAX_VALUE;
+    for (int i = 1; i < tripleOccurences.length; i++) {
+      double currentHierarchyLevelBalance = getHierarchyLevelBalance(tripleOccurences[0],
+              tripleOccurences[i]);
+      if (currentHierarchyLevelBalance < minBalance) {
+        balancedHierarchyLevel = i;
+        minBalance = currentHierarchyLevelBalance;
+      }
     }
 
-    // TODO Auto-generated method stub
-    return 0;
+    return balancedHierarchyLevel;
+  }
+
+  private double getHierarchyLevelBalance(long[][] nonIriTriple, long[][] iriTriples) {
+    double averageNumberOfTriples = 0;
+    for (int chunk = 0; chunk < iriTriples.length; chunk++) {
+      averageNumberOfTriples += nonIriTriple[chunk][0] + iriTriples[chunk][0];
+    }
+    averageNumberOfTriples /= iriTriples.length;
+
+    double standardDeviation = 0;
+    for (int chunk = 0; chunk < iriTriples.length; chunk++) {
+      double factor = (nonIriTriple[chunk][0] + iriTriples[chunk][0]) - averageNumberOfTriples;
+      standardDeviation += factor * factor;
+    }
+    standardDeviation /= iriTriples.length;
+    return Math.sqrt(standardDeviation);
   }
 
   private long[][][] computeTripleFrequencyPerHierarchyLevel(long[][][] tripleOccurences,
@@ -188,14 +208,6 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
       sb.append("/").append(iriParts[i]);
     }
     return sb.toString();
-  }
-
-  public static void main(String[] args) {
-    try (RDFFileIterator iterator = new RDFFileIterator(
-            new File("/home/danijank/Downloads/foaf.rdf"), false, null);) {
-      HierarchicalCoverCreator coverCreator = new HierarchicalCoverCreator(null);
-      coverCreator.identifyHierarchyLevel(iterator, 4);
-    }
   }
 
 }
