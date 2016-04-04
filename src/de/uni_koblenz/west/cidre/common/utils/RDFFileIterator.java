@@ -98,10 +98,16 @@ public class RDFFileIterator
     getNextIterator();
   }
 
+  public RDFFileIterator(RDFFileIterator iterator) {
+    this(iterator.rdfFiles.length == 1 ? iterator.rdfFiles[0]
+            : iterator.rdfFiles.length == 0 ? null : iterator.rdfFiles[0].getParentFile(),
+            iterator.deleteReadFiles, iterator.logger);
+  }
+
   private boolean isCurrentFileSkippable() {
     Lang lang = RDFLanguages.filenameToLang(rdfFiles[currentFile].getName());
-    return lang == Lang.CSV || lang == Lang.N3 || lang == Lang.NQ || lang == Lang.NQUADS
-            || lang == Lang.NT || lang == Lang.NTRIPLES;
+    return (lang == Lang.CSV) || (lang == Lang.N3) || (lang == Lang.NQ) || (lang == Lang.NQUADS)
+            || (lang == Lang.NT) || (lang == Lang.NTRIPLES);
   }
 
   private void handleParseError(RiotException e) {
@@ -129,8 +135,8 @@ public class RDFFileIterator
       logger.finer("Skipping rest of line of file " + rdfFiles[currentFile].getAbsolutePath()
               + " because of the following error: " + prefix + lineWithError + suffix);
     }
-    if (lineNumber2Offset == null || lineNumber2Offset.isEmpty()
-            || lineNumber2Offset.lastKey() < lineWithError) {
+    if ((lineNumber2Offset == null) || lineNumber2Offset.isEmpty()
+            || (lineNumber2Offset.lastKey() < lineWithError)) {
       createLineNumberMapping(lineWithError);
     }
     String baseIRI = rdfFiles[currentFile].getAbsolutePath();
@@ -145,7 +151,7 @@ public class RDFFileIterator
     if (lineWithError == 1) {
       lineNumber2Offset.put(lineNumber, offset);
     }
-    if (lineNumber2Offset != null && !lineNumber2Offset.isEmpty()) {
+    if ((lineNumber2Offset != null) && !lineNumber2Offset.isEmpty()) {
       lineNumber = lineNumber2Offset.lastKey();
       offset = lineNumber2Offset.get(lineNumber);
     }
@@ -166,7 +172,7 @@ public class RDFFileIterator
           if (lineNumber >= lineWithError) {
             lineNumber2Offset.put(lineNumber, offset);
           }
-          if (lineNumber >= lineWithError + MAX_NUMBER_OF_STORED_LINE_OFFSETS) {
+          if (lineNumber >= (lineWithError + RDFFileIterator.MAX_NUMBER_OF_STORED_LINE_OFFSETS)) {
             break;
           }
         }
@@ -195,10 +201,10 @@ public class RDFFileIterator
         nextChar = in.read();
         if (nextChar == '\n') {
           currentLine++;
-        } else if (currentLine == lineWithError && nextChar != -1) {
+        } else if ((currentLine == lineWithError) && (nextChar != -1)) {
           sb.append((char) nextChar);
         }
-      } while (currentLine <= lineWithError && nextChar != -1);
+      } while ((currentLine <= lineWithError) && (nextChar != -1));
       skippedLineNumbers = currentLine - 1;
       if (logger != null) {
         logger.finer("Skipped line is: " + sb.toString());
@@ -216,7 +222,7 @@ public class RDFFileIterator
 
   private void getNextIterator() {
     lineNumber2Offset = null;
-    if (deleteReadFiles && currentFile > 0 && currentFile <= rdfFiles.length) {
+    if (deleteReadFiles && (currentFile > 0) && (currentFile <= rdfFiles.length)) {
       rdfFiles[currentFile - 1].delete();
     }
     if (currentFile >= rdfFiles.length) {
@@ -250,8 +256,8 @@ public class RDFFileIterator
 
   @Override
   public boolean hasNext() {
-    boolean hasNext = iterator != null && iterator.hasNext();
-    if (!hasNext && readerRunner != null) {
+    boolean hasNext = (iterator != null) && iterator.hasNext();
+    if (!hasNext && (readerRunner != null)) {
       if (parserFuture != null) {
         try {
           parserFuture.get();

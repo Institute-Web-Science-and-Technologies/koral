@@ -26,7 +26,7 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
   @Override
   protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
           OutputStream[] outputs, boolean[] writtenFiles) {
-    int hierarchyLevel = identifyHierarchyLevel(rdfFiles, numberOfGraphChunks);
+    int hierarchyLevel = identifyHierarchyLevel(new RDFFileIterator(rdfFiles), numberOfGraphChunks);
     for (Node[] statement : rdfFiles) {
       if (!statement[0].isURI()) {
         processStatement(numberOfGraphChunks, outputs, writtenFiles, statement);
@@ -74,7 +74,7 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
       }
     }
 
-    return balancedHierarchyLevel;
+    return balancedHierarchyLevel - 1;
   }
 
   private double getHierarchyLevelBalance(long[][] nonIriTriple, long[][] iriTriples) {
