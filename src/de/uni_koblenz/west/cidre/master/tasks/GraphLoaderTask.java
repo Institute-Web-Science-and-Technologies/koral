@@ -12,6 +12,7 @@ import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreatorFactory;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.NHopReplicator;
 import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
 import de.uni_koblenz.west.cidre.master.networkManager.impl.FileChunkRequestProcessor;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
@@ -226,9 +227,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
           throw e;
         }
         long timeToSleep = 100 - (System.currentTimeMillis() - currentTime);
-        if (!isInterrupted() && timeToSleep > 0) {
+        if (!isInterrupted() && (timeToSleep > 0)) {
           try {
-            sleep(timeToSleep);
+            Thread.sleep(timeToSleep);
           } catch (InterruptedException e) {
             break;
           }
@@ -276,7 +277,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
             logger);
     File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir, numberOfGraphChunks);
     if (replicationPathLength != 0) {
-      // TODO implement n-hop extension
+      NHopReplicator replicator = new NHopReplicator(logger);
+      chunks = replicator.createNHopReplication(chunks, workingDir, replicationPathLength);
     }
 
     if (logger != null) {
@@ -317,7 +319,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
     } else if (!isStarted) {
       graphIsLoadingOrLoaded = false;
     }
-    if (keepAliveThread != null && keepAliveThread.isAlive()) {
+    if ((keepAliveThread != null) && keepAliveThread.isAlive()) {
       keepAliveThread.interrupt();
     }
     if (fileReceiver != null) {

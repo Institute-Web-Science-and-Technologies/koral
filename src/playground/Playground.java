@@ -15,8 +15,9 @@ import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
 import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HashCoverCreator;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HierarchicalCoverCreator;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
@@ -46,11 +47,12 @@ public class Playground {
 
     // create cover
     RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
-    HashCoverCreator coverCreator = new HashCoverCreator(null);
+    // GraphCoverCreator coverCreator = new HashCoverCreator(null);
+    GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null);
     File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 
     NHopReplicator replicator = new NHopReplicator(null);
-    cover = replicator.createNHopReplication(cover, workingDir, 2);
+    cover = replicator.createNHopReplication(cover, workingDir, 0);
 
     // encode cover and collect statistics
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null);
