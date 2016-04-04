@@ -116,7 +116,7 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
     System.arraycopy(tripleOccurences, 0, extendedArray, 0, tripleOccurences.length);
     for (int i = tripleOccurences.length; i < extendedArray.length; i++) {
       extendedArray[i] = new long[extendedArray[0].length][2];
-      if (i > 0) {
+      if (i > 1) {
         for (int chunk = 0; chunk < extendedArray[i].length; chunk++) {
           extendedArray[i][chunk][0] = extendedArray[i - 1][chunk][1];
           extendedArray[i][chunk][1] = extendedArray[i - 1][chunk][1];
