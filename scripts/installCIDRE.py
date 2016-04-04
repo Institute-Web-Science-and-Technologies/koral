@@ -5,7 +5,7 @@ from fabric.contrib.files import *
 @roles('master')
 def installMaster():
     performCommonInstallationSteps()
-    installMetis()
+    #installMetis()
 
 @roles('slaves')
 def installSlave():
@@ -68,7 +68,7 @@ def installMaven():
     sudo("apt-get -y install maven")
 
 def resolveJena():
-    run("wget http://mirror.23media.de/apache/jena/binaries/apache-jena-3.0.0.tar.gz")
+    run("wget https://archive.apache.org/dist/jena/binaries/apache-jena-3.0.0.tar.gz")
     run("tar -xf apache-jena-3.0.0.tar.gz")
     run("rm apache-jena-3.0.0.tar.gz")
     run("mv apache-jena-3.0.0/lib/jena-arq-3.0.0.jar cidre/lib/jena-arq-3.0.0.jar")
