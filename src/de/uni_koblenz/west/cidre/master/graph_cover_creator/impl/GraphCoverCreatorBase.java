@@ -42,7 +42,7 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
     OutputStream[] outputs = getOutputStreams(chunkFiles);
     boolean[] writtenFiles = new boolean[chunkFiles.length];
     try {
-      createCover(rdfFiles, numberOfGraphChunks, outputs, writtenFiles);
+      createCover(rdfFiles, numberOfGraphChunks, outputs, writtenFiles, workingDir);
     } finally {
       rdfFiles.close();
       for (OutputStream stream : outputs) {
@@ -56,7 +56,7 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
       // delete empty chunks
       for (int i = 0; i < chunkFiles.length; i++) {
         if (!writtenFiles[i]) {
-          if (chunkFiles[i] != null && chunkFiles[i].exists()) {
+          if ((chunkFiles[i] != null) && chunkFiles[i].exists()) {
             chunkFiles[i].delete();
             chunkFiles[i] = null;
           }
@@ -81,9 +81,10 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
    * @param writtenFiles
    *          has to be set to true, if a triple is written to a specific file
    *          (chunk)
+   * @param workingDir
    */
   protected abstract void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
-          OutputStream[] outputs, boolean[] writtenFiles);
+          OutputStream[] outputs, boolean[] writtenFiles, File workingDir);
 
   protected void writeStatementToChunk(int targetChunk, int numberOfGraphChunks, Node[] statement,
           OutputStream[] outputs, boolean[] writtenFiles) {
@@ -99,7 +100,7 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
 
   private Node encodeContainmentInformation(int targetChunk, int numberOfGraphChunks) {
     int bitsetSize = numberOfGraphChunks / Byte.SIZE;
-    if (numberOfGraphChunks % Byte.SIZE != 0) {
+    if ((numberOfGraphChunks % Byte.SIZE) != 0) {
       bitsetSize += 1;
     }
     byte[] bitset = new byte[bitsetSize];

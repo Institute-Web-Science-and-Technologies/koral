@@ -7,6 +7,7 @@ import org.apache.jena.riot.system.IRIResolver;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.utils.DeSerializer;
 
+import java.io.File;
 import java.io.OutputStream;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -25,7 +26,7 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
 
   @Override
   protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
-          OutputStream[] outputs, boolean[] writtenFiles) {
+          OutputStream[] outputs, boolean[] writtenFiles, File workingDir) {
     int hierarchyLevel = identifyHierarchyLevel(new RDFFileIterator(rdfFiles), numberOfGraphChunks);
     for (Node[] statement : rdfFiles) {
       if (!statement[0].isURI()) {

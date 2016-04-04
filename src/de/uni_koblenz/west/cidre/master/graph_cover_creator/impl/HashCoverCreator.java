@@ -5,6 +5,7 @@ import org.apache.jena.graph.Node;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 
+import java.io.File;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -36,7 +37,7 @@ public class HashCoverCreator extends GraphCoverCreatorBase {
 
   @Override
   protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
-          OutputStream[] outputs, boolean[] writtenFiles) {
+          OutputStream[] outputs, boolean[] writtenFiles, File workingDir) {
     for (Node[] statement : rdfFiles) {
       processStatement(numberOfGraphChunks, outputs, writtenFiles, statement);
     }
