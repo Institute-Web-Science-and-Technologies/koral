@@ -5,6 +5,7 @@ from fabric.contrib.files import *
 @roles('master')
 def installMaster():
     performCommonInstallationSteps()
+    installMetis()
 
 @roles('slaves')
 def installSlave():
@@ -98,3 +99,7 @@ def buildCidre():
     with cd("cidre"):
         run("ant")
     run("cp cidre/build/cidre.jar cidre.jar");
+
+def installMetis():
+    sudo("apt-get update")
+    sudo("apt-get -y install metis")
