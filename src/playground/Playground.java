@@ -17,7 +17,7 @@ import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.HierarchicalCoverCreator;
+import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.MinimalEdgeCutCover;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 
@@ -48,7 +48,8 @@ public class Playground {
     // create cover
     RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
     // GraphCoverCreator coverCreator = new HashCoverCreator(null);
-    GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null);
+    // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null);
+    GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null);
     File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 
     NHopReplicator replicator = new NHopReplicator(null);

@@ -53,7 +53,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   private final File workingDir;
 
-  private CoverStrategyType coverStrategy;
+  private GraphCoverCreator coverCreator;
 
   private int replicationPathLength;
 
@@ -138,7 +138,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       logger.finer("loadGraph(coverStrategy=" + coverStrategy.name() + ", replicationPathLength="
               + replicationPathLength + ", numberOfFiles=" + numberOfFiles + ")");
     }
-    this.coverStrategy = coverStrategy;
+    coverCreator = GraphCoverCreatorFactory.getGraphCoverCreator(coverStrategy, logger);
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
     this.fileSenderConnection = fileSenderConnection;
@@ -273,8 +273,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
             MessageType.MASTER_WORK_IN_PROGRESS, "Started creation of graph cover.", logger));
 
     RDFFileIterator rdfFiles = new RDFFileIterator(workingDir, true, logger);
-    GraphCoverCreator coverCreator = GraphCoverCreatorFactory.getGraphCoverCreator(coverStrategy,
-            logger);
     File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir, numberOfGraphChunks);
     if (replicationPathLength != 0) {
       NHopReplicator replicator = new NHopReplicator(logger);
@@ -310,6 +308,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   @Override
   public void close() {
+    coverCreator.close();
     if (isAlive()) {
       interrupt();
       clientConnections.send(clientId,

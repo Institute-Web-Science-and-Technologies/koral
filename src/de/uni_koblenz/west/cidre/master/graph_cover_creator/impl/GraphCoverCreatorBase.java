@@ -173,4 +173,8 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
     return chunkFiles;
   }
 
+  @Override
+  public void close() {
+  }
+
 }
