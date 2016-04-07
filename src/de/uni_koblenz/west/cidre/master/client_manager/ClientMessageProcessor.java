@@ -9,6 +9,7 @@ import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionCoordinato
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.ReusableIDGenerator;
 import de.uni_koblenz.west.cidre.master.CidreMaster;
+import de.uni_koblenz.west.cidre.master.tasks.ClientConnectionKeepAliveTask;
 import de.uni_koblenz.west.cidre.master.tasks.GraphLoaderTask;
 
 import java.io.Closeable;
@@ -87,7 +88,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
    */
   public boolean processMessage(boolean graphHasBeenLoaded) {
     byte[] message = clientConnections.receive(false);
-    if (message != null && message.length > 0) {
+    if ((message != null) && (message.length > 0)) {
       try {
         MessageType messageType = MessageType.valueOf(message[0]);
         switch (messageType) {
@@ -281,7 +282,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     if (logger != null) {
       logger.finer("Dropping database");
     }
+    Thread keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections, clientID);
+    keepAliveThread.start();
     master.clear();
+    keepAliveThread.interrupt();
     clientConnections.send(clientID, MessageUtils.createStringMessage(
             MessageType.CLIENT_COMMAND_SUCCEEDED, "Database is dropped, successfully.", logger));
     if (logger != null) {
@@ -300,7 +304,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     String address = MessageUtils.convertToString(buffer, logger);
 
     buffer = clientConnections.receive(true);
-    if (buffer == null || buffer.length != 4) {
+    if ((buffer == null) || (buffer.length != 4)) {
       if (logger != null) {
         logger.finest(
                 "Client " + address + " has not sent the id of the file this chunk belongs to.");
@@ -319,7 +323,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     long chunkID = NumberConversion.bytes2long(buffer);
 
     buffer = clientConnections.receive(true);
-    if (buffer == null || buffer.length != 8) {
+    if ((buffer == null) || (buffer.length != 8)) {
       if (logger != null) {
         logger.finest("Client " + address + " has not sent the total number of chunks.");
       }
@@ -452,7 +456,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
   public void notifyOnClosedConnection(int clientID) {
     String address = null;
     for (Entry<String, Integer> entry : clientAddress2Id.entrySet()) {
-      if (entry.getValue() != null && entry.getValue().intValue() == clientID) {
+      if ((entry.getValue() != null) && (entry.getValue().intValue() == clientID)) {
         address = entry.getKey();
       }
     }
@@ -465,7 +469,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
   public boolean isGraphLoaded(boolean graphHasBeenLoaded) {
     Entry<String, GraphLoaderTask> task = null;
     for (Entry<String, GraphLoaderTask> entry : clientAddress2GraphLoaderTask.entrySet()) {
-      if (entry.getValue() != null && entry.getValue() instanceof GraphLoaderTask) {
+      if ((entry.getValue() != null) && (entry.getValue() instanceof GraphLoaderTask)) {
         task = entry;
         break;
       }
