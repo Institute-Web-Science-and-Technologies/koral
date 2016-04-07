@@ -87,8 +87,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
         metisOutputGraph.delete();
       }
       if (ignoredTriples.exists()) {
-        // TODO enable again
-        // ignoredTriples.delete();
+        ignoredTriples.delete();
       }
       dictionary.close();
       deleteFolder(dictionaryFolder);
@@ -125,15 +124,15 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
                   .equals("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")) {
             // this is a self loop that is forbidden in METIS
             // assign it to the first chunk
-            String subject = DeSerializer.serializeNode(statement[0]);
-            String property = DeSerializer.serializeNode(statement[1]);
-            String object = DeSerializer.serializeNode(statement[2]);
-            ignoredTriplesOutput.writeInt(subject.length());
-            ignoredTriplesOutput.writeBytes(subject);
-            ignoredTriplesOutput.writeInt(property.length());
-            ignoredTriplesOutput.writeBytes(property);
-            ignoredTriplesOutput.writeInt(object.length());
-            ignoredTriplesOutput.writeBytes(object);
+            byte[] subject = DeSerializer.serializeNode(statement[0]).getBytes("UTF-8");
+            byte[] property = DeSerializer.serializeNode(statement[1]).getBytes("UTF-8");
+            byte[] object = DeSerializer.serializeNode(statement[2]).getBytes("UTF-8");
+            ignoredTriplesOutput.writeInt(subject.length);
+            ignoredTriplesOutput.write(subject);
+            ignoredTriplesOutput.writeInt(property.length);
+            ignoredTriplesOutput.write(property);
+            ignoredTriplesOutput.writeInt(object.length);
+            ignoredTriplesOutput.write(object);
             continue;
           }
           long encodedSubject = dictionary.encode(DeSerializer.serializeNode(statement[0]), true);
@@ -313,18 +312,18 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             int subjectLength = graphInput.readInt();
             byte[] subjectByteArray = new byte[subjectLength];
             graphInput.readFully(subjectByteArray);
-            String subjectString = new String(subjectByteArray);
+            String subjectString = new String(subjectByteArray, "UTF-8");
             long subject = dictionary.encode(subjectString, false);
 
             int propertyLength = graphInput.readInt();
             byte[] propertyString = new byte[propertyLength];
             graphInput.readFully(propertyString);
-            String property = new String(propertyString);
+            String property = new String(propertyString, "UTF-8");
 
             int objectLength = graphInput.readInt();
             byte[] objectByteArray = new byte[objectLength];
             graphInput.readFully(objectByteArray);
-            String objectString = new String(objectByteArray);
+            String objectString = new String(objectByteArray, "UTF-8");
 
             Node[] statement = new Node[] { DeSerializer.deserializeNode(subjectString),
                     DeSerializer.deserializeNode(property),
@@ -384,7 +383,6 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
   }
 
   public static void main(String[] args) {
-    // TODO fix bug during determining number of edges
     RDFFileIterator iterator = new RDFFileIterator(
             new File("/home/danijank/Downloads/cleaned_01data-3-00.nq.gz"), false, null);
     MinimalEdgeCutCover cover = new MinimalEdgeCutCover(null);
