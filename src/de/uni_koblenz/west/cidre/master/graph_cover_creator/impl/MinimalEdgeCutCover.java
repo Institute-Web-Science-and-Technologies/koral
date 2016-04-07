@@ -382,11 +382,4 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     super.close();
   }
 
-  public static void main(String[] args) {
-    RDFFileIterator iterator = new RDFFileIterator(
-            new File("/home/danijank/Downloads/cleaned_01data-3-00.nq.gz"), false, null);
-    MinimalEdgeCutCover cover = new MinimalEdgeCutCover(null);
-    cover.createGraphCover(iterator, new File("/tmp"), 4);
-  }
-
 }
