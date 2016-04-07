@@ -311,6 +311,9 @@ public class RDFFileIterator
   public void close() {
     executor.shutdown();
     readerRunner.close();
+    if ((iterator != null) && iterator.hasNext()) {
+      iterator.next();
+    }
     if (deleteReadFiles) {
       rdfFiles[rdfFiles.length - 1].delete();
     }
@@ -324,6 +327,8 @@ public class RDFFileIterator
 }
 
 class GraphReaderRunnable implements Runnable {
+
+  private Thread currentThread;
 
   private final ReaderRIOT reader;
 
@@ -355,6 +360,7 @@ class GraphReaderRunnable implements Runnable {
   @Override
   public void run() {
     try {
+      currentThread = Thread.currentThread();
       outputStream.start();
       reader.read(in, baseIRI, contentType, outputStream, null);
     } catch (RiotException e) {
@@ -380,6 +386,7 @@ class GraphReaderRunnable implements Runnable {
 
   public void close() {
     IO.close(in);
+    currentThread.interrupt();
   }
 
 }
