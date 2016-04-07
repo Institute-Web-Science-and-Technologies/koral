@@ -62,20 +62,23 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
 
     File encodedRDFGraph = null;
     File metisOutputGraph = null;
+    File ignoredTriples = new File(
+            workingDir.getAbsolutePath() + File.separator + "ignoredTriples.gz");
     try {
       encodedRDFGraph = new File(
               workingDir.getAbsolutePath() + File.separator + "encodedRDFGraph.gz");
       File metisInputGraph = new File(workingDir.getAbsolutePath() + File.separator + "metisInput");
 
       try {
-        createMetisInputFile(rdfFiles, dictionary, encodedRDFGraph, metisInputGraph, workingDir);
+        createMetisInputFile(rdfFiles, dictionary, encodedRDFGraph, metisInputGraph, ignoredTriples,
+                workingDir);
         metisOutputGraph = runMetis(metisInputGraph, numberOfGraphChunks);
       } finally {
         metisInputGraph.delete();
       }
 
-      createGraphCover(encodedRDFGraph, dictionary, metisOutputGraph, outputs, writtenFiles,
-              numberOfGraphChunks, workingDir);
+      createGraphCover(encodedRDFGraph, dictionary, metisOutputGraph, ignoredTriples, outputs,
+              writtenFiles, numberOfGraphChunks, workingDir);
     } finally {
       if (encodedRDFGraph != null) {
         encodedRDFGraph.delete();
@@ -83,13 +86,17 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       if (metisOutputGraph != null) {
         metisOutputGraph.delete();
       }
+      if (ignoredTriples.exists()) {
+        // TODO enable again
+        // ignoredTriples.delete();
+      }
       dictionary.close();
       deleteFolder(dictionaryFolder);
     }
   }
 
   private void createMetisInputFile(RDFFileIterator rdfFiles, Dictionary dictionary,
-          File encodedRDFGraph, File metisInputGraph, File workingDir) {
+          File encodedRDFGraph, File metisInputGraph, File ignoredTriples, File workingDir) {
     File metisInputTempFolder = new File(
             workingDir.getAbsolutePath() + File.separator + "metisInputCreation");
     if (!metisInputTempFolder.exists()) {
@@ -109,9 +116,26 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     // create adjacency lists
     try {
       try (DataOutputStream encodedGraphOutput = new DataOutputStream(new BufferedOutputStream(
-              new GZIPOutputStream(new FileOutputStream(encodedRDFGraph))));) {
+              new GZIPOutputStream(new FileOutputStream(encodedRDFGraph))));
+              DataOutputStream ignoredTriplesOutput = new DataOutputStream(new BufferedOutputStream(
+                      new GZIPOutputStream(new FileOutputStream(ignoredTriples))))) {
         for (Node[] statement : rdfFiles) {
           transformBlankNodes(statement);
+          if (statement[0].equals(statement[2]) || DeSerializer.serializeNode(statement[1])
+                  .equals("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")) {
+            // this is a self loop that is forbidden in METIS
+            // assign it to the first chunk
+            String subject = DeSerializer.serializeNode(statement[0]);
+            String property = DeSerializer.serializeNode(statement[1]);
+            String object = DeSerializer.serializeNode(statement[2]);
+            ignoredTriplesOutput.writeInt(subject.length());
+            ignoredTriplesOutput.writeBytes(subject);
+            ignoredTriplesOutput.writeInt(property.length());
+            ignoredTriplesOutput.writeBytes(property);
+            ignoredTriplesOutput.writeInt(object.length());
+            ignoredTriplesOutput.writeBytes(object);
+            continue;
+          }
           long encodedSubject = dictionary.encode(DeSerializer.serializeNode(statement[0]), true);
           long encodedObject = dictionary.encode(DeSerializer.serializeNode(statement[2]), true);
           // write encoded triple to graph file
@@ -120,6 +144,10 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           encodedGraphOutput.writeInt(property.length());
           encodedGraphOutput.writeBytes(property);
           encodedGraphOutput.writeLong(encodedObject);
+          // ignore loops since METIS does not allow them
+          // if (encodedSubject == encodedObject) {
+          // continue;
+          // }
           // add direction subject2object
           Set<Long> adjacentVerticesOfSubject = adjacencyLists.get(encodedSubject);
           if (adjacentVerticesOfSubject == null) {
@@ -129,8 +157,8 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           boolean isNewAdjacency = adjacentVerticesOfSubject.add(encodedObject);
           if (isNewAdjacency) {
             numberOfEdges++;
+            adjacencyLists.put(encodedSubject, adjacentVerticesOfSubject);
           }
-          adjacencyLists.put(encodedSubject, adjacentVerticesOfSubject);
           // add direction object2subject (since edges are bidirectional, do not
           // count an additional edge)
           Set<Long> adjacentVerticesOfObject = adjacencyLists.get(encodedObject);
@@ -138,8 +166,10 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             numberOfVertices++;
             adjacentVerticesOfObject = new ConcurrentSkipListSet<>();
           }
-          adjacentVerticesOfObject.add(encodedSubject);
-          adjacencyLists.put(encodedObject, adjacentVerticesOfObject);
+          boolean setHasChanged = adjacentVerticesOfObject.add(encodedSubject);
+          if (setHasChanged) {
+            adjacencyLists.put(encodedObject, adjacentVerticesOfObject);
+          }
         }
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -151,7 +181,6 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
         metisInputGraphWriter.write(numberOfVertices + " " + numberOfEdges);
         for (long vertex = 1; vertex <= numberOfVertices; vertex++) {
           Set<Long> adjacentVertices = adjacencyLists.get(vertex);
-          assert adjacentVertices != null;
           metisInputGraphWriter.write("\n");
           String delim = "";
           for (Long neighbour : adjacentVertices) {
@@ -177,7 +206,6 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     }
     try {
       process = processBuilder.start();
-      // TODO kill process if graphCoverCreator is closed
       if (logger != null) {
         new LogPipedWriter(process.getInputStream(), logger).start();
         new LogPipedWriter(process.getErrorStream(), logger).start();
@@ -189,12 +217,16 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       throw new RuntimeException(e);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
+    } finally {
+      if ((process != null) && process.isAlive()) {
+        process.destroy();
+      }
     }
   }
 
   private void createGraphCover(File encodedRDFGraph, Dictionary dictionary, File metisOutputGraph,
-          OutputStream[] outputs, boolean[] writtenFiles, int numberOfGraphChunks,
-          File workingDir) {
+          File ignoredTriples, OutputStream[] outputs, boolean[] writtenFiles,
+          int numberOfGraphChunks, File workingDir) {
     File vertex2chunkIndexFolder = new File(
             workingDir.getAbsolutePath() + File.separator + "vertex2chunkIndex");
     if (!vertex2chunkIndexFolder.exists()) {
@@ -223,6 +255,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
         throw new RuntimeException(e);
       }
 
+      // assign partitioned triples
       try (DataInputStream graphInput = new DataInputStream(new BufferedInputStream(
               new GZIPInputStream(new FileInputStream(encodedRDFGraph))));) {
         long lastVertex = -1;
@@ -248,7 +281,14 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           if (subject == lastVertex) {
             targetChunk = lastChunkIndex;
           } else {
-            targetChunk = vertex2chunkIndex.get(subject);
+            Integer target = vertex2chunkIndex.get(subject);
+            if (target == null) {
+              // if a vertex only occurs in a self loop or with a rdf:type
+              // property it is not partitioned by
+              // metis
+              target = 0;
+            }
+            targetChunk = target;
             lastVertex = subject;
             lastChunkIndex = targetChunk;
           }
@@ -260,6 +300,61 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
         // thrown
       } catch (IOException e) {
         throw new RuntimeException(e);
+      }
+
+      if (ignoredTriples.exists()) {
+        // assign ignored triples
+        try (DataInputStream graphInput = new DataInputStream(new BufferedInputStream(
+                new GZIPInputStream(new FileInputStream(ignoredTriples))));) {
+          long lastVertex = -1;
+          int lastChunkIndex = -1;
+
+          while (true) {
+            int subjectLength = graphInput.readInt();
+            byte[] subjectByteArray = new byte[subjectLength];
+            graphInput.readFully(subjectByteArray);
+            String subjectString = new String(subjectByteArray);
+            long subject = dictionary.encode(subjectString, false);
+
+            int propertyLength = graphInput.readInt();
+            byte[] propertyString = new byte[propertyLength];
+            graphInput.readFully(propertyString);
+            String property = new String(propertyString);
+
+            int objectLength = graphInput.readInt();
+            byte[] objectByteArray = new byte[objectLength];
+            graphInput.readFully(objectByteArray);
+            String objectString = new String(objectByteArray);
+
+            Node[] statement = new Node[] { DeSerializer.deserializeNode(subjectString),
+                    DeSerializer.deserializeNode(property),
+                    DeSerializer.deserializeNode(objectString) };
+
+            int targetChunk = -1;
+            if (subject == lastVertex) {
+              targetChunk = lastChunkIndex;
+            } else {
+              Integer target = vertex2chunkIndex.get(subject);
+              if (target == null) {
+                // if a vertex only occurs in a self loop or with a rdf:type
+                // property it is not partitioned by
+                // metis
+                target = 0;
+              }
+              targetChunk = target;
+              lastVertex = subject;
+              lastChunkIndex = targetChunk;
+            }
+
+            writeStatementToChunk(targetChunk, numberOfGraphChunks, statement, outputs,
+                    writtenFiles);
+          }
+        } catch (EOFException e1) {
+          // when encoded graph file is completely processed, this exception is
+          // thrown
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
       }
 
     } finally {
