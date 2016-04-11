@@ -148,6 +148,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
     ftpServer.start(ftpIpAddress, ftpPort, workingDir);
+    if (logger != null) {
+      logger.finest("FTP server started");
+    }
     clientConnections.send(clientId, MessageUtils.createStringMessage(MessageType.MASTER_SEND_FILES,
             ftpIpAddress + ":" + ftpPort, logger));
   }
@@ -321,6 +324,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
       keepAliveThread.interrupt();
     }
     ftpServer.close();
+    if (logger != null) {
+      logger.finest("FTP server stopped");
+    }
     deleteContent(workingDir);
     workingDir.delete();
   }
