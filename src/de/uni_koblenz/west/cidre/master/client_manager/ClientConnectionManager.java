@@ -5,11 +5,8 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileChunk;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiverConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -26,7 +23,7 @@ import java.util.logging.Logger;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class ClientConnectionManager implements Closeable, FileReceiverConnection {
+public class ClientConnectionManager implements Closeable {
 
   private final Logger logger;
 
@@ -86,14 +83,14 @@ public class ClientConnectionManager implements Closeable, FileReceiverConnectio
     } else {
       message = inSocket.recv(ZMQ.DONTWAIT);
     }
-    if (System.currentTimeMillis() - lastConnectionTimeoutCheck > connectionTimeout / 2) {
+    if ((System.currentTimeMillis() - lastConnectionTimeoutCheck) > (connectionTimeout / 2)) {
       // perform timeout checks
       for (int i = 0; i < outClientSockets.size(); i++) {
         Long timeSinceLastMessage = latestLifeSignalTimeFromClient.get(i);
         if (timeSinceLastMessage == null) {
           continue;
         }
-        if (System.currentTimeMillis() - timeSinceLastMessage >= connectionTimeout) {
+        if ((System.currentTimeMillis() - timeSinceLastMessage) >= connectionTimeout) {
           // The connection has to be closed due to a timeout
           if (logger != null) {
             logger.finer("Timeout for client connection " + i);
@@ -153,26 +150,6 @@ public class ClientConnectionManager implements Closeable, FileReceiverConnectio
         }
       }
     }
-  }
-
-  @Override
-  public void requestFileChunk(int clientID, int fileID, FileChunk chunk) {
-    byte[] request = new byte[Byte.BYTES + Integer.BYTES + Long.BYTES];
-    request[0] = MessageType.FILE_CHUNK_REQUEST.getValue();
-    NumberConversion.int2bytes(fileID, request, 1);
-    NumberConversion.long2bytes(chunk.getSequenceNumber(), request, 5);
-    send(clientID, request);
-    chunk.setRequestTime(System.currentTimeMillis());
-  }
-
-  @Override
-  public void sendFinish(int clientID) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void sendFailNotification(int slaveID, String message) {
-    throw new UnsupportedOperationException();
   }
 
   public void closeConnection(int clientID) {

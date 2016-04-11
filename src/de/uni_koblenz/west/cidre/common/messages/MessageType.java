@@ -1,7 +1,7 @@
 package de.uni_koblenz.west.cidre.common.messages;
 
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
-import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
+import de.uni_koblenz.west.cidre.master.tasks.GraphLoaderListener;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 
 /**
@@ -14,54 +14,6 @@ import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
  *
  */
 public enum MessageType {
-
-  /**
-   * <p>
-   * master to client<br>
-   * int fileID<br>
-   * long chunkID
-   * </p>
-   * 
-   * <p>
-   * slave to master<br>
-   * short slaveID<br>
-   * int fileID<br>
-   * long chunkID
-   * </p>
-   */
-  FILE_CHUNK_REQUEST {
-    @Override
-    public Class<? extends MessageListener> getListenerType() {
-      return FileChunkRequestListener.class;
-    }
-  },
-
-  /**
-   * <p>
-   * client to master<br>
-   * (multipart message)<br>
-   * String ip:port<br>
-   * int fileID<br>
-   * long chunkID<br>
-   * long totalChunks<br>
-   * byte[] file chunk
-   * </p>
-   * 
-   * <p>
-   * master to slave<br>
-   * (multipart message)<br>
-   * int fileID<br>
-   * long chunkID<br>
-   * long totalChunks<br>
-   * byte[] file chunk
-   * </p>
-   */
-  FILE_CHUNK_RESPONSE {
-    @Override
-    public Class<? extends MessageListener> getListenerType() {
-      return GraphChunkListener.class;
-    }
-  },
 
   /*
    * client specific messages
@@ -109,6 +61,18 @@ public enum MessageType {
 
   /**
    * master to client<br>
+   * String ip:port
+   */
+  MASTER_SEND_FILES,
+
+  /**
+   * client to master<br>
+   * String ip:port
+   */
+  CLIENT_FILES_SENT,
+
+  /**
+   * master to client<br>
    * String message
    */
   MASTER_WORK_IN_PROGRESS,
@@ -143,8 +107,9 @@ public enum MessageType {
    */
 
   /**
-   * master to slave<br>
-   * long totalNumberOfChunks
+   * master to slave (multi-part message)<br>
+   * String ipAddress:port<br>
+   * String fileName
    */
   START_FILE_TRANSFER {
     @Override
@@ -161,7 +126,7 @@ public enum MessageType {
   GRAPH_LOADING_FAILED {
     @Override
     public Class<? extends MessageListener> getListenerType() {
-      return FileChunkRequestListener.class;
+      return GraphLoaderListener.class;
     }
   },
 
@@ -172,7 +137,7 @@ public enum MessageType {
   GRAPH_LOADING_COMPLETE {
     @Override
     public Class<? extends MessageListener> getListenerType() {
-      return FileChunkRequestListener.class;
+      return GraphLoaderListener.class;
     }
   },
 
@@ -263,7 +228,7 @@ public enum MessageType {
   }
 
   public static MessageType valueOf(byte messagePrefix) {
-    MessageType[] messageTypes = values();
+    MessageType[] messageTypes = MessageType.values();
     if (messagePrefix < messageTypes.length) {
       return messageTypes[messagePrefix];
     }

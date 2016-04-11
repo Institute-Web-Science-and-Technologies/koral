@@ -1,10 +1,10 @@
 package de.uni_koblenz.west.cidre.master.tasks;
 
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
+import de.uni_koblenz.west.cidre.common.ftp.FTPServer;
 import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
+import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.cidre.master.client_manager.ClientConnectionManager;
@@ -13,17 +13,14 @@ import de.uni_koblenz.west.cidre.master.graph_cover_creator.CoverStrategyType;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreatorFactory;
 import de.uni_koblenz.west.cidre.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.cidre.master.networkManager.FileChunkRequestListener;
-import de.uni_koblenz.west.cidre.master.networkManager.impl.FileChunkRequestProcessor;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.cidre.slave.CidreSlave;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.IOException;
-import java.util.LinkedList;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.logging.Logger;
 
 /**
@@ -47,6 +44,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   private final ClientConnectionManager clientConnections;
 
+  private final NetworkManager slaveConnections;
+
   private final DictionaryEncoder dictionary;
 
   private final GraphStatistics statistics;
@@ -59,30 +58,39 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   private int numberOfGraphChunks;
 
-  private FileReceiver fileReceiver;
-
   private ClientConnectionKeepAliveTask keepAliveThread;
 
   private boolean graphIsLoadingOrLoaded;
 
   private final MessageNotifier messageNotifier;
 
-  private FileSenderConnection fileSenderConnection;
+  private final String ftpIpAddress;
+
+  private final String ftpPort;
+
+  private final FTPServer ftpServer;
+
+  private volatile int numberOfBusySlaves;
 
   private boolean isStarted;
 
   public GraphLoaderTask(int clientID, ClientConnectionManager clientConnections,
+          NetworkManager slaveConnections, String ftpIpAddress, String ftpPort,
           DictionaryEncoder dictionary, GraphStatistics statistics, File tmpDir,
           MessageNotifier messageNotifier, Logger logger) {
-    isDaemon();
+    setDaemon(true);
     graphIsLoadingOrLoaded = true;
     isStarted = false;
     clientId = clientID;
     this.clientConnections = clientConnections;
+    this.slaveConnections = slaveConnections;
     this.dictionary = dictionary;
     this.statistics = statistics;
     this.messageNotifier = messageNotifier;
     this.logger = logger;
+    this.ftpIpAddress = ftpIpAddress;
+    this.ftpPort = ftpPort;
+    ftpServer = new FTPServer();
     workingDir = new File(
             tmpDir.getAbsolutePath() + File.separatorChar + "cidre_client_" + clientId);
     if (workingDir.exists()) {
@@ -108,8 +116,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
     }
   }
 
-  public void loadGraph(byte[][] args, int numberOfGraphChunks,
-          FileSenderConnection fileSenderConnection) {
+  public void loadGraph(byte[][] args, int numberOfGraphChunks) {
     if (args.length < 4) {
       throw new IllegalArgumentException(
               "Loading a graph requires at least 4 arguments, but received only " + args.length
@@ -120,7 +127,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
     int replicationPathLength = NumberConversion.bytes2int(args[1]);
     int numberOfFiles = NumberConversion.bytes2int(args[2]);
     loadGraph(coverStrategy, replicationPathLength, numberOfGraphChunks, numberOfFiles,
-            getFileExtensions(args, 3), fileSenderConnection);
+            getFileExtensions(args, 3));
   }
 
   private String[] getFileExtensions(byte[][] args, int startIndex) {
@@ -132,8 +139,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
   }
 
   public void loadGraph(CoverStrategyType coverStrategy, int replicationPathLength,
-          int numberOfGraphChunks, int numberOfFiles, String[] fileExtensions,
-          FileSenderConnection fileSenderConnection) {
+          int numberOfGraphChunks, int numberOfFiles, String[] fileExtensions) {
     if (logger != null) {
       logger.finer("loadGraph(coverStrategy=" + coverStrategy.name() + ", replicationPathLength="
               + replicationPathLength + ", numberOfFiles=" + numberOfFiles + ")");
@@ -141,41 +147,13 @@ public class GraphLoaderTask extends Thread implements Closeable {
     coverCreator = GraphCoverCreatorFactory.getGraphCoverCreator(coverStrategy, logger);
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
-    this.fileSenderConnection = fileSenderConnection;
-    fileReceiver = new FileReceiver(workingDir, clientId, 1, clientConnections, numberOfFiles,
-            fileExtensions, logger);
-    fileReceiver.requestFiles();
+    ftpServer.start(ftpIpAddress, ftpPort, workingDir);
+    clientConnections.send(clientId, MessageUtils.createStringMessage(MessageType.MASTER_SEND_FILES,
+            ftpIpAddress + ":" + ftpPort, logger));
   }
 
-  public void receiveFileChunk(int fileID, long chunkID, long totalNumberOfChunks,
-          byte[] chunkContent) {
-    if (fileReceiver == null) {
-      // this task has been closed
-      return;
-    }
-    try {
-      fileReceiver.receiveFileChunk(fileID, chunkID, totalNumberOfChunks, chunkContent);
-      if (fileReceiver.isFinished()) {
-        fileReceiver.close();
-        fileReceiver = null;
-        clientConnections.send(clientId, MessageUtils.createStringMessage(
-                MessageType.MASTER_WORK_IN_PROGRESS, "Master received all files.", logger));
-        start();
-      } else if (clientConnections.isConnectionClosed(clientId)) {
-        graphIsLoadingOrLoaded = false;
-        close();
-      }
-    } catch (IOException e) {
-      if (logger != null) {
-        logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                e);
-      }
-      clientConnections.send(clientId,
-              MessageUtils.createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
-                      e.getClass().getName() + ": " + e.getMessage(), logger));
-      graphIsLoadingOrLoaded = false;
-      close();
-    }
+  public void receiveFilesSent() {
+    start();
   }
 
   @Override
@@ -188,44 +166,25 @@ public class GraphLoaderTask extends Thread implements Closeable {
       File[] chunks = createGraphChunks();
       File[] encodedFiles = encodeGraphFiles(chunks);
 
-      List<FileChunkRequestProcessor> fileSenders = new LinkedList<>();
+      numberOfBusySlaves = 0;
+      List<GraphLoaderListener> listeners = new ArrayList<>();
       for (int i = 0; i < encodedFiles.length; i++) {
         File file = encodedFiles[i];
         if (file == null) {
           continue;
         }
+        numberOfBusySlaves++;
         // slave ids start with 1!
-        FileChunkRequestProcessor sender = new FileChunkRequestProcessor(i + 1, logger);
-        fileSenders.add(sender);
-        messageNotifier.registerMessageListener(FileChunkRequestListener.class, sender);
-        sender.sendFile(file, fileSenderConnection);
+        GraphLoaderListener listener = new GraphLoaderListener(this, i + 1);
+        listeners.add(listener);
+        messageNotifier.registerMessageListener(GraphLoaderListener.class, listener);
+        slaveConnections.sendMore(i + 1, new byte[] { MessageType.START_FILE_TRANSFER.getValue() });
+        slaveConnections.sendMore(i + 1, (ftpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
+        slaveConnections.send(i + 1, file.getName().getBytes("UTF-8"));
       }
 
-      while (!isInterrupted() && !fileSenders.isEmpty()) {
+      while (!isInterrupted() && (numberOfBusySlaves > 0)) {
         long currentTime = System.currentTimeMillis();
-        ListIterator<FileChunkRequestProcessor> iterator = fileSenders.listIterator();
-        try {
-          while (!isInterrupted() && iterator.hasNext()) {
-            FileChunkRequestProcessor sender = iterator.next();
-            if (sender.isFinished()) {
-              messageNotifier.unregisterMessageListener(FileChunkRequestListener.class, sender);
-              sender.close();
-              iterator.remove();
-            } else if (sender.isFailed()) {
-              throw new RuntimeException(sender.getErrorMessage());
-            }
-          }
-        } catch (RuntimeException e) {
-          // clean up listeners
-          iterator = fileSenders.listIterator();
-          while (iterator.hasNext()) {
-            FileChunkRequestProcessor sender = iterator.next();
-            messageNotifier.unregisterMessageListener(FileChunkRequestListener.class, sender);
-            sender.close();
-            iterator.remove();
-          }
-          throw e;
-        }
         long timeToSleep = 100 - (System.currentTimeMillis() - currentTime);
         if (!isInterrupted() && (timeToSleep > 0)) {
           try {
@@ -236,9 +195,13 @@ public class GraphLoaderTask extends Thread implements Closeable {
         }
       }
 
+      for (GraphLoaderListener listener : listeners) {
+        messageNotifier.unregisterMessageListener(GraphLoaderListener.class, listener);
+      }
+
       keepAliveThread.interrupt();
 
-      if (fileSenders.isEmpty()) {
+      if (numberOfBusySlaves == 0) {
         clientConnections.send(clientId,
                 new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
       } else {
@@ -257,6 +220,42 @@ public class GraphLoaderTask extends Thread implements Closeable {
               MessageUtils.createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
                       e.getClass().getName() + ":" + e.getMessage(), logger));
       close();
+    }
+  }
+
+  public void processSlaveResponse(byte[] message) {
+    MessageType messageType = MessageType.valueOf(message[0]);
+    if (messageType == null) {
+      if (logger != null) {
+        logger.finest("Ignoring message with unknown type.");
+      }
+    }
+    switch (messageType) {
+      case GRAPH_LOADING_COMPLETE:
+        numberOfBusySlaves--;
+        break;
+      case GRAPH_LOADING_FAILED:
+        clearDatabase();
+        String errorMessage = null;
+        try {
+          errorMessage = new String(message, 3, message.length, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+          errorMessage = e.getMessage();
+        }
+        if (logger != null) {
+          logger.finer("Loading of graph failed on slave "
+                  + NumberConversion.bytes2short(message, 1) + ". Reason: " + errorMessage);
+        }
+        clientConnections.send(clientId, MessageUtils.createStringMessage(
+                MessageType.CLIENT_COMMAND_FAILED, "Loading of graph failed on slave "
+                        + NumberConversion.bytes2short(message, 1) + ". Reason: " + errorMessage,
+                logger));
+        close();
+        break;
+      default:
+        if (logger != null) {
+          logger.finest("Ignoring message of type " + messageType);
+        }
     }
   }
 
@@ -321,10 +320,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
     if ((keepAliveThread != null) && keepAliveThread.isAlive()) {
       keepAliveThread.interrupt();
     }
-    if (fileReceiver != null) {
-      fileReceiver.close();
-      fileReceiver = null;
-    }
+    ftpServer.close();
     deleteContent(workingDir);
     workingDir.delete();
   }

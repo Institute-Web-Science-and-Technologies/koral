@@ -7,7 +7,6 @@ import org.apache.commons.cli.ParseException;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.executor.WorkerTask;
 import de.uni_koblenz.west.cidre.common.executor.messagePassing.MessageReceiverListener;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.system.CidreSystem;
 import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
@@ -65,10 +64,6 @@ public class CidreMaster extends CidreSystem {
     return statistics;
   }
 
-  public FileSenderConnection getFileSenderConnection() {
-    return (MasterNetworkManager) super.getNetworkManager();
-  }
-
   public void executeTask(WorkerTask rootTask) {
     getWorkerManager().addTask(rootTask);
   }
@@ -93,31 +88,19 @@ public class CidreMaster extends CidreSystem {
   }
 
   private void processMessage(byte[] receivedMessage) {
-    if (receivedMessage == null || receivedMessage.length == 0) {
+    if ((receivedMessage == null) || (receivedMessage.length == 0)) {
       return;
     }
     MessageType messageType = null;
     try {
       messageType = MessageType.valueOf(receivedMessage[0]);
       switch (messageType) {
-        case FILE_CHUNK_REQUEST:
-          byte[][] message = new byte[4][];
-          message[0] = new byte[] { receivedMessage[0] };
-          message[1] = new byte[2];
-          System.arraycopy(receivedMessage, 1, message[1], 0, message[1].length);
-          message[2] = new byte[4];
-          System.arraycopy(receivedMessage, 3, message[2], 0, message[2].length);
-          message[3] = new byte[8];
-          System.arraycopy(receivedMessage, 7, message[3], 0, message[3].length);
-          short slaveID = NumberConversion.bytes2short(message[1]);
-          notifyMessageListener(messageType.getListenerType(), slaveID, message);
-          break;
         case GRAPH_LOADING_COMPLETE:
-          message = new byte[2][];
+          byte[][] message = new byte[2][];
           message[0] = new byte[] { receivedMessage[0] };
           message[1] = new byte[2];
           System.arraycopy(receivedMessage, 1, message[1], 0, message[1].length);
-          slaveID = NumberConversion.bytes2short(message[1]);
+          short slaveID = NumberConversion.bytes2short(message[1]);
           notifyMessageListener(messageType.getListenerType(), slaveID, message);
           break;
         case GRAPH_LOADING_FAILED:
@@ -188,17 +171,18 @@ public class CidreMaster extends CidreSystem {
   public static void main(String[] args) {
     String className = CidreMaster.class.getName();
     String additionalArgs = "";
-    Options options = createCommandLineOptions();
+    Options options = CidreSystem.createCommandLineOptions();
     try {
-      CommandLine line = parseCommandLineArgs(options, args);
-      Configuration conf = initializeConfiguration(options, line, className, additionalArgs);
+      CommandLine line = CidreSystem.parseCommandLineArgs(options, args);
+      Configuration conf = CidreSystem.initializeConfiguration(options, line, className,
+              additionalArgs);
 
       CidreMaster master = new CidreMaster(conf);
       master.start();
 
     } catch (ParseException e) {
       e.printStackTrace();
-      printUsage(className, options, additionalArgs);
+      CidreSystem.printUsage(className, options, additionalArgs);
     }
   }
 

@@ -5,12 +5,9 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileChunk;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileSenderConnection;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkContextFactory;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
@@ -28,7 +25,7 @@ import java.util.Enumeration;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class ClientConnection implements Closeable, FileSenderConnection {
+public class ClientConnection implements Closeable {
 
   private final ZContext context;
 
@@ -92,8 +89,8 @@ public class ClientConnection implements Closeable, FileSenderConnection {
             answer = inSocket.recv();
           }
         }
-        if (answer == null || (answer.length != 1
-                && MessageType.valueOf(answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION)) {
+        if ((answer == null) || ((answer.length != 1) && (MessageType
+                .valueOf(answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION))) {
           System.out.println("Master is not confirming connection attempt.");
           closeConnectionToMaster();
           return;
@@ -101,7 +98,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
         Thread keepAliveThread = new Thread() {
           @Override
           public void run() {
-            while (!isInterrupted() && inSocket != null) {
+            while (!isInterrupted() && (inSocket != null)) {
               long startTime = System.currentTimeMillis();
               synchronized (outSocketSemaphore) {
                 if (outSocket == null) {
@@ -110,8 +107,8 @@ public class ClientConnection implements Closeable, FileSenderConnection {
                 outSocket.send(MessageUtils.createStringMessage(MessageType.CLIENT_IS_ALIVE,
                         clientAddress, null));
               }
-              long remainingSleepTime = Configuration.CLIENT_KEEP_ALIVE_INTERVAL
-                      - System.currentTimeMillis() + startTime;
+              long remainingSleepTime = (Configuration.CLIENT_KEEP_ALIVE_INTERVAL
+                      - System.currentTimeMillis()) + startTime;
               if (remainingSleepTime > 0) {
                 try {
                   Thread.sleep(remainingSleepTime);
@@ -135,7 +132,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
 
   private String getHostAddress() throws UnknownHostException {
     InetAddress localHost = InetAddress.getLocalHost();
-    if (localHost instanceof Inet4Address && !localHost.isLoopbackAddress()) {
+    if ((localHost instanceof Inet4Address) && !localHost.isLoopbackAddress()) {
       return localHost.getHostAddress();
     } else {
       try {
@@ -145,7 +142,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
           Enumeration<InetAddress> addresses = netIface.getInetAddresses();
           while (addresses.hasMoreElements()) {
             InetAddress addr = addresses.nextElement();
-            if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+            if ((addr instanceof Inet4Address) && !addr.isLoopbackAddress()) {
               return addr.getHostAddress();
             }
           }
@@ -183,7 +180,7 @@ public class ClientConnection implements Closeable, FileSenderConnection {
           outSocket.send(new byte[] { (byte) 0 });
         } else {
           for (int i = 0; i < args.length; i++) {
-            if (i == args.length - 1) {
+            if (i == (args.length - 1)) {
               outSocket.send(args[i]);
             } else {
               outSocket.sendMore(args[i]);
@@ -196,33 +193,15 @@ public class ClientConnection implements Closeable, FileSenderConnection {
     }
   }
 
-  @Override
-  public void sendFileChunk(int slaveID, FileChunk fileChunk) {
-    if (!isConnected()) {
-      throw new RuntimeException("The client has not connected to the master, yet.");
-    }
-    try {
-      byte[] clientAddress = this.clientAddress.getBytes("UTF-8");
-      synchronized (outSocketSemaphore) {
-        if (outSocket == null) {
-          System.out.println("Connection to master is already closed.");
-          return;
-        }
-        outSocket.sendMore(new byte[] { MessageType.FILE_CHUNK_RESPONSE.getValue() });
-        outSocket.sendMore(clientAddress);
-        outSocket.sendMore(NumberConversion.int2bytes(fileChunk.getFileID()));
-        outSocket.sendMore(NumberConversion.long2bytes(fileChunk.getSequenceNumber()));
-        outSocket.sendMore(NumberConversion.long2bytes(fileChunk.getTotalNumberOfSequences()));
-        outSocket.send(fileChunk.getContent());
+  public void sendFilesSent() {
+    synchronized (outSocketSemaphore) {
+      if (outSocket == null) {
+        System.out.println("Connection to master is already closed.");
+        return;
       }
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
+      outSocket.send(
+              MessageUtils.createStringMessage(MessageType.CLIENT_FILES_SENT, clientAddress, null));
     }
-  }
-
-  @Override
-  public void sendFileLength(int slaveID, long totalNumberOfFileChunks) {
-    throw new UnsupportedOperationException();
   }
 
   public byte[][] getResponse() {
@@ -232,8 +211,8 @@ public class ClientConnection implements Closeable, FileSenderConnection {
     byte[][] response = null;
     long startTime = System.currentTimeMillis();
     byte[] mType = null;
-    while (mType == null
-            && System.currentTimeMillis() - startTime < Configuration.CLIENT_CONNECTION_TIMEOUT) {
+    while ((mType == null) && ((System.currentTimeMillis()
+            - startTime) < Configuration.CLIENT_CONNECTION_TIMEOUT)) {
       synchronized (inSocketSemaphore) {
         if (inSocket == null) {
           System.out.println("Connection to master is already closed.");
@@ -255,7 +234,6 @@ public class ClientConnection implements Closeable, FileSenderConnection {
       }
       MessageType messageType = MessageType.valueOf(mType[0]);
       switch (messageType) {
-        case FILE_CHUNK_REQUEST:
         case MASTER_WORK_IN_PROGRESS:
         case CLIENT_COMMAND_SUCCEEDED:
         case CLIENT_COMMAND_FAILED:

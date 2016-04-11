@@ -6,7 +6,6 @@ import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionCoordinator;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.common.utils.ReusableIDGenerator;
 import de.uni_koblenz.west.cidre.master.CidreMaster;
 import de.uni_koblenz.west.cidre.master.tasks.ClientConnectionKeepAliveTask;
@@ -36,6 +35,8 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
 
   private final File tmpDir;
 
+  private final String[] ftpServer;
+
   private final Map<String, Integer> clientAddress2Id;
 
   private final Map<String, GraphLoaderTask> clientAddress2GraphLoaderTask;
@@ -63,6 +64,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     this.logger = logger;
     this.clientConnections = clientConnections;
     this.master = master;
+    ftpServer = conf.getFTPServer();
     numberOfChunks = conf.getNumberOfSlaves();
     tmpDir = new File(conf.getTmpDir());
     if (!tmpDir.exists() || !tmpDir.isDirectory()) {
@@ -101,8 +103,8 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
           case CLIENT_COMMAND:
             processCommand(message, graphHasBeenLoaded);
             break;
-          case FILE_CHUNK_RESPONSE:
-            processFileChunk(message);
+          case CLIENT_FILES_SENT:
+            processFilesSent(message);
             break;
           case CLIENT_COMMAND_ABORTED:
             processAbortCommand(message);
@@ -224,9 +226,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
             break;
           }
           GraphLoaderTask loaderTask = new GraphLoaderTask(clientID.intValue(), clientConnections,
-                  master.getDictionary(), master.getStatistics(), tmpDir, master, logger);
+                  master.getNetworkManager(), ftpServer[0], ftpServer[1], master.getDictionary(),
+                  master.getStatistics(), tmpDir, master, logger);
           clientAddress2GraphLoaderTask.put(address, loaderTask);
-          loaderTask.loadGraph(arguments, numberOfChunks, master.getFileSenderConnection());
+          loaderTask.loadGraph(arguments, numberOfChunks);
           break;
         case "query":
           if (!graphHasBeenLoaded) {
@@ -293,52 +296,8 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     }
   }
 
-  private void processFileChunk(byte[] message) {
-    byte[] buffer = clientConnections.receive(true);
-    if (buffer == null) {
-      if (logger != null) {
-        logger.finest("Client has sent a command request but missed to send his id.");
-      }
-      return;
-    }
-    String address = MessageUtils.convertToString(buffer, logger);
-
-    buffer = clientConnections.receive(true);
-    if ((buffer == null) || (buffer.length != 4)) {
-      if (logger != null) {
-        logger.finest(
-                "Client " + address + " has not sent the id of the file this chunk belongs to.");
-      }
-      return;
-    }
-    int fileID = NumberConversion.bytes2int(buffer);
-
-    buffer = clientConnections.receive(true);
-    if (buffer == null) {
-      if (logger != null) {
-        logger.finest("Client " + address + " has not sent the id of the chunk.");
-      }
-      return;
-    }
-    long chunkID = NumberConversion.bytes2long(buffer);
-
-    buffer = clientConnections.receive(true);
-    if ((buffer == null) || (buffer.length != 8)) {
-      if (logger != null) {
-        logger.finest("Client " + address + " has not sent the total number of chunks.");
-      }
-      return;
-    }
-    long totalNumberOfChunks = NumberConversion.bytes2long(buffer);
-
-    buffer = clientConnections.receive(true);
-    if (buffer == null) {
-      if (logger != null) {
-        logger.finest("Client " + address + " has not sent the content of chunk " + chunkID
-                + " of file" + fileID + ".");
-      }
-      return;
-    }
+  private void processFilesSent(byte[] message) {
+    String address = MessageUtils.convertToString(message, logger);
 
     if (address.trim().isEmpty()) {
       if (logger != null) {
@@ -362,7 +321,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
       }
       return;
     }
-    task.receiveFileChunk(fileID, chunkID, totalNumberOfChunks, buffer);
+    task.receiveFilesSent();
   }
 
   private void processAbortCommand(byte[] message) {

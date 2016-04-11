@@ -16,7 +16,7 @@ import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.impl.GraphChunkLoader;
 
 import java.io.File;
-import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -35,7 +35,8 @@ public class CidreSlave extends CidreSystem {
   private TripleStoreAccessor tripleStore;
 
   public CidreSlave(Configuration conf) throws ConfigurationException {
-    super(conf, getCurrentIP(conf), new SlaveNetworkManager(conf, getCurrentIP(conf)));
+    super(conf, CidreSlave.getCurrentIP(conf),
+            new SlaveNetworkManager(conf, CidreSlave.getCurrentIP(conf)));
     try {
       tmpDir = new File(conf.getTmpDir());
       if (!tmpDir.exists()) {
@@ -65,7 +66,7 @@ public class CidreSlave extends CidreSystem {
     for (int i = 0; i < conf.getNumberOfSlaves(); i++) {
       String[] slave = conf.getSlave(i);
       try {
-        NetworkInterface ni = NetworkInterface.getByInetAddress(Inet4Address.getByName(slave[0]));
+        NetworkInterface ni = NetworkInterface.getByInetAddress(InetAddress.getByName(slave[0]));
         if (ni != null) {
           return slave;
         }
@@ -91,7 +92,7 @@ public class CidreSlave extends CidreSystem {
   }
 
   private void processMessage(byte[] receivedMessage) {
-    if (receivedMessage == null || receivedMessage.length == 0) {
+    if ((receivedMessage == null) || (receivedMessage.length == 0)) {
       return;
     }
     try {
@@ -104,9 +105,10 @@ public class CidreSlave extends CidreSystem {
             clear();
             break;
           case START_FILE_TRANSFER:
-            byte[][] message = new byte[2][];
+            byte[][] message = new byte[3][];
             message[0] = new byte[] { receivedMessage[0] };
-            message[1] = new byte[8];
+            message[1] = getNetworkManager().receive(true);
+            message[2] = getNetworkManager().receive(true);
             System.arraycopy(receivedMessage, 1, message[1], 0, message[1].length);
             File workingDir = new File(
                     tmpDir.getAbsolutePath() + File.separatorChar + "graphLoader" + slaveID);
@@ -115,9 +117,6 @@ public class CidreSlave extends CidreSystem {
                     (SlaveNetworkManager) getNetworkManager(), tripleStore, this, logger);
             registerMessageListener(GraphChunkListener.class, loader);
             notifyMessageListener(messageType.getListenerType(), slaveID, message);
-            break;
-          case FILE_CHUNK_RESPONSE:
-            receiveFileChunkResponse(receivedMessage, messageType, slaveID);
             break;
           case QUERY_CREATE:
             getWorkerManager().createQuery(receivedMessage);
@@ -160,49 +159,6 @@ public class CidreSlave extends CidreSystem {
     }
   }
 
-  private void receiveFileChunkResponse(byte[] receivedMessage, MessageType messageType,
-          int slaveID) {
-    byte[][] message = new byte[5][];
-    message[0] = new byte[] { receivedMessage[0] };
-    while (message[1] == null) {
-      message[1] = getNetworkManager().receive();
-    }
-    if (message[1] == null || message[1].length != 4) {
-      if (logger != null) {
-        logger.finest("Master has not sent the id of the file this chunk belongs to.");
-      }
-      return;
-    }
-    while (message[2] == null) {
-      message[2] = getNetworkManager().receive();
-    }
-    if (message[2] == null || message[2].length != 8) {
-      if (logger != null) {
-        logger.finest("Master has not sent the id of the sent chunk.");
-      }
-      return;
-    }
-    while (message[3] == null) {
-      message[3] = getNetworkManager().receive();
-    }
-    if (message[3] == null || message[3].length != 8) {
-      if (logger != null) {
-        logger.finest("Master has not sent the number of total chunks.");
-      }
-      return;
-    }
-    while (message[4] == null) {
-      message[4] = getNetworkManager().receive();
-    }
-    if (message[4] == null) {
-      if (logger != null) {
-        logger.finest("Master has not sent the content of the chunk.");
-      }
-      return;
-    }
-    notifyMessageListener(messageType.getListenerType(), slaveID, message);
-  }
-
   @Override
   public void shutDown() {
     super.shutDown();
@@ -221,10 +177,11 @@ public class CidreSlave extends CidreSystem {
   public static void main(String[] args) {
     String className = CidreSlave.class.getName();
     String additionalArgs = "";
-    Options options = createCommandLineOptions();
+    Options options = CidreSystem.createCommandLineOptions();
     try {
-      CommandLine line = parseCommandLineArgs(options, args);
-      Configuration conf = initializeConfiguration(options, line, className, additionalArgs);
+      CommandLine line = CidreSystem.parseCommandLineArgs(options, args);
+      Configuration conf = CidreSystem.initializeConfiguration(options, line, className,
+              additionalArgs);
 
       CidreSlave slave;
       try {
@@ -236,7 +193,7 @@ public class CidreSlave extends CidreSystem {
 
     } catch (ParseException e) {
       e.printStackTrace();
-      printUsage(className, options, additionalArgs);
+      CidreSystem.printUsage(className, options, additionalArgs);
     }
   }
 

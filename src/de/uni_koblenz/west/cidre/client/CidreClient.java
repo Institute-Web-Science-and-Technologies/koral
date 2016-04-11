@@ -12,8 +12,7 @@ import org.apache.jena.query.QueryFactory;
 import org.apache.jena.util.FileUtils;
 
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileChunk;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileSender;
+import de.uni_koblenz.west.cidre.common.ftp.FTPClient;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
@@ -75,25 +74,18 @@ public class CidreClient {
     connection.sendCommand("load", args);
 
     byte[][] response = connection.getResponse();
-    try (FileSender sender = new FileSender(files, connection);) {
+    try {
       while (response != null) {
         MessageType mtype = MessageType.valueOf(response[0][0]);
-        if (mtype == MessageType.FILE_CHUNK_REQUEST) {
-          int fileID = NumberConversion.bytes2int(response[0], 1);
-          long chunkID = NumberConversion.bytes2long(response[0], 5);
-          FileChunk fileChunk = sender.sendFileChunk(0, fileID, chunkID);
-          // some output for user
-          if (fileChunk.getSequenceNumber() == 0) {
-            System.out
-                    .println("Sending file " + files.get(fileChunk.getFileID()).getAbsolutePath());
-          } else {
-            final long numberOfOutputs = 10;
-            long outputInterval = fileChunk.getTotalNumberOfSequences() / numberOfOutputs;
-            if (outputInterval > 0 && fileChunk.getSequenceNumber() % outputInterval == 0) {
-              System.out.println((fileChunk.getSequenceNumber() / outputInterval * numberOfOutputs)
-                      + "% finished");
+        if (mtype == MessageType.MASTER_SEND_FILES) {
+          String[] ftpServer = MessageUtils.extractMessageString(response[0], null).split(":");
+          FTPClient ftpClient = new FTPClient(null);
+          for (File file : files) {
+            if ((file != null) && file.exists()) {
+              ftpClient.uploadFile(file, ftpServer[0], ftpServer[1]);
             }
           }
+          connection.sendFilesSent();
         } else if (mtype == MessageType.MASTER_WORK_IN_PROGRESS) {
           if (response[0].length > 1) {
             System.out.println(MessageUtils.extractMessageString(response[0], null));
@@ -342,12 +334,12 @@ public class CidreClient {
   }
 
   public static void main(String[] args) {
-    String[][] argParts = splitArgs(args);
-    Options options = createCommandLineOptions();
+    String[][] argParts = CidreClient.splitArgs(args);
+    Options options = CidreClient.createCommandLineOptions();
     try {
-      CommandLine line = parseCommandLineArgs(options, argParts[0]);
+      CommandLine line = CidreClient.parseCommandLineArgs(options, argParts[0]);
       if (line.hasOption("h")) {
-        printUsage(options);
+        CidreClient.printUsage(options);
         return;
       }
       String master = JeromqStreamHandler.DEFAULT_PORT;
@@ -379,14 +371,14 @@ public class CidreClient {
       });
 
       if (argParts[1].length > 0) {
-        executeCommand(client, argParts[1]);
+        CidreClient.executeCommand(client, argParts[1]);
       } else {
-        startCLI(client);
+        CidreClient.startCLI(client);
       }
 
     } catch (ParseException e) {
       e.printStackTrace();
-      printUsage(options);
+      CidreClient.printUsage(options);
     }
   }
 
@@ -401,12 +393,12 @@ public class CidreClient {
           String line = scanner.nextLine().trim();
           if (!line.isEmpty()) {
             String[] command = line.split("\\s+");
-            if (command.length == 1 && (command[0].toLowerCase().equals("exit")
+            if ((command.length == 1) && (command[0].toLowerCase().equals("exit")
                     || command[0].toLowerCase().equals("quit"))) {
               break;
             }
             try {
-              executeCommand(client, command);
+              CidreClient.executeCommand(client, command);
             } catch (RuntimeException e) {
               e.printStackTrace();
             }
@@ -424,27 +416,27 @@ public class CidreClient {
     try {
       switch (strings[0].toLowerCase()) {
         case "help":
-          printCommandList();
+          CidreClient.printCommandList();
           break;
         case "load":
-          loadGraph(client, args);
+          CidreClient.loadGraph(client, args);
           break;
         case "query":
-          queryGraph(client, args);
+          CidreClient.queryGraph(client, args);
           break;
         case "drop":
-          dropDatabase(client, args);
+          CidreClient.dropDatabase(client, args);
           break;
       }
 
     } catch (ParseException e) {
       System.out.println("Invalid command syntax.");
-      printCommandList();
+      CidreClient.printCommandList();
     }
   }
 
   private static void loadGraph(CidreClient client, String[] args) throws ParseException {
-    Options options = createLoadOptions();
+    Options options = CidreClient.createLoadOptions();
     CommandLineParser parser = new DefaultParser();
     CommandLine commandLine = parser.parse(options, args);
 
@@ -464,7 +456,7 @@ public class CidreClient {
   }
 
   private static void queryGraph(CidreClient client, String[] args) throws ParseException {
-    Options options = createQueryOptions();
+    Options options = CidreClient.createQueryOptions();
     CommandLineParser parser = new DefaultParser();
     CommandLine commandLine = parser.parse(options, args);
 
@@ -584,7 +576,7 @@ public class CidreClient {
     String[][] parts = new String[2][];
     int i = 0;
     for (i = 0; i < args.length; i++) {
-      if (isCommand(args[i])) {
+      if (CidreClient.isCommand(args[i])) {
         parts[0] = new String[i];
         System.arraycopy(args, 0, parts[0], 0, parts[0].length);
         parts[1] = new String[args.length - i];
@@ -641,7 +633,7 @@ public class CidreClient {
     formatter.printHelp("java " + CidreClient.class.getName() + " [-h] [-m <IP:Port>] <command>",
             options);
     System.out.println("The following commands are available:");
-    printCommandList();
+    CidreClient.printCommandList();
   }
 
   private static void printCommandList() {
@@ -650,11 +642,11 @@ public class CidreClient {
     System.out.println("quit\tquits the client");
     HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp("load -c <graphCoverStrategy> [-n <pathLength>] <fileOrFolder>...",
-            createLoadOptions());
+            CidreClient.createLoadOptions());
     formatter.printHelp(
             "query [-t <treeType>] [-o <outputFile>] <SPARQL query>\n"
                     + "query [-t <treeType>] [-o <outputFile>] -q <SPARQLQueryFile>",
-            createQueryOptions());
+            CidreClient.createQueryOptions());
     System.out.println(
             "drop\tdeletes the database and its content. All running tasks, e.g., executed queries are terminated.");
   }

@@ -1,20 +1,18 @@
 package de.uni_koblenz.west.cidre.slave.triple_store.loader.impl;
 
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiver;
-import de.uni_koblenz.west.cidre.common.fileTransfer.FileReceiverConnection;
+import de.uni_koblenz.west.cidre.common.ftp.FTPClient;
 import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
 import de.uni_koblenz.west.cidre.master.CidreMaster;
+import de.uni_koblenz.west.cidre.slave.networkManager.SlaveNetworkManager;
 import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.cidre.slave.triple_store.loader.GraphChunkListener;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.BufferUnderflowException;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Requests the corresponding graph chunk from {@link CidreMaster}. If the chunk
@@ -31,23 +29,23 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 
   private final File workingDir;
 
-  private final FileReceiver receiver;
-
-  private final FileReceiverConnection connection;
-
-  private final Set<File> receivedGraphChunks;
+  private final SlaveNetworkManager connection;
 
   private final TripleStoreAccessor tripleStore;
 
   private final MessageNotifier messageNotifier;
 
+  private String[] ftpServer;
+
+  private String remoteGraphChunkFileName;
+
   public GraphChunkLoader(int slaveID, int numberOfSlaves, File workingDir,
-          FileReceiverConnection connection, TripleStoreAccessor tripleStore,
+          SlaveNetworkManager networkManager, TripleStoreAccessor tripleStore,
           MessageNotifier messageNotifier, Logger logger) {
     this.logger = logger;
     this.slaveID = slaveID;
+    connection = networkManager;
     this.tripleStore = tripleStore;
-    this.connection = connection;
     this.workingDir = workingDir;
     this.messageNotifier = messageNotifier;
     if (workingDir.exists()) {
@@ -58,14 +56,11 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
                 "The working directory " + workingDir.getAbsolutePath() + " could not be created!");
       }
     }
-    receiver = new FileReceiver(workingDir, slaveID, numberOfSlaves, connection, 1,
-            new String[] { "enc.gz" }, logger);
-    receivedGraphChunks = new HashSet<>();
   }
 
   @Override
   public void processMessage(byte[][] message) {
-    if (message == null || message.length == 0) {
+    if ((message == null) || (message.length == 0)) {
       return;
     }
     try {
@@ -74,36 +69,9 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
         mType = MessageType.valueOf(message[0][0]);
         switch (mType) {
           case START_FILE_TRANSFER:
-            long totalNumberOfChunks = NumberConversion.bytes2long(message[1]);
-            if (totalNumberOfChunks < receiver.getMaximalNumberOfParallelRequests()) {
-              receiver.adjustMaximalNumberOfParallelRequests((int) totalNumberOfChunks);
-            }
-            receiver.requestFiles();
-            break;
-          case FILE_CHUNK_RESPONSE:
-            int fileID = NumberConversion.bytes2int(message[1]);
-            long chunkID = NumberConversion.bytes2long(message[2]);
-            totalNumberOfChunks = NumberConversion.bytes2long(message[3]);
-            byte[] chunkContent = message[4];
-            try {
-              receiver.receiveFileChunk(fileID, chunkID, totalNumberOfChunks, chunkContent);
-              File graphChunk = receiver.getFileWithID(fileID);
-              if (!receivedGraphChunks.contains(graphChunk)) {
-                receivedGraphChunks.add(graphChunk);
-              }
-              if (receiver.isFinished()) {
-                receiver.close();
-                start();
-              }
-            } catch (IOException e) {
-              if (logger != null) {
-                logger.finer("error during receiving a graph chunk");
-                logger.throwing(e.getStackTrace()[0].getClassName(),
-                        e.getStackTrace()[0].getMethodName(), e);
-              }
-              connection.sendFailNotification(slaveID, e.getMessage());
-              close();
-            }
+            ftpServer = new String(message[1], "UTF-8").split(Pattern.quote(":"));
+            remoteGraphChunkFileName = new String(message[2], "UTF-8");
+            start();
             break;
           default:
             if (logger != null) {
@@ -123,7 +91,7 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
                   e);
         }
       }
-    } catch (RuntimeException e) {
+    } catch (UnsupportedEncodingException | RuntimeException e) {
       if (logger != null) {
         logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
                 e);
@@ -141,13 +109,12 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
   @Override
   public void run() {
     try {
-      for (File graphChunk : receivedGraphChunks) {
-        if (graphChunk.exists()) {
-          tripleStore.storeTriples(graphChunk);
-        }
-        if (isInterrupted()) {
-          break;
-        }
+      File graphChunk = new File(
+              workingDir.getAbsolutePath() + File.separator + remoteGraphChunkFileName);
+      FTPClient ftpClient = new FTPClient(logger);
+      ftpClient.downloadFile(remoteGraphChunkFileName, graphChunk, ftpServer[0], ftpServer[1]);
+      if (graphChunk.exists()) {
+        tripleStore.storeTriples(graphChunk);
       }
     } catch (RuntimeException e) {
       if (logger != null) {
@@ -172,7 +139,6 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
   @Override
   public void close() {
     messageNotifier.unregisterMessageListener(GraphChunkListener.class, this);
-    receiver.close();
     deleteContent(workingDir);
     workingDir.delete();
   }

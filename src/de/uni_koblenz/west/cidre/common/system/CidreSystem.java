@@ -94,7 +94,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
     }
   }
 
-  protected NetworkManager getNetworkManager() {
+  public NetworkManager getNetworkManager() {
     return networkManager;
   }
 
@@ -174,8 +174,8 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
     }
     // find first free index
     int insertIndex = 0;
-    while (insertIndex < messageListeners[slaveIndex].length
-            && messageListeners[slaveIndex][insertIndex] != null) {
+    while ((insertIndex < messageListeners[slaveIndex].length)
+            && (messageListeners[slaveIndex][insertIndex] != null)) {
       insertIndex++;
     }
     if (insertIndex == messageListeners[slaveIndex].length) {
@@ -344,7 +344,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
   protected static Configuration initializeConfiguration(Options options, CommandLine line,
           String className, String additionalArgs) {
     if (line.hasOption("h")) {
-      printUsage(className, options, additionalArgs);
+      CidreSystem.printUsage(className, options, additionalArgs);
       return null;
     }
     String confFile = "cidreConfig.xml";
