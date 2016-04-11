@@ -47,6 +47,8 @@ def resolveDependencies():
     resolveJeromq()
     resolveJena()
     resolveMapDB()
+    resolveFtpServer()
+    resolveCommonsNet()
 
 def resolveCLI():
     run("wget http://apache.mirror.digionline.de//commons/cli/binaries/commons-cli-1.3.1-bin.tar.gz")
@@ -94,6 +96,22 @@ def resolveMapDB():
         run("mvn package -DskipTests")
     run("cp mapdb/target/mapdb-1.0.8.jar cidre/lib/mapdb-1.0.8.jar")
     sudo("rm -r mapdb")
+
+def resolveFtpServer():
+    run("wget http://archive.apache.org/dist/mina/ftpserver/1.0.5/ftpserver-1.0.5.zip")
+    run("uzip ftpserver-1.0.5.zip")
+    run("rm ftpserver-1.0.5.zip")
+    run("mv apache-ftpserver-1.0.5/common/lib/ftplet-api-1.0.5.jar cidre/lib/ftplet-api-1.0.5.jar")
+    run("mv apache-ftpserver-1.0.5/common/lib/ftpserver-core-1.0.5.jar cidre/lib/ftpserver-core-1.0.5.jar")
+    run("mv apache-ftpserver-1.0.5/common/lib/mina-core-2.0.0-RC1.jar cidre/lib/mina-core-2.0.0-RC1.jar")
+    run("rm -r apache-ftpserver-1.0.5")
+
+def resolveCommonsNet():
+    run("wget http://mirror.softaculous.com/apache//commons/net/binaries/commons-net-3.4-bin.tar.gz")
+    run("tar -xf commons-net-3.4-bin.tar.gz")
+    run("rm commons-net-3.4-bin.tar.gz")
+    run("mv commons-net-3.4/commons-net-3.4.jar cidre/lib/commons-net-3.4.jar")
+    run("rm -r commons-net-3.4")
 
 def buildCidre():
     with cd("cidre"):

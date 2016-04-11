@@ -20,8 +20,7 @@
 
 	<target name="compile" depends="clean">
 		<mkdir dir="${class.dir}" />
-		<javac srcdir="src" destdir="${class.dir}" includeantruntime="false"
-			debug="on">
+		<javac srcdir="src" destdir="${class.dir}" includeantruntime="false" debug="on">
 			<classpath refid="class.path" />
 		</javac>
 	</target>
@@ -109,6 +108,31 @@
 				<exclude name="**/*sources.jar" />
 			</fileset>
 			<globmapper from="META-INF/*" to="META-INF-mapdb/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/ftplet-api-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-ftplet-api/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/ftpserver-core-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-ftpserver-core/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/mina-core-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-mina-core/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/commons-net-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-commons-net/*" />
 		</unjar>
 	</target>
 
