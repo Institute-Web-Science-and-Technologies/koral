@@ -21,6 +21,15 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
     }
   }
 
+  public String serializeFtpServer(Configuration conf) {
+    String[] ftpServer = conf.getFTPServer();
+    if (ftpServer[0] != null) {
+      return ftpServer[0] + ":" + ftpServer[1];
+    } else {
+      return "";
+    }
+  }
+
   public String serializeSlaves(Configuration conf) {
     StringBuilder sb = new StringBuilder();
     String delim = "";

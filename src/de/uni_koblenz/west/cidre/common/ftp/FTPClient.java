@@ -26,6 +26,11 @@ public class FTPClient {
     this.logger = logger;
   }
 
+  public void uploadFile(File fileToUpload, String ipAddress, String port) {
+    uploadFile(fileToUpload, ipAddress, port, FTPServer.DEFAULT_USER_NAME,
+            FTPServer.DEFAULT_PASSWORD);
+  }
+
   public void uploadFile(File fileToUpload, String ipAddress, String port, String username,
           String password) {
     org.apache.commons.net.ftp.FTPClient ftpClient = new org.apache.commons.net.ftp.FTPClient();
@@ -39,9 +44,7 @@ public class FTPClient {
       String remoteFile = fileToUpload.getName();
       try (InputStream inputStream = new BufferedInputStream(new FileInputStream(fileToUpload));) {
         boolean done = ftpClient.storeFile(remoteFile, inputStream);
-        if (logger != null) {
-          logServerReply(ftpClient);
-        }
+        logServerReply(ftpClient);
         if (!done) {
           throw new RuntimeException(
                   "The file " + fileToUpload.getAbsolutePath() + " could not be uploaded.");
@@ -62,6 +65,11 @@ public class FTPClient {
     }
   }
 
+  public void downloadFile(String remoteFile, File localFile, String ipAddress, String port) {
+    downloadFile(remoteFile, localFile, ipAddress, port, FTPServer.DEFAULT_USER_NAME,
+            FTPServer.DEFAULT_PASSWORD);
+  }
+
   public void downloadFile(String remoteFile, File localFile, String ipAddress, String port,
           String username, String password) {
     org.apache.commons.net.ftp.FTPClient ftpClient = new org.apache.commons.net.ftp.FTPClient();
@@ -74,9 +82,7 @@ public class FTPClient {
 
       try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(localFile));) {
         boolean done = ftpClient.retrieveFile(remoteFile, outputStream);
-        if (logger != null) {
-          logServerReply(ftpClient);
-        }
+        logServerReply(ftpClient);
         if (!done) {
           throw new RuntimeException("The file " + remoteFile + " could not be downloaded.");
         }
@@ -100,7 +106,11 @@ public class FTPClient {
     String[] replies = ftpClient.getReplyStrings();
     if ((replies != null) && (replies.length > 0)) {
       for (String aReply : replies) {
-        logger.fine("SERVER: " + aReply);
+        if (logger != null) {
+          logger.fine("SERVER: " + aReply);
+        } else {
+          System.out.println("SERVER: " + aReply);
+        }
       }
     }
   }

@@ -6,6 +6,11 @@
 		<value></value>
 	</property>
 	<property>
+		<name>ftpServer</name>
+		<description>The ip and port of the FTP server started at the master server, e.g., 192.168.0.1:2121. If no port is specified, the default port 2121 is used. The FTP server is used to upload the graph files from the client to the master and the graph chunks from the master to the slaves. The FTP server runs only during the filetransfer.</description>
+		<value></value>
+	</property>
+	<property>
 		<name>slaves</name>
 		<description>The comma separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port 4710 is used.</description>
 		<value></value>

@@ -26,12 +26,16 @@ import java.util.List;
  */
 public class FTPServer implements Closeable {
 
+  final static String DEFAULT_USER_NAME = "user";
+
+  final static String DEFAULT_PASSWORD = "user";
+
   private File ftpFolder;
 
   private FtpServer server;
 
   public void start(String ipAddress, String port, File workingDir) {
-    start(ipAddress, port, workingDir, "user", "user");
+    start(ipAddress, port, workingDir, FTPServer.DEFAULT_USER_NAME, FTPServer.DEFAULT_PASSWORD);
   }
 
   public void start(String ipAddress, String port, File workingDir, String username,

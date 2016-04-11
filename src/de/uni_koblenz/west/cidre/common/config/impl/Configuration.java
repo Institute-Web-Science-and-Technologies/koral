@@ -30,8 +30,10 @@ public class Configuration implements Configurable {
 
   private static final String DEFAULT_PORT = "4710";
 
+  private static final String DEFAULT_FTP_PORT = "2121";
+
   @Property(name = "master", description = "The ip and port of the master server, e.g., 192.168.0.1:4710. If no port is specified, the default port "
-          + DEFAULT_PORT + " is used.")
+          + Configuration.DEFAULT_PORT + " is used.")
   private String masterIP;
 
   private String masterPort;
@@ -41,7 +43,7 @@ public class Configuration implements Configurable {
   }
 
   public void setMaster(String masterIP) {
-    setMaster(masterIP, DEFAULT_PORT);
+    setMaster(masterIP, Configuration.DEFAULT_PORT);
   }
 
   public void setMaster(String masterIP, String masterPort) {
@@ -49,8 +51,29 @@ public class Configuration implements Configurable {
     this.masterPort = masterPort;
   }
 
+  @Property(name = "ftpServer", description = "The ip and port of the FTP server started at the master server, e.g., 192.168.0.1:2121. If no port is specified, the default port "
+          + Configuration.DEFAULT_FTP_PORT + " is used."
+          + " The FTP server is used to upload the graph files from the client to the master and the graph chunks from the master to the slaves."
+          + " The FTP server runs only during the filetransfer.")
+  private String ftpServerIP;
+
+  private String ftpServerPort;
+
+  public String[] getFTPServer() {
+    return new String[] { ftpServerIP, ftpServerPort };
+  }
+
+  public void setFTPServer(String ftpServerIP) {
+    setMaster(ftpServerIP, Configuration.DEFAULT_FTP_PORT);
+  }
+
+  public void setFTPServer(String ftpServerIP, String ftpServerPort) {
+    this.ftpServerIP = ftpServerIP;
+    this.ftpServerPort = ftpServerPort;
+  }
+
   @Property(name = "slaves", description = "The comma separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port "
-          + DEFAULT_PORT + " is used.")
+          + Configuration.DEFAULT_PORT + " is used.")
   private List<String> slaveIPs;
 
   private List<String> slavePorts;
@@ -64,7 +87,7 @@ public class Configuration implements Configurable {
   }
 
   public void addSlave(String slaveIP) {
-    addSlave(slaveIP, DEFAULT_PORT);
+    addSlave(slaveIP, Configuration.DEFAULT_PORT);
   }
 
   public void addSlave(String slaveIP, String slavePort) {
@@ -79,7 +102,7 @@ public class Configuration implements Configurable {
   public static final String DEFAULT_CLIENT_PORT = "4711";
 
   @Property(name = "clientConnection", description = "The ip and port to which clients can connect, e.g., 192.168.0.1:4711. If no port is specified, the default port "
-          + DEFAULT_CLIENT_PORT + " is used.")
+          + Configuration.DEFAULT_CLIENT_PORT + " is used.")
   private String clientIP;
 
   private String clientPort;
@@ -89,7 +112,7 @@ public class Configuration implements Configurable {
   }
 
   public void setClient(String clientIP) {
-    setClient(clientIP, DEFAULT_CLIENT_PORT);
+    setClient(clientIP, Configuration.DEFAULT_CLIENT_PORT);
   }
 
   public void setClient(String clientIP, String clientPort) {
@@ -102,10 +125,10 @@ public class Configuration implements Configurable {
   public static final long CLIENT_KEEP_ALIVE_INTERVAL = 3000;
 
   @Property(name = "clientConnectionTimeout", description = "The number of milliseconds the master waits for messages from the client before closing the connection."
-          + " Every " + CLIENT_KEEP_ALIVE_INTERVAL
+          + " Every " + Configuration.CLIENT_KEEP_ALIVE_INTERVAL
           + " milliseconds the client sends a keep alive message to the master. The default value is "
-          + CLIENT_CONNECTION_TIMEOUT + " milliseconds.")
-  private long clientConnectionTimeout = CLIENT_CONNECTION_TIMEOUT;
+          + Configuration.CLIENT_CONNECTION_TIMEOUT + " milliseconds.")
+  private long clientConnectionTimeout = Configuration.CLIENT_CONNECTION_TIMEOUT;
 
   public long getClientConnectionTimeout() {
     return clientConnectionTimeout;
