@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * API and command line interface to interact with CIDRE master.
@@ -50,11 +51,18 @@ public class CidreClient {
 
   private final ClientConnection connection;
 
+  private String[] master;
+
   public CidreClient() {
     connection = new ClientConnection();
   }
 
   public boolean startUp(String masterAddress) {
+    if (masterAddress.contains(":")) {
+      master = masterAddress.split(Pattern.quote(":"));
+    } else {
+      master = new String[] { masterAddress, Configuration.DEFAULT_CLIENT_PORT };
+    }
     connection.connect(masterAddress);
     return connection.isConnected();
   }
@@ -82,7 +90,7 @@ public class CidreClient {
           FTPClient ftpClient = new FTPClient(null);
           for (File file : files) {
             if ((file != null) && file.exists()) {
-              ftpClient.uploadFile(file, ftpServer[0], ftpServer[1]);
+              ftpClient.uploadFile(file, master[0], ftpServer[1]);
             }
           }
           connection.sendFilesSent();
