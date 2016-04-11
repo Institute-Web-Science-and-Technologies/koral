@@ -99,7 +99,7 @@ def resolveMapDB():
 
 def resolveFtpServer():
     run("wget http://archive.apache.org/dist/mina/ftpserver/1.0.5/ftpserver-1.0.5.zip")
-    run("uzip ftpserver-1.0.5.zip")
+    run("unzip ftpserver-1.0.5.zip")
     run("rm ftpserver-1.0.5.zip")
     run("mv apache-ftpserver-1.0.5/common/lib/ftplet-api-1.0.5.jar cidre/lib/ftplet-api-1.0.5.jar")
     run("mv apache-ftpserver-1.0.5/common/lib/ftpserver-core-1.0.5.jar cidre/lib/ftpserver-core-1.0.5.jar")
