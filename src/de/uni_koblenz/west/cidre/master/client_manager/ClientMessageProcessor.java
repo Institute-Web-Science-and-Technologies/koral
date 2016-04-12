@@ -37,6 +37,8 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
 
   private final String[] ftpServer;
 
+  private final String internalFtpIpAddress;
+
   private final Map<String, Integer> clientAddress2Id;
 
   private final Map<String, GraphLoaderTask> clientAddress2GraphLoaderTask;
@@ -65,6 +67,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     this.clientConnections = clientConnections;
     this.master = master;
     ftpServer = conf.getFTPServer();
+    internalFtpIpAddress = conf.getMaster()[0];
     numberOfChunks = conf.getNumberOfSlaves();
     tmpDir = new File(conf.getTmpDir());
     if (!tmpDir.exists() || !tmpDir.isDirectory()) {
@@ -226,8 +229,8 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
             break;
           }
           GraphLoaderTask loaderTask = new GraphLoaderTask(clientID.intValue(), clientConnections,
-                  master.getNetworkManager(), ftpServer[0], ftpServer[1], master.getDictionary(),
-                  master.getStatistics(), tmpDir, master, logger);
+                  master.getNetworkManager(), ftpServer[0], internalFtpIpAddress, ftpServer[1],
+                  master.getDictionary(), master.getStatistics(), tmpDir, master, logger);
           clientAddress2GraphLoaderTask.put(address, loaderTask);
           loaderTask.loadGraph(arguments, numberOfChunks);
           break;

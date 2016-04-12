@@ -90,6 +90,8 @@ public class CidreClient {
           FTPClient ftpClient = new FTPClient(null);
           for (File file : files) {
             if ((file != null) && file.exists()) {
+              System.out.println("uploading " + file.getAbsolutePath() + " to " + master[0] + ":"
+                      + ftpServer[1]);
               ftpClient.uploadFile(file, master[0], ftpServer[1]);
             }
           }

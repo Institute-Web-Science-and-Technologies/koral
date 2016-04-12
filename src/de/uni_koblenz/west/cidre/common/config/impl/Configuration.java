@@ -51,8 +51,9 @@ public class Configuration implements Configurable {
     this.masterPort = masterPort;
   }
 
-  @Property(name = "ftpServer", description = "The ip and port of the FTP server started at the master server, e.g., 192.168.0.1:2121. If no port is specified, the default port "
-          + Configuration.DEFAULT_FTP_PORT + " is used."
+  @Property(name = "ftpServer", description = "The external ip and the internal and external port of the FTP server started at the master server, e.g., 192.168.0.1:2121."
+          + " If no port is specified, the default port " + Configuration.DEFAULT_FTP_PORT
+          + " is used."
           + " The FTP server is used to upload the graph files from the client to the master and the graph chunks from the master to the slaves."
           + " The FTP server runs only during the filetransfer.")
   private String ftpServerIP;

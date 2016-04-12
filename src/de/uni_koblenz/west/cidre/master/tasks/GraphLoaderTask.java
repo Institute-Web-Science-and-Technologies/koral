@@ -64,7 +64,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   private final MessageNotifier messageNotifier;
 
-  private final String ftpIpAddress;
+  private final String externalFtpIpAddress;
+
+  private final String internalFtpIpAddress;
 
   private final String ftpPort;
 
@@ -75,8 +77,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
   private boolean isStarted;
 
   public GraphLoaderTask(int clientID, ClientConnectionManager clientConnections,
-          NetworkManager slaveConnections, String ftpIpAddress, String ftpPort,
-          DictionaryEncoder dictionary, GraphStatistics statistics, File tmpDir,
+          NetworkManager slaveConnections, String externalFtpIpAddress, String internalFtpIpAddress,
+          String ftpPort, DictionaryEncoder dictionary, GraphStatistics statistics, File tmpDir,
           MessageNotifier messageNotifier, Logger logger) {
     setDaemon(true);
     graphIsLoadingOrLoaded = true;
@@ -88,7 +90,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
     this.statistics = statistics;
     this.messageNotifier = messageNotifier;
     this.logger = logger;
-    this.ftpIpAddress = ftpIpAddress;
+    this.externalFtpIpAddress = externalFtpIpAddress;
+    this.internalFtpIpAddress = internalFtpIpAddress;
     this.ftpPort = ftpPort;
     ftpServer = new FTPServer();
     workingDir = new File(
@@ -147,15 +150,13 @@ public class GraphLoaderTask extends Thread implements Closeable {
     coverCreator = GraphCoverCreatorFactory.getGraphCoverCreator(coverStrategy, logger);
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
-    ftpServer.start(ftpIpAddress, ftpPort, workingDir);
-    if (logger != null) {
-      logger.finest("FTP server started");
-    }
+    ftpServer.start(externalFtpIpAddress, ftpPort, workingDir);
     clientConnections.send(clientId, MessageUtils.createStringMessage(MessageType.MASTER_SEND_FILES,
-            ftpIpAddress + ":" + ftpPort, logger));
+            externalFtpIpAddress + ":" + ftpPort, logger));
   }
 
   public void receiveFilesSent() {
+    ftpServer.close();
     start();
   }
 
@@ -169,6 +170,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       File[] chunks = createGraphChunks();
       File[] encodedFiles = encodeGraphFiles(chunks);
 
+      ftpServer.start(internalFtpIpAddress, ftpPort, workingDir);
       numberOfBusySlaves = 0;
       List<GraphLoaderListener> listeners = new ArrayList<>();
       for (int i = 0; i < encodedFiles.length; i++) {
@@ -182,7 +184,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
         listeners.add(listener);
         messageNotifier.registerMessageListener(GraphLoaderListener.class, listener);
         slaveConnections.sendMore(i + 1, new byte[] { MessageType.START_FILE_TRANSFER.getValue() });
-        slaveConnections.sendMore(i + 1, (ftpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
+        slaveConnections.sendMore(i + 1, (externalFtpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
         slaveConnections.send(i + 1, file.getName().getBytes("UTF-8"));
       }
 
@@ -324,9 +326,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
       keepAliveThread.interrupt();
     }
     ftpServer.close();
-    if (logger != null) {
-      logger.finest("FTP server stopped");
-    }
     deleteContent(workingDir);
     workingDir.delete();
   }
