@@ -13,6 +13,7 @@ import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
 import de.uni_koblenz.west.cidre.common.executor.WorkerManager;
 import de.uni_koblenz.west.cidre.common.logger.JeromqStreamHandler;
 import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
+import de.uni_koblenz.west.cidre.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.cidre.common.messages.MessageListener;
 import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.networManager.NetworkManager;
@@ -35,6 +36,8 @@ import java.util.logging.Logger;
 public abstract class CidreSystem extends Thread implements MessageNotifier {
 
   protected Logger logger;
+
+  protected MeasurementCollector measurmentCollector;
 
   private volatile boolean continueRunning;
 
@@ -81,6 +84,11 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
         }
         e.printStackTrace();
       }
+    }
+
+    if (conf.getRomoteMeasurementReceiver() != null) {
+      measurmentCollector = new MeasurementCollector(conf, currentAddress,
+              conf.getRomoteMeasurementReceiver());
     }
 
     this.networkManager = networkManager;
@@ -294,6 +302,9 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
   public void shutDown() {
     workerManager.close();
     networkManager.close();
+    if (measurmentCollector != null) {
+      measurmentCollector.close();
+    }
   }
 
   public void clear() {
@@ -328,10 +339,17 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
                     + JeromqStreamHandler.DEFAULT_PORT + " is used as default.")
             .required(false).build();
 
+    Option measurementReceiver = Option.builder("m").longOpt("measurementReceiver").hasArg()
+            .argName("measurementReceiverIP:Port")
+            .desc("remote receiver to which measurement are sent. If no port is specified, port "
+                    + MeasurementCollector.DEFAULT_PORT + " is used as default.")
+            .required(false).build();
+
     Options options = new Options();
     options.addOption(help);
     options.addOption(config);
     options.addOption(remoteLogger);
+    options.addOption(measurementReceiver);
     return options;
   }
 
@@ -358,12 +376,17 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
       conf.setRomoteLoggerReceiver(line.getOptionValue("r"));
     }
 
+    if (line.hasOption("m")) {
+      conf.setRomoteMeasurementReceiver(line.getOptionValue("m"));
+    }
+
     return conf;
   }
 
   protected static void printUsage(String className, Options options, String additionalArgs) {
     HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("java " + className + " [-h] [-c <configFile>] [-r <receiverIP:Port>] "
+    formatter.printHelp("java " + className
+            + " [-h] [-c <configFile>] [-r <receiverIP:Port>] [-m <measurementReceiverIP:Port>]"
             + additionalArgs, options);
   }
 

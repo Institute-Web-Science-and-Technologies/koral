@@ -149,6 +149,16 @@ public class Configuration implements Configurable {
     this.romoteLoggerReceiver = romoteLoggerReceiver;
   }
 
+  private String romoteMeasurementReceiver;
+
+  public String getRomoteMeasurementReceiver() {
+    return romoteMeasurementReceiver;
+  }
+
+  public void setRomoteMeasurementReceiver(String romoteMeasurementReceiver) {
+    this.romoteMeasurementReceiver = romoteMeasurementReceiver;
+  }
+
   @Property(name = "logLevel", description = "Sets the logging level to one of: OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL")
   private Level loglevel = Level.INFO;
 
