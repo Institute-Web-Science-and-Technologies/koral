@@ -316,7 +316,7 @@ public class RDFFileIterator
     if ((iterator != null) && iterator.hasNext()) {
       iterator.next();
     }
-    if (deleteReadFiles) {
+    if (deleteReadFiles && (rdfFiles != null) && (rdfFiles.length > 0)) {
       rdfFiles[rdfFiles.length - 1].delete();
     }
   }
