@@ -300,7 +300,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
   }
 
   private void processFilesSent(byte[] message) {
-    String address = MessageUtils.convertToString(message, logger);
+    String address = MessageUtils.extractMessageString(message, logger);
 
     if (address.trim().isEmpty()) {
       if (logger != null) {
@@ -425,10 +425,6 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     if (address != null) {
       terminateTask(address);
       clientAddress2Id.remove(address);
-      if (logger != null) {
-        // TODO remove
-        logger.info("removed client address " + address);
-      }
     }
   }
 
