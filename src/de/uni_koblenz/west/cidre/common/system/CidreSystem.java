@@ -37,7 +37,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
 
   protected Logger logger;
 
-  protected MeasurementCollector measurmentCollector;
+  protected MeasurementCollector measurementCollector;
 
   private volatile boolean continueRunning;
 
@@ -87,7 +87,7 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
     }
 
     if (conf.getRomoteMeasurementReceiver() != null) {
-      measurmentCollector = new MeasurementCollector(conf, currentAddress,
+      measurementCollector = new MeasurementCollector(conf, currentAddress,
               conf.getRomoteMeasurementReceiver());
     }
 
@@ -302,8 +302,8 @@ public abstract class CidreSystem extends Thread implements MessageNotifier {
   public void shutDown() {
     workerManager.close();
     networkManager.close();
-    if (measurmentCollector != null) {
-      measurmentCollector.close();
+    if (measurementCollector != null) {
+      measurementCollector.close();
     }
   }
 

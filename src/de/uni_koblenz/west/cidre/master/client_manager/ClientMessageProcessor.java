@@ -3,6 +3,8 @@ package de.uni_koblenz.west.cidre.master.client_manager;
 import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.cidre.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.cidre.common.measurement.MeasurementType;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
 import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionCoordinator;
@@ -28,6 +30,8 @@ import java.util.regex.Pattern;
 public class ClientMessageProcessor implements Closeable, ClosedConnectionListener {
 
   private final Logger logger;
+
+  private final MeasurementCollector measurementCollector;
 
   private final ClientConnectionManager clientConnections;
 
@@ -62,8 +66,9 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
   private final MapDBCacheOptions cacheType;
 
   public ClientMessageProcessor(Configuration conf, ClientConnectionManager clientConnections,
-          CidreMaster master, Logger logger) {
+          CidreMaster master, Logger logger, MeasurementCollector measurementCollector) {
     this.logger = logger;
+    this.measurementCollector = measurementCollector;
     this.clientConnections = clientConnections;
     this.master = master;
     ftpServer = conf.getFTPServer();
@@ -142,6 +147,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     clientAddress2Id.put(address, clientID);
     clientConnections.send(clientID,
             new byte[] { MessageType.CLIENT_CONNECTION_CONFIRMATION.getValue() });
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.CLIENT_STARTS_CONNECTION,
+              System.currentTimeMillis(), address, new Integer(clientID).toString());
+    }
   }
 
   private void processKeepAlive(byte[] message) {
@@ -288,12 +297,20 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     if (logger != null) {
       logger.finer("Dropping database");
     }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.CLIENT_DROP_START,
+              System.currentTimeMillis(), new Integer(clientID).toString());
+    }
     Thread keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections, clientID);
     keepAliveThread.start();
     master.clear();
     keepAliveThread.interrupt();
     clientConnections.send(clientID, MessageUtils.createStringMessage(
             MessageType.CLIENT_COMMAND_SUCCEEDED, "Database is dropped, successfully.", logger));
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.CLIENT_DROP_END, System.currentTimeMillis(),
+              new Integer(clientID).toString());
+    }
     if (logger != null) {
       logger.finer("Database is dropped.");
     }
@@ -345,6 +362,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
           logger.finer("unknown aborted command: " + parts[1]);
         }
     }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.CLIENT_ABORTS_CONNECTION,
+              System.currentTimeMillis(), parts[0], parts[1]);
+    }
   }
 
   private void terminateTask(String address) {
@@ -377,6 +398,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     cID = clientAddress2Id.get(address);
     if (cID != null) {
       clientConnections.closeConnection(cID.intValue());
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.CLIENT_CLOSES_CONNECTION,
+                System.currentTimeMillis(), address, new Integer(cID).toString());
+      }
     } else if (logger != null) {
       logger.finest("ignoring attempt from client " + address
               + " to close the connection. Connection already closed.");
@@ -425,6 +450,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     if (address != null) {
       terminateTask(address);
       clientAddress2Id.remove(address);
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.CLIENT_CONNECTION_TIMEOUT,
+                System.currentTimeMillis(), address, new Integer(clientID).toString());
+      }
     }
   }
 

@@ -67,11 +67,25 @@ public class MeasurementCollector implements Closeable {
     measureValue(type, new Character(value).toString());
   }
 
-  public void measureValue(MeasurementType type, String value) {
-    send(MeasurementCollector.rowSeparator + currentServer + MeasurementCollector.columnSeparator
-            + (messageId++) + MeasurementCollector.columnSeparator + System.currentTimeMillis()
-            + MeasurementCollector.columnSeparator + type + MeasurementCollector.columnSeparator
-            + value);
+  public void measureValue(MeasurementType type, long time, String... values) {
+    String[] newValues = new String[values.length + 1];
+    newValues[0] = new Long(time).toString();
+    System.arraycopy(values, 0, newValues, 1, values.length);
+    measureValue(type, newValues);
+  }
+
+  public void measureValue(MeasurementType type, String... values) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(MeasurementCollector.rowSeparator + currentServer
+            + MeasurementCollector.columnSeparator + (messageId++)
+            + MeasurementCollector.columnSeparator + System.currentTimeMillis()
+            + MeasurementCollector.columnSeparator + type + MeasurementCollector.columnSeparator);
+    String delim = "";
+    for (String value : values) {
+      sb.append(delim).append(value);
+      delim = MeasurementCollector.columnSeparator;
+    }
+    send(sb.toString());
   }
 
   private void send(String message) {
@@ -92,7 +106,7 @@ public class MeasurementCollector implements Closeable {
     return "SERVER" + MeasurementCollector.columnSeparator + "MESSAGE_NUMBER"
             + MeasurementCollector.columnSeparator + "TIMESTAMP"
             + MeasurementCollector.columnSeparator + "MEASUREMENT_TYPE"
-            + MeasurementCollector.columnSeparator + "MEASURED_VALUE";
+            + MeasurementCollector.columnSeparator + "MEASURED_VALUE*";
   }
 
 }
