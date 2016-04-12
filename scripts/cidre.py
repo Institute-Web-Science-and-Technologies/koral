@@ -11,9 +11,9 @@ def update():
     execute(updateCIDRE.updateMaster)
     execute(updateCIDRE.updateSlave)
 
-def start(remoteLogger=-1):
-    execute(manageCIDRE.startMaster, remoteLogger)
-    execute(manageCIDRE.startSlave, remoteLogger)
+def start(remoteLogger=-1, remoteMeasurementCollector=-1):
+    execute(manageCIDRE.startMaster, remoteLogger, remoteMeasurementCollector)
+    execute(manageCIDRE.startSlave, remoteLogger, remoteMeasurementCollector)
 
 def stop():
     execute(manageCIDRE.stopSlave)
