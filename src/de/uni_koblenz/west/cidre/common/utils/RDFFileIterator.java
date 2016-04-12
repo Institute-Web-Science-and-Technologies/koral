@@ -310,7 +310,9 @@ public class RDFFileIterator
   @Override
   public void close() {
     executor.shutdown();
-    readerRunner.close();
+    if (readerRunner != null) {
+      readerRunner.close();
+    }
     if ((iterator != null) && iterator.hasNext()) {
       iterator.next();
     }
