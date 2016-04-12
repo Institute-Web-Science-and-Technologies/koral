@@ -425,6 +425,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     if (address != null) {
       terminateTask(address);
       clientAddress2Id.remove(address);
+      if (logger != null) {
+        // TODO remove
+        logger.info("removed client address " + address);
+      }
     }
   }
 
