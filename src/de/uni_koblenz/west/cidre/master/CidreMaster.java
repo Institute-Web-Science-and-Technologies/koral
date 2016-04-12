@@ -17,7 +17,6 @@ import de.uni_koblenz.west.cidre.master.networkManager.MasterNetworkManager;
 import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
 
 import java.nio.BufferUnderflowException;
-import java.util.Arrays;
 
 /**
  * The CIDRE master implementation.
@@ -96,26 +95,15 @@ public class CidreMaster extends CidreSystem {
       messageType = MessageType.valueOf(receivedMessage[0]);
       switch (messageType) {
         case GRAPH_LOADING_COMPLETE:
-          byte[][] message = new byte[2][];
-          message[0] = new byte[] { receivedMessage[0] };
-          message[1] = new byte[2];
-          System.arraycopy(receivedMessage, 1, message[1], 0, message[1].length);
-          short slaveID = NumberConversion.bytes2short(message[1]);
-          notifyMessageListener(messageType.getListenerType(), slaveID, message);
-          break;
         case GRAPH_LOADING_FAILED:
-          message = new byte[3][];
-          message[0] = new byte[] { receivedMessage[0] };
-          message[1] = Arrays.copyOfRange(receivedMessage, 1, 3);
-          message[2] = Arrays.copyOfRange(receivedMessage, 3, receivedMessage.length);
-          slaveID = NumberConversion.bytes2short(message[1]);
-          notifyMessageListener(messageType.getListenerType(), slaveID, message);
+          short senderID = NumberConversion.bytes2short(receivedMessage, 1);
+          notifyMessageListener(messageType.getListenerType(), senderID, receivedMessage);
           break;
         case QUERY_CREATED:
         case QUERY_MAPPING_BATCH:
         case QUERY_TASK_FINISHED:
         case QUERY_TASK_FAILED:
-          short senderID = NumberConversion.bytes2short(receivedMessage, 1);
+          senderID = NumberConversion.bytes2short(receivedMessage, 1);
           notifyMessageListener(MessageReceiverListener.class, senderID, receivedMessage);
           break;
         default:
