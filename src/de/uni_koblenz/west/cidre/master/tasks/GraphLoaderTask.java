@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -166,6 +167,11 @@ public class GraphLoaderTask extends Thread implements Closeable {
     try {
       keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections, clientId);
       keepAliveThread.start();
+
+      if (logger != null) {
+        // TODO remove
+        logger.info(Arrays.toString(workingDir.list()));
+      }
 
       File[] chunks = createGraphChunks();
       File[] encodedFiles = encodeGraphFiles(chunks);
