@@ -53,7 +53,7 @@ public class NHopReplicator {
       DBMaker<?> dbmaker = MapDBStorageOptions.MEMORY_MAPPED_FILE
               .getDBMaker(mapFolder.getAbsolutePath() + File.separator + "nHopReplication")
               .transactionDisable().closeOnJvmShutdown().asyncWriteEnable();
-      dbmaker = MapDBCacheOptions.HASH_TABLE.setCaching(dbmaker);
+      dbmaker = MapDBCacheOptions.HASH_TABLE.setCaching(dbmaker).compressionEnable();
       DB database = dbmaker.make();
 
       HTreeMap<String, Set<String[]>> moleculeMap = database.createHashMap("molecules").makeOrGet();
