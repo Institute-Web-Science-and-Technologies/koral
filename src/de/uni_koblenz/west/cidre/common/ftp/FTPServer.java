@@ -62,7 +62,7 @@ public class FTPServer implements Closeable {
       BaseUser user = new BaseUser();
       user.setName(username);
       user.setPassword(password);
-      user.setHomeDirectory(ftpFolder.getAbsolutePath());
+      user.setHomeDirectory(workingDir.getAbsolutePath());
       List<Authority> authorities = new ArrayList<>();
       authorities.add(new WritePermission());
       user.setAuthorities(authorities);
