@@ -20,7 +20,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -168,11 +167,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
       keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections, clientId);
       keepAliveThread.start();
 
-      if (logger != null) {
-        // TODO remove
-        logger.info(Arrays.toString(workingDir.list()));
-      }
-
       File[] chunks = createGraphChunks();
       File[] encodedFiles = encodeGraphFiles(chunks);
 
@@ -190,7 +184,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
         listeners.add(listener);
         messageNotifier.registerMessageListener(GraphLoaderListener.class, listener);
         slaveConnections.sendMore(i + 1, new byte[] { MessageType.START_FILE_TRANSFER.getValue() });
-        slaveConnections.sendMore(i + 1, (externalFtpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
+        slaveConnections.sendMore(i + 1, (internalFtpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
         slaveConnections.send(i + 1, file.getName().getBytes("UTF-8"));
       }
 
