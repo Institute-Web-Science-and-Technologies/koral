@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.cidre.master.tasks;
 
 import de.uni_koblenz.west.cidre.common.ftp.FTPServer;
+import de.uni_koblenz.west.cidre.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.cidre.common.measurement.MeasurementType;
 import de.uni_koblenz.west.cidre.common.messages.MessageNotifier;
 import de.uni_koblenz.west.cidre.common.messages.MessageType;
 import de.uni_koblenz.west.cidre.common.messages.MessageUtils;
@@ -39,6 +41,8 @@ import java.util.logging.Logger;
 public class GraphLoaderTask extends Thread implements Closeable {
 
   private final Logger logger;
+
+  private final MeasurementCollector measurementCollector;
 
   private final int clientId;
 
@@ -79,7 +83,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
   public GraphLoaderTask(int clientID, ClientConnectionManager clientConnections,
           NetworkManager slaveConnections, String externalFtpIpAddress, String internalFtpIpAddress,
           String ftpPort, DictionaryEncoder dictionary, GraphStatistics statistics, File tmpDir,
-          MessageNotifier messageNotifier, Logger logger) {
+          MessageNotifier messageNotifier, Logger logger, MeasurementCollector collector) {
     setDaemon(true);
     graphIsLoadingOrLoaded = true;
     isStarted = false;
@@ -90,6 +94,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
     this.statistics = statistics;
     this.messageNotifier = messageNotifier;
     this.logger = logger;
+    measurementCollector = collector;
     this.externalFtpIpAddress = externalFtpIpAddress;
     this.internalFtpIpAddress = internalFtpIpAddress;
     this.ftpPort = ftpPort;
@@ -147,16 +152,30 @@ public class GraphLoaderTask extends Thread implements Closeable {
       logger.finer("loadGraph(coverStrategy=" + coverStrategy.name() + ", replicationPathLength="
               + replicationPathLength + ", numberOfFiles=" + numberOfFiles + ")");
     }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_START,
+              System.currentTimeMillis(), coverStrategy.toString(),
+              new Integer(replicationPathLength).toString(),
+              new Integer(numberOfGraphChunks).toString());
+    }
     coverCreator = GraphCoverCreatorFactory.getGraphCoverCreator(coverStrategy, logger);
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
     ftpServer.start(externalFtpIpAddress, ftpPort, workingDir);
     clientConnections.send(clientId, MessageUtils.createStringMessage(MessageType.MASTER_SEND_FILES,
             externalFtpIpAddress + ":" + ftpPort, logger));
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FILE_TRANSFER_TO_MASTER_START,
+              System.currentTimeMillis());
+    }
   }
 
   public void receiveFilesSent() {
     ftpServer.close();
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FILE_TRANSFER_TO_MASTER_END,
+              System.currentTimeMillis());
+    }
     start();
   }
 
@@ -276,11 +295,28 @@ public class GraphLoaderTask extends Thread implements Closeable {
     clientConnections.send(clientId, MessageUtils.createStringMessage(
             MessageType.MASTER_WORK_IN_PROGRESS, "Started creation of graph cover.", logger));
 
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_START,
+              System.currentTimeMillis());
+    }
     RDFFileIterator rdfFiles = new RDFFileIterator(workingDir, true, logger);
     File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir, numberOfGraphChunks);
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_END,
+              System.currentTimeMillis());
+    }
+
     if (replicationPathLength != 0) {
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_START,
+                System.currentTimeMillis());
+      }
       NHopReplicator replicator = new NHopReplicator(logger);
       chunks = replicator.createNHopReplication(chunks, workingDir, replicationPathLength);
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_END,
+                System.currentTimeMillis());
+      }
     }
 
     if (logger != null) {
@@ -295,9 +331,17 @@ public class GraphLoaderTask extends Thread implements Closeable {
     if (logger != null) {
       logger.finer("encoding of graph chunks");
     }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_START,
+              System.currentTimeMillis());
+    }
     clientConnections.send(clientId, MessageUtils.createStringMessage(
             MessageType.MASTER_WORK_IN_PROGRESS, "Started encoding of graph chunks.", logger));
     File[] encodedFiles = dictionary.encodeGraphChunks(plainGraphChunks, statistics, workingDir);
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
+              System.currentTimeMillis());
+    }
     if (logger != null) {
       logger.finer("encoding of graph chunks finished");
     }
@@ -328,6 +372,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
     ftpServer.close();
     deleteContent(workingDir);
     workingDir.delete();
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINISHED,
+              System.currentTimeMillis());
+    }
   }
 
 }

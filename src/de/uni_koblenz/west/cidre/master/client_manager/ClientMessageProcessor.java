@@ -237,9 +237,14 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
                     .createStringMessage(MessageType.CLIENT_COMMAND_FAILED, errorMessage, logger));
             break;
           }
+          if (measurementCollector != null) {
+            measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_MESSAGE_RECEIPTION,
+                    System.currentTimeMillis());
+          }
           GraphLoaderTask loaderTask = new GraphLoaderTask(clientID.intValue(), clientConnections,
                   master.getNetworkManager(), ftpServer[0], internalFtpIpAddress, ftpServer[1],
-                  master.getDictionary(), master.getStatistics(), tmpDir, master, logger);
+                  master.getDictionary(), master.getStatistics(), tmpDir, master, logger,
+                  measurementCollector);
           clientAddress2GraphLoaderTask.put(address, loaderTask);
           loaderTask.loadGraph(arguments, numberOfChunks);
           break;
