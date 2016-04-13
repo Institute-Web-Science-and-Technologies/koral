@@ -18,6 +18,7 @@ public class CIDRE {
   public static void main(String[] args) {
     if (args.length < 1) {
       CIDRE.printUsage();
+      return;
     }
     String[] followUpArgs = new String[args.length - 1];
     System.arraycopy(args, 1, followUpArgs, 0, followUpArgs.length);
