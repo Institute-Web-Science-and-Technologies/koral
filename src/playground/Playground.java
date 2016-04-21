@@ -2,24 +2,24 @@ package playground;
 
 import org.apache.jena.query.QueryFactory;
 
-import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.query.Mapping;
-import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.query.TriplePattern;
-import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
-import de.uni_koblenz.west.cidre.common.query.execution.QueryExecutionTreeDeserializer;
-import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorBase;
-import de.uni_koblenz.west.cidre.common.query.execution.QueryOperatorTask;
-import de.uni_koblenz.west.cidre.common.query.parser.QueryExecutionTreeType;
-import de.uni_koblenz.west.cidre.common.query.parser.SparqlParser;
-import de.uni_koblenz.west.cidre.common.query.parser.VariableDictionary;
-import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
-import de.uni_koblenz.west.cidre.master.dictionary.DictionaryEncoder;
-import de.uni_koblenz.west.cidre.master.graph_cover_creator.GraphCoverCreator;
-import de.uni_koblenz.west.cidre.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.cidre.master.graph_cover_creator.impl.MinimalEdgeCutCover;
-import de.uni_koblenz.west.cidre.master.statisticsDB.GraphStatistics;
-import de.uni_koblenz.west.cidre.slave.triple_store.TripleStoreAccessor;
+import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.query.Mapping;
+import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.koral.common.query.TriplePattern;
+import de.uni_koblenz.west.koral.common.query.TriplePatternType;
+import de.uni_koblenz.west.koral.common.query.execution.QueryExecutionTreeDeserializer;
+import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorBase;
+import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorTask;
+import de.uni_koblenz.west.koral.common.query.parser.QueryExecutionTreeType;
+import de.uni_koblenz.west.koral.common.query.parser.SparqlParser;
+import de.uni_koblenz.west.koral.common.query.parser.VariableDictionary;
+import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
+import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.NHopReplicator;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
+import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
+import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,7 +27,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 /**
- * A class to test source code. Not used within CIDRE.
+ * A class to test source code. Not used within Koral.
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
@@ -35,7 +35,7 @@ import java.io.IOException;
 public class Playground {
 
   public static void main(String[] args) {
-    File workingDir = new File(System.getProperty("java.io.tmpdir") + File.separator + "cidreTest");
+    File workingDir = new File(System.getProperty("java.io.tmpdir") + File.separator + "koralTest");
     if (!workingDir.exists()) {
       workingDir.mkdir();
     }

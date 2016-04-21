@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="jar" name="Create Runnable Jar for Project cidre">
+<project default="jar" name="Create Runnable Jar for Project koral">
 
 	<property name="build.dir" value="build" />
 	<property name="class.dir" value="${build.dir}/classes" />
 	<property name="jar.dir" value="${build.dir}" />
 	<property name="lib.dir" value="lib" />
-	<property name="project_name" value="cidre" />
-	<property name="mainclass" value="de.uni_koblenz.west.cidre.CIDRE" />
+	<property name="project_name" value="koral" />
+	<property name="mainclass" value="de.uni_koblenz.west.koral.Koral" />
 
 	<path id="class.path">
 		<fileset dir="${lib.dir}">

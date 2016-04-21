@@ -1,16 +1,16 @@
 package playground;
 
-import de.uni_koblenz.west.cidre.common.mapDB.MapDBCacheOptions;
-import de.uni_koblenz.west.cidre.common.mapDB.MapDBStorageOptions;
-import de.uni_koblenz.west.cidre.common.query.Mapping;
-import de.uni_koblenz.west.cidre.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.cidre.common.query.TriplePattern;
-import de.uni_koblenz.west.cidre.common.query.TriplePatternType;
-import de.uni_koblenz.west.cidre.common.utils.JoinMappingCache;
-import de.uni_koblenz.west.cidre.common.utils.MapDBJoinMappingCache;
-import de.uni_koblenz.west.cidre.common.utils.MappingIteratorWrapper;
-import de.uni_koblenz.west.cidre.common.utils.NumberConversion;
-import de.uni_koblenz.west.cidre.slave.triple_store.impl.IndexType;
+import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.koral.common.query.Mapping;
+import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
+import de.uni_koblenz.west.koral.common.query.TriplePattern;
+import de.uni_koblenz.west.koral.common.query.TriplePatternType;
+import de.uni_koblenz.west.koral.common.utils.JoinMappingCache;
+import de.uni_koblenz.west.koral.common.utils.MapDBJoinMappingCache;
+import de.uni_koblenz.west.koral.common.utils.MappingIteratorWrapper;
+import de.uni_koblenz.west.koral.common.utils.NumberConversion;
+import de.uni_koblenz.west.koral.slave.triple_store.impl.IndexType;
 
 import java.io.File;
 

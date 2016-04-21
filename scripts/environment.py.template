@@ -2,8 +2,8 @@ from fabric.api import *
 
 # addresses of masters and slaves
 env.roledefs = {
-	'master': ["cidre-master"],
-	'slaves': ["cidre-slave001", "cidre-slave002"]
+	'master': ["koral-master"],
+	'slaves': ["koral-slave001", "koral-slave002"]
 }
 
 # define user by

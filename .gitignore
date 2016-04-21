@@ -15,5 +15,5 @@
 # backup files
 *~
 *.bak
-/cidreConfig.xml
+/koralConfig.xml
 /build/

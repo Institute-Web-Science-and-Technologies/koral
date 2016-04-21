@@ -1,9 +1,9 @@
 package playground;
 
-import de.uni_koblenz.west.cidre.common.config.Configurable;
-import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.config.impl.XMLDeserializer;
-import de.uni_koblenz.west.cidre.common.config.impl.XMLSerializer;
+import de.uni_koblenz.west.koral.common.config.Configurable;
+import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.config.impl.XMLDeserializer;
+import de.uni_koblenz.west.koral.common.config.impl.XMLSerializer;
 
 /**
  * If a new configuration option is added to {@link Configuration}, this class
@@ -15,8 +15,8 @@ import de.uni_koblenz.west.cidre.common.config.impl.XMLSerializer;
 public class UpdateConfigs {
 
   public static void main(String[] args) throws InstantiationException, IllegalAccessException {
-    update("cidreConfig.xml");
-    update("cidreConfig.xml.template");
+    UpdateConfigs.update("koralConfig.xml");
+    UpdateConfigs.update("koralConfig.xml.template");
   }
 
   private static void update(String confFile)

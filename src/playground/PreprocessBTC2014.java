@@ -9,11 +9,11 @@ import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sparql.core.Quad;
 
-import de.uni_koblenz.west.cidre.common.config.impl.Configuration;
-import de.uni_koblenz.west.cidre.common.logger.CSVFileHandler;
-import de.uni_koblenz.west.cidre.common.logger.LoggerFactory;
-import de.uni_koblenz.west.cidre.common.utils.GraphFileFilter;
-import de.uni_koblenz.west.cidre.common.utils.RDFFileIterator;
+import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.logger.CSVFileHandler;
+import de.uni_koblenz.west.koral.common.logger.LoggerFactory;
+import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
+import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
