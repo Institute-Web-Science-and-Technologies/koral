@@ -311,7 +311,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_START,
                 System.currentTimeMillis());
       }
-      NHopReplicator replicator = new NHopReplicator(logger);
+      NHopReplicator replicator = new NHopReplicator(logger, measurementCollector);
       chunks = replicator.createNHopReplication(chunks, workingDir, replicationPathLength);
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_END,

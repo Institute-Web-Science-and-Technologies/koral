@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.koral.slave.triple_store.loader.impl;
 
 import de.uni_koblenz.west.koral.common.ftp.FTPClient;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.messages.MessageNotifier;
 import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.master.KoralMaster;
@@ -25,6 +27,8 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 
   private final Logger logger;
 
+  private final MeasurementCollector measurementCollector;
+
   private final int slaveID;
 
   private final File workingDir;
@@ -41,8 +45,9 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
 
   public GraphChunkLoader(int slaveID, int numberOfSlaves, File workingDir,
           SlaveNetworkManager networkManager, TripleStoreAccessor tripleStore,
-          MessageNotifier messageNotifier, Logger logger) {
+          MessageNotifier messageNotifier, Logger logger, MeasurementCollector collector) {
     this.logger = logger;
+    measurementCollector = collector;
     this.slaveID = slaveID;
     connection = networkManager;
     this.tripleStore = tripleStore;
@@ -109,12 +114,29 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
   @Override
   public void run() {
     try {
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FILE_TRANSFER_TO_SLAVES_START,
+                System.currentTimeMillis());
+      }
       File graphChunk = new File(
               workingDir.getAbsolutePath() + File.separator + remoteGraphChunkFileName);
       FTPClient ftpClient = new FTPClient(logger);
       ftpClient.downloadFile(remoteGraphChunkFileName, graphChunk, ftpServer[0], ftpServer[1]);
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FILE_TRANSFER_TO_SLAVES_END,
+                System.currentTimeMillis());
+      }
+
       if (graphChunk.exists()) {
+        if (measurementCollector != null) {
+          measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_STORING_TRIPLES_START,
+                  System.currentTimeMillis());
+        }
         tripleStore.storeTriples(graphChunk);
+        if (measurementCollector != null) {
+          measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_STORING_TRIPLES_END,
+                  System.currentTimeMillis());
+        }
       }
     } catch (RuntimeException e) {
       if (logger != null) {

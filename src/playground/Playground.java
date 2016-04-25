@@ -52,11 +52,11 @@ public class Playground {
     GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null);
     File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 
-    NHopReplicator replicator = new NHopReplicator(null);
+    NHopReplicator replicator = new NHopReplicator(null, null);
     cover = replicator.createNHopReplication(cover, workingDir, 0);
 
     // encode cover and collect statistics
-    DictionaryEncoder encoder = new DictionaryEncoder(conf, null);
+    DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
     GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
     File[] encodedFiles = encoder.encodeGraphChunks(cover, statistics, workingDir);
 

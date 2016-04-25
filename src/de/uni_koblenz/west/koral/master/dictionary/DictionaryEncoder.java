@@ -8,6 +8,8 @@ import de.uni_koblenz.west.koral.common.mapDB.HashTreeMapWrapper;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBMapWrapper;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.dictionary.impl.MapDBDictionary;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
@@ -50,10 +52,13 @@ public class DictionaryEncoder implements Closeable {
 
   private final Logger logger;
 
+  private final MeasurementCollector measurementCollector;
+
   private final Dictionary dictionary;
 
-  public DictionaryEncoder(Configuration conf, Logger logger) {
+  public DictionaryEncoder(Configuration conf, Logger logger, MeasurementCollector collector) {
     this.logger = logger;
+    measurementCollector = collector;
     if (conf != null) {
       dictionary = new MapDBDictionary(conf.getDictionaryStorageType(),
               conf.getDictionaryDataStructure(), conf.getDictionaryDir(),
@@ -72,6 +77,10 @@ public class DictionaryEncoder implements Closeable {
 
   private File[] encodeGraphChunksAndCountStatistics(File[] plainGraphChunks,
           GraphStatistics statistics) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_START,
+              System.currentTimeMillis());
+    }
     File[] intermediateFiles = new File[plainGraphChunks.length];
     for (int i = 0; i < plainGraphChunks.length; i++) {
       if (plainGraphChunks[i] == null) {
@@ -99,11 +108,19 @@ public class DictionaryEncoder implements Closeable {
         throw new RuntimeException(e);
       }
     }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_END,
+              System.currentTimeMillis());
+    }
     return intermediateFiles;
   }
 
   private File[] setOwnership(File[] intermediateFiles, GraphStatistics statistics,
           File workingDir) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_OWNERSHIP_START,
+              System.currentTimeMillis());
+    }
     File[] encodedFiles = new File[intermediateFiles.length];
     File tmpDir = new File(workingDir.getAbsolutePath() + File.separatorChar + "ownerMap");
     if (!tmpDir.exists()) {
@@ -155,6 +172,15 @@ public class DictionaryEncoder implements Closeable {
       }
     } finally {
       deleteDirectory(tmpDir);
+    }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_OWNERSHIP_END,
+              System.currentTimeMillis());
+      String[] ownerLoad = new String[encodedFiles.length];
+      for (int i = 0; i < encodedFiles.length; i++) {
+        ownerLoad[i] = Long.toString(statistics.getOwnerLoad(i));
+      }
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_OWNERLOAD, ownerLoad);
     }
     return encodedFiles;
   }

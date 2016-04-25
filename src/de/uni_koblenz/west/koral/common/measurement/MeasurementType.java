@@ -100,9 +100,57 @@ public enum MeasurementType {
 
   /**
    * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_NHOP_REPLICATION_INIT_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_NHOP_REPLICATION_INIT_END,
+
+  /**
+   * measured on master<br>
+   * timestamp;stepNumber
+   */
+  LOAD_GRAPH_NHOP_REPLICATION_STEP_START,
+
+  /**
+   * measured on master<br>
+   * timestamp;stepNumber
+   */
+  LOAD_GRAPH_NHOP_REPLICATION_STEP_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_NHOP_REPLICATION_CONTAINMENT_UPDATE_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_NHOP_REPLICATION_CONTAINMENT_UPDATE_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_NHOP_REPLICATION_FILEWRITE_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_NHOP_REPLICATION_FILEWRITE_END,
+
+  /**
+   * measured on master<br>
    * numberOfTriples*
    */
-  REPLICATED_CHUNK_SIZES,
+  LOAD_GRAPH_REPLICATED_CHUNK_SIZES,
 
   /**
    * measured on master<br>
@@ -115,6 +163,36 @@ public enum MeasurementType {
    * timestamp
    */
   LOAD_GRAPH_ENCODING_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_ENCODING_ENCODING_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_ENCODING_ENCODING_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_ENCODING_OWNERSHIP_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_ENCODING_OWNERSHIP_END,
+
+  /**
+   * measured on master<br>
+   * numberOfOwnedRessourcesPerSlave*
+   */
+  LOAD_GRAPH_ENCODING_OWNERLOAD,
 
   /**
    * measured on master<br>
@@ -144,7 +222,7 @@ public enum MeasurementType {
    * measured on slave<br>
    * timestamp
    */
-  LOAD_GRAPH_FILE_STORING_TRIPLES_END,
+  LOAD_GRAPH_STORING_TRIPLES_END,
 
   /**
    * measured on master<br>

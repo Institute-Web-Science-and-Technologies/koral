@@ -38,7 +38,7 @@ public class KoralMaster extends KoralSystem {
     super(conf, conf.getMaster(), new MasterNetworkManager(conf, conf.getMaster()));
     try {
       ClientConnectionManager clientConnections = new ClientConnectionManager(conf, logger);
-      dictionary = new DictionaryEncoder(conf, logger);
+      dictionary = new DictionaryEncoder(conf, logger, measurementCollector);
       statistics = new GraphStatistics(conf, (short) conf.getNumberOfSlaves(), logger);
       clientMessageProcessor = new ClientMessageProcessor(conf, clientConnections, this, logger,
               measurementCollector);

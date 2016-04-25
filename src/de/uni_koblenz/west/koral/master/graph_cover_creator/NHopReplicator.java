@@ -12,6 +12,8 @@ import org.mapdb.HTreeMap;
 
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 
@@ -31,10 +33,13 @@ public class NHopReplicator {
 
   private final Logger logger;
 
+  private final MeasurementCollector measurementCollector;
+
   private final ArrayComparator<String> comparator;
 
-  public NHopReplicator(Logger logger) {
+  public NHopReplicator(Logger logger, MeasurementCollector measurementCollector) {
     this.logger = logger;
+    this.measurementCollector = measurementCollector;
     comparator = new ArrayComparator<>();
   }
 
@@ -64,12 +69,22 @@ public class NHopReplicator {
         if (logger != null) {
           logger.info("Performing " + n + "-hop replication");
         }
-        performHopStep(database, cover, moleculeMap);
+        performHopStep(database, cover, moleculeMap, n);
       }
 
       // update containment information
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_CONTAINMENT_UPDATE_START,
+                System.currentTimeMillis());
+      }
       for (int i = 0; i < cover.length; i++) {
         adjustContainment(i, cover[i], moleculeMap);
+      }
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_CONTAINMENT_UPDATE_END,
+                System.currentTimeMillis());
       }
 
       nHopReplicatedFiles = convertToFiles(cover, moleculeMap, workingDir);
@@ -89,10 +104,18 @@ public class NHopReplicator {
 
   private Set<String>[] createInitialCover(DB database, HTreeMap<String, Set<String[]>> moleculeMap,
           File[] graphCover) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_INIT_START,
+              System.currentTimeMillis());
+    }
     @SuppressWarnings("unchecked")
     Set<String>[] subjectSets = new Set[graphCover.length];
     for (int i = 0; i < graphCover.length; i++) {
       subjectSets[i] = createMapOutOfFile(database, moleculeMap, graphCover[i], i);
+    }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_INIT_END,
+              System.currentTimeMillis());
     }
     return subjectSets;
   }
@@ -126,9 +149,17 @@ public class NHopReplicator {
   }
 
   private void performHopStep(DB database, Set<String>[] cover,
-          HTreeMap<String, Set<String[]>> moleculeMap) {
+          HTreeMap<String, Set<String[]>> moleculeMap, int hopNumber) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_STEP_START,
+              System.currentTimeMillis(), Integer.toString(hopNumber));
+    }
     for (int currentCoverIndex = 0; currentCoverIndex < cover.length; currentCoverIndex++) {
       replicateTriples(database, cover[currentCoverIndex], moleculeMap);
+    }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_STEP_END,
+              System.currentTimeMillis(), Integer.toString(hopNumber));
     }
   }
 
@@ -207,15 +238,30 @@ public class NHopReplicator {
 
   private File[] convertToFiles(Set<String>[] cover, HTreeMap<String, Set<String[]>> moleculeMap,
           File workingDir) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_FILEWRITE_START,
+              System.currentTimeMillis());
+    }
     File[] chunks = new File[cover.length];
+    long[] numberOfTriples = new long[cover.length];
     for (int i = 0; i < cover.length; i++) {
-      chunks[i] = convertToFile(cover[i], i, moleculeMap, workingDir);
+      chunks[i] = convertToFile(cover[i], i, moleculeMap, workingDir, numberOfTriples);
+    }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_FILEWRITE_END,
+              System.currentTimeMillis());
+      String[] triplesPerChunk = new String[cover.length];
+      for (int i = 0; i < numberOfTriples.length; i++) {
+        triplesPerChunk[i] = Long.toString(numberOfTriples[i]);
+      }
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_REPLICATED_CHUNK_SIZES,
+              triplesPerChunk);
     }
     return chunks;
   }
 
   private File convertToFile(Set<String> subjects, int chunkIndex,
-          HTreeMap<String, Set<String[]>> moleculeMap, File workingDir) {
+          HTreeMap<String, Set<String[]>> moleculeMap, File workingDir, long[] numberOfTriples) {
     if (subjects == null) {
       return null;
     }
@@ -228,6 +274,7 @@ public class NHopReplicator {
         Set<String[]> molecule = moleculeMap.get(subject);
         if (molecule != null) {
           for (String[] triple : molecule) {
+            numberOfTriples[chunkIndex]++;
             Node[] statement = new Node[triple.length];
             for (int i = 0; i < triple.length; i++) {
               statement[i] = DeSerializer.deserializeNode(triple[i]);

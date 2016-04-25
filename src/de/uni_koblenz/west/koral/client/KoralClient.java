@@ -197,7 +197,7 @@ public class KoralClient {
     class DummyDictionaryEncoder extends DictionaryEncoder {
 
       public DummyDictionaryEncoder(Configuration conf, Logger logger) {
-        super(conf, logger);
+        super(conf, logger, null);
       }
 
       @Override

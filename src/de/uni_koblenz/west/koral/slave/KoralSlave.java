@@ -113,7 +113,8 @@ public class KoralSlave extends KoralSystem {
                     tmpDir.getAbsolutePath() + File.separatorChar + "graphLoader" + slaveID);
             GraphChunkListener loader = new GraphChunkLoader(slaveID,
                     getNetworkManager().getNumberOfSlaves(), workingDir,
-                    (SlaveNetworkManager) getNetworkManager(), tripleStore, this, logger);
+                    (SlaveNetworkManager) getNetworkManager(), tripleStore, this, logger,
+                    measurementCollector);
             registerMessageListener(GraphChunkListener.class, loader);
             notifyMessageListener(messageType.getListenerType(), slaveID, message);
             break;
