@@ -105,13 +105,13 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
    * @param receivedMessage
    */
   public void startQuery(byte[] receivedMessage) {
-    for (WorkerTask task : receiver.getAllTasksOfQuery(receivedMessage, Short.BYTES)) {
+    for (WorkerTask task : receiver.getAllTasksOfQuery(receivedMessage, 1)) {
       task.start();
     }
   }
 
   public void abortQuery(byte[] receivedMessage) {
-    Set<WorkerTask> queryTasks = receiver.getAllTasksOfQuery(receivedMessage, Short.BYTES);
+    Set<WorkerTask> queryTasks = receiver.getAllTasksOfQuery(receivedMessage, 1);
     Iterator<WorkerTask> iterator = tasks.iterator();
     while (iterator.hasNext()) {
       WorkerTask task = iterator.next();
@@ -155,7 +155,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
       rebalance();
       if (tasks.isEmpty()) {
         try {
-          Thread.sleep(100);
+          sleep(100);
         } catch (InterruptedException e) {
         }
       }
@@ -209,7 +209,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
   }
 
   private Set<WorkerTask> getTasksToShift(long unbalancedLoad) {
-    if ((unbalancedLoad <= 0) || !tasks.isEmpty()) {
+    if (unbalancedLoad <= 0 || !tasks.isEmpty()) {
       return new HashSet<>();
     }
 
@@ -217,7 +217,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
     NavigableSet<WorkerTask> relevantTasks = new TreeSet<>(new WorkerTaskComparator(true));
     for (WorkerTask task : tasks) {
       long load = task.getCurrentTaskLoad();
-      if ((load == 0) || (load > unbalancedLoad)) {
+      if (load == 0 || load > unbalancedLoad) {
         continue;
       }
       relevantTasks.add(task);
