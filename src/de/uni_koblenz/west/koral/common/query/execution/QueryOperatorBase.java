@@ -77,7 +77,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   }
 
   public void setParentTask(WorkerTask parent) {
-    if (parent == null || !(parent instanceof QueryOperatorBase)) {
+    if ((parent == null) || !(parent instanceof QueryOperatorBase)) {
       throw new IllegalArgumentException(
               "The parent worker task must be of type " + getClass().getName());
     }
@@ -126,7 +126,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   @Override
   public boolean hasToPerformFinalSteps() {
     if (getChildTask(0) == null) {
-      return isFinishedLocally() || getEstimatedTaskLoad() == 0;
+      return isFinishedLocally() || (getEstimatedTaskLoad() == 0);
     } else {
       return super.hasToPerformFinalSteps();
     }
@@ -232,6 +232,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   }
 
   public abstract void toString(StringBuilder sb, int indention);
+
+  public abstract String toAlgebraicString();
 
   protected void indent(StringBuilder sb, int indention) {
     for (int i = 0; i < indention; i++) {

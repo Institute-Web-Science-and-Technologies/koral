@@ -80,7 +80,7 @@ public class ProjectionOperator extends QueryOperatorBase {
 
   @Override
   protected void executeOperationStep() {
-    for (int i = 0; i < getEmittedMappingsPerRound() && !isInputQueueEmpty(0); i++) {
+    for (int i = 0; (i < getEmittedMappingsPerRound()) && !isInputQueueEmpty(0); i++) {
       Mapping mapping = consumeMapping(0);
       if (mapping != null) {
         Mapping result = recycleCache.getMappingWithRestrictedVariables(mapping,
@@ -123,6 +123,18 @@ public class ProjectionOperator extends QueryOperatorBase {
     sb.append(" estimatedWorkLoad: ").append(getEstimatedTaskLoad());
     sb.append("\n");
     ((QueryOperatorBase) getChildTask(0)).toString(sb, indention + 1);
+  }
+
+  @Override
+  public String toAlgebraicString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("project(");
+    sb.append(getChildTask(0).getID() & 0xff_ffL);
+    for (long resultVar : getResultVariables()) {
+      sb.append(",?").append(resultVar);
+    }
+    sb.append(")");
+    return sb.toString();
   }
 
 }

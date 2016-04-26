@@ -1,12 +1,14 @@
 package de.uni_koblenz.west.koral.common.executor;
 
 import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.koral.common.utils.CachedFileReceiverQueue;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -26,6 +28,8 @@ import java.util.logging.Logger;
 public abstract class WorkerTaskBase implements WorkerTask {
 
   protected Logger logger;
+
+  protected MeasurementCollector measurementCollector;
 
   private final long id;
 
@@ -61,7 +65,7 @@ public abstract class WorkerTaskBase implements WorkerTask {
   }
 
   protected void addInputQueue() {
-    if (inputQueues == null || inputQueues.length == 0) {
+    if ((inputQueues == null) || (inputQueues.length == 0)) {
       inputQueues = new CachedFileReceiverQueue[1];
     } else {
       CachedFileReceiverQueue[] newInputQueues = new CachedFileReceiverQueue[inputQueues.length
@@ -121,7 +125,7 @@ public abstract class WorkerTaskBase implements WorkerTask {
 
   public int addChildTask(WorkerTask child) {
     int id = 0;
-    if (children == null || children.length == 0) {
+    if ((children == null) || (children.length == 0)) {
       children = new WorkerTask[1];
     } else {
       WorkerTask[] newChildren = new WorkerTask[children.length + 1];
@@ -157,11 +161,15 @@ public abstract class WorkerTaskBase implements WorkerTask {
   }
 
   protected WorkerTask getChildTask(int i) {
-    if (children == null || children.length == 0) {
+    if ((children == null) || (children.length == 0)) {
       return null;
     } else {
       return children[i];
     }
+  }
+
+  public WorkerTask[] getChildren() {
+    return Arrays.copyOf(children, children.length);
   }
 
   /**

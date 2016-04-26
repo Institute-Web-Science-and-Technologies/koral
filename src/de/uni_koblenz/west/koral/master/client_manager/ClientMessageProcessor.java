@@ -258,11 +258,16 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
                     .createStringMessage(MessageType.CLIENT_COMMAND_FAILED, errorMessage, logger));
             break;
           }
+          if (measurementCollector != null) {
+            measurementCollector.measureValue(MeasurementType.QUERY_MESSAGE_RECEIPTION,
+                    System.currentTimeMillis());
+          }
           QueryExecutionCoordinator coordinator = new QueryExecutionCoordinator(
                   master.getComputerId(), queryIdGenerator.getNextId(), master.getNumberOfSlaves(),
                   mappingReceiverQueueSize, tmpDir, clientID.intValue(), clientConnections,
                   master.getDictionary(), master.getStatistics(), emittedMappingsPerRound,
-                  storageType, useTransactions, writeAsynchronously, cacheType, logger);
+                  storageType, useTransactions, writeAsynchronously, cacheType, logger,
+                  measurementCollector);
           coordinator.processQueryRequest(arguments);
           clientAddress2queryExecutionCoordinator.put(address, coordinator);
           master.executeTask(coordinator);

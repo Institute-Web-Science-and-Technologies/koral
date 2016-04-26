@@ -95,7 +95,8 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
 
     listeners = new HashMap<>();
 
-    workerManager = new WorkerManager(conf, this, getNetworkManager(), logger);
+    workerManager = new WorkerManager(conf, this, getNetworkManager(), logger,
+            measurementCollector);
 
     if (logger != null) {
       logger.info(getClass().getSimpleName() + " started");

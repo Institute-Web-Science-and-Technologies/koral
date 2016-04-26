@@ -5,9 +5,13 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.executor.WorkerTask;
 import de.uni_koblenz.west.koral.common.networManager.NetworkContextFactory;
+import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorBase;
 
 import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Sends the collected measurements to a {@link MeasurementReceiver}.
@@ -19,9 +23,9 @@ public class MeasurementCollector implements Closeable {
 
   public static String DEFAULT_PORT = "4713";
 
-  private static final String columnSeparator = "\t";
+  public static final String columnSeparator = "\t";
 
-  private static final String rowSeparator = "\n";
+  public static final String rowSeparator = "\n";
 
   private final ZContext context;
 
@@ -72,6 +76,26 @@ public class MeasurementCollector implements Closeable {
     newValues[0] = new Long(time).toString();
     System.arraycopy(values, 0, newValues, 1, values.length);
     measureValue(type, newValues);
+  }
+
+  public void measureValue(MeasurementType type, int queryId,
+          QueryOperatorBase queryExecutionTree) {
+    List<String> values = new ArrayList<>();
+    values.add(Integer.toString(queryId));
+    transformQueryExecutionTree(values, queryExecutionTree);
+    measureValue(type, values.toArray(new String[values.size()]));
+  }
+
+  private void transformQueryExecutionTree(List<String> values,
+          QueryOperatorBase queryExecutionTree) {
+    WorkerTask[] children = queryExecutionTree.getChildren();
+    if (children != null) {
+      for (WorkerTask child : children) {
+        transformQueryExecutionTree(values, (QueryOperatorBase) child);
+      }
+    }
+    values.add(Long.toString((queryExecutionTree.getID() & 0xff_ffL)));
+    values.add(queryExecutionTree.toAlgebraicString());
   }
 
   public void measureValue(MeasurementType type, String... values) {

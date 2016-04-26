@@ -6,7 +6,6 @@ import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 
 import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +69,7 @@ public class MessageReceiverListener implements MessageListener {
   }
 
   public void register(WorkerTask task) {
-    byte[] id = ByteBuffer.allocate(8).putLong(task.getID()).array();
+    byte[] id = NumberConversion.long2bytes(task.getID());
     registerTask(id, task);
   }
 

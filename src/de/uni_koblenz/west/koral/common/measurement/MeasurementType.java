@@ -288,6 +288,84 @@ public enum MeasurementType {
    * measured on master<br>
    * timestamp
    */
-  LOAD_GRAPH_FINISHED;
+  LOAD_GRAPH_FINISHED,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  QUERY_MESSAGE_RECEIPTION,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId;queryString
+   */
+  QUERY_COORDINATOR_START,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId;implementationType;queryTreeType
+   */
+  QUERY_COORDINATOR_PARSE_START,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId
+   */
+  QUERY_COORDINATOR_PARSE_END,
+
+  /**
+   * measured on master<br>
+   * queryId;(nodeID_last2byte;OperationString)+
+   */
+  QUERY_COORDINATOR_QET_NODES,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId
+   */
+  QUERY_COORDINATOR_SEND_QUERY_TO_SLAVE,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId
+   */
+  QUERY_COORDINATOR_SEND_QUERY_START,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId;firstResultNumber;lastResultNumber
+   */
+  QUERY_COORDINATOR_SEND_QUERY_RESULTS_TO_CLIENT,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId
+   */
+  QUERY_SLAVE_QUERY_CREATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId
+   */
+  QUERY_SLAVE_QUERY_CREATION_END,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId
+   */
+  QUERY_SLAVE_QUERY_EXECUTION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId
+   */
+  QUERY_SLAVE_QUERY_EXECUTION_ABORT,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId
+   */
+  QUERY_COORDINATOR_END;
 
 }

@@ -113,6 +113,17 @@ public class SliceOperator extends QueryOperatorBase {
   }
 
   @Override
+  public String toAlgebraicString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("slice(");
+    sb.append(getChildTask(0).getID() & 0xff_ffL);
+    sb.append(",").append(getOffset());
+    sb.append(",").append(getLength());
+    sb.append(")");
+    return sb.toString();
+  }
+
+  @Override
   protected void executeOperationStep() {
     throw new UnsupportedOperationException(
             "The slice operation is performed by the query execution coordinator.");

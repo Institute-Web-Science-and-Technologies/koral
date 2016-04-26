@@ -161,7 +161,7 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
   @Override
   public long getCurrentTaskLoad() {
-    if (iterator == null || tripleStore == null || getEstimatedTaskLoad() == 0
+    if ((iterator == null) || (tripleStore == null) || (getEstimatedTaskLoad() == 0)
             || !iterator.hasNext()) {
       return 0;
     } else {
@@ -175,13 +175,13 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
   @Override
   protected void executeOperationStep() {
-    if (getEstimatedTaskLoad() == 0 || tripleStore == null) {
+    if ((getEstimatedTaskLoad() == 0) || (tripleStore == null)) {
       return;
     }
     if (iterator == null) {
       iterator = tripleStore.lookup(recycleCache, pattern).iterator();
     }
-    for (int i = 0; i < getEmittedMappingsPerRound() && iterator.hasNext(); i++) {
+    for (int i = 0; (i < getEmittedMappingsPerRound()) && iterator.hasNext(); i++) {
       Mapping mapping = iterator.next();
       emitMapping(mapping);
     }
@@ -189,8 +189,8 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
   @Override
   protected boolean isFinishedLocally() {
-    return getEstimatedTaskLoad() == 0 || tripleStore == null
-            || (iterator != null && !iterator.hasNext());
+    return (getEstimatedTaskLoad() == 0) || (tripleStore == null)
+            || ((iterator != null) && !iterator.hasNext());
   }
 
   @Override
@@ -221,6 +221,28 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
     sb.append(">");
     sb.append(" estimatedWorkLoad: ").append(getEstimatedTaskLoad());
     sb.append("\n");
+  }
+
+  @Override
+  public String toAlgebraicString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("match(");
+    if (pattern.isSubjectVariable()) {
+      sb.append("?");
+    }
+    sb.append(pattern.getSubject());
+    sb.append(",");
+    if (pattern.isPropertyVariable()) {
+      sb.append("?");
+    }
+    sb.append(pattern.getProperty());
+    sb.append(",");
+    if (pattern.isObjectVariable()) {
+      sb.append("?");
+    }
+    sb.append(pattern.getObject());
+    sb.append(")");
+    return sb.toString();
   }
 
 }

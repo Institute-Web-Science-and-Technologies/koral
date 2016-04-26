@@ -6,6 +6,8 @@ import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageSender;
 import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageSenderBuffer;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.messages.MessageNotifier;
 import de.uni_koblenz.west.koral.common.query.execution.QueryExecutionTreeDeserializer;
 import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorTask;
@@ -34,6 +36,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
 
   private final Logger logger;
 
+  private final MeasurementCollector measurementCollector;
+
   private final MessageNotifier messageNotifier;
 
   private final MessageSenderBuffer messageSender;
@@ -59,13 +63,15 @@ public class WorkerManager implements Closeable, AutoCloseable {
   private final MapDBCacheOptions cacheType;
 
   public WorkerManager(Configuration conf, MessageNotifier notifier, MessageSender messageSender,
-          Logger logger) {
-    this(conf, null, notifier, messageSender, logger);
+          Logger logger, MeasurementCollector measurementCollector) {
+    this(conf, null, notifier, messageSender, logger, measurementCollector);
   }
 
   public WorkerManager(Configuration conf, TripleStoreAccessor tripleStore,
-          MessageNotifier notifier, MessageSender messageSender, Logger logger) {
+          MessageNotifier notifier, MessageSender messageSender, Logger logger,
+          MeasurementCollector measurementCollector) {
     this.logger = logger;
+    this.measurementCollector = measurementCollector;
     messageNotifier = notifier;
     messageReceiver = new MessageReceiverListener(logger);
     this.messageSender = new MessageSenderBuffer(conf.getNumberOfSlaves(),
@@ -114,6 +120,11 @@ public class WorkerManager implements Closeable, AutoCloseable {
             receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES + 1) & 0x00_00_ff_ff;
     long coordinatorId = NumberConversion.bytes2long(receivedQUERY_CREATEMessage,
             Byte.BYTES + Integer.BYTES + 1);
+    int queryId = (int) ((coordinatorId & 0x00_00_ff_ff_ff_ff_00_00L) >>> Short.SIZE);
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_CREATION_START,
+              System.currentTimeMillis(), Integer.toString(queryId));
+    }
     QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(tripleStore,
             numberOfSlaves, cacheSize, cacheDirectory, storageType, useTransactions,
             writeAsynchronously, cacheType);
@@ -123,10 +134,12 @@ public class WorkerManager implements Closeable, AutoCloseable {
       QueryOperatorTask queryExecutionTree = deserializer.deserialize(input);
       initializeTaskTree(queryExecutionTree);
       messageSender.sendQueryCreated(computerOfQueryExecutionCoordinator, coordinatorId);
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_CREATION_END,
+                System.currentTimeMillis(), Integer.toString(queryId));
+      }
       if (logger != null) {
-        int queryID = (int) ((queryExecutionTree.getID() >>> Short.SIZE)
-                & 0x00_00_00_00_ff_ff_ff_ffl);
-        logger.finer("Query " + queryID + " created.");
+        logger.finer("Query " + queryId + " created.");
       }
     } catch (Throwable e) {
       String message = "Error during deserialization of query "
@@ -186,9 +199,13 @@ public class WorkerManager implements Closeable, AutoCloseable {
   public void startQuery(byte[] receivedMessage) {
     // startQuery() on any worker will start all QueryTasks independent to
     // which worker it is assigned.
-    if (workers != null && workers.length > 0) {
+    if ((workers != null) && (workers.length > 0)) {
       workers[0].startQuery(receivedMessage);
     }
+    // if (measurementCollector != null) {
+    // measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_EXECUTION_START,
+    // System.currentTimeMillis(), Integer.toString(queryId));
+    // }
     if (logger != null) {
       logger.finer("Query " + NumberConversion.bytes2int(receivedMessage, 1) + " started.");
     }

@@ -7,6 +7,8 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.executor.WorkerTask;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.common.messages.MessageUtils;
 import de.uni_koblenz.west.koral.common.query.Mapping;
@@ -77,13 +79,16 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
   private long queryExecutionTime;
 
+  private long lastSentResultMappingNumber;
+
   public QueryExecutionCoordinator(short computerID, int queryID, int numberOfSlaves, int cacheSize,
           File cacheDir, int clientID, ClientConnectionManager clientConnections,
           DictionaryEncoder dictionary, GraphStatistics statistics, int emittedMappingsPerRound,
           MapDBStorageOptions storageType, boolean useTransactions, boolean writeAsynchronously,
-          MapDBCacheOptions cacheType, Logger logger) {
+          MapDBCacheOptions cacheType, Logger logger, MeasurementCollector measurementCollector) {
     super(computerID, queryID, (short) 0, numberOfSlaves, cacheSize, cacheDir);
     this.logger = logger;
+    this.measurementCollector = measurementCollector;
     setEstimatedWorkLoad(Integer.MAX_VALUE);
     this.clientConnections = clientConnections;
     clientId = clientID;
@@ -159,6 +164,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
             logger.finer("Query " + getQueryId()
                     + " has been created on all slaves. Start of execution.");
           }
+          if (measurementCollector != null) {
+            measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_SEND_QUERY_START,
+                    System.currentTimeMillis(), Integer.toString(getQueryId()));
+          }
           sendMessageToClient(MessageUtils.createStringMessage(MessageType.MASTER_WORK_IN_PROGRESS,
                   "Query execution tree has been created on all slaves. Start of execution.",
                   logger));
@@ -195,7 +204,18 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
   @Override
   protected void executePreStartStep() {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_START,
+              System.currentTimeMillis(), Integer.toString(getQueryId()),
+              queryString.replace(MeasurementCollector.columnSeparator, " ")
+                      .replace(MeasurementCollector.rowSeparator, " "));
+    }
     if (parser != null) {
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_PARSE_START,
+                System.currentTimeMillis(), Integer.toString(getQueryId()),
+                parser.isBaseImplementationUsed() ? "base" : "default", treeType.name());
+      }
       querySetUpTime = System.currentTimeMillis();
       QueryOperatorBase queryExecutionTree = (QueryOperatorBase) parser.parse(queryString, treeType,
               varDictionary);
@@ -209,7 +229,17 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
         offset = 0;
         length = -1;
       }
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_PARSE_END,
+                System.currentTimeMillis(), Integer.toString(getQueryId()));
+        measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_QET_NODES, getQueryId(),
+                queryExecutionTree);
+      }
       resultVariables = queryExecutionTree.getResultVariables();
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_SEND_QUERY_TO_SLAVE,
+                System.currentTimeMillis(), Integer.toString(getQueryId()));
+      }
       messageSender.sendQueryCreate(statistics, getQueryId(), queryExecutionTree,
               parser.isBaseImplementationUsed());
       parser = null;
@@ -219,6 +249,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
   @Override
   protected void executeOperationStep() {
+    long firstSentResultMappingNumber = lastSentResultMappingNumber + 1;
     StringBuilder result = new StringBuilder();
     int numberOfAlreadyEmittedMessages = 0;
     for (numberOfAlreadyEmittedMessages = 0; numberOfAlreadyEmittedMessages < emittedMappingsPerRound; numberOfAlreadyEmittedMessages++) {
@@ -229,7 +260,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
         offset--;
         numberOfAlreadyEmittedMessages--;
         continue;
-      } else if (offset <= 0 && (length > 0 || length < 0)) {
+      } else if ((offset <= 0) && ((length > 0) || (length < 0))) {
+        lastSentResultMappingNumber++;
         // the result has always to start with a new row, since the
         // client already writes the header without row separator
         result.append(Configuration.QUERY_RESULT_ROW_SEPARATOR_CHAR);
@@ -263,6 +295,13 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
       }
     }
     if (result.length() > 0) {
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(
+                MeasurementType.QUERY_COORDINATOR_SEND_QUERY_RESULTS_TO_CLIENT,
+                System.currentTimeMillis(), Integer.toString(getQueryId()),
+                Long.toString(firstSentResultMappingNumber),
+                Long.toString(lastSentResultMappingNumber));
+      }
       clientConnections.send(clientId, MessageUtils.createStringMessage(MessageType.QUERY_RESULT,
               result.toString(), logger));
       lastContactWithClient = System.currentTimeMillis();
@@ -276,8 +315,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
   }
 
   private void sendKeepAliveMessageToClient() {
-    if (System.currentTimeMillis()
-            - lastContactWithClient >= Configuration.CLIENT_KEEP_ALIVE_INTERVAL) {
+    if ((System.currentTimeMillis()
+            - lastContactWithClient) >= Configuration.CLIENT_KEEP_ALIVE_INTERVAL) {
       sendMessageToClient(new byte[] { MessageType.MASTER_WORK_IN_PROGRESS.getValue() });
     }
   }
@@ -295,6 +334,10 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
   protected void tidyUp() {
     queryExecutionTime = System.currentTimeMillis() - queryExecutionTime;
     sendMessageToClient(new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_END,
+              System.currentTimeMillis(), Integer.toString(getQueryId()));
+    }
     if (logger != null) {
       logger.fine("Query " + getQueryId() + " is finished. Set up time: " + querySetUpTime
               + "ms Execution time: " + queryExecutionTime + "ms");
@@ -303,7 +346,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
   @Override
   protected boolean isFinishedLocally() {
-    return numberOfMissingFinishNotificationsFromSlaves == 0 && isInputQueueEmpty(0);
+    return (numberOfMissingFinishNotificationsFromSlaves == 0) && isInputQueueEmpty(0);
   }
 
   @Override

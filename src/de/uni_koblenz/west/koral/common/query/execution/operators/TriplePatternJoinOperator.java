@@ -182,7 +182,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
       int numberOfJoinVars = 0;
       int numberOfResultVars = 0;
       for (int i = 0; i < allVars.length; i++) {
-        if (i > 0 && allVars[i - 1] == allVars[i]) {
+        if ((i > 0) && (allVars[i - 1] == allVars[i])) {
           // each variable occurs at most two times
           numberOfJoinVars++;
         } else {
@@ -194,7 +194,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
       joinVars = new long[numberOfJoinVars];
       int nextJoinVarIndex = 0;
       for (int i = 0; i < allVars.length; i++) {
-        if (i > 0 && allVars[i - 1] == allVars[i]) {
+        if ((i > 0) && (allVars[i - 1] == allVars[i])) {
           // each variable occurs at most two times
           joinVars[nextJoinVarIndex] = allVars[i];
           nextJoinVarIndex++;
@@ -288,7 +288,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
   private void executeJoinStep() {
     for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
-      if (iterator == null || !iterator.hasNext()) {
+      if ((iterator == null) || !iterator.hasNext()) {
         if (shouldConsumefromLeftChild()) {
           if (isInputQueueEmpty(0)) {
             if (isInputQueueEmpty(1)) {
@@ -360,7 +360,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
         // the right child has matched
         if (!isInputQueueEmpty(0)) {
           startJoinTime();
-          for (int i = 0; i < getEmittedMappingsPerRound() && !isInputQueueEmpty(0); i++) {
+          for (int i = 0; (i < getEmittedMappingsPerRound()) && !isInputQueueEmpty(0); i++) {
             Mapping mapping = consumeMapping(0);
             if (mapping == null) {
               startWaitTime();
@@ -393,7 +393,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
         // the left child has matched
         if (!isInputQueueEmpty(1)) {
           startJoinTime();
-          for (int i = 0; i < getEmittedMappingsPerRound() && !isInputQueueEmpty(1); i++) {
+          for (int i = 0; (i < getEmittedMappingsPerRound()) && !isInputQueueEmpty(1); i++) {
             Mapping mapping = consumeMapping(1);
             if (mapping == null) {
               startWaitTime();
@@ -447,7 +447,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
   @Override
   protected boolean isFinishedLocally() {
-    return super.isFinishedLocally() && (iterator == null || !iterator.hasNext());
+    return super.isFinishedLocally() && ((iterator == null) || !iterator.hasNext());
   }
 
   @Override
@@ -503,6 +503,17 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
     sb.append("\n");
     ((QueryOperatorBase) getChildTask(0)).toString(sb, indention + 1);
     ((QueryOperatorBase) getChildTask(1)).toString(sb, indention + 1);
+  }
+
+  @Override
+  public String toAlgebraicString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("join(");
+    sb.append(getChildTask(0).getID() & 0xff_ffL);
+    sb.append(",").append(getChildTask(1).getID() & 0xff_ffL);
+    sb.append(",").append(joinType);
+    sb.append(")");
+    return sb.toString();
   }
 
   private static enum JoinType {
