@@ -158,7 +158,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
               new Integer(replicationPathLength).toString(),
               new Integer(numberOfGraphChunks).toString());
     }
-    coverCreator = GraphCoverCreatorFactory.getGraphCoverCreator(coverStrategy, logger);
+    coverCreator = GraphCoverCreatorFactory.getGraphCoverCreator(coverStrategy, logger,
+            measurementCollector);
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
     ftpServer.start(externalFtpIpAddress, ftpPort, workingDir);

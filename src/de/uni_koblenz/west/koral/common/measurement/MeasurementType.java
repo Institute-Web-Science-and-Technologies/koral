@@ -76,6 +76,72 @@ public enum MeasurementType {
 
   /**
    * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_HIERARCHY_LEVEL_IDENTIFICATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_HIERARCHY_LEVEL_IDENTIFICATION_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_METIS_INPUT_FILE_CREATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_METIS_INPUT_FILE_CREATION_END,
+
+  /**
+   * measured on master<br>
+   * numberOfIgnoredTriples
+   */
+  LOAD_GRAPH_COVER_CREATION_METIS_IGNORED_TRIPLES,
+
+  /**
+   * measured on master<br>
+   * numberOfTriples;numberOfVertices;numberOfEdges
+   */
+  LOAD_GRAPH_COVER_CREATION_METIS_INPUT_GRAPH_SIZE,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_RUN_METIS_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_RUN_METIS_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_FILE_WRITE_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_END,
+
+  /**
+   * measured on master<br>
    * numberOfTriples
    */
   TOTAL_GRAPH_SIZE,
@@ -85,12 +151,6 @@ public enum MeasurementType {
    * numberOfTriples*
    */
   INITIAL_CHUNK_SIZES,
-
-  /**
-   * measured on master<br>
-   * timestamp
-   */
-  LOAD_GRAPH_COVER_CREATION_END,
 
   /**
    * measured on master<br>

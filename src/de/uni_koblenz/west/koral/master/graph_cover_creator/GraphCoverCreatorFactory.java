@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.koral.master.graph_cover_creator;
 
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HierarchicalCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
@@ -15,14 +16,15 @@ import java.util.logging.Logger;
  */
 public class GraphCoverCreatorFactory {
 
-  public static GraphCoverCreator getGraphCoverCreator(CoverStrategyType strategy, Logger logger) {
+  public static GraphCoverCreator getGraphCoverCreator(CoverStrategyType strategy, Logger logger,
+          MeasurementCollector measurementCollector) {
     switch (strategy) {
       case HASH:
-        return new HashCoverCreator(logger);
+        return new HashCoverCreator(logger, measurementCollector);
       case HIERARCHICAL:
-        return new HierarchicalCoverCreator(logger);
+        return new HierarchicalCoverCreator(logger, measurementCollector);
       case MIN_EDGE_CUT:
-        return new MinimalEdgeCutCover(logger);
+        return new MinimalEdgeCutCover(logger, measurementCollector);
       default:
         return null;
 

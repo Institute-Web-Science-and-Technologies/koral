@@ -47,9 +47,10 @@ public class Playground {
 
     // create cover
     RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
-    // GraphCoverCreator coverCreator = new HashCoverCreator(null);
-    // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null);
-    GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null);
+    // GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
+    // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
+    // null);
+    GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
     File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 
     NHopReplicator replicator = new NHopReplicator(null, null);

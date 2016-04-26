@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.master.graph_cover_creator.impl;
 
 import org.apache.jena.graph.Node;
 
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 
@@ -22,8 +23,8 @@ public class HashCoverCreator extends GraphCoverCreatorBase {
 
   private final MessageDigest digest;
 
-  public HashCoverCreator(Logger logger) {
-    super(logger);
+  public HashCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
+    super(logger, measurementCollector);
     try {
       digest = MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {

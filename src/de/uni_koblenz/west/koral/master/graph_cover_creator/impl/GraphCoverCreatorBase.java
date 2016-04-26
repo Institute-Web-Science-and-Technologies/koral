@@ -9,6 +9,8 @@ import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sparql.core.Quad;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
@@ -31,8 +33,13 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
 
   protected final Logger logger;
 
-  public GraphCoverCreatorBase(Logger logger) {
+  protected final MeasurementCollector measurementCollector;
+
+  protected long[] numberOfTriplesPerChunk;
+
+  public GraphCoverCreatorBase(Logger logger, MeasurementCollector measurementCollector) {
     this.logger = logger;
+    this.measurementCollector = measurementCollector;
   }
 
   @Override
@@ -63,6 +70,16 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
         }
       }
     }
+    if (measurementCollector != null) {
+      long totalNumberOfTriples = 0;
+      String[] numberOfChunkTriples = new String[numberOfTriplesPerChunk.length];
+      for (int i = 0; i < numberOfTriplesPerChunk.length; i++) {
+        totalNumberOfTriples += numberOfTriplesPerChunk[i];
+        numberOfChunkTriples[i] = Long.toString(numberOfTriplesPerChunk[i]);
+      }
+      measurementCollector.measureValue(MeasurementType.TOTAL_GRAPH_SIZE, totalNumberOfTriples);
+      measurementCollector.measureValue(MeasurementType.INITIAL_CHUNK_SIZES, numberOfChunkTriples);
+    }
     return chunkFiles;
   }
 
@@ -88,6 +105,12 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
 
   protected void writeStatementToChunk(int targetChunk, int numberOfGraphChunks, Node[] statement,
           OutputStream[] outputs, boolean[] writtenFiles) {
+    if (measurementCollector != null) {
+      if (numberOfTriplesPerChunk == null) {
+        numberOfTriplesPerChunk = new long[numberOfGraphChunks];
+      }
+      numberOfTriplesPerChunk[targetChunk]++;
+    }
     // ignore graphs and add all triples to the same graph
     // encode the containment information as graph name
     DatasetGraph graph = DatasetGraphFactory.createMem();

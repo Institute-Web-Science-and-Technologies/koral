@@ -8,6 +8,8 @@ import org.mapdb.HTreeMap;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.dictionary.Dictionary;
 import de.uni_koblenz.west.koral.master.dictionary.impl.MapDBDictionary;
@@ -44,8 +46,8 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
 
   private Process process;
 
-  public MinimalEdgeCutCover(Logger logger) {
-    super(logger);
+  public MinimalEdgeCutCover(Logger logger, MeasurementCollector measurementCollector) {
+    super(logger, measurementCollector);
   }
 
   @Override
@@ -96,6 +98,11 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
 
   private void createMetisInputFile(RDFFileIterator rdfFiles, Dictionary dictionary,
           File encodedRDFGraph, File metisInputGraph, File ignoredTriples, File workingDir) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_METIS_INPUT_FILE_CREATION_START,
+              System.currentTimeMillis());
+    }
     File metisInputTempFolder = new File(
             workingDir.getAbsolutePath() + File.separator + "metisInputCreation");
     if (!metisInputTempFolder.exists()) {
@@ -110,6 +117,8 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
 
     long numberOfVertices = 0;
     long numberOfEdges = 0;
+    long numberOfUsedTriples = 0;
+    long numberOfIgnoredTriples = 0;
     HTreeMap<Long, Set<Long>> adjacencyLists = database.createHashMap("adjacenceList").makeOrGet();
 
     // create adjacency lists
@@ -122,8 +131,10 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           transformBlankNodes(statement);
           if (statement[0].equals(statement[2]) || DeSerializer.serializeNode(statement[1])
                   .equals("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")) {
-            // this is a self loop that is forbidden in METIS
-            // assign it to the first chunk
+            // this is a self loop that is forbidden in METIS or
+            // it is a rdf:type triple
+            // store it as ignored triple
+            numberOfIgnoredTriples++;
             byte[] subject = DeSerializer.serializeNode(statement[0]).getBytes("UTF-8");
             byte[] property = DeSerializer.serializeNode(statement[1]).getBytes("UTF-8");
             byte[] object = DeSerializer.serializeNode(statement[2]).getBytes("UTF-8");
@@ -135,6 +146,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             ignoredTriplesOutput.write(object);
             continue;
           }
+          numberOfUsedTriples++;
           long encodedSubject = dictionary.encode(DeSerializer.serializeNode(statement[0]), true);
           long encodedObject = dictionary.encode(DeSerializer.serializeNode(statement[2]), true);
           // write encoded triple to graph file
@@ -143,10 +155,6 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           encodedGraphOutput.writeInt(property.length());
           encodedGraphOutput.writeBytes(property);
           encodedGraphOutput.writeLong(encodedObject);
-          // ignore loops since METIS does not allow them
-          // if (encodedSubject == encodedObject) {
-          // continue;
-          // }
           // add direction subject2object
           Set<Long> adjacentVerticesOfSubject = adjacencyLists.get(encodedSubject);
           if (adjacentVerticesOfSubject == null) {
@@ -174,6 +182,16 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
         throw new RuntimeException(e);
       }
 
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_COVER_CREATION_METIS_IGNORED_TRIPLES,
+                numberOfIgnoredTriples);
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_COVER_CREATION_METIS_INPUT_GRAPH_SIZE,
+                Long.toString(numberOfUsedTriples), Long.toString(numberOfVertices),
+                Long.toString(numberOfEdges));
+      }
+
       // write adjacency lists to file
       try (BufferedWriter metisInputGraphWriter = new BufferedWriter(
               new OutputStreamWriter(new FileOutputStream(metisInputGraph), "UTF-8"));) {
@@ -194,10 +212,19 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     } finally {
       database.close();
       deleteFolder(metisInputTempFolder);
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_COVER_CREATION_METIS_INPUT_FILE_CREATION_END,
+                System.currentTimeMillis());
+      }
     }
   }
 
   private File runMetis(File metisInputGraph, int numberOfGraphChunks) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_RUN_METIS_START,
+              System.currentTimeMillis());
+    }
     ProcessBuilder processBuilder = new ProcessBuilder("gpmetis", metisInputGraph.getAbsolutePath(),
             new Integer(numberOfGraphChunks).toString());
     if (logger == null) {
@@ -220,12 +247,20 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       if ((process != null) && process.isAlive()) {
         process.destroy();
       }
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_RUN_METIS_END,
+                System.currentTimeMillis());
+      }
     }
   }
 
   private void createGraphCover(File encodedRDFGraph, Dictionary dictionary, File metisOutputGraph,
           File ignoredTriples, OutputStream[] outputs, boolean[] writtenFiles,
           int numberOfGraphChunks, File workingDir) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
+              System.currentTimeMillis());
+    }
     File vertex2chunkIndexFolder = new File(
             workingDir.getAbsolutePath() + File.separator + "vertex2chunkIndex");
     if (!vertex2chunkIndexFolder.exists()) {
@@ -359,6 +394,10 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     } finally {
       database.close();
       deleteFolder(vertex2chunkIndexFolder);
+    }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_END,
+              System.currentTimeMillis());
     }
   }
 

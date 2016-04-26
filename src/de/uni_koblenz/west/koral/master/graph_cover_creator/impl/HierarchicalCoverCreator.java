@@ -4,6 +4,8 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.iri.IRI;
 import org.apache.jena.riot.system.IRIResolver;
 
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 
@@ -20,14 +22,18 @@ import java.util.regex.Pattern;
  */
 public class HierarchicalCoverCreator extends HashCoverCreator {
 
-  public HierarchicalCoverCreator(Logger logger) {
-    super(logger);
+  public HierarchicalCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
+    super(logger, measurementCollector);
   }
 
   @Override
   protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
           OutputStream[] outputs, boolean[] writtenFiles, File workingDir) {
     int hierarchyLevel = identifyHierarchyLevel(new RDFFileIterator(rdfFiles), numberOfGraphChunks);
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
+              System.currentTimeMillis());
+    }
     for (Node[] statement : rdfFiles) {
       if (!statement[0].isURI()) {
         processStatement(numberOfGraphChunks, outputs, writtenFiles, statement);
@@ -42,9 +48,18 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
         writeStatementToChunk(targetChunk, numberOfGraphChunks, statement, outputs, writtenFiles);
       }
     }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_END,
+              System.currentTimeMillis());
+    }
   }
 
   private int identifyHierarchyLevel(RDFFileIterator rdfFiles, int numberOfGraphChunks) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_HIERARCHY_LEVEL_IDENTIFICATION_START,
+              System.currentTimeMillis());
+    }
     /*
      * The first dimension identifies the hierarchy level. Level 0 stores the
      * number of triples that have not an IRI as subject. They are not counted
@@ -73,6 +88,12 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
         balancedHierarchyLevel = i;
         minBalance = currentHierarchyLevelBalance;
       }
+    }
+
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_HIERARCHY_LEVEL_IDENTIFICATION_END,
+              System.currentTimeMillis());
     }
 
     return balancedHierarchyLevel - 1;
