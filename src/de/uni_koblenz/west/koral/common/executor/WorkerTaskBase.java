@@ -51,8 +51,9 @@ public abstract class WorkerTaskBase implements WorkerTask {
 
   @Override
   public void setUp(MessageSenderBuffer messageSender, MappingRecycleCache recycleCache,
-          Logger logger) {
+          Logger logger, MeasurementCollector measurementCollector) {
     this.logger = logger;
+    this.measurementCollector = measurementCollector;
   }
 
   @Override

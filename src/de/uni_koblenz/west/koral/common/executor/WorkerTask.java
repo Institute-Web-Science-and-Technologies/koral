@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.koral.common.executor;
 
 import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 
 import java.io.Closeable;
@@ -17,7 +18,7 @@ import java.util.logging.Logger;
 public interface WorkerTask extends Closeable {
 
   public void setUp(MessageSenderBuffer messageSender, MappingRecycleCache recycleCache,
-          Logger logger);
+          Logger logger, MeasurementCollector measurementCollector);
 
   /**
    * <p>

@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.common.executor;
 
 import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageReceiverListener;
 import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 
 import java.io.Closeable;
@@ -27,6 +28,8 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
   private final Logger logger;
 
+  private final MeasurementCollector measurementCollector;
+
   private final int id;
 
   private final MappingRecycleCache mappingCache;
@@ -47,9 +50,10 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
   public WorkerThread(int id, int sizeOfMappingRecycleCache, double unbalanceThreshold,
           MessageReceiverListener receiver, MessageSenderBuffer messageSender, int numberOfSlaves,
-          Logger logger) {
+          Logger logger, MeasurementCollector measurementCollector) {
     setDaemon(true);
     this.logger = logger;
+    this.measurementCollector = measurementCollector;
     this.id = id;
     setName("WorkerThread " + id);
     tasks = new ConcurrentLinkedQueue<>();
@@ -85,7 +89,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
   }
 
   public void addWorkerTask(WorkerTask task) {
-    task.setUp(messageSender, mappingCache, logger);
+    task.setUp(messageSender, mappingCache, logger, measurementCollector);
     receiver.register(task);
     receiveTask(task);
   }
@@ -155,7 +159,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
       rebalance();
       if (tasks.isEmpty()) {
         try {
-          sleep(100);
+          Thread.sleep(100);
         } catch (InterruptedException e) {
         }
       }
@@ -209,7 +213,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
   }
 
   private Set<WorkerTask> getTasksToShift(long unbalancedLoad) {
-    if (unbalancedLoad <= 0 || !tasks.isEmpty()) {
+    if ((unbalancedLoad <= 0) || !tasks.isEmpty()) {
       return new HashSet<>();
     }
 
@@ -217,7 +221,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
     NavigableSet<WorkerTask> relevantTasks = new TreeSet<>(new WorkerTaskComparator(true));
     for (WorkerTask task : tasks) {
       long load = task.getCurrentTaskLoad();
-      if (load == 0 || load > unbalancedLoad) {
+      if ((load == 0) || (load > unbalancedLoad)) {
         continue;
       }
       relevantTasks.add(task);

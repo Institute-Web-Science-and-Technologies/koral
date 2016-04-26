@@ -80,6 +80,7 @@ public class ProjectionOperator extends QueryOperatorBase {
 
   @Override
   protected void executeOperationStep() {
+    startWorkTime();
     for (int i = 0; (i < getEmittedMappingsPerRound()) && !isInputQueueEmpty(0); i++) {
       Mapping mapping = consumeMapping(0);
       if (mapping != null) {
@@ -89,6 +90,7 @@ public class ProjectionOperator extends QueryOperatorBase {
         recycleCache.releaseMapping(mapping);
       }
     }
+    startIdleTime();
   }
 
   @Override

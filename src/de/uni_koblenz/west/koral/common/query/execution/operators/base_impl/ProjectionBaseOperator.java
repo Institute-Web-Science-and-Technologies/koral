@@ -24,6 +24,7 @@ public class ProjectionBaseOperator extends ProjectionOperator {
 
   @Override
   protected void emitMapping(Mapping mapping) {
+    numberOfEmittedMappings++;
     if (getParentTask() == null) {
       messageSender.sendQueryMapping(mapping, getID(), getCoordinatorID(), recycleCache);
     } else {

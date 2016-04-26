@@ -1,9 +1,9 @@
 package de.uni_koblenz.west.koral.common.query.execution;
 
 import de.uni_koblenz.west.koral.common.executor.WorkerTask;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.execution.operators.ProjectionOperator;
-import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 
 import java.io.ByteArrayOutputStream;
@@ -27,10 +27,18 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   private final int emittedMappingsPerRound;
 
   /*
-   * Time measurements
+   * Performance measurements
    */
 
-  private long operatorExecutionTime;
+  private long startIdleTime;
+
+  private long totalIdleTime;
+
+  private long startWorkTime;
+
+  private long totalWorkTime;
+
+  protected long numberOfEmittedMappings;
 
   public QueryOperatorBase(short slaveId, int queryId, short taskId, long coordinatorId,
           int numberOfSlaves, int cacheSize, File cacheDirectory, int emittedMappingsPerRound) {
@@ -92,7 +100,12 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   @Override
   public void start() {
     super.start();
-    operatorExecutionTime = System.currentTimeMillis();
+    startIdleTime();
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_START,
+              System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
+              Long.toString(getID() & 0xff_ffL));
+    }
   }
 
   @Override
@@ -138,17 +151,19 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
 
   @Override
   protected void executeFinalStep() {
-    operatorExecutionTime = System.currentTimeMillis() - operatorExecutionTime;
     messageSender.sendQueryTaskFinished(getID(), getParentTask() == null, getCoordinatorID(),
             recycleCache);
-    if (logger != null) {
-      logger.finest(NumberConversion.id2description(getID()) + " required " + operatorExecutionTime
-              + "ms");
-    }
   }
 
   @Override
   protected void tidyUp() {
+    stopTimeMeasurement();
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_FINISH,
+              System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
+              Long.toString(getID() & 0xff_ffL), Long.toString(totalIdleTime),
+              Long.toString(totalWorkTime), Long.toString(numberOfEmittedMappings));
+    }
   }
 
   /**
@@ -160,6 +175,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
    * @param mapping
    */
   protected void emitMapping(Mapping mapping) {
+    numberOfEmittedMappings++;
     if (getParentTask() == null) {
       messageSender.sendQueryMapping(mapping, getID(), getCoordinatorID(), recycleCache);
     } else if (getParentTask() instanceof ProjectionOperator) {
@@ -208,6 +224,47 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
     }
   }
 
+  protected void startTimeMeasurement() {
+    startWorkTime = 0;
+    totalWorkTime = 0;
+    totalIdleTime = 0;
+    startIdleTime = System.currentTimeMillis();
+  }
+
+  protected void startIdleTime() {
+    if (startIdleTime < startWorkTime) {
+      totalWorkTime += System.currentTimeMillis() - startWorkTime;
+      startIdleTime = System.currentTimeMillis();
+      if (startIdleTime == startWorkTime) {
+        startWorkTime--;
+      }
+    }
+  }
+
+  protected void startWorkTime() {
+    if (startWorkTime < startIdleTime) {
+      totalIdleTime += System.currentTimeMillis() - startIdleTime;
+      startWorkTime = System.currentTimeMillis();
+      if (startIdleTime == startWorkTime) {
+        startIdleTime--;
+      }
+    }
+  }
+
+  protected void stopTimeMeasurement() {
+    if ((startIdleTime == 0) && (startWorkTime == 0)) {
+      return;
+    } else if (startIdleTime < startWorkTime) {
+      startIdleTime();
+      startWorkTime = 0;
+      startIdleTime = 0;
+    } else if (startWorkTime < startIdleTime) {
+      startWorkTime();
+      startWorkTime = 0;
+      startIdleTime = 0;
+    }
+  }
+
   @Override
   public byte[] serialize(boolean useBaseImplementation, int slaveId) {
     ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
@@ -245,6 +302,13 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   public void close() {
     super.close();
     closeInternal();
+    stopTimeMeasurement();
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_CLOSED,
+              System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
+              Long.toString(getID() & 0xff_ffL), Long.toString(totalIdleTime),
+              Long.toString(totalWorkTime), Long.toString(numberOfEmittedMappings));
+    }
   }
 
   protected abstract void closeInternal();

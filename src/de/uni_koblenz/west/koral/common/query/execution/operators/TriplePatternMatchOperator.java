@@ -179,12 +179,16 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
       return;
     }
     if (iterator == null) {
+      startWorkTime();
       iterator = tripleStore.lookup(recycleCache, pattern).iterator();
+    } else {
+      startWorkTime();
     }
     for (int i = 0; (i < getEmittedMappingsPerRound()) && iterator.hasNext(); i++) {
       Mapping mapping = iterator.next();
       emitMapping(mapping);
     }
+    startIdleTime();
   }
 
   @Override

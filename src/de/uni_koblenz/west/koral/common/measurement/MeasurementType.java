@@ -364,6 +364,43 @@ public enum MeasurementType {
 
   /**
    * measured on master<br>
+   * timestamp;queryId;taskId
+   */
+  QUERY_OPERATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId;taskId;receiverSlave;numberOfMappings;
+   * numberOfVariablesPerMapping
+   */
+  QUERY_OPERATION_SENT_MAPPINGS_TO_SLAVE,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId;taskId;numberOfFinishNotifications
+   */
+  QUERY_OPERATION_SENT_FINISH_NOTIFICATIONS_TO_OTHER_SLAVES,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId;taskId;numberOfComparisons
+   */
+  QUERY_OPERATION_JOIN_NUMBER_OF_COMPARISONS,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId;taskId;idleTime;processingTime;numberOfEmmittedMappings
+   */
+  QUERY_OPERATION_FINISH,
+
+  /**
+   * measured on master<br>
+   * timestamp;queryId;taskId;idleTime;processingTime;numberOfEmmittedMappings
+   */
+  QUERY_OPERATION_CLOSED,
+
+  /**
+   * measured on master<br>
    * timestamp;queryId
    */
   QUERY_COORDINATOR_END;

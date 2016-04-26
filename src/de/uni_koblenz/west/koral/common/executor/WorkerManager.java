@@ -94,7 +94,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
     for (int i = 0; i < workers.length; i++) {
       workers[i] = new WorkerThread(i, conf.getSizeOfMappingRecycleCache(),
               conf.getUnbalanceThresholdForWorkerThreads(), messageReceiver, this.messageSender,
-              numberOfSlaves, logger);
+              numberOfSlaves, logger, measurementCollector);
       if (i > 0) {
         workers[i - 1].setNext(workers[i]);
         workers[i].setPrevious(workers[i - 1]);
@@ -202,10 +202,11 @@ public class WorkerManager implements Closeable, AutoCloseable {
     if ((workers != null) && (workers.length > 0)) {
       workers[0].startQuery(receivedMessage);
     }
-    // if (measurementCollector != null) {
-    // measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_EXECUTION_START,
-    // System.currentTimeMillis(), Integer.toString(queryId));
-    // }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_EXECUTION_START,
+              System.currentTimeMillis(),
+              Integer.toString(NumberConversion.bytes2int(receivedMessage, 1)));
+    }
     if (logger != null) {
       logger.finer("Query " + NumberConversion.bytes2int(receivedMessage, 1) + " started.");
     }
@@ -214,6 +215,11 @@ public class WorkerManager implements Closeable, AutoCloseable {
   public void abortQuery(byte[] receivedMessage) {
     for (WorkerThread worker : workers) {
       worker.abortQuery(receivedMessage);
+    }
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_EXECUTION_ABORT,
+              System.currentTimeMillis(),
+              Integer.toString(NumberConversion.bytes2int(receivedMessage, 1)));
     }
     if (logger != null) {
       logger.finer("Query " + NumberConversion.bytes2int(receivedMessage, 1) + " aborted.");

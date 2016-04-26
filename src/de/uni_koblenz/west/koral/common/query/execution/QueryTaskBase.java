@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.common.query.execution;
 
 import de.uni_koblenz.west.koral.common.executor.WorkerTaskBase;
 import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
@@ -42,8 +43,8 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
   @Override
   public void setUp(MessageSenderBuffer messageSender, MappingRecycleCache recycleCache,
-          Logger logger) {
-    super.setUp(messageSender, recycleCache, logger);
+          Logger logger, MeasurementCollector measurementCollector) {
+    super.setUp(messageSender, recycleCache, logger, measurementCollector);
     this.recycleCache = recycleCache;
     this.messageSender = messageSender;
   }
@@ -90,9 +91,9 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
   @Override
   public boolean hasToPerformFinalSteps() {
-    return (isSubQueryExecutionTreeFinished() && state == QueryTaskState.STARTED)
-            || (state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH
-                    && numberOfMissingFinishedMessages == 0)
+    return (isSubQueryExecutionTreeFinished() && (state == QueryTaskState.STARTED))
+            || ((state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH)
+                    && (numberOfMissingFinishedMessages == 0))
             || super.hasToPerformFinalSteps();
   }
 
