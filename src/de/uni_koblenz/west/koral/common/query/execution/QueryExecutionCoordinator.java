@@ -204,13 +204,13 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
   @Override
   protected void executePreStartStep() {
-    if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_START,
-              System.currentTimeMillis(), Integer.toString(getQueryId()),
-              queryString.replace(MeasurementCollector.columnSeparator, " ")
-                      .replace(MeasurementCollector.rowSeparator, " "));
-    }
     if (parser != null) {
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_START,
+                System.currentTimeMillis(), Integer.toString(getQueryId()),
+                queryString.replace(MeasurementCollector.columnSeparator, " ")
+                        .replace(MeasurementCollector.rowSeparator, " "));
+      }
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.QUERY_COORDINATOR_PARSE_START,
                 System.currentTimeMillis(), Integer.toString(getQueryId()),
