@@ -400,20 +400,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
   }
 
   @Override
-  protected void tidyUp() {
-    super.tidyUp();
-    if (measurementCollector != null) {
-      if (iterator != null) {
-        numberOfComparisons += iterator.getNumberOfComparisons();
-        iterator = null;
-      }
-      measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_JOIN_NUMBER_OF_COMPARISONS,
-              Integer.toString((int) (getID() >>> Short.SIZE)), Long.toString(getID() & 0xff_ffL),
-              Long.toString(numberOfComparisons));
-    }
-  }
-
-  @Override
   protected boolean isFinishedLocally() {
     return super.isFinishedLocally() && ((iterator == null) || !iterator.hasNext());
   }
@@ -473,6 +459,20 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
     sb.append(",").append(joinType);
     sb.append(")");
     return sb.toString();
+  }
+
+  @Override
+  public void close() {
+    super.close();
+    if (measurementCollector != null) {
+      if (iterator != null) {
+        numberOfComparisons += iterator.getNumberOfComparisons();
+        iterator = null;
+      }
+      measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_JOIN_NUMBER_OF_COMPARISONS,
+              Integer.toString((int) (getID() >>> Short.SIZE)), Long.toString(getID() & 0xff_ffL),
+              Long.toString(numberOfComparisons));
+    }
   }
 
   private static enum JoinType {
