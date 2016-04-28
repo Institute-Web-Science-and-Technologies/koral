@@ -173,9 +173,10 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   protected void tidyUp() {
     stopTimeMeasurement();
     if (measurementCollector != null) {
+      long taskId = getID() & 0xff_ffL;
       String[] values = new String[4 + numberOfEmittedMappings.length];
       values[0] = Integer.toString((int) (getID() >>> Short.SIZE));
-      values[1] = Long.toString(getID() & 0xff_ffL);
+      values[1] = Long.toString(taskId);
       values[2] = Long.toString(totalIdleTime);
       values[3] = Long.toString(totalWorkTime);
       for (int i = 0; i < numberOfEmittedMappings.length; i++) {
@@ -183,6 +184,23 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
       }
       measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_FINISH,
               System.currentTimeMillis(), values);
+      measurementCollector.measureValue(
+              MeasurementType.QUERY_OPERATION_SENT_FINISH_NOTIFICATIONS_TO_OTHER_SLAVES,
+              Integer.toString((int) (getID() >>> Short.SIZE)), Long.toString(taskId),
+              Integer.toString(numberOfEmittedMappings.length - 2));
+      values = new String[((2 + numberOfEmittedMappings.length) - 2) + 1];
+      values[0] = Integer.toString((int) (getID() >>> Short.SIZE));
+      values[1] = Long.toString(taskId);
+      int nextIndex = 2;
+      for (int i = 1; i < numberOfEmittedMappings.length; i++) {
+        if (i != taskId) {
+          long emitted = numberOfEmittedMappings[i];
+          values[nextIndex++] = Long.toString(emitted);
+        }
+      }
+      values[values.length - 1] = Integer.toString(getResultVariables().length);
+      measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_SENT_MAPPINGS_TO_SLAVE,
+              values);
     }
   }
 

@@ -4,6 +4,7 @@ import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageSenderBuf
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorBase;
@@ -47,6 +48,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
   private JoinMappingCache rightMappingCache;
 
   private JoinIterator iterator;
+
+  /*
+   * variables for measurement
+   */
+
+  private long numberOfComparisons;
 
   public TriplePatternJoinOperator(long id, long coordinatorId, int numberOfSlaves, int cacheSize,
           File cacheDirectory, int emittedMappingsPerRound, QueryOperatorTask leftChild,
@@ -273,6 +280,10 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
   private void executeJoinStep() {
     for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
       if ((iterator == null) || !iterator.hasNext()) {
+        if (iterator != null) {
+          numberOfComparisons += iterator.getNumberOfComparisons();
+          iterator = null;
+        }
         if (shouldConsumefromLeftChild()) {
           if (isInputQueueEmpty(0)) {
             if (isInputQueueEmpty(1)) {
@@ -385,6 +396,20 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
           recycleCache.releaseMapping(mapping);
         }
       }
+    }
+  }
+
+  @Override
+  protected void tidyUp() {
+    super.tidyUp();
+    if (measurementCollector != null) {
+      if (iterator != null) {
+        numberOfComparisons += iterator.getNumberOfComparisons();
+        iterator = null;
+      }
+      measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_JOIN_NUMBER_OF_COMPARISONS,
+              Integer.toString((int) (getID() >>> Short.SIZE)), Long.toString(getID() & 0xff_ffL),
+              Long.toString(numberOfComparisons));
     }
   }
 

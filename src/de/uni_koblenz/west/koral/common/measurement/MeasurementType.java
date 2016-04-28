@@ -370,20 +370,20 @@ public enum MeasurementType {
 
   /**
    * measured on master<br>
-   * timestamp;queryId;taskId;receiverSlave;numberOfMappings;
+   * queryId;taskId;(receiverSlave;numberOfMappings;)+
    * numberOfVariablesPerMapping
    */
   QUERY_OPERATION_SENT_MAPPINGS_TO_SLAVE,
 
   /**
    * measured on master<br>
-   * timestamp;queryId;taskId;numberOfFinishNotifications
+   * queryId;taskId;numberOfFinishNotifications
    */
   QUERY_OPERATION_SENT_FINISH_NOTIFICATIONS_TO_OTHER_SLAVES,
 
   /**
    * measured on master<br>
-   * timestamp;queryId;taskId;numberOfComparisons
+   * queryId;taskId;numberOfComparisons
    */
   QUERY_OPERATION_JOIN_NUMBER_OF_COMPARISONS,
 
