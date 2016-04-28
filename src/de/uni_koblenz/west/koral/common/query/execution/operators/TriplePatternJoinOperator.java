@@ -292,6 +292,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
             }
           } else {
             Mapping mapping = consumeMapping(0);
+            if (logger != null) {
+              // TODO remove
+              if (mapping == null) {
+                logger.info("\ninputQueueLength=" + getSizeOfInputQueue(0));
+              }
+            }
             long[] mappingVars = ((QueryOperatorBase) getChildTask(0)).getResultVariables();
             long[] rightVars = ((QueryOperatorBase) getChildTask(1)).getResultVariables();
             leftMappingCache.add(mapping);
@@ -309,6 +315,12 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
             }
           } else {
             Mapping mapping = consumeMapping(1);
+            if (logger != null) {
+              // TODO remove
+              if (mapping == null) {
+                logger.info("\ninputQueueLength=" + getSizeOfInputQueue(1));
+              }
+            }
             long[] mappingVars = ((QueryOperatorBase) getChildTask(1)).getResultVariables();
             long[] leftVars = ((QueryOperatorBase) getChildTask(0)).getResultVariables();
             rightMappingCache.add(mapping);
