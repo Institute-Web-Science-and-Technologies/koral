@@ -54,10 +54,11 @@ public class MappingRecycleCache {
     return mapping;
   }
 
-  public Mapping createMapping(TriplePattern pattern, IndexType indexType, byte[] triple) {
+  public synchronized Mapping createMapping(TriplePattern pattern, IndexType indexType,
+          byte[] triple) {
     byte[] newMapping = new byte[Byte.BYTES + Long.BYTES + Long.BYTES + Integer.BYTES
-            + Long.BYTES * pattern.getVariables().length
-            + (numberOfSlaves / Byte.SIZE + (numberOfSlaves % Byte.SIZE == 0 ? 0 : 1))];
+            + (Long.BYTES * pattern.getVariables().length)
+            + ((numberOfSlaves / Byte.SIZE) + ((numberOfSlaves % Byte.SIZE) == 0 ? 0 : 1))];
     newMapping[0] = MessageType.QUERY_MAPPING_BATCH.getValue();
     NumberConversion.int2bytes(newMapping.length, newMapping, Byte.BYTES + Long.BYTES + Long.BYTES);
     // set matched variables
@@ -75,12 +76,12 @@ public class MappingRecycleCache {
       insertionIndex += Long.BYTES;
     }
     System.arraycopy(triple, 3 * Long.BYTES, newMapping, insertionIndex,
-            triple.length - 3 * Long.BYTES);
+            triple.length - (3 * Long.BYTES));
     return createMapping(newMapping, 0, newMapping.length);
   }
 
-  public Mapping createMapping(byte[] byteArrayWithMapping, int firstIndexOfMappingInArray,
-          int lengthOfMapping) {
+  public synchronized Mapping createMapping(byte[] byteArrayWithMapping,
+          int firstIndexOfMappingInArray, int lengthOfMapping) {
     Mapping result = getMapping();
     result.set(byteArrayWithMapping, firstIndexOfMappingInArray, lengthOfMapping);
     return result;
@@ -96,27 +97,27 @@ public class MappingRecycleCache {
     return result;
   }
 
-  public void releaseMapping(Mapping mapping) {
+  public synchronized void releaseMapping(Mapping mapping) {
     if (!isFull()) {
       push(mapping);
     }
   }
 
-  public Mapping getMappingWithRestrictedVariables(Mapping mapping, long[] vars,
+  public synchronized Mapping getMappingWithRestrictedVariables(Mapping mapping, long[] vars,
           long[] selectedVars) {
     Mapping result = getMapping();
     result.restrictMapping(selectedVars, mapping, vars);
     return result;
   }
 
-  public Mapping mergeMappings(long[] resultVarsOrdering, Mapping mapping1, long[] vars1,
-          Mapping mapping2, long[] vars2) {
+  public synchronized Mapping mergeMappings(long[] resultVarsOrdering, Mapping mapping1,
+          long[] vars1, Mapping mapping2, long[] vars2) {
     Mapping result = getMapping();
     result.joinMappings(resultVarsOrdering, mapping1, vars1, mapping2, vars2);
     return result;
   }
 
-  public Mapping cloneMapping(Mapping mapping) {
+  public synchronized Mapping cloneMapping(Mapping mapping) {
     byte[] newArray = new byte[mapping.getLengthOfMappingInByteArray()];
     System.arraycopy(mapping.getByteArray(), mapping.getFirstIndexOfMappingInByteArray(), newArray,
             0, newArray.length);
