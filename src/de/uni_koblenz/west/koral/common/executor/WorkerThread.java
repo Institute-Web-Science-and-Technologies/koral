@@ -115,6 +115,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
   }
 
   public void abortQuery(byte[] receivedMessage) {
+    messageSender.sendAllBufferedMessages(mappingCache);
     Set<WorkerTask> queryTasks = receiver.getAllTasksOfQuery(receivedMessage, 1);
     Iterator<WorkerTask> iterator = tasks.iterator();
     while (iterator.hasNext()) {
