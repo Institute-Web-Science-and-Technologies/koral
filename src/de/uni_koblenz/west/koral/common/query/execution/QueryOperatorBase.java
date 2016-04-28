@@ -7,7 +7,6 @@ import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.koral.common.query.execution.operators.ProjectionOperator;
-import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 
 import java.io.ByteArrayOutputStream;
@@ -120,9 +119,6 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
       measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_START,
               System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
               Long.toString(getID() & 0xff_ffL));
-    }
-    if (logger != null) {
-      logger.info("test output at start(): " + NumberConversion.id2description(getID()));
     }
   }
 
