@@ -170,7 +170,11 @@ public abstract class WorkerTaskBase implements WorkerTask {
   }
 
   public WorkerTask[] getChildren() {
-    return Arrays.copyOf(children, children.length);
+    if (children != null) {
+      return Arrays.copyOf(children, children.length);
+    } else {
+      return new WorkerTask[0];
+    }
   }
 
   /**
