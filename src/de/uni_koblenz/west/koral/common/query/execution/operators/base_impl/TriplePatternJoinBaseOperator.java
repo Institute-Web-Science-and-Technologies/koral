@@ -31,14 +31,15 @@ public class TriplePatternJoinBaseOperator extends TriplePatternJoinOperator {
 
   @Override
   protected void emitMapping(Mapping mapping) {
-    numberOfEmittedMappings++;
     if (getParentTask() == null) {
       messageSender.sendQueryMapping(mapping, getID(), getCoordinatorID(), recycleCache);
+      numberOfEmittedMappings[0]++;
     } else {
       // send to computer with smallest id
       long parentBaseID = getParentTask().getID() & 0x00_00_FF_FF_FF_FF_FF_FFl;
       messageSender.sendQueryMapping(mapping, getID(), parentBaseID | 0x00_01_00_00_00_00_00_00l,
               recycleCache);
+      numberOfEmittedMappings[1]++;
     }
   }
 

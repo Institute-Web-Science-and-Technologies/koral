@@ -389,13 +389,15 @@ public enum MeasurementType {
 
   /**
    * measured on master<br>
-   * timestamp;queryId;taskId;idleTime;processingTime;numberOfEmmittedMappings
+   * timestamp;queryId;taskId;idleTime;processingTime;
+   * numberOfMappingsEmmittedToMaster;numberOfMappingsEmmittedToSlaves+
    */
   QUERY_OPERATION_FINISH,
 
   /**
    * measured on master<br>
-   * timestamp;queryId;taskId;idleTime;processingTime;numberOfEmmittedMappings
+   * timestamp;queryId;taskId;idleTime;processingTime;
+   * numberOfMappingsEmmittedToMaster;numberOfMappingsEmmittedToSlaves+
    */
   QUERY_OPERATION_CLOSED,
 

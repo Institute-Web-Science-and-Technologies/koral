@@ -1,8 +1,11 @@
 package de.uni_koblenz.west.koral.common.query.execution;
 
 import de.uni_koblenz.west.koral.common.executor.WorkerTask;
+import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageSenderBuffer;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.query.Mapping;
+import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.koral.common.query.execution.operators.ProjectionOperator;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 
@@ -10,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * This is the base implementation of {@link WorkerTask} that is common for all
@@ -38,7 +42,10 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
 
   private long totalWorkTime;
 
-  protected long numberOfEmittedMappings;
+  /**
+   * master,slave0,slave1,...
+   */
+  protected long[] numberOfEmittedMappings;
 
   public QueryOperatorBase(short slaveId, int queryId, short taskId, long coordinatorId,
           int numberOfSlaves, int cacheSize, File cacheDirectory, int emittedMappingsPerRound) {
@@ -54,6 +61,13 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
     super(id, numberOfSlaves, cacheSize, cacheDirectory);
     this.coordinatorId = coordinatorId;
     this.emittedMappingsPerRound = emittedMappingsPerRound;
+  }
+
+  @Override
+  public void setUp(MessageSenderBuffer messageSender, MappingRecycleCache recycleCache,
+          Logger logger, MeasurementCollector measurementCollector) {
+    numberOfEmittedMappings = new long[messageSender.getNumberOfSlaves() + 1];
+    super.setUp(messageSender, recycleCache, logger, measurementCollector);
   }
 
   /**
@@ -159,10 +173,16 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   protected void tidyUp() {
     stopTimeMeasurement();
     if (measurementCollector != null) {
+      String[] values = new String[4 + numberOfEmittedMappings.length];
+      values[0] = Integer.toString((int) (getID() >>> Short.SIZE));
+      values[1] = Long.toString(getID() & 0xff_ffL);
+      values[2] = Long.toString(totalIdleTime);
+      values[3] = Long.toString(totalWorkTime);
+      for (int i = 0; i < numberOfEmittedMappings.length; i++) {
+        values[4 + i] = Long.toString(numberOfEmittedMappings[i]);
+      }
       measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_FINISH,
-              System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
-              Long.toString(getID() & 0xff_ffL), Long.toString(totalIdleTime),
-              Long.toString(totalWorkTime), Long.toString(numberOfEmittedMappings));
+              System.currentTimeMillis(), values);
     }
   }
 
@@ -175,12 +195,13 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
    * @param mapping
    */
   protected void emitMapping(Mapping mapping) {
-    numberOfEmittedMappings++;
     if (getParentTask() == null) {
       messageSender.sendQueryMapping(mapping, getID(), getCoordinatorID(), recycleCache);
+      numberOfEmittedMappings[0]++;
     } else if (getParentTask() instanceof ProjectionOperator) {
       // projection operator filters all mappings on the same computer
       messageSender.sendQueryMapping(mapping, getID(), getParentTask().getID(), recycleCache);
+      numberOfEmittedMappings[(int) (getParentTask().getID() >>> (Integer.SIZE + Short.SIZE))]++;
     } else {
       short thisComputerID = (short) (getID() >>> (Short.SIZE + Integer.SIZE));
       long parentBaseID = getParentTask().getID() & 0x00_00_FF_FF_FF_FF_FF_FFl;
@@ -190,6 +211,9 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
           // it to all parent tasks
           mapping.setContainmentToAll();
           messageSender.sendQueryMappingToAll(mapping, getID(), parentBaseID, recycleCache);
+          for (int i = 1; i < numberOfEmittedMappings.length; i++) {
+            numberOfEmittedMappings[i]++;
+          }
         }
       } else {
         long firstJoinVar = ((QueryOperatorTask) getParentTask()).getFirstJoinVar();
@@ -198,6 +222,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
           // send to computer with smallest id
           messageSender.sendQueryMapping(mapping, getID(),
                   parentBaseID | 0x00_01_00_00_00_00_00_00l, recycleCache);
+          numberOfEmittedMappings[1]++;
         } else {
           long ownerLong = mapping.getValue(firstJoinVar, getResultVariables())
                   & 0xFF_FF_00_00_00_00_00_00l;
@@ -209,6 +234,8 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
               // forward it to parent task on this computer
               messageSender.sendQueryMapping(mapping, getID(), getParentTask().getID(),
                       recycleCache);
+              numberOfEmittedMappings[(int) (getParentTask()
+                      .getID() >>> (Integer.SIZE + Short.SIZE))]++;
             }
           } else {
             if (mapping.getIdOfFirstComputerKnowingThisMapping() == thisComputerID) {
@@ -217,6 +244,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
               mapping.updateContainment((int) (getID() >>> (Short.SIZE + Integer.SIZE)), owner);
               messageSender.sendQueryMapping(mapping, getID(), parentBaseID | ownerLong,
                       recycleCache);
+              numberOfEmittedMappings[owner]++;
             }
           }
         }
@@ -304,10 +332,16 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
     closeInternal();
     stopTimeMeasurement();
     if (measurementCollector != null) {
+      String[] values = new String[4 + numberOfEmittedMappings.length];
+      values[0] = Integer.toString((int) (getID() >>> Short.SIZE));
+      values[1] = Long.toString(getID() & 0xff_ffL);
+      values[2] = Long.toString(totalIdleTime);
+      values[3] = Long.toString(totalWorkTime);
+      for (int i = 0; i < numberOfEmittedMappings.length; i++) {
+        values[4 + i] = Long.toString(numberOfEmittedMappings[i]);
+      }
       measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_CLOSED,
-              System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
-              Long.toString(getID() & 0xff_ffL), Long.toString(totalIdleTime),
-              Long.toString(totalWorkTime), Long.toString(numberOfEmittedMappings));
+              System.currentTimeMillis(), values);
     }
   }
 

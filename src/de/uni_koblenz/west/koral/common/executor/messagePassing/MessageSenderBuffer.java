@@ -62,6 +62,10 @@ public class MessageSenderBuffer {
     this.numberOfSlaves = numberOfSlaves;
   }
 
+  public int getNumberOfSlaves() {
+    return numberOfSlaves;
+  }
+
   public void sendQueryCreate(GraphStatistics statistics, int queryId, QueryOperatorBase queryTree,
           boolean useBaseImplementation) {
     for (int slave = 0; slave < numberOfSlaves; slave++) {
@@ -159,7 +163,7 @@ public class MessageSenderBuffer {
   }
 
   private int getComputerID(long taskID) {
-    return (int) (taskID >>> 6 * Byte.SIZE);
+    return (int) (taskID >>> (6 * Byte.SIZE));
   }
 
   public void sendAllBufferedMessages(MappingRecycleCache mappingCache) {
