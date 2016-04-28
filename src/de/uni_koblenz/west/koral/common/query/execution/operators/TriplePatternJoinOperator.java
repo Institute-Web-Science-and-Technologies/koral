@@ -292,14 +292,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
             }
           } else {
             Mapping mapping = consumeMapping(0);
-            if ((mapping == null) && isAborted()) {
-              return;
-            }
-            if (logger != null) {
-              // TODO remove
-              if (mapping == null) {
-                logger.info("\ninputQueueLength=" + getSizeOfInputQueue(0));
-              }
+            if (mapping == null) {
+              continue;
             }
             long[] mappingVars = ((QueryOperatorBase) getChildTask(0)).getResultVariables();
             long[] rightVars = ((QueryOperatorBase) getChildTask(1)).getResultVariables();
@@ -318,14 +312,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
             }
           } else {
             Mapping mapping = consumeMapping(1);
-            if ((mapping == null) && isAborted()) {
-              return;
-            }
-            if (logger != null) {
-              // TODO remove
-              if (mapping == null) {
-                logger.info("\ninputQueueLength=" + getSizeOfInputQueue(1));
-              }
+            if (mapping == null) {
+              continue;
             }
             long[] mappingVars = ((QueryOperatorBase) getChildTask(1)).getResultVariables();
             long[] leftVars = ((QueryOperatorBase) getChildTask(0)).getResultVariables();
@@ -363,8 +351,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
         // discard all mappings received from left child
         while (!isInputQueueEmpty(0)) {
           Mapping mapping = consumeMapping(0);
-          if ((mapping == null) && isAborted()) {
-            return;
+          if (mapping == null) {
+            continue;
           }
           recycleCache.releaseMapping(mapping);
         }
@@ -383,10 +371,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
           // as a final step, discard the empty mapping from the right
           // child
           Mapping mapping = consumeMapping(1);
-          if ((mapping == null) && isAborted()) {
-            return;
+          if (mapping != null) {
+            recycleCache.releaseMapping(mapping);
           }
-          recycleCache.releaseMapping(mapping);
         }
       }
     }
@@ -400,8 +387,8 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
         // discard all mappings received from right child
         while (!isInputQueueEmpty(1)) {
           Mapping mapping = consumeMapping(1);
-          if ((mapping == null) && isAborted()) {
-            return;
+          if (mapping == null) {
+            continue;
           }
           recycleCache.releaseMapping(mapping);
         }
@@ -420,10 +407,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
           // as a final step, discard the empty mapping from the left
           // child
           Mapping mapping = consumeMapping(0);
-          if ((mapping == null) && isAborted()) {
-            return;
+          if (mapping != null) {
+            recycleCache.releaseMapping(mapping);
           }
-          recycleCache.releaseMapping(mapping);
         }
       }
     }
