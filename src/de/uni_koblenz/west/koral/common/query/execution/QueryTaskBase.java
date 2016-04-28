@@ -159,6 +159,12 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
     return state == QueryTaskState.FINISHED;
   }
 
+  private void abort() {
+    if (state != QueryTaskState.FINISHED) {
+      state = QueryTaskState.ABORTED;
+    }
+  }
+
   public boolean isAborted() {
     return state == QueryTaskState.ABORTED;
   }
@@ -166,9 +172,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
   @Override
   public void close() {
     super.close();
-    if (state != QueryTaskState.FINISHED) {
-      state = QueryTaskState.ABORTED;
-    }
+    abort();
   }
 
 }

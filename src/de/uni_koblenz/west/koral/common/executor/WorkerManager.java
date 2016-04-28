@@ -213,9 +213,6 @@ public class WorkerManager implements Closeable, AutoCloseable {
   }
 
   public void abortQuery(byte[] receivedMessage) {
-    if (logger != null) {
-      logger.info("\nabortQuery");
-    }
     for (WorkerThread worker : workers) {
       worker.abortQuery(receivedMessage);
     }

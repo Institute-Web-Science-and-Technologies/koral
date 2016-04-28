@@ -292,6 +292,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
             }
           } else {
             Mapping mapping = consumeMapping(0);
+            if ((mapping == null) && isAborted()) {
+              return;
+            }
             if (logger != null) {
               // TODO remove
               if (mapping == null) {
@@ -315,6 +318,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
             }
           } else {
             Mapping mapping = consumeMapping(1);
+            if ((mapping == null) && isAborted()) {
+              return;
+            }
             if (logger != null) {
               // TODO remove
               if (mapping == null) {
@@ -357,6 +363,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
         // discard all mappings received from left child
         while (!isInputQueueEmpty(0)) {
           Mapping mapping = consumeMapping(0);
+          if ((mapping == null) && isAborted()) {
+            return;
+          }
           recycleCache.releaseMapping(mapping);
         }
       } else {
@@ -374,6 +383,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
           // as a final step, discard the empty mapping from the right
           // child
           Mapping mapping = consumeMapping(1);
+          if ((mapping == null) && isAborted()) {
+            return;
+          }
           recycleCache.releaseMapping(mapping);
         }
       }
@@ -388,6 +400,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
         // discard all mappings received from right child
         while (!isInputQueueEmpty(1)) {
           Mapping mapping = consumeMapping(1);
+          if ((mapping == null) && isAborted()) {
+            return;
+          }
           recycleCache.releaseMapping(mapping);
         }
       } else {
@@ -405,6 +420,9 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
           // as a final step, discard the empty mapping from the left
           // child
           Mapping mapping = consumeMapping(0);
+          if ((mapping == null) && isAborted()) {
+            return;
+          }
           recycleCache.releaseMapping(mapping);
         }
       }
