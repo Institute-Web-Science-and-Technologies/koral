@@ -6,6 +6,7 @@ import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NavigableSet;
@@ -257,6 +258,11 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
   @Override
   public void close() {
     if (isAlive()) {
+      if (logger != null) {
+        // TODO remove
+        logger.info("\nINTERRUPTED!!!!\n"
+                + Arrays.toString(Thread.getAllStackTraces().get(Thread.currentThread())));
+      }
       interrupt();
     }
     messageSender.close(mappingCache);
