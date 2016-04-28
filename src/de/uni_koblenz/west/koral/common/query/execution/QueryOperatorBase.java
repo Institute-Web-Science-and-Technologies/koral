@@ -121,6 +121,9 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
               System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
               Long.toString(getID() & 0xff_ffL));
     }
+    if (logger != null) {
+      logger.info("test output at start(): " + NumberConversion.id2description(getID()));
+    }
   }
 
   @Override
@@ -185,10 +188,6 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
       }
       measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_FINISH,
               System.currentTimeMillis(), values);
-    }
-    if (logger != null) {
-      // TODO remove
-      logger.info("finished task " + NumberConversion.id2description(getID()));
     }
   }
 
