@@ -26,6 +26,10 @@ public class CSVFileHandler extends Handler {
   private String delim = "";
 
   public CSVFileHandler(Configuration conf, String[] currentServer) throws IOException {
+    File logDir = new File(conf.getLogDirectory());
+    if (!logDir.exists()) {
+      logDir.mkdirs();
+    }
     out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf.getLogDirectory()
             + File.separatorChar + currentServer[0] + "_" + currentServer[1] + ".log"), "UTF-8"));
     formatter = new CSVFormatter(currentServer);
