@@ -5,17 +5,17 @@ from fabric.contrib.files import *
 @roles('master')
 def installMaster():
     performCommonInstallationSteps()
-    #installMetis()
+    installMetis()
 
 @roles('slaves')
 def installSlave():
     performCommonInstallationSteps()
 
 def performCommonInstallationSteps():
-    #environment.initialiseVM()
-    #installOracleJDK8()
-    #installGit()
-    #installAnt()
+    environment.initialiseVM()
+    installOracleJDK8()
+    installGit()
+    installAnt()
     cloneKoral()
     resolveDependencies()
     buildKoral()
@@ -43,7 +43,7 @@ def cloneKoral():
 
 def resolveDependencies():
     resolveCLI()
-    #installMaven()
+    installMaven()
     resolveJeromq()
     resolveJena()
     resolveMapDB()

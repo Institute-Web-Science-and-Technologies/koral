@@ -11,6 +11,9 @@ def update():
     execute(updateKoral.updateMaster)
     execute(updateKoral.updateSlave)
 
+def updateConfig(configFile=-1):
+    execute(updateKoral.updateConfig, configFile)
+
 def start(remoteLogger=-1, remoteMeasurementCollector=-1):
     execute(manageKoral.startMaster, remoteLogger, remoteMeasurementCollector)
     execute(manageKoral.startSlave, remoteLogger, remoteMeasurementCollector)
