@@ -8,6 +8,7 @@ import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.common.messages.MessageUtils;
 import de.uni_koblenz.west.koral.common.query.execution.QueryExecutionCoordinator;
+import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 import de.uni_koblenz.west.koral.master.KoralMaster;
 import de.uni_koblenz.west.koral.master.tasks.ClientConnectionKeepAliveTask;
@@ -192,7 +193,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
       }
       return;
     }
-    byte numberOfArguments = buffer[0];
+    int numberOfArguments = NumberConversion.bytes2int(buffer);
 
     byte[][] arguments = new byte[numberOfArguments][];
     for (int i = 0; i < numberOfArguments; i++) {

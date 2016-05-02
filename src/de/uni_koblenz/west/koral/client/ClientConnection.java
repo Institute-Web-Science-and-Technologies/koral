@@ -8,6 +8,7 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.common.messages.MessageUtils;
 import de.uni_koblenz.west.koral.common.networManager.NetworkContextFactory;
+import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
@@ -177,7 +178,7 @@ public class ClientConnection implements Closeable {
         outSocket.sendMore(clientAddress);
         outSocket.sendMore(commandBytes);
         if (args.length == 0) {
-          outSocket.send(new byte[] { (byte) 0 });
+          outSocket.send(NumberConversion.int2bytes(0));
         } else {
           for (int i = 0; i < args.length; i++) {
             if (i == (args.length - 1)) {

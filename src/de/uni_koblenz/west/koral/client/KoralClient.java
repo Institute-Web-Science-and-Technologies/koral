@@ -70,12 +70,11 @@ public class KoralClient {
   public void loadGraph(CoverStrategyType graphCover, int nHopReplicationPathLength,
           String... inputPaths) {
     List<File> files = getFiles(inputPaths);
-    System.out.println(files);
     if (files.isEmpty()) {
       throw new RuntimeException("No graph file could be found.");
     }
     byte[][] args = new byte[4 + files.size()][];
-    args[0] = new byte[] { (byte) (args.length - 1) };
+    args[0] = NumberConversion.int2bytes(args.length - 1);
     args[1] = NumberConversion.int2bytes(graphCover.ordinal());
     args[2] = NumberConversion.int2bytes(nHopReplicationPathLength);
     args[3] = NumberConversion.int2bytes(files.size());

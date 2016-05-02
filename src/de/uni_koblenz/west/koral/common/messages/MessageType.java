@@ -52,7 +52,7 @@ public enum MessageType {
    * (multipart message)<br>
    * String ip:port<br>
    * String command<br>
-   * byte numberOfArgs<br>
+   * int numberOfArgs<br>
    * byte[] arg<sub>1</sub><br>
    * ...<br>
    * byte[] arg<sub>numberOfArgs</sub>
