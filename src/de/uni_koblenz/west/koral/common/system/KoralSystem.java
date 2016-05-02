@@ -19,6 +19,7 @@ import de.uni_koblenz.west.koral.common.messages.MessageNotifier;
 import de.uni_koblenz.west.koral.common.networManager.NetworkManager;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,6 +68,11 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
         }
       }
     }));
+
+    File tmpDir = new File(conf.getTmpDir());
+    if (!tmpDir.exists()) {
+      tmpDir.mkdirs();
+    }
 
     if (conf.getLoglevel() != Level.OFF) {
       if (conf.getRomoteLoggerReceiver() != null) {
