@@ -29,7 +29,8 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
   @Override
   protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
           OutputStream[] outputs, boolean[] writtenFiles, File workingDir) {
-    int hierarchyLevel = identifyHierarchyLevel(new RDFFileIterator(rdfFiles), numberOfGraphChunks);
+    int hierarchyLevel = identifyHierarchyLevel(new RDFFileIterator(rdfFiles, false),
+            numberOfGraphChunks);
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
               System.currentTimeMillis());

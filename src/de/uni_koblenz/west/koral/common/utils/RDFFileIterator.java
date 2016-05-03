@@ -98,10 +98,10 @@ public class RDFFileIterator
     getNextIterator();
   }
 
-  public RDFFileIterator(RDFFileIterator iterator) {
+  public RDFFileIterator(RDFFileIterator iterator, boolean deleteReadFiles) {
     this(iterator.rdfFiles.length == 1 ? iterator.rdfFiles[0]
             : iterator.rdfFiles.length == 0 ? null : iterator.rdfFiles[0].getParentFile(),
-            iterator.deleteReadFiles, iterator.logger);
+            deleteReadFiles, iterator.logger);
   }
 
   private boolean isCurrentFileSkippable() {
