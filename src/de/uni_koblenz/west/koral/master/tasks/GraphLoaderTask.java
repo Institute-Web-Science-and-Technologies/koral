@@ -56,6 +56,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   private final File workingDir;
 
+  private final File graphFilesDir;
+
   private GraphCoverCreator coverCreator;
 
   private int replicationPathLength;
@@ -109,6 +111,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
                 "The working directory " + workingDir.getAbsolutePath() + " could not be created!");
       }
     }
+    graphFilesDir = new File(workingDir.getAbsolutePath() + File.separatorChar + "graphFiles");
   }
 
   private void deleteContent(File dir) {
@@ -162,7 +165,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
             measurementCollector);
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
-    ftpServer.start(externalFtpIpAddress, ftpPort, workingDir);
+    ftpServer.start(externalFtpIpAddress, ftpPort, graphFilesDir);
     clientConnections.send(clientId, MessageUtils.createStringMessage(MessageType.MASTER_SEND_FILES,
             externalFtpIpAddress + ":" + ftpPort, logger));
     if (measurementCollector != null) {
@@ -300,7 +303,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_START,
               System.currentTimeMillis());
     }
-    RDFFileIterator rdfFiles = new RDFFileIterator(workingDir, true, logger);
+    RDFFileIterator rdfFiles = new RDFFileIterator(graphFilesDir, true, logger);
     File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir, numberOfGraphChunks);
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_END,
@@ -371,6 +374,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
       keepAliveThread.interrupt();
     }
     ftpServer.close();
+    deleteContent(graphFilesDir);
+    graphFilesDir.delete();
     deleteContent(workingDir);
     workingDir.delete();
     if (measurementCollector != null) {
