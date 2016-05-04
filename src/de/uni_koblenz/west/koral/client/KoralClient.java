@@ -218,7 +218,7 @@ public class KoralClient {
     try {
       // send query
       byte[][] args = new byte[4][];
-      args[0] = new byte[] { (byte) (args.length - 1) };
+      args[0] = NumberConversion.int2bytes(args.length - 1);
       args[1] = NumberConversion.int2bytes(treeType.ordinal());
       args[2] = new byte[] { useBaseOperators ? (byte) 1 : (byte) 0 };
       args[3] = queryString.getBytes("UTF-8");
@@ -298,7 +298,7 @@ public class KoralClient {
   }
 
   public void dropDatabase() {
-    connection.sendCommand("drop", new byte[0][0]);
+    connection.sendCommand("drop", new byte[][] { NumberConversion.int2bytes(0), { 0 } });
     byte[][] response = connection.getResponse();
     while (response != null) {
       MessageType mtype = MessageType.valueOf(response[0][0]);
