@@ -334,7 +334,7 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
         Mapping resultMapping = iterator.next();
         emitMapping(resultMapping);
         emittedMessages++;
-        if ((logger != null) && ((emittedMessages / 100000) == 0)) {
+        if ((logger != null) && ((emittedMessages % 100000) == 0)) {
           // TODO remove
           logger.info(NumberConversion.id2description(getID()) + " emitted " + emittedMessages
                   + " mappings.");
