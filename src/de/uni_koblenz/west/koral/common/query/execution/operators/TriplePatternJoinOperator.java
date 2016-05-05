@@ -277,7 +277,15 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
     startIdleTime();
   }
 
+  // TODO remove
+  long startTime = System.currentTimeMillis();
+
   private void executeJoinStep() {
+    if (((System.currentTimeMillis() - startTime) > 10000) && (logger != null)) {
+      // TODO remove
+      logger.info("executed for " + ((System.currentTimeMillis() - startTime) / 1000) + " sec");
+      startTime = System.currentTimeMillis();
+    }
     for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
       if ((iterator == null) || !iterator.hasNext()) {
         if (iterator != null) {
