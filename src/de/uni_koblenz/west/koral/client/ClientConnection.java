@@ -90,14 +90,16 @@ public class ClientConnection implements Closeable {
             answer = inSocket.recv();
           }
         }
-        if ((answer == null) || ((answer.length >= 1) && (MessageType
-                .valueOf(answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION))) {
+        if (answer == null) {
           System.out.println("Master is not confirming connection attempt.");
           closeConnectionToMaster();
           return;
+        } else if ((answer.length >= 1)
+                && (MessageType.valueOf(answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION)) {
+          System.out.println("Unexpected respond from master: " + MessageType.valueOf(answer[0]));
+          closeConnectionToMaster();
+          return;
         }
-        // TODO remove
-        System.out.println(MessageType.valueOf(answer[0]));
         Thread keepAliveThread = new Thread() {
           @Override
           public void run() {
@@ -236,8 +238,6 @@ public class ClientConnection implements Closeable {
         return null;
       }
       MessageType messageType = MessageType.valueOf(mType[0]);
-      // TODO remove
-      System.out.println(messageType);
       switch (messageType) {
         case MASTER_SEND_FILES:
         case MASTER_WORK_IN_PROGRESS:
@@ -290,17 +290,6 @@ public class ClientConnection implements Closeable {
 
   @Override
   public void close() {
-    // receive all additional messages
-    byte[][] ignoredResponse;
-    do {
-      ignoredResponse = getResponse();
-      // TODO remove
-      if (ignoredResponse != null) {
-        System.out
-                .println("Ignoring message of type " + MessageType.valueOf(ignoredResponse[0][0]));
-      }
-    } while ((ignoredResponse != null)
-            && (MessageType.valueOf(ignoredResponse[0][0]) != MessageType.CONNECTION_CLOSED));
     if (outSocket != null) {
       synchronized (outSocketSemaphore) {
         closeConnectionToMaster();
