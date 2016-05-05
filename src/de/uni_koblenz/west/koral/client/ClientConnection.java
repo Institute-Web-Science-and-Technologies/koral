@@ -242,6 +242,9 @@ public class ClientConnection implements Closeable {
         case QUERY_RESULT:
           response = new byte[1][];
           break;
+        case CLIENT_CONNECTION_CONFIRMATION:
+          System.out.println("Ignoring massage from master: " + messageType);
+          break;
         default:
           throw new RuntimeException("Unexpected response from server: " + messageType.name());
       }
