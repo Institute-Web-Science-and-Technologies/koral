@@ -13,7 +13,6 @@ import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.koral.common.utils.InMemoryJoinMappingCache;
 import de.uni_koblenz.west.koral.common.utils.JoinMappingCache;
 import de.uni_koblenz.west.koral.common.utils.MapDBJoinMappingCache;
-import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 
 import java.io.DataOutputStream;
@@ -278,9 +277,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
     startIdleTime();
   }
 
-  // TODO remove
-  private long emittedMessages = 0;
-
   private void executeJoinStep() {
     for (int i = 0; i < getEmittedMappingsPerRound(); i++) {
       if ((iterator == null) || !iterator.hasNext()) {
@@ -333,12 +329,6 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
       } else {
         Mapping resultMapping = iterator.next();
         emitMapping(resultMapping);
-        emittedMessages++;
-        if ((logger != null) && ((emittedMessages % 100000) == 0)) {
-          // TODO remove
-          logger.info(NumberConversion.id2description(getID()) + " emitted " + emittedMessages
-                  + " mappings.");
-        }
       }
     }
   }
