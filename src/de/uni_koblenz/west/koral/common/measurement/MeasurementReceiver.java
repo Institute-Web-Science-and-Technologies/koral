@@ -16,12 +16,11 @@ import de.uni_koblenz.west.koral.common.networManager.NetworkContextFactory;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Command line tool that stores the received measurements in a CSV file.
@@ -42,10 +41,13 @@ public class MeasurementReceiver extends Thread implements Closeable {
   }
 
   public MeasurementReceiver(String address, String port, File outputFile) {
+    if (!outputFile.getName().endsWith(".gz")) {
+      outputFile = new File(outputFile.getAbsolutePath() + ".gz");
+    }
     try {
-      writer = new BufferedWriter(
-              new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8"));
-    } catch (UnsupportedEncodingException | FileNotFoundException e) {
+      writer = new BufferedWriter(new OutputStreamWriter(
+              new GZIPOutputStream(new FileOutputStream(outputFile)), "UTF-8"));
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
     context = NetworkContextFactory.getNetworkContext();
