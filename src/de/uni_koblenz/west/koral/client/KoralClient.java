@@ -333,14 +333,6 @@ public class KoralClient {
         default:
           throw new RuntimeException("Unexpected message type " + mtype.name());
       }
-      // receive all additional messages
-      byte[][] ignoredResponse;
-      do {
-        ignoredResponse = connection.getResponse();
-        // TODO remove
-        System.out
-                .println("Ignoring message of type " + MessageType.valueOf(ignoredResponse[0][0]));
-      } while (ignoredResponse != null);
     } catch (IllegalArgumentException e) {
       throw new RuntimeException("Unknwon message type " + response[0][0]);
     }
