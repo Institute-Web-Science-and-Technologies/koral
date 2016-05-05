@@ -295,8 +295,12 @@ public class ClientConnection implements Closeable {
     do {
       ignoredResponse = getResponse();
       // TODO remove
-      System.out.println("Ignoring message of type " + MessageType.valueOf(ignoredResponse[0][0]));
-    } while (ignoredResponse != null);
+      if (ignoredResponse != null) {
+        System.out
+                .println("Ignoring message of type " + MessageType.valueOf(ignoredResponse[0][0]));
+      }
+    } while ((ignoredResponse != null)
+            && (MessageType.valueOf(ignoredResponse[0][0]) != MessageType.CONNECTION_CLOSED));
     if (outSocket != null) {
       synchronized (outSocketSemaphore) {
         closeConnectionToMaster();
