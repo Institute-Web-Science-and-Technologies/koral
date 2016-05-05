@@ -96,6 +96,8 @@ public class ClientConnection implements Closeable {
           closeConnectionToMaster();
           return;
         }
+        // TODO remove
+        System.out.println(MessageType.valueOf(answer[0]));
         Thread keepAliveThread = new Thread() {
           @Override
           public void run() {
@@ -234,6 +236,8 @@ public class ClientConnection implements Closeable {
         return null;
       }
       MessageType messageType = MessageType.valueOf(mType[0]);
+      // TODO remove
+      System.out.println(messageType);
       switch (messageType) {
         case MASTER_SEND_FILES:
         case MASTER_WORK_IN_PROGRESS:
