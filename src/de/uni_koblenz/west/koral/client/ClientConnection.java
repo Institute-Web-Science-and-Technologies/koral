@@ -90,7 +90,7 @@ public class ClientConnection implements Closeable {
             answer = inSocket.recv();
           }
         }
-        if ((answer == null) || ((answer.length != 1) && (MessageType
+        if ((answer == null) || ((answer.length >= 1) && (MessageType
                 .valueOf(answer[0]) != MessageType.CLIENT_CONNECTION_CONFIRMATION))) {
           System.out.println("Master is not confirming connection attempt.");
           closeConnectionToMaster();
