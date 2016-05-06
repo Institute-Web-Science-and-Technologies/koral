@@ -73,7 +73,7 @@ public class CachedFileReceiverQueue implements Closeable {
   }
 
   public synchronized boolean isEmpty() {
-    return size == 0;
+    return size <= 0;
   }
 
   public synchronized long size() {
