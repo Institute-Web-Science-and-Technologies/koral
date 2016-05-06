@@ -51,6 +51,9 @@ public class SubsetCreator {
 
       DatasetGraph graph = DatasetGraphFactory.createMem();
       for (long i = 0; iter.hasNext() && (i < numberOfSelectedTriples); i++) {
+        if ((i % (numberOfSelectedTriples / 100)) == 0) {
+          System.out.println(i + "/" + numberOfSelectedTriples);
+        }
         Node[] statement = iter.next();
         if (statement.length == 3) {
           graph.getDefaultGraph().add(new Triple(statement[0], statement[1], statement[2]));
