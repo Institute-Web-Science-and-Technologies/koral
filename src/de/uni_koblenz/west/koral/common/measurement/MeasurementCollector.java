@@ -98,7 +98,7 @@ public class MeasurementCollector implements Closeable {
     values.add(queryExecutionTree.toAlgebraicString());
   }
 
-  public void measureValue(MeasurementType type, String... values) {
+  public synchronized void measureValue(MeasurementType type, String... values) {
     StringBuilder sb = new StringBuilder();
     sb.append(MeasurementCollector.rowSeparator + currentServer
             + MeasurementCollector.columnSeparator + (messageId++)
