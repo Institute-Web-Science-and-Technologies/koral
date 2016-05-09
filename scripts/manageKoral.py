@@ -3,12 +3,14 @@ from fabric.api import *
 from fabric.contrib.files import *
 
 @roles('master')
-def startMaster(remoteLogger=-1, remoteMeasurementCollector=-1):
+def startMaster(remoteLogger=-1, remoteMeasurementCollector=-1, startStandAlone=-1):
     additionalArgs = "";
     if (remoteLogger != -1):
         additionalArgs += " -r " + remoteLogger;
     if (remoteMeasurementCollector != -1):
         additionalArgs += " -m " + remoteMeasurementCollector;
+    if (startStandAlone != -1):
+        additionalArgs += " -o ";
     run("nohup java -jar koral.jar master" + additionalArgs + " >& /dev/null < /dev/null & echo $! > koralMaster.pid &", pty=False)
 
 @roles('master')

@@ -18,9 +18,15 @@ def start(remoteLogger=-1, remoteMeasurementCollector=-1):
     execute(manageKoral.startMaster, remoteLogger, remoteMeasurementCollector)
     execute(manageKoral.startSlave, remoteLogger, remoteMeasurementCollector)
 
+def startMaster(remoteLogger=-1, remoteMeasurementCollector=-1, startStandAlone=-1):
+    manageKoral.startMaster(remoteLogger, remoteMeasurementCollector, startStandAlone)
+
 def stop():
     execute(manageKoral.stopSlave)
     execute(manageKoral.stopMaster)
+
+def stopMaster():
+    manageKoral.stopSlave()
 
 def clear():
     execute(manageKoral.clearKoral)
