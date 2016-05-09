@@ -458,8 +458,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
     } else {
       dictionary.clear();
       statistics.clear();
-      // TODO remove
-      System.out.println(dictionary.isEmpty());
     }
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINISHED,
