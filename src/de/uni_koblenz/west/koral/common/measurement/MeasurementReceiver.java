@@ -45,8 +45,12 @@ public class MeasurementReceiver extends Thread implements Closeable {
       outputFile = new File(outputFile.getAbsolutePath() + ".gz");
     }
     try {
+      boolean outputFileExists = outputFile.exists();
       writer = new BufferedWriter(new OutputStreamWriter(
               new GZIPOutputStream(new FileOutputStream(outputFile, true)), "UTF-8"));
+      if (outputFileExists) {
+        writer.write("\n");
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
