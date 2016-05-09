@@ -187,7 +187,7 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
     return outputs;
   }
 
-  private File[] getGraphChunkFiles(File workingDir, int numberOfGraphChunks) {
+  public File[] getGraphChunkFiles(File workingDir, int numberOfGraphChunks) {
     File[] chunkFiles = new File[numberOfGraphChunks];
     for (int i = 0; i < chunkFiles.length; i++) {
       chunkFiles[i] = new File(

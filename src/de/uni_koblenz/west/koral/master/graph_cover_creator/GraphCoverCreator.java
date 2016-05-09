@@ -26,6 +26,8 @@ public interface GraphCoverCreator {
   public File[] createGraphCover(RDFFileIterator rdfFiles, File workingDir,
           int numberOfGraphChunks);
 
+  public File[] getGraphChunkFiles(File workingDir, int numberOfGraphChunks);
+
   public void close();
 
 }

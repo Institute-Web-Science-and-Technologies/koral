@@ -185,6 +185,15 @@ public class DictionaryEncoder implements Closeable {
     return encodedFiles;
   }
 
+  public File[] getEncodeGraphChunks(File workingDir, int numberOfGraphChunks) {
+    File[] chunkFiles = new File[numberOfGraphChunks];
+    for (int i = 0; i < chunkFiles.length; i++) {
+      chunkFiles[i] = new File(
+              workingDir.getAbsolutePath() + File.separatorChar + "chunk" + i + ".enc.gz");
+    }
+    return chunkFiles;
+  }
+
   private void deleteDirectory(File tmpDir) {
     if (tmpDir.exists()) {
       for (File file : tmpDir.listFiles()) {

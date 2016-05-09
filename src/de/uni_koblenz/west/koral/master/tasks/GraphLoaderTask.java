@@ -20,6 +20,10 @@ import de.uni_koblenz.west.koral.slave.KoralSlave;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.LineNumberReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +86,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   private boolean isStarted;
 
+  private LoadingState state;
+
   public GraphLoaderTask(int clientID, ClientConnectionManager clientConnections,
           NetworkManager slaveConnections, String externalFtpIpAddress, String internalFtpIpAddress,
           String ftpPort, DictionaryEncoder dictionary, GraphStatistics statistics, File tmpDir,
@@ -104,14 +110,43 @@ public class GraphLoaderTask extends Thread implements Closeable {
     workingDir = new File(
             tmpDir.getAbsolutePath() + File.separatorChar + "koral_client_" + clientId);
     if (workingDir.exists()) {
-      deleteContent(workingDir);
+      loadState();
+      if (state == LoadingState.START) {
+        deleteContent(workingDir);
+      }
     } else {
       if (!workingDir.mkdirs()) {
         throw new RuntimeException(
                 "The working directory " + workingDir.getAbsolutePath() + " could not be created!");
       }
+      setState(LoadingState.START);
     }
     graphFilesDir = new File(workingDir.getAbsolutePath() + File.separatorChar + "graphFiles");
+  }
+
+  private void setState(LoadingState state) {
+    try (FileWriter fw = new FileWriter(
+            workingDir.getAbsolutePath() + File.separator + "GraphLoaderTaskState.txt");) {
+      fw.write(state.toString());
+      this.state = state;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void loadState() {
+    File stateFile = new File(
+            workingDir.getAbsolutePath() + File.separator + "GraphLoaderTaskState.txt");
+    if (stateFile.exists()) {
+      try (LineNumberReader reader = new LineNumberReader(new FileReader(stateFile));) {
+        String state = reader.readLine();
+        this.state = LoadingState.valueOf(state);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      state = LoadingState.START;
+    }
   }
 
   private void deleteContent(File dir) {
@@ -155,7 +190,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       logger.finer("loadGraph(coverStrategy=" + coverStrategy.name() + ", replicationPathLength="
               + replicationPathLength + ", numberOfFiles=" + numberOfFiles + ")");
     }
-    if (measurementCollector != null) {
+    if ((state == LoadingState.START) && (measurementCollector != null)) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_START,
               System.currentTimeMillis(), coverStrategy.toString(),
               new Integer(replicationPathLength).toString(),
@@ -165,20 +200,26 @@ public class GraphLoaderTask extends Thread implements Closeable {
             measurementCollector);
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
-    ftpServer.start(externalFtpIpAddress, ftpPort, graphFilesDir);
-    clientConnections.send(clientId, MessageUtils.createStringMessage(MessageType.MASTER_SEND_FILES,
-            externalFtpIpAddress + ":" + ftpPort, logger));
-    if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FILE_TRANSFER_TO_MASTER_START,
-              System.currentTimeMillis());
+    if (state == LoadingState.START) {
+      ftpServer.start(externalFtpIpAddress, ftpPort, graphFilesDir);
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_SEND_FILES, externalFtpIpAddress + ":" + ftpPort, logger));
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FILE_TRANSFER_TO_MASTER_START,
+                System.currentTimeMillis());
+      }
+    } else {
+      receiveFilesSent();
     }
   }
 
   public void receiveFilesSent() {
-    ftpServer.close();
-    if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FILE_TRANSFER_TO_MASTER_END,
-              System.currentTimeMillis());
+    if (state == LoadingState.START) {
+      ftpServer.close();
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FILE_TRANSFER_TO_MASTER_END,
+                System.currentTimeMillis());
+      }
     }
     start();
   }
@@ -193,45 +234,52 @@ public class GraphLoaderTask extends Thread implements Closeable {
       File[] chunks = createGraphChunks();
       File[] encodedFiles = encodeGraphFiles(chunks);
 
-      ftpServer.start(internalFtpIpAddress, ftpPort, workingDir);
-      numberOfBusySlaves = 0;
-      List<GraphLoaderListener> listeners = new ArrayList<>();
-      for (int i = 0; i < encodedFiles.length; i++) {
-        File file = encodedFiles[i];
-        if (file == null) {
-          continue;
+      if (state != LoadingState.FINISHED) {
+        setState(LoadingState.TRANSMITTING);
+        ftpServer.start(internalFtpIpAddress, ftpPort, workingDir);
+        numberOfBusySlaves = 0;
+        List<GraphLoaderListener> listeners = new ArrayList<>();
+        for (int i = 0; i < encodedFiles.length; i++) {
+          File file = encodedFiles[i];
+          if (file == null) {
+            continue;
+          }
+          numberOfBusySlaves++;
+          // slave ids start with 1!
+          GraphLoaderListener listener = new GraphLoaderListener(this, i + 1);
+          listeners.add(listener);
+          messageNotifier.registerMessageListener(GraphLoaderListener.class, listener);
+          slaveConnections.sendMore(i + 1,
+                  new byte[] { MessageType.START_FILE_TRANSFER.getValue() });
+          slaveConnections.sendMore(i + 1,
+                  (internalFtpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
+          slaveConnections.send(i + 1, file.getName().getBytes("UTF-8"));
         }
-        numberOfBusySlaves++;
-        // slave ids start with 1!
-        GraphLoaderListener listener = new GraphLoaderListener(this, i + 1);
-        listeners.add(listener);
-        messageNotifier.registerMessageListener(GraphLoaderListener.class, listener);
-        slaveConnections.sendMore(i + 1, new byte[] { MessageType.START_FILE_TRANSFER.getValue() });
-        slaveConnections.sendMore(i + 1, (internalFtpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
-        slaveConnections.send(i + 1, file.getName().getBytes("UTF-8"));
-      }
 
-      while (!isInterrupted() && (numberOfBusySlaves > 0)) {
-        long currentTime = System.currentTimeMillis();
-        long timeToSleep = 100 - (System.currentTimeMillis() - currentTime);
-        if (!isInterrupted() && (timeToSleep > 0)) {
-          try {
-            Thread.sleep(timeToSleep);
-          } catch (InterruptedException e) {
-            break;
+        while (!isInterrupted() && (numberOfBusySlaves > 0)) {
+          long currentTime = System.currentTimeMillis();
+          long timeToSleep = 100 - (System.currentTimeMillis() - currentTime);
+          if (!isInterrupted() && (timeToSleep > 0)) {
+            try {
+              Thread.sleep(timeToSleep);
+            } catch (InterruptedException e) {
+              break;
+            }
           }
         }
-      }
 
-      for (GraphLoaderListener listener : listeners) {
-        messageNotifier.unregisterMessageListener(GraphLoaderListener.class, listener);
+        for (GraphLoaderListener listener : listeners) {
+          messageNotifier.unregisterMessageListener(GraphLoaderListener.class, listener);
+        }
       }
 
       keepAliveThread.interrupt();
+      setState(LoadingState.FINISHED);
 
       if (numberOfBusySlaves == 0) {
         clientConnections.send(clientId,
                 new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
+        cleanWorkingDirs();
       } else {
         clientConnections.send(clientId,
                 MessageUtils.createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
@@ -239,7 +287,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
                         logger));
       }
     } catch (Throwable e) {
-      clearDatabase();
+      // clearDatabase();
       if (logger != null) {
         logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
                 e);
@@ -263,7 +311,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
         numberOfBusySlaves--;
         break;
       case GRAPH_LOADING_FAILED:
-        clearDatabase();
+        // clearDatabase();
         String errorMessage = null;
         try {
           errorMessage = new String(message, 3, message.length, "UTF-8");
@@ -287,70 +335,91 @@ public class GraphLoaderTask extends Thread implements Closeable {
     }
   }
 
-  private void clearDatabase() {
-    dictionary.clear();
-    statistics.clear();
-  }
+  // private void clearDatabase() {
+  // dictionary.clear();
+  // statistics.clear();
+  // }
 
   private File[] createGraphChunks() {
-    if (logger != null) {
-      logger.finer("creation of graph cover started");
-    }
-    clientConnections.send(clientId, MessageUtils.createStringMessage(
-            MessageType.MASTER_WORK_IN_PROGRESS, "Started creation of graph cover.", logger));
+    File[] chunks = null;
+    if ((state == LoadingState.START) || (state == LoadingState.GRAPH_COVER_CREATION)) {
+      setState(LoadingState.GRAPH_COVER_CREATION);
+      if (logger != null) {
+        logger.finer("creation of graph cover started");
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Started creation of graph cover.", logger));
 
-    if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_START,
-              System.currentTimeMillis());
-    }
-    RDFFileIterator rdfFiles = new RDFFileIterator(graphFilesDir, true, logger);
-    File[] chunks = coverCreator.createGraphCover(rdfFiles, workingDir, numberOfGraphChunks);
-    if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_END,
-              System.currentTimeMillis());
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_START,
+                System.currentTimeMillis());
+      }
+      RDFFileIterator rdfFiles = new RDFFileIterator(graphFilesDir, true, logger);
+      chunks = coverCreator.createGraphCover(rdfFiles, workingDir, numberOfGraphChunks);
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_END,
+                System.currentTimeMillis());
+      }
+    } else {
+      chunks = coverCreator.getGraphChunkFiles(workingDir, numberOfGraphChunks);
     }
 
     if (replicationPathLength != 0) {
-      if (measurementCollector != null) {
-        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_START,
-                System.currentTimeMillis());
-      }
       NHopReplicator replicator = new NHopReplicator(logger, measurementCollector);
-      chunks = replicator.createNHopReplication(chunks, workingDir, replicationPathLength);
-      if (measurementCollector != null) {
-        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_END,
-                System.currentTimeMillis());
+      if ((state == LoadingState.GRAPH_COVER_CREATION)
+              || (state == LoadingState.N_HOP_REPLICATION)) {
+        setState(LoadingState.N_HOP_REPLICATION);
+        if (measurementCollector != null) {
+          measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_START,
+                  System.currentTimeMillis());
+        }
+        chunks = replicator.createNHopReplication(chunks, workingDir, replicationPathLength);
+        if (measurementCollector != null) {
+          measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_END,
+                  System.currentTimeMillis());
+        }
+      } else {
+        chunks = replicator.getGraphChunkFiles(workingDir, numberOfGraphChunks);
       }
     }
 
-    if (logger != null) {
-      logger.finer("creation of graph cover finished");
+    if ((state == LoadingState.GRAPH_COVER_CREATION) || (state == LoadingState.N_HOP_REPLICATION)) {
+      if (logger != null) {
+        logger.finer("creation of graph cover finished");
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Finished creation of graph cover.", logger));
     }
-    clientConnections.send(clientId, MessageUtils.createStringMessage(
-            MessageType.MASTER_WORK_IN_PROGRESS, "Finished creation of graph cover.", logger));
     return chunks;
   }
 
   private File[] encodeGraphFiles(File[] plainGraphChunks) {
-    if (logger != null) {
-      logger.finer("encoding of graph chunks");
+    File[] encodedFiles = null;
+    if ((state == LoadingState.GRAPH_COVER_CREATION) || (state == LoadingState.N_HOP_REPLICATION)
+            || (state == LoadingState.ENCODING)) {
+      setState(LoadingState.ENCODING);
+      if (logger != null) {
+        logger.finer("encoding of graph chunks");
+      }
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_START,
+                System.currentTimeMillis());
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Started encoding of graph chunks.", logger));
+      encodedFiles = dictionary.encodeGraphChunks(plainGraphChunks, statistics, workingDir);
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
+                System.currentTimeMillis());
+      }
+      if (logger != null) {
+        logger.finer("encoding of graph chunks finished");
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Finished encoding of graph chunks.", logger));
+    } else {
+      encodedFiles = dictionary.getEncodeGraphChunks(workingDir, numberOfGraphChunks);
     }
-    if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_START,
-              System.currentTimeMillis());
-    }
-    clientConnections.send(clientId, MessageUtils.createStringMessage(
-            MessageType.MASTER_WORK_IN_PROGRESS, "Started encoding of graph chunks.", logger));
-    File[] encodedFiles = dictionary.encodeGraphChunks(plainGraphChunks, statistics, workingDir);
-    if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
-              System.currentTimeMillis());
-    }
-    if (logger != null) {
-      logger.finer("encoding of graph chunks finished");
-    }
-    clientConnections.send(clientId, MessageUtils.createStringMessage(
-            MessageType.MASTER_WORK_IN_PROGRESS, "Finished encoding of graph chunks.", logger));
     return encodedFiles;
   }
 
@@ -374,14 +443,24 @@ public class GraphLoaderTask extends Thread implements Closeable {
       keepAliveThread.interrupt();
     }
     ftpServer.close();
-    deleteContent(graphFilesDir);
-    graphFilesDir.delete();
-    deleteContent(workingDir);
-    workingDir.delete();
+    if ((state == LoadingState.START) || (state == LoadingState.FINISHED)) {
+      cleanWorkingDirs();
+    }
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINISHED,
               System.currentTimeMillis());
     }
   }
 
+  protected void cleanWorkingDirs() {
+    deleteContent(graphFilesDir);
+    graphFilesDir.delete();
+    deleteContent(workingDir);
+    workingDir.delete();
+  }
+
+}
+
+enum LoadingState {
+  START, GRAPH_COVER_CREATION, N_HOP_REPLICATION, ENCODING, TRANSMITTING, FINISHED;
 }

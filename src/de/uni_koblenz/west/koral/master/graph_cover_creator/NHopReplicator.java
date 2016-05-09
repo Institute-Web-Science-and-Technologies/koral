@@ -265,8 +265,7 @@ public class NHopReplicator {
     if (subjects == null) {
       return null;
     }
-    File chunkFile = new File(
-            workingDir.getAbsolutePath() + File.separatorChar + "chunk_" + chunkIndex + ".nq.gz");
+    File chunkFile = getFile(chunkIndex, workingDir);
     try (OutputStream output = new BufferedOutputStream(
             new GZIPOutputStream(new FileOutputStream(chunkFile)));) {
       DatasetGraph graph = DatasetGraphFactory.createMem();
@@ -289,6 +288,19 @@ public class NHopReplicator {
       throw new RuntimeException(e);
     }
     return chunkFile;
+  }
+
+  protected File getFile(int chunkIndex, File workingDir) {
+    return new File(
+            workingDir.getAbsolutePath() + File.separatorChar + "chunk_" + chunkIndex + ".nq.gz");
+  }
+
+  public File[] getGraphChunkFiles(File workingDir, int numberOfGraphChunks) {
+    File[] chunkFiles = new File[numberOfGraphChunks];
+    for (int i = 0; i < chunkFiles.length; i++) {
+      chunkFiles[i] = getFile(i, workingDir);
+    }
+    return chunkFiles;
   }
 
   private void deleteFolder(File mapFolder) {
