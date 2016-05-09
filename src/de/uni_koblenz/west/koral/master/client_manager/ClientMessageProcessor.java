@@ -233,15 +233,17 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     try {
       switch (command) {
         case "load":
-          if (graphHasBeenLoaded) {
-            String errorMessage = "Loading of graph rejected: Koral is currently loading a graph or it has already loaded a graph.";
-            if (logger != null) {
-              logger.finer(errorMessage);
-            }
-            clientConnections.send(clientID, MessageUtils
-                    .createStringMessage(MessageType.CLIENT_COMMAND_FAILED, errorMessage, logger));
-            break;
-          }
+          // if (graphHasBeenLoaded) {
+          // String errorMessage = "Loading of graph rejected: Koral is
+          // currently loading a graph or it has already loaded a graph.";
+          // if (logger != null) {
+          // logger.finer(errorMessage);
+          // }
+          // clientConnections.send(clientID, MessageUtils
+          // .createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
+          // errorMessage, logger));
+          // break;
+          // }
           if (measurementCollector != null) {
             measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_MESSAGE_RECEIPTION,
                     System.currentTimeMillis());
