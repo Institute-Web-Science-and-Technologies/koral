@@ -171,7 +171,7 @@ public class KoralMaster extends KoralSystem {
       Configuration conf = KoralSystem.initializeConfiguration(options, line, className,
               additionalArgs);
 
-      KoralMaster master = new KoralMaster(conf, line.hasOption('o'));
+      KoralMaster master = new KoralMaster(conf, !line.hasOption('o'));
       master.start();
 
     } catch (ParseException e) {
