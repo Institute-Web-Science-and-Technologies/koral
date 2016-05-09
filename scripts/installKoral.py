@@ -107,7 +107,7 @@ def resolveFtpServer():
     run("rm -r apache-ftpserver-1.0.5")
 
 def resolveCommonsNet():
-    run("wget http://mirror.softaculous.com/apache//commons/net/binaries/commons-net-3.4-bin.tar.gz")
+    run("wget apache.mirror.digionline.de//commons/net/binaries/commons-net-1.4.1.tar.gz")
     run("tar -xf commons-net-3.4-bin.tar.gz")
     run("rm commons-net-3.4-bin.tar.gz")
     run("mv commons-net-3.4/commons-net-3.4.jar koral/lib/commons-net-3.4.jar")
