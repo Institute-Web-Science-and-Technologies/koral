@@ -12,8 +12,8 @@ import de.uni_koblenz.west.koral.master.KoralMaster;
  */
 public class MasterNetworkManager extends NetworkManager {
 
-  public MasterNetworkManager(Configuration conf, String[] currentServer) {
-    super(conf, currentServer);
+  public MasterNetworkManager(Configuration conf, String[] currentServer, boolean contactSlaves) {
+    super(conf, currentServer, contactSlaves);
   }
 
 }

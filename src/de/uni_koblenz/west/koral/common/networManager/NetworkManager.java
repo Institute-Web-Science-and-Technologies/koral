@@ -32,24 +32,31 @@ public class NetworkManager implements Closeable, MessageSender {
   private int currentID;
 
   public NetworkManager(Configuration conf, String[] currentServer) {
+    this(conf, currentServer, true);
+  }
+
+  public NetworkManager(Configuration conf, String[] currentServer, boolean contactSlaves) {
     context = NetworkContextFactory.getNetworkContext();
 
     receiver = context.createSocket(ZMQ.PULL);
     receiver.bind("tcp://" + currentServer[0] + ":" + currentServer[1]);
 
     senders = new Socket[conf.getNumberOfSlaves() + 1];
-    String[] master = conf.getMaster();
-    senders[0] = context.createSocket(ZMQ.PUSH);
-    senders[0].connect("tcp://" + master[0] + ":" + master[1]);
-    if (Arrays.equals(currentServer, master)) {
-      currentID = 0;
-    }
-    for (int i = 1; i < senders.length; i++) {
-      String[] slave = conf.getSlave(i - 1);
-      senders[i] = context.createSocket(ZMQ.PUSH);
-      senders[i].connect("tcp://" + slave[0] + ":" + slave[1]);
-      if (Arrays.equals(currentServer, slave)) {
-        currentID = i;
+    if (contactSlaves) {
+
+      String[] master = conf.getMaster();
+      senders[0] = context.createSocket(ZMQ.PUSH);
+      senders[0].connect("tcp://" + master[0] + ":" + master[1]);
+      if (Arrays.equals(currentServer, master)) {
+        currentID = 0;
+      }
+      for (int i = 1; i < senders.length; i++) {
+        String[] slave = conf.getSlave(i - 1);
+        senders[i] = context.createSocket(ZMQ.PUSH);
+        senders[i].connect("tcp://" + slave[0] + ":" + slave[1]);
+        if (Arrays.equals(currentServer, slave)) {
+          currentID = i;
+        }
       }
     }
   }
@@ -64,6 +71,9 @@ public class NetworkManager implements Closeable, MessageSender {
   }
 
   public boolean sendMore(int receiver, byte[] message, boolean awaitSending) {
+    if (senders[receiver] == null) {
+      return false;
+    }
     Socket out = senders[receiver];
     boolean wasSent = false;
     if (out != null) {
@@ -83,6 +93,9 @@ public class NetworkManager implements Closeable, MessageSender {
   }
 
   public boolean send(int receiver, byte[] message, boolean awaitSending) {
+    if (senders[receiver] == null) {
+      return false;
+    }
     Socket out = senders[receiver];
     boolean wasSent = false;
     if (out != null) {
@@ -111,6 +124,9 @@ public class NetworkManager implements Closeable, MessageSender {
   }
 
   private boolean sendToAll(byte[] message, int excludedSlave, boolean excludeMaster) {
+    if (senders[1] == null) {
+      return false;
+    }
     boolean wasSent = true;
     for (int i = excludeMaster ? 1 : 0; i < senders.length; i++) {
       if (i == excludedSlave) {

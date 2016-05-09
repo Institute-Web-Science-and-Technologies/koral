@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.koral.master;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -35,13 +36,17 @@ public class KoralMaster extends KoralSystem {
   private boolean graphHasBeenLoaded;
 
   public KoralMaster(Configuration conf) {
-    super(conf, conf.getMaster(), new MasterNetworkManager(conf, conf.getMaster()));
+    this(conf, true);
+  }
+
+  public KoralMaster(Configuration conf, boolean contactSlaves) {
+    super(conf, conf.getMaster(), new MasterNetworkManager(conf, conf.getMaster(), contactSlaves));
     try {
       ClientConnectionManager clientConnections = new ClientConnectionManager(conf, logger);
       dictionary = new DictionaryEncoder(conf, logger, measurementCollector);
       statistics = new GraphStatistics(conf, (short) conf.getNumberOfSlaves(), logger);
-      clientMessageProcessor = new ClientMessageProcessor(conf, clientConnections, this, logger,
-              measurementCollector);
+      clientMessageProcessor = new ClientMessageProcessor(conf, clientConnections, this,
+              contactSlaves, logger, measurementCollector);
       graphHasBeenLoaded = !dictionary.isEmpty();
     } catch (Throwable t) {
       if (logger != null) {
@@ -160,19 +165,28 @@ public class KoralMaster extends KoralSystem {
   public static void main(String[] args) {
     String className = KoralMaster.class.getName();
     String additionalArgs = "";
-    Options options = KoralSystem.createCommandLineOptions();
+    Options options = KoralMaster.createCommandLineOptions();
     try {
       CommandLine line = KoralSystem.parseCommandLineArgs(options, args);
       Configuration conf = KoralSystem.initializeConfiguration(options, line, className,
               additionalArgs);
 
-      KoralMaster master = new KoralMaster(conf);
+      KoralMaster master = new KoralMaster(conf, line.hasOption('o'));
       master.start();
 
     } catch (ParseException e) {
       e.printStackTrace();
       KoralSystem.printUsage(className, options, additionalArgs);
     }
+  }
+
+  protected static Options createCommandLineOptions() {
+    Options options = KoralSystem.createCommandLineOptions();
+    Option coverOnly = Option.builder("o").longOpt("coverOnly")
+            .desc("if set, the graph cover is created but the chunks are not transmitted to the slaves")
+            .required(false).build();
+    options.addOption(coverOnly);
+    return options;
   }
 
 }

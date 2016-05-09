@@ -66,12 +66,16 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
 
   private final MapDBCacheOptions cacheType;
 
+  private final boolean contactSlaves;
+
   public ClientMessageProcessor(Configuration conf, ClientConnectionManager clientConnections,
-          KoralMaster master, Logger logger, MeasurementCollector measurementCollector) {
+          KoralMaster master, boolean contactSlaves, Logger logger,
+          MeasurementCollector measurementCollector) {
     this.logger = logger;
     this.measurementCollector = measurementCollector;
     this.clientConnections = clientConnections;
     this.master = master;
+    this.contactSlaves = contactSlaves;
     ftpServer = conf.getFTPServer();
     internalFtpIpAddress = conf.getMaster()[0];
     numberOfChunks = conf.getNumberOfSlaves();
@@ -245,7 +249,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
           GraphLoaderTask loaderTask = new GraphLoaderTask(clientID.intValue(), clientConnections,
                   master.getNetworkManager(), ftpServer[0], internalFtpIpAddress, ftpServer[1],
                   master.getDictionary(), master.getStatistics(), tmpDir, master, logger,
-                  measurementCollector);
+                  measurementCollector, contactSlaves);
           clientAddress2GraphLoaderTask.put(address, loaderTask);
           loaderTask.loadGraph(arguments, numberOfChunks);
           break;

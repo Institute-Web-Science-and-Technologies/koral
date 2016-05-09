@@ -88,12 +88,16 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   private LoadingState state;
 
+  private final boolean contactSlaves;
+
   public GraphLoaderTask(int clientID, ClientConnectionManager clientConnections,
           NetworkManager slaveConnections, String externalFtpIpAddress, String internalFtpIpAddress,
           String ftpPort, DictionaryEncoder dictionary, GraphStatistics statistics, File tmpDir,
-          MessageNotifier messageNotifier, Logger logger, MeasurementCollector collector) {
+          MessageNotifier messageNotifier, Logger logger, MeasurementCollector collector,
+          boolean contactSlaves) {
     setDaemon(true);
     graphIsLoadingOrLoaded = true;
+    this.contactSlaves = contactSlaves;
     isStarted = false;
     clientId = clientID;
     this.clientConnections = clientConnections;
@@ -236,40 +240,42 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
       if (state != LoadingState.FINISHED) {
         setState(LoadingState.TRANSMITTING);
-        ftpServer.start(internalFtpIpAddress, ftpPort, workingDir);
-        numberOfBusySlaves = 0;
-        List<GraphLoaderListener> listeners = new ArrayList<>();
-        for (int i = 0; i < encodedFiles.length; i++) {
-          File file = encodedFiles[i];
-          if (file == null) {
-            continue;
+        if (contactSlaves) {
+          ftpServer.start(internalFtpIpAddress, ftpPort, workingDir);
+          numberOfBusySlaves = 0;
+          List<GraphLoaderListener> listeners = new ArrayList<>();
+          for (int i = 0; i < encodedFiles.length; i++) {
+            File file = encodedFiles[i];
+            if (file == null) {
+              continue;
+            }
+            numberOfBusySlaves++;
+            // slave ids start with 1!
+            GraphLoaderListener listener = new GraphLoaderListener(this, i + 1);
+            listeners.add(listener);
+            messageNotifier.registerMessageListener(GraphLoaderListener.class, listener);
+            slaveConnections.sendMore(i + 1,
+                    new byte[] { MessageType.START_FILE_TRANSFER.getValue() });
+            slaveConnections.sendMore(i + 1,
+                    (internalFtpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
+            slaveConnections.send(i + 1, file.getName().getBytes("UTF-8"));
           }
-          numberOfBusySlaves++;
-          // slave ids start with 1!
-          GraphLoaderListener listener = new GraphLoaderListener(this, i + 1);
-          listeners.add(listener);
-          messageNotifier.registerMessageListener(GraphLoaderListener.class, listener);
-          slaveConnections.sendMore(i + 1,
-                  new byte[] { MessageType.START_FILE_TRANSFER.getValue() });
-          slaveConnections.sendMore(i + 1,
-                  (internalFtpIpAddress + ":" + ftpPort).getBytes("UTF-8"));
-          slaveConnections.send(i + 1, file.getName().getBytes("UTF-8"));
-        }
 
-        while (!isInterrupted() && (numberOfBusySlaves > 0)) {
-          long currentTime = System.currentTimeMillis();
-          long timeToSleep = 100 - (System.currentTimeMillis() - currentTime);
-          if (!isInterrupted() && (timeToSleep > 0)) {
-            try {
-              Thread.sleep(timeToSleep);
-            } catch (InterruptedException e) {
-              break;
+          while (!isInterrupted() && (numberOfBusySlaves > 0)) {
+            long currentTime = System.currentTimeMillis();
+            long timeToSleep = 100 - (System.currentTimeMillis() - currentTime);
+            if (!isInterrupted() && (timeToSleep > 0)) {
+              try {
+                Thread.sleep(timeToSleep);
+              } catch (InterruptedException e) {
+                break;
+              }
             }
           }
-        }
 
-        for (GraphLoaderListener listener : listeners) {
-          messageNotifier.unregisterMessageListener(GraphLoaderListener.class, listener);
+          for (GraphLoaderListener listener : listeners) {
+            messageNotifier.unregisterMessageListener(GraphLoaderListener.class, listener);
+          }
         }
       }
 
@@ -279,7 +285,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
       if (numberOfBusySlaves == 0) {
         clientConnections.send(clientId,
                 new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
-        cleanWorkingDirs();
+        if (contactSlaves) {
+          cleanWorkingDirs();
+        }
       } else {
         clientConnections.send(clientId,
                 MessageUtils.createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
