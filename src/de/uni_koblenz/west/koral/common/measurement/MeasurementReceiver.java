@@ -46,7 +46,7 @@ public class MeasurementReceiver extends Thread implements Closeable {
     }
     try {
       writer = new BufferedWriter(new OutputStreamWriter(
-              new GZIPOutputStream(new FileOutputStream(outputFile)), "UTF-8"));
+              new GZIPOutputStream(new FileOutputStream(outputFile, false)), "UTF-8"));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
