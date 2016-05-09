@@ -260,7 +260,8 @@ public class ClientConnection implements Closeable {
         }
       }
     } catch (IllegalArgumentException e) {
-      throw new RuntimeException("Unknwon message type " + mType[0], e);
+      System.out.println("Unknwon message type " + mType[0]);
+      return getResponse();
     }
     return response;
   }
