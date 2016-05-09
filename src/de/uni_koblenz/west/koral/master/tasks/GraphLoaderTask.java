@@ -354,8 +354,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_START,
                 System.currentTimeMillis());
       }
-      RDFFileIterator rdfFiles = new RDFFileIterator(graphFilesDir, true, logger);
+      RDFFileIterator rdfFiles = new RDFFileIterator(graphFilesDir, false, logger);
       chunks = coverCreator.createGraphCover(rdfFiles, workingDir, numberOfGraphChunks);
+      deleteContent(graphFilesDir);
+      graphFilesDir.delete();
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_END,
                 System.currentTimeMillis());

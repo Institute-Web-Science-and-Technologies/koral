@@ -92,6 +92,9 @@ public class NHopReplicator {
       // clean up
       database.close();
       deleteFolder(mapFolder);
+      for (File file : graphCover) {
+        file.delete();
+      }
     } else {
       nHopReplicatedFiles = graphCover;
     }
@@ -126,7 +129,7 @@ public class NHopReplicator {
       return null;
     }
     Set<String> subjectSet = database.createHashSet("subjectsOfChunk" + chunkNumber).makeOrGet();
-    try (RDFFileIterator iterator = new RDFFileIterator(file, true, logger);) {
+    try (RDFFileIterator iterator = new RDFFileIterator(file, false, logger);) {
       for (Node[] tripleNodes : iterator) {
         String[] triple = new String[] { DeSerializer.serializeNode(tripleNodes[0]),
                 DeSerializer.serializeNode(tripleNodes[1]),

@@ -72,7 +72,12 @@ public class DictionaryEncoder implements Closeable {
   public File[] encodeGraphChunks(File[] plainGraphChunks, GraphStatistics statistics,
           File workingDir) {
     File[] itermediateFiles = encodeGraphChunksAndCountStatistics(plainGraphChunks, statistics);
-    return setOwnership(itermediateFiles, statistics, workingDir);
+    File[] result = setOwnership(itermediateFiles, statistics, workingDir);
+
+    for (File file : plainGraphChunks) {
+      file.delete();
+    }
+    return result;
   }
 
   private File[] encodeGraphChunksAndCountStatistics(File[] plainGraphChunks,
@@ -88,7 +93,7 @@ public class DictionaryEncoder implements Closeable {
       }
       intermediateFiles[i] = new File(plainGraphChunks[i].getParentFile().getAbsolutePath()
               + File.separatorChar + "chunk" + i + ".enc.int.gz");
-      try (RDFFileIterator iter = new RDFFileIterator(plainGraphChunks[i], true, logger);
+      try (RDFFileIterator iter = new RDFFileIterator(plainGraphChunks[i], false, logger);
               DataOutputStream out = new DataOutputStream(new BufferedOutputStream(
                       new GZIPOutputStream(new FileOutputStream(intermediateFiles[i]))));) {
         for (Node[] quad : iter) {
