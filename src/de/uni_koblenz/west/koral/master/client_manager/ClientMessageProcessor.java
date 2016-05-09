@@ -256,15 +256,17 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
           loaderTask.loadGraph(arguments, numberOfChunks);
           break;
         case "query":
-          if (!graphHasBeenLoaded) {
-            String errorMessage = "There is no graph loaded that could be queried.";
-            if (logger != null) {
-              logger.finer(errorMessage);
-            }
-            clientConnections.send(clientID, MessageUtils
-                    .createStringMessage(MessageType.CLIENT_COMMAND_FAILED, errorMessage, logger));
-            break;
-          }
+          // if (!graphHasBeenLoaded) {
+          // String errorMessage = "There is no graph loaded that could be
+          // queried.";
+          // if (logger != null) {
+          // logger.finer(errorMessage);
+          // }
+          // clientConnections.send(clientID, MessageUtils
+          // .createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
+          // errorMessage, logger));
+          // break;
+          // }
           if (measurementCollector != null) {
             measurementCollector.measureValue(MeasurementType.QUERY_MESSAGE_RECEIPTION,
                     System.currentTimeMillis());
