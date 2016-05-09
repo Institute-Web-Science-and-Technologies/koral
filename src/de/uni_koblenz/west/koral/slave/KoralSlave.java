@@ -105,6 +105,7 @@ public class KoralSlave extends KoralSystem {
             clear();
             break;
           case START_FILE_TRANSFER:
+            clear();
             byte[][] message = new byte[3][];
             message[0] = new byte[] { receivedMessage[0] };
             message[1] = getNetworkManager().receive(true);

@@ -71,6 +71,8 @@ public class DictionaryEncoder implements Closeable {
 
   public File[] encodeGraphChunks(File[] plainGraphChunks, GraphStatistics statistics,
           File workingDir) {
+    clear();
+    statistics.clear();
     File[] itermediateFiles = encodeGraphChunksAndCountStatistics(plainGraphChunks, statistics);
     File[] result = setOwnership(itermediateFiles, statistics, workingDir);
 
