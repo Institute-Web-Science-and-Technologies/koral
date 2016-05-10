@@ -200,7 +200,7 @@ public class NHopReplicator {
       for (String[] triple : molecule) {
         // update containment information
         updateContainment(triple, currentChunkIndex);
-        updatedMolecule.add(triple);
+        updatedMolecule.append(triple);
       }
       moleculeMap.put(subject, updatedFile.getAbsolutePath());
       originalFile.delete();

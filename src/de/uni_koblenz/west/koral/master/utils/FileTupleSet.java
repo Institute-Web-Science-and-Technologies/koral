@@ -54,7 +54,7 @@ public class FileTupleSet implements Iterable<String[]> {
     }
   }
 
-  private void append(String[] tuple) {
+  public void append(String[] tuple) {
     try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(
             new GZIPOutputStream(new FileOutputStream(getFile(), true))));) {
       output.writeInt(tuple.length);
