@@ -13,8 +13,8 @@ import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.dictionary.Dictionary;
 import de.uni_koblenz.west.koral.master.dictionary.impl.MapDBDictionary;
+import de.uni_koblenz.west.koral.master.utils.AdjacencyMatrix;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
-import de.uni_koblenz.west.koral.master.utils.FileLongSet;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
 import java.io.BufferedInputStream;
@@ -114,13 +114,20 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     long numberOfUsedTriples = 0;
     long numberOfIgnoredTriples = 0;
 
+    AdjacencyMatrix adjacencyMatrix = new AdjacencyMatrix(metisInputTempFolder);
     // create adjacency lists
     try {
       try (DataOutputStream encodedGraphOutput = new DataOutputStream(new BufferedOutputStream(
               new GZIPOutputStream(new FileOutputStream(encodedRDFGraph))));
               DataOutputStream ignoredTriplesOutput = new DataOutputStream(new BufferedOutputStream(
                       new GZIPOutputStream(new FileOutputStream(ignoredTriples))))) {
+        // TODO remove
+        long triples = 0;
         for (Node[] statement : rdfFiles) {
+          triples++;
+          if ((triples % 100000) == 0) {
+            System.out.println("processed " + triples + " triples");
+          }
           transformBlankNodes(statement);
           if (statement[0].equals(statement[2]) || DeSerializer.serializeNode(statement[1])
                   .equals("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")) {
@@ -154,25 +161,15 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           encodedGraphOutput.writeInt(property.length());
           encodedGraphOutput.writeBytes(property);
           encodedGraphOutput.writeLong(encodedObject);
-          // add direction subject2object
-          FileLongSet adjacentVerticesOfSubject = new FileLongSet(
-                  getAdjacencyListFile(metisInputTempFolder, encodedSubject));
-          adjacentVerticesOfSubject.close();
-          boolean isNewAdjacency = adjacentVerticesOfSubject.add(encodedObject);
-          adjacentVerticesOfSubject.close();
-          if (isNewAdjacency) {
-            numberOfEdges++;
-          }
-          // add direction object2subject (since edges are bidirectional, do not
-          // count an additional edge)
-          FileLongSet adjacentVerticesOfObject = new FileLongSet(
-                  getAdjacencyListFile(metisInputTempFolder, encodedObject));
-          adjacentVerticesOfObject.add(encodedSubject);
-          adjacentVerticesOfObject.close();
+
+          adjacencyMatrix.addEdge(encodedSubject, encodedObject);
         }
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
+
+      numberOfVertices = adjacencyMatrix.getNumberOfVertices();
+      numberOfEdges = adjacencyMatrix.getNumberOfEdges();
 
       if (measurementCollector != null) {
         measurementCollector.measureValue(
@@ -189,24 +186,22 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
               new OutputStreamWriter(new FileOutputStream(metisInputGraph), "UTF-8"));) {
         metisInputGraphWriter.write(numberOfVertices + " " + numberOfEdges);
         for (long vertex = 1; vertex <= numberOfVertices; vertex++) {
-          FileLongSet adjacentVertices = new FileLongSet(
-                  getAdjacencyListFile(metisInputTempFolder, vertex));
           metisInputGraphWriter.write("\n");
           String delim = "";
-          LongIterator iterator = adjacentVertices.iterator();
+          LongIterator iterator = adjacencyMatrix.getAdjacencyList(vertex);
           while (iterator.hasNext()) {
             long neighbour = iterator.next();
             metisInputGraphWriter.write(delim + neighbour);
             delim = " ";
           }
           iterator.close();
-          adjacentVertices.close();
         }
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
 
     } finally {
+      adjacencyMatrix.close();
       deleteFolder(metisInputTempFolder);
       if (measurementCollector != null) {
         measurementCollector.measureValue(
@@ -214,10 +209,6 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
                 System.currentTimeMillis());
       }
     }
-  }
-
-  private File getAdjacencyListFile(File adjacencyListFolder, long adjacencyListId) {
-    return new File(adjacencyListFolder + File.separator + adjacencyListId);
   }
 
   private File runMetis(File metisInputGraph, int numberOfGraphChunks) {
