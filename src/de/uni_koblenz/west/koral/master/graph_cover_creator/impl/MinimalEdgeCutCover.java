@@ -14,6 +14,8 @@ import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.dictionary.Dictionary;
 import de.uni_koblenz.west.koral.master.dictionary.impl.MapDBDictionary;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
+import de.uni_koblenz.west.koral.master.utils.FileLongSet;
+import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -29,8 +31,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Scanner;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -108,18 +108,11 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     if (!metisInputTempFolder.exists()) {
       metisInputTempFolder.mkdirs();
     }
-    DBMaker<?> dbmaker = MapDBStorageOptions.MEMORY_MAPPED_FILE
-            .getDBMaker(
-                    metisInputTempFolder.getAbsolutePath() + File.separator + "metisInputCreation")
-            .transactionDisable().closeOnJvmShutdown().asyncWriteEnable();
-    dbmaker = MapDBCacheOptions.HASH_TABLE.setCaching(dbmaker);
-    DB database = dbmaker.make();
 
     long numberOfVertices = 0;
     long numberOfEdges = 0;
     long numberOfUsedTriples = 0;
     long numberOfIgnoredTriples = 0;
-    HTreeMap<Long, Set<Long>> adjacencyLists = database.createHashMap("adjacenceList").makeOrGet();
 
     // create adjacency lists
     try {
@@ -148,7 +141,13 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           }
           numberOfUsedTriples++;
           long encodedSubject = dictionary.encode(DeSerializer.serializeNode(statement[0]), true);
+          if (encodedSubject > numberOfVertices) {
+            numberOfVertices = encodedSubject;
+          }
           long encodedObject = dictionary.encode(DeSerializer.serializeNode(statement[2]), true);
+          if (encodedObject > numberOfVertices) {
+            numberOfVertices = encodedObject;
+          }
           // write encoded triple to graph file
           encodedGraphOutput.writeLong(encodedSubject);
           String property = DeSerializer.serializeNode(statement[1]);
@@ -156,27 +155,20 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           encodedGraphOutput.writeBytes(property);
           encodedGraphOutput.writeLong(encodedObject);
           // add direction subject2object
-          Set<Long> adjacentVerticesOfSubject = adjacencyLists.get(encodedSubject);
-          if (adjacentVerticesOfSubject == null) {
-            numberOfVertices++;
-            adjacentVerticesOfSubject = new ConcurrentSkipListSet<>();
-          }
+          FileLongSet adjacentVerticesOfSubject = new FileLongSet(
+                  getAdjacencyListFile(metisInputTempFolder, encodedSubject));
+          adjacentVerticesOfSubject.close();
           boolean isNewAdjacency = adjacentVerticesOfSubject.add(encodedObject);
+          adjacentVerticesOfSubject.close();
           if (isNewAdjacency) {
             numberOfEdges++;
-            adjacencyLists.put(encodedSubject, adjacentVerticesOfSubject);
           }
           // add direction object2subject (since edges are bidirectional, do not
           // count an additional edge)
-          Set<Long> adjacentVerticesOfObject = adjacencyLists.get(encodedObject);
-          if (adjacentVerticesOfObject == null) {
-            numberOfVertices++;
-            adjacentVerticesOfObject = new ConcurrentSkipListSet<>();
-          }
-          boolean setHasChanged = adjacentVerticesOfObject.add(encodedSubject);
-          if (setHasChanged) {
-            adjacencyLists.put(encodedObject, adjacentVerticesOfObject);
-          }
+          FileLongSet adjacentVerticesOfObject = new FileLongSet(
+                  getAdjacencyListFile(metisInputTempFolder, encodedObject));
+          adjacentVerticesOfObject.add(encodedSubject);
+          adjacentVerticesOfObject.close();
         }
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -197,20 +189,24 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
               new OutputStreamWriter(new FileOutputStream(metisInputGraph), "UTF-8"));) {
         metisInputGraphWriter.write(numberOfVertices + " " + numberOfEdges);
         for (long vertex = 1; vertex <= numberOfVertices; vertex++) {
-          Set<Long> adjacentVertices = adjacencyLists.get(vertex);
+          FileLongSet adjacentVertices = new FileLongSet(
+                  getAdjacencyListFile(metisInputTempFolder, vertex));
           metisInputGraphWriter.write("\n");
           String delim = "";
-          for (Long neighbour : adjacentVertices) {
-            metisInputGraphWriter.write(delim + neighbour.longValue());
+          LongIterator iterator = adjacentVertices.iterator();
+          while (iterator.hasNext()) {
+            long neighbour = iterator.next();
+            metisInputGraphWriter.write(delim + neighbour);
             delim = " ";
           }
+          iterator.close();
+          adjacentVertices.close();
         }
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
 
     } finally {
-      database.close();
       deleteFolder(metisInputTempFolder);
       if (measurementCollector != null) {
         measurementCollector.measureValue(
@@ -218,6 +214,10 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
                 System.currentTimeMillis());
       }
     }
+  }
+
+  private File getAdjacencyListFile(File adjacencyListFolder, long adjacencyListId) {
+    return new File(adjacencyListFolder + File.separator + adjacencyListId);
   }
 
   private File runMetis(File metisInputGraph, int numberOfGraphChunks) {
@@ -407,7 +407,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     }
     if (folder.isDirectory()) {
       for (File file : folder.listFiles()) {
-        file.delete();
+        deleteFolder(file);
       }
     }
     folder.delete();

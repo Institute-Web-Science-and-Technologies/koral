@@ -35,6 +35,10 @@ import java.io.IOException;
 public class Playground {
 
   public static void main(String[] args) {
+    if (args.length == 0) {
+      System.out.println("Missing input file");
+      return;
+    }
     File workingDir = new File(System.getProperty("java.io.tmpdir") + File.separator + "koralTest");
     if (!workingDir.exists()) {
       workingDir.mkdir();
@@ -61,9 +65,9 @@ public class Playground {
     GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
     File[] encodedFiles = encoder.encodeGraphChunks(cover, statistics, workingDir);
 
-    System.out.println(statistics.toString());
-
-    Playground.printContentOfChunks(encodedFiles, encoder, conf, workingDir);
+    // System.out.println(statistics.toString());
+    //
+    // Playground.printContentOfChunks(encodedFiles, encoder, conf, workingDir);
 
     // store triples
     conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
