@@ -129,26 +129,31 @@ public class NHopReplicator {
     }
     Set<String> subjectSet = database.createHashSet("subjectsOfChunk" + chunkNumber).makeOrGet();
     try (RDFFileIterator iterator = new RDFFileIterator(file, false, logger);) {
+      String lastSubject = null;
+      FileTupleSet lastMolecule = null;
       for (Node[] tripleNodes : iterator) {
         String[] triple = new String[] { DeSerializer.serializeNode(tripleNodes[0]),
                 DeSerializer.serializeNode(tripleNodes[1]),
                 DeSerializer.serializeNode(tripleNodes[2]),
                 DeSerializer.serializeNode(tripleNodes[3]) };
-        addTripleToMap(mapFolder, moleculeMap, triple);
+        if ((lastMolecule == null) || !lastSubject.equals(triple[0])) {
+          lastSubject = triple[0];
+          lastMolecule = getMolecule(mapFolder, moleculeMap, triple[0]);
+        }
+        lastMolecule.append(triple);
         subjectSet.add(triple[0]);
       }
     }
     return subjectSet;
   }
 
-  private void addTripleToMap(File mapFolder, HTreeMap<String, String> map, String[] triple) {
-    String moleculeFileName = map.get(triple[0]);
+  private FileTupleSet getMolecule(File mapFolder, HTreeMap<String, String> map, String subject) {
+    String moleculeFileName = map.get(subject);
     if (moleculeFileName == null) {
       moleculeFileName = mapFolder.getAbsolutePath() + File.separator + moleculeNumber++;
-      map.put(triple[0], moleculeFileName);
+      map.put(subject, moleculeFileName);
     }
-    FileTupleSet set = new FileTupleSet(new File(moleculeFileName));
-    set.add(triple);
+    return new FileTupleSet(new File(moleculeFileName));
   }
 
   private void performHopStep(DB database, Set<String>[] cover,
