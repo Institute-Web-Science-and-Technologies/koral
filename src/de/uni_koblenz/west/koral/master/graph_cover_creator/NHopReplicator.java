@@ -117,8 +117,9 @@ public class NHopReplicator {
     @SuppressWarnings("unchecked")
     Set<String>[] subjectSets = new Set[graphCover.length];
     for (int i = 0; i < graphCover.length; i++) {
-      // TODO remove
-      System.out.println("processing chunk " + i);
+      if (logger != null) {
+        logger.info("preprocessiong chunk " + i);
+      }
       subjectSets[i] = createMapOutOfFile(database, mapFolder, moleculeMap, graphCover[i], i);
     }
     if (measurementCollector != null) {
@@ -187,13 +188,14 @@ public class NHopReplicator {
 
   private void performHopStep(DB database, Set<String>[] cover,
           HTreeMap<String, String> moleculeMap, int hopNumber) {
-    // TODO remove
-    System.out.println("hop " + hopNumber);
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_STEP_START,
               System.currentTimeMillis(), Integer.toString(hopNumber));
     }
     for (int currentCoverIndex = 0; currentCoverIndex < cover.length; currentCoverIndex++) {
+      if (logger != null) {
+        logger.info("performing hop " + hopNumber + " for chunk " + currentCoverIndex);
+      }
       replicateTriples(database, cover[currentCoverIndex], moleculeMap);
     }
     if (measurementCollector != null) {
@@ -225,8 +227,9 @@ public class NHopReplicator {
     if (chunk == null) {
       return;
     }
-    // TODO remove
-    System.out.println("adjust containment");
+    if (logger != null) {
+      logger.finer("adjusting containment of chunk " + currentChunkIndex);
+    }
     for (String subject : chunk) {
       String orignialFileName = moleculeMap.get(subject);
       if (orignialFileName == null) {
@@ -327,8 +330,9 @@ public class NHopReplicator {
     if (subjects == null) {
       return null;
     }
-    // TODO remove
-    System.out.println("convert to file " + chunkIndex);
+    if (logger != null) {
+      logger.finer("Converting chunk " + chunkIndex + " into a file.");
+    }
     File chunkFile = getFile(chunkIndex, workingDir);
     try (OutputStream output = new BufferedOutputStream(
             new GZIPOutputStream(new FileOutputStream(chunkFile)));) {
