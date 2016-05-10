@@ -23,7 +23,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
+import java.util.Comparator;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
@@ -129,15 +133,22 @@ public class NHopReplicator {
     if (file == null) {
       return null;
     }
+    Comparator<String[]> comparator = new ArrayComparator<>();
     Set<String> subjectSet = database.createHashSet("subjectsOfChunk" + chunkNumber).makeOrGet();
     try (RDFFileIterator iterator = new RDFFileIterator(file, false, logger);) {
-      String lastSubject = null;
-      FileTupleSet lastMolecule = null;
-      for (Node[] tripleNodes : iterator) {
+      SortedSet<String[]> buffer = new TreeSet<>(comparator);
+      while (iterator.hasNext() && (buffer.size() < 1000)) {
+        Node[] tripleNodes = iterator.next();
         String[] triple = new String[] { DeSerializer.serializeNode(tripleNodes[0]),
                 DeSerializer.serializeNode(tripleNodes[1]),
                 DeSerializer.serializeNode(tripleNodes[2]),
                 DeSerializer.serializeNode(tripleNodes[3]) };
+        buffer.add(triple);
+      }
+      String lastSubject = null;
+      FileTupleSet lastMolecule = null;
+      while (!buffer.isEmpty()) {
+        String[] triple = buffer.first();
         if ((lastMolecule == null) || !lastSubject.equals(triple[0])) {
           if (lastMolecule != null) {
             lastMolecule.close();
@@ -147,6 +158,16 @@ public class NHopReplicator {
         }
         lastMolecule.append(triple);
         subjectSet.add(triple[0]);
+        // update buffer
+        buffer.remove(triple);
+        if (iterator.hasNext()) {
+          Node[] tripleNodes = iterator.next();
+          String[] nextTriple = new String[] { DeSerializer.serializeNode(tripleNodes[0]),
+                  DeSerializer.serializeNode(tripleNodes[1]),
+                  DeSerializer.serializeNode(tripleNodes[2]),
+                  DeSerializer.serializeNode(tripleNodes[3]) };
+          buffer.add(nextTriple);
+        }
       }
       if (lastMolecule != null) {
         lastMolecule.close();
@@ -166,6 +187,8 @@ public class NHopReplicator {
 
   private void performHopStep(DB database, Set<String>[] cover,
           HTreeMap<String, String> moleculeMap, int hopNumber) {
+    // TODO remove
+    System.out.println("hop " + hopNumber);
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_STEP_START,
               System.currentTimeMillis(), Integer.toString(hopNumber));
@@ -202,6 +225,8 @@ public class NHopReplicator {
     if (chunk == null) {
       return;
     }
+    // TODO remove
+    System.out.println("adjust containment");
     for (String subject : chunk) {
       String orignialFileName = moleculeMap.get(subject);
       if (orignialFileName == null) {
@@ -302,6 +327,8 @@ public class NHopReplicator {
     if (subjects == null) {
       return null;
     }
+    // TODO remove
+    System.out.println("convert to file " + chunkIndex);
     File chunkFile = getFile(chunkIndex, workingDir);
     try (OutputStream output = new BufferedOutputStream(
             new GZIPOutputStream(new FileOutputStream(chunkFile)));) {
@@ -352,6 +379,33 @@ public class NHopReplicator {
       }
     }
     mapFolder.delete();
+  }
+
+  private static class ArrayComparator<V extends Comparable<V>>
+          implements Comparator<V[]>, Serializable {
+
+    private static final long serialVersionUID = 4931864666201142295L;
+
+    @Override
+    public int compare(V[] o1, V[] o2) {
+      if ((o1 == null) && (o2 == null)) {
+        return 0;
+      } else if (o1 == null) {
+        return -1;
+      } else if (o2 == null) {
+        return 1;
+      } else {
+        int minLength = o1.length < o2.length ? o1.length : o2.length;
+        for (int i = 0; i < minLength; i++) {
+          int comparison = o1[i].compareTo(o2[i]);
+          if (comparison != 0) {
+            return comparison;
+          }
+        }
+        return o1.length - o2.length;
+      }
+    }
+
   }
 
 }
