@@ -16,7 +16,7 @@ import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
-import de.uni_koblenz.west.koral.master.utils.FileTupleSet;
+import de.uni_koblenz.west.koral.master.utils.FileStringTupleSet;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -149,7 +149,7 @@ public class NHopReplicator {
         buffer.add(triple);
       }
       String lastSubject = null;
-      FileTupleSet lastMolecule = null;
+      FileStringTupleSet lastMolecule = null;
       while (!buffer.isEmpty()) {
         String[] triple = buffer.first();
         if ((lastMolecule == null) || !lastSubject.equals(triple[0])) {
@@ -179,13 +179,13 @@ public class NHopReplicator {
     return subjectSet;
   }
 
-  private FileTupleSet getMolecule(File mapFolder, HTreeMap<String, String> map, String subject) {
+  private FileStringTupleSet getMolecule(File mapFolder, HTreeMap<String, String> map, String subject) {
     String moleculeFileName = map.get(subject);
     if (moleculeFileName == null) {
       moleculeFileName = mapFolder.getAbsolutePath() + File.separator + moleculeNumber++;
       map.put(subject, moleculeFileName);
     }
-    return new FileTupleSet(new File(moleculeFileName));
+    return new FileStringTupleSet(new File(moleculeFileName));
   }
 
   private void performHopStep(DB database, Set<String>[] cover,
@@ -214,7 +214,7 @@ public class NHopReplicator {
     for (String subject : chunk) {
       String moleculeFileName = moleculeMap.get(subject);
       if (moleculeFileName != null) {
-        FileTupleSet molecule = new FileTupleSet(new File(moleculeFileName));
+        FileStringTupleSet molecule = new FileStringTupleSet(new File(moleculeFileName));
         for (String[] triple : molecule) {
           // add object to current chunk
           chunk.add(triple[2]);
@@ -239,8 +239,8 @@ public class NHopReplicator {
       }
       File originalFile = new File(orignialFileName);
       File updatedFile = getNewFile(originalFile);
-      FileTupleSet molecule = new FileTupleSet(originalFile);
-      FileTupleSet updatedMolecule = new FileTupleSet(updatedFile);
+      FileStringTupleSet molecule = new FileStringTupleSet(originalFile);
+      FileStringTupleSet updatedMolecule = new FileStringTupleSet(updatedFile);
       for (String[] triple : molecule) {
         // update containment information
         updateContainment(triple, currentChunkIndex);
@@ -342,7 +342,7 @@ public class NHopReplicator {
       for (String subject : subjects) {
         String moleculeFileName = moleculeMap.get(subject);
         if (moleculeFileName != null) {
-          FileTupleSet molecule = new FileTupleSet(new File(moleculeFileName));
+          FileStringTupleSet molecule = new FileStringTupleSet(new File(moleculeFileName));
           for (String[] triple : molecule) {
             numberOfTriples[chunkIndex]++;
             Node[] statement = new Node[triple.length];

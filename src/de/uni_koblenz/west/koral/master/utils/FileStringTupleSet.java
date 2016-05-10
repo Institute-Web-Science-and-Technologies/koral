@@ -22,13 +22,13 @@ import java.util.zip.GZIPOutputStream;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class FileTupleSet implements Iterable<String[]>, Closeable {
+public class FileStringTupleSet implements Iterable<String[]>, Closeable {
 
   private final File file;
 
   private DataOutputStream output;
 
-  public FileTupleSet(File file) {
+  public FileStringTupleSet(File file) {
     this.file = file;
   }
 
