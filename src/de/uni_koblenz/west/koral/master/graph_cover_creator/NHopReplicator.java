@@ -113,6 +113,8 @@ public class NHopReplicator {
     @SuppressWarnings("unchecked")
     Set<String>[] subjectSets = new Set[graphCover.length];
     for (int i = 0; i < graphCover.length; i++) {
+      // TODO remove
+      System.out.println("processing chunk " + i);
       subjectSets[i] = createMapOutOfFile(database, mapFolder, moleculeMap, graphCover[i], i);
     }
     if (measurementCollector != null) {
@@ -137,11 +139,17 @@ public class NHopReplicator {
                 DeSerializer.serializeNode(tripleNodes[2]),
                 DeSerializer.serializeNode(tripleNodes[3]) };
         if ((lastMolecule == null) || !lastSubject.equals(triple[0])) {
+          if (lastMolecule != null) {
+            lastMolecule.close();
+          }
           lastSubject = triple[0];
           lastMolecule = getMolecule(mapFolder, moleculeMap, triple[0]);
         }
         lastMolecule.append(triple);
         subjectSet.add(triple[0]);
+      }
+      if (lastMolecule != null) {
+        lastMolecule.close();
       }
     }
     return subjectSet;
@@ -184,6 +192,7 @@ public class NHopReplicator {
           // add object to current chunk
           chunk.add(triple[2]);
         }
+        molecule.close();
       }
     }
   }
@@ -207,6 +216,8 @@ public class NHopReplicator {
         updateContainment(triple, currentChunkIndex);
         updatedMolecule.append(triple);
       }
+      molecule.close();
+      updatedMolecule.close();
       moleculeMap.put(subject, updatedFile.getAbsolutePath());
       originalFile.delete();
     }
@@ -309,6 +320,7 @@ public class NHopReplicator {
             RDFDataMgr.write(output, graph, RDFFormat.NQ);
             graph.clear();
           }
+          molecule.close();
         }
       }
     } catch (IOException e) {

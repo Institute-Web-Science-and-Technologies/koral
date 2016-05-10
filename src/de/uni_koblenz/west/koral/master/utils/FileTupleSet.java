@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.master.utils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -21,9 +22,11 @@ import java.util.zip.GZIPOutputStream;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class FileTupleSet implements Iterable<String[]> {
+public class FileTupleSet implements Iterable<String[]>, Closeable {
 
   private final File file;
+
+  private DataOutputStream output;
 
   public FileTupleSet(File file) {
     this.file = file;
@@ -55,8 +58,11 @@ public class FileTupleSet implements Iterable<String[]> {
   }
 
   public void append(String[] tuple) {
-    try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(
-            new GZIPOutputStream(new FileOutputStream(getFile(), true))));) {
+    try {
+      if (output == null) {
+        output = new DataOutputStream(new BufferedOutputStream(
+                new GZIPOutputStream(new FileOutputStream(getFile(), true))));
+      }
       output.writeInt(tuple.length);
       for (String element : tuple) {
         byte[] bytes = element.getBytes("UTF-8");
@@ -69,7 +75,20 @@ public class FileTupleSet implements Iterable<String[]> {
   }
 
   @Override
+  public void close() {
+    if (output != null) {
+      try {
+        output.close();
+        output = null;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  @Override
   public Iterator<String[]> iterator() {
+    close();
     return new Iterator<String[]>() {
 
       private DataInputStream input;
