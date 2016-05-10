@@ -63,40 +63,42 @@ public class NHopReplicator {
       dbmaker = MapDBCacheOptions.HASH_TABLE.setCaching(dbmaker).compressionEnable();
       DB database = dbmaker.make();
 
-      HTreeMap<String, String> moleculeMap = database.createHashMap("molecules").makeOrGet();
-      Set<String>[] cover = createInitialCover(database, moleculeMap, graphCover, mapFolder);
+      try {
+        HTreeMap<String, String> moleculeMap = database.createHashMap("molecules").makeOrGet();
+        Set<String>[] cover = createInitialCover(database, moleculeMap, graphCover, mapFolder);
 
-      // perform n-hop replication
-      for (int n = 1; n <= numberOfHops; n++) {
-        if (logger != null) {
-          logger.info("Performing " + n + "-hop replication");
+        // perform n-hop replication
+        for (int n = 1; n <= numberOfHops; n++) {
+          if (logger != null) {
+            logger.info("Performing " + n + "-hop replication");
+          }
+          performHopStep(database, cover, moleculeMap, n);
         }
-        performHopStep(database, cover, moleculeMap, n);
-      }
 
-      // update containment information
-      if (measurementCollector != null) {
-        measurementCollector.measureValue(
-                MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_CONTAINMENT_UPDATE_START,
-                System.currentTimeMillis());
-      }
-      for (int i = 0; i < cover.length; i++) {
-        adjustContainment(i, cover[i], moleculeMap);
-      }
-      if (measurementCollector != null) {
-        measurementCollector.measureValue(
-                MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_CONTAINMENT_UPDATE_END,
-                System.currentTimeMillis());
-      }
+        // update containment information
+        if (measurementCollector != null) {
+          measurementCollector.measureValue(
+                  MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_CONTAINMENT_UPDATE_START,
+                  System.currentTimeMillis());
+        }
+        for (int i = 0; i < cover.length; i++) {
+          adjustContainment(i, cover[i], moleculeMap);
+        }
+        if (measurementCollector != null) {
+          measurementCollector.measureValue(
+                  MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_CONTAINMENT_UPDATE_END,
+                  System.currentTimeMillis());
+        }
 
-      nHopReplicatedFiles = convertToFiles(cover, moleculeMap, workingDir);
-
-      // clean up
-      database.close();
-      deleteFolder(mapFolder);
-      moleculeNumber = 0;
-      for (File file : graphCover) {
-        file.delete();
+        nHopReplicatedFiles = convertToFiles(cover, moleculeMap, workingDir);
+        for (File file : graphCover) {
+          file.delete();
+        }
+      } finally {
+        // clean up
+        database.close();
+        deleteFolder(mapFolder);
+        moleculeNumber = 0;
       }
     } else {
       nHopReplicatedFiles = graphCover;
