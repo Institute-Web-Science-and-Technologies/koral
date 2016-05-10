@@ -35,8 +35,6 @@ public class AdjacencyMatrix implements Closeable {
 
   private final Map<Long, FileLongSet> vertex2adjacentList;
 
-  // TODO use most frequently used cache (max open files = 100)
-
   public AdjacencyMatrix(File workingDir) {
     this.workingDir = workingDir;
     areDuplicatesRemoved = true;

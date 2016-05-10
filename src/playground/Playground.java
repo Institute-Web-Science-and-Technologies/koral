@@ -65,9 +65,9 @@ public class Playground {
     GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
     File[] encodedFiles = encoder.encodeGraphChunks(cover, statistics, workingDir);
 
-    // System.out.println(statistics.toString());
-    //
-    // Playground.printContentOfChunks(encodedFiles, encoder, conf, workingDir);
+    System.out.println(statistics.toString());
+
+    Playground.printContentOfChunks(encodedFiles, encoder, conf, workingDir);
 
     // store triples
     conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
