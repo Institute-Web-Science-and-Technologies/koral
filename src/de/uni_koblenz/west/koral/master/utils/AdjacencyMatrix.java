@@ -1,8 +1,18 @@
 package de.uni_koblenz.west.koral.master.utils;
 
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+
+import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
+
 import java.io.Closeable;
 import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -21,11 +31,17 @@ public class AdjacencyMatrix implements Closeable {
 
   private boolean areDuplicatesRemoved;
 
+  private final Queue<Long> lruCache;
+
+  private final Map<Long, FileLongSet> vertex2adjacentList;
+
   // TODO use most frequently used cache (max open files = 100)
 
   public AdjacencyMatrix(File workingDir) {
     this.workingDir = workingDir;
     areDuplicatesRemoved = true;
+    lruCache = new LinkedList<>();
+    vertex2adjacentList = new HashMap<>();
   }
 
   public long getNumberOfVertices() {
@@ -49,10 +65,8 @@ public class AdjacencyMatrix implements Closeable {
     }
     FileLongSet adjacencyList1 = getInternalAdjacencyList(vertex1);
     adjacencyList1.append(vertex2);
-    adjacencyList1.close();
     FileLongSet adjacencyList2 = getInternalAdjacencyList(vertex2);
     adjacencyList2.append(vertex1);
-    adjacencyList2.close();
   }
 
   public LongIterator getAdjacencyList(long vertex) {
@@ -63,40 +77,51 @@ public class AdjacencyMatrix implements Closeable {
   }
 
   private FileLongSet getInternalAdjacencyList(long vertex) {
-    return new FileLongSet(new File(workingDir.getAbsolutePath() + File.separator + vertex));
+    FileLongSet set = vertex2adjacentList.get(vertex);
+    if (set == null) {
+      set = new FileLongSet(new File(workingDir.getAbsolutePath() + File.separator + vertex));
+      if (lruCache.size() == 100) {
+        long oldestVertex = lruCache.poll();
+        FileLongSet toBeRemoved = vertex2adjacentList.remove(oldestVertex);
+        toBeRemoved.close();
+      }
+      vertex2adjacentList.put(vertex, set);
+    } else {
+      lruCache.remove(vertex);
+    }
+    lruCache.offer(vertex);
+    return set;
   }
 
   private void removeDuplicates() {
+    DBMaker<?> dbmaker = MapDBStorageOptions.MEMORY_MAPPED_FILE
+            .getDBMaker(workingDir.getAbsolutePath() + File.separator + "adjacencySets")
+            .transactionDisable().closeOnJvmShutdown().asyncWriteEnable();
+    dbmaker = MapDBCacheOptions.HASH_TABLE.setCaching(dbmaker);
+    DB database = dbmaker.make();
+    Set<Long> vertexSet = database.createHashSet("adjacencys").makeOrGet();
+
     for (long vertex = 1; vertex <= numberOfVertices; vertex++) {
       FileLongSet adjacencyList = getInternalAdjacencyList(vertex);
       File newFile = new File(adjacencyList.getFile().getAbsolutePath() + "_copy");
       adjacencyList.getFile().renameTo(newFile);
       adjacencyList = new FileLongSet(newFile);
       FileLongSet newAdjacencyList = getInternalAdjacencyList(vertex);
-      if (newFile.length() < (1024 * 1024)) {
-        // duplicates can be checked in memory
-        Set<Long> alreadySeen = new HashSet<>();
-        LongIterator iterator = adjacencyList.iterator();
-        while (iterator.hasNext()) {
-          long next = iterator.next();
-          boolean isNew = alreadySeen.add(next);
-          if (isNew) {
-            newAdjacencyList.append(next);
-            numberOfEdges++;
-          }
+      boolean isSmall = newFile.length() < (1024 * 1024);
+      // duplicates can be checked in memory
+      Set<Long> alreadySeen = isSmall ? new HashSet<>() : vertexSet;
+      LongIterator iterator = adjacencyList.iterator();
+      while (iterator.hasNext()) {
+        long next = iterator.next();
+        boolean isNew = alreadySeen.add(next);
+        if (isNew) {
+          newAdjacencyList.append(next);
+          numberOfEdges++;
         }
-        iterator.close();
-      } else {
-        // duplicate have to be detected on disk
-        LongIterator iterator = adjacencyList.iterator();
-        while (iterator.hasNext()) {
-          long next = iterator.next();
-          boolean isNew = newAdjacencyList.add(next);
-          if (isNew) {
-            numberOfEdges++;
-          }
-        }
-        iterator.close();
+      }
+      iterator.close();
+      if (!isSmall) {
+        vertexSet.clear();
       }
       newAdjacencyList.close();
       adjacencyList.close();
