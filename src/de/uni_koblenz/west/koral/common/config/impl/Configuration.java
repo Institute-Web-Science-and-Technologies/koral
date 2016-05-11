@@ -121,7 +121,8 @@ public class Configuration implements Configurable {
     this.clientPort = clientPort;
   }
 
-  public static final long CLIENT_CONNECTION_TIMEOUT = 10000;
+  // TODO reduce timeout again
+  public static final long CLIENT_CONNECTION_TIMEOUT = 1000 * 60 * 60;
 
   public static final long CLIENT_KEEP_ALIVE_INTERVAL = 3000;
 
