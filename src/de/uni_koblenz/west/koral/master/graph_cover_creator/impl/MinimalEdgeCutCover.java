@@ -121,13 +121,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
               new GZIPOutputStream(new FileOutputStream(encodedRDFGraph))));
               DataOutputStream ignoredTriplesOutput = new DataOutputStream(new BufferedOutputStream(
                       new GZIPOutputStream(new FileOutputStream(ignoredTriples))))) {
-        // TODO remove
-        long triples = 0;
         for (Node[] statement : rdfFiles) {
-          triples++;
-          if ((triples % 100000) == 0) {
-            System.out.println("processed " + triples + " triples");
-          }
           transformBlankNodes(statement);
           if (statement[0].equals(statement[2]) || DeSerializer.serializeNode(statement[1])
                   .equals("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")) {
