@@ -9,7 +9,6 @@ import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.common.messages.MessageUtils;
 import de.uni_koblenz.west.koral.common.query.execution.QueryExecutionCoordinator;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
-import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 import de.uni_koblenz.west.koral.master.KoralMaster;
 import de.uni_koblenz.west.koral.master.tasks.ClientConnectionKeepAliveTask;
 import de.uni_koblenz.west.koral.master.tasks.GraphLoaderTask;
@@ -50,7 +49,9 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
 
   private final int numberOfChunks;
 
-  private final ReusableIDGenerator queryIdGenerator;
+  // private final ReusableIDGenerator queryIdGenerator;
+
+  private int nextQueryId;
 
   private final Map<String, QueryExecutionCoordinator> clientAddress2queryExecutionCoordinator;
 
@@ -87,7 +88,8 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     clientAddress2Id = new HashMap<>();
     clientAddress2GraphLoaderTask = new HashMap<>();
     clientAddress2queryExecutionCoordinator = new HashMap<>();
-    queryIdGenerator = new ReusableIDGenerator();
+    // queryIdGenerator = new ReusableIDGenerator();
+    nextQueryId = 0;
     this.clientConnections.registerClosedConnectionListener(this);
     mappingReceiverQueueSize = conf.getReceiverQueueSize();
     emittedMappingsPerRound = conf.getMaxEmittedMappingsPerRound();
@@ -272,11 +274,11 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
                     System.currentTimeMillis());
           }
           QueryExecutionCoordinator coordinator = new QueryExecutionCoordinator(
-                  master.getComputerId(), queryIdGenerator.getNextId(), master.getNumberOfSlaves(),
-                  mappingReceiverQueueSize, tmpDir, clientID.intValue(), clientConnections,
-                  master.getDictionary(), master.getStatistics(), emittedMappingsPerRound,
-                  storageType, useTransactions, writeAsynchronously, cacheType, logger,
-                  measurementCollector);
+                  master.getComputerId(), /* queryIdGenerator.getNextId() */nextQueryId++,
+                  master.getNumberOfSlaves(), mappingReceiverQueueSize, tmpDir, clientID.intValue(),
+                  clientConnections, master.getDictionary(), master.getStatistics(),
+                  emittedMappingsPerRound, storageType, useTransactions, writeAsynchronously,
+                  cacheType, logger, measurementCollector);
           coordinator.processQueryRequest(arguments);
           clientAddress2queryExecutionCoordinator.put(address, coordinator);
           master.executeTask(coordinator);
@@ -401,7 +403,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     QueryExecutionCoordinator query = clientAddress2queryExecutionCoordinator.get(address);
     if (query != null) {
       query.close();
-      queryIdGenerator.release(query.getQueryId());
+      // queryIdGenerator.release(query.getQueryId());
     }
     clientAddress2GraphLoaderTask.remove(address);
   }
