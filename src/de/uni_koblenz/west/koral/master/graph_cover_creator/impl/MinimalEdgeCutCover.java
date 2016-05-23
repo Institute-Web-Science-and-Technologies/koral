@@ -30,6 +30,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Scanner;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -391,8 +397,35 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       return;
     }
     if (folder.isDirectory()) {
-      for (File file : folder.listFiles()) {
-        deleteFolder(file);
+      Path path = FileSystems.getDefault().getPath(folder.getAbsolutePath());
+      try {
+        Files.walkFileTree(path, new FileVisitor<Path>() {
+          @Override
+          public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                  throws IOException {
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                  throws IOException {
+            // here you have the files to process
+            file.toFile().delete();
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+            return FileVisitResult.TERMINATE;
+          }
+
+          @Override
+          public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            return FileVisitResult.CONTINUE;
+          }
+        });
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
     }
     folder.delete();

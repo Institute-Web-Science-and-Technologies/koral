@@ -24,6 +24,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.SortedSet;
@@ -179,7 +185,8 @@ public class NHopReplicator {
     return subjectSet;
   }
 
-  private FileStringTupleSet getMolecule(File mapFolder, HTreeMap<String, String> map, String subject) {
+  private FileStringTupleSet getMolecule(File mapFolder, HTreeMap<String, String> map,
+          String subject) {
     String moleculeFileName = map.get(subject);
     if (moleculeFileName == null) {
       moleculeFileName = mapFolder.getAbsolutePath() + File.separator + moleculeNumber++;
@@ -379,10 +386,34 @@ public class NHopReplicator {
     if (!mapFolder.exists()) {
       return;
     }
-    for (File file : mapFolder.listFiles()) {
-      if (file.exists()) {
-        file.delete();
-      }
+    Path path = FileSystems.getDefault().getPath(mapFolder.getAbsolutePath());
+    try {
+      Files.walkFileTree(path, new FileVisitor<Path>() {
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                throws IOException {
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+          // here you have the files to process
+          file.toFile().delete();
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+          return FileVisitResult.TERMINATE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+          return FileVisitResult.CONTINUE;
+        }
+      });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
     mapFolder.delete();
   }
