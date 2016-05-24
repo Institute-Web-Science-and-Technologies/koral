@@ -17,7 +17,7 @@ import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
@@ -51,11 +51,10 @@ public class Playground {
 
     // create cover
     RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
-    GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
+    // GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
     // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
     // null);
-    // GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
-    // TODO METIS bug
+    GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
     File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 
     NHopReplicator replicator = new NHopReplicator(null, null);

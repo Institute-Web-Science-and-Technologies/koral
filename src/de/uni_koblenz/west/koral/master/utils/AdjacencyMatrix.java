@@ -101,6 +101,7 @@ public class AdjacencyMatrix implements Closeable {
 
     for (long vertex = 1; vertex <= numberOfVertices; vertex++) {
       FileLongSet adjacencyList = getInternalAdjacencyList(vertex);
+      adjacencyList.close();
       File newFile = new File(adjacencyList.getFile().getAbsolutePath() + "_copy");
       adjacencyList.getFile().renameTo(newFile);
       adjacencyList = new FileLongSet(newFile);
