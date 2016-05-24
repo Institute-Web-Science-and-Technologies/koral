@@ -313,7 +313,7 @@ public class RDFFileIterator
     if (readerRunner != null) {
       readerRunner.close();
     }
-    if ((iterator != null) && iterator.hasNext()) {
+    while ((iterator != null) && iterator.hasNext()) {
       iterator.next();
     }
     if (deleteReadFiles && (rdfFiles != null) && (rdfFiles.length > 0)) {
