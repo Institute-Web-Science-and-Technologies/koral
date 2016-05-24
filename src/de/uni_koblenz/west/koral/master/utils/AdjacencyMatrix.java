@@ -131,8 +131,9 @@ public class AdjacencyMatrix implements Closeable {
 
   @Override
   public void close() {
-    // TODO Auto-generated method stub
-
+    for (FileLongSet set : vertex2adjacentList.values()) {
+      set.close();
+    }
   }
 
 }
