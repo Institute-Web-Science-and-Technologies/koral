@@ -124,18 +124,6 @@ public class LevelDBDictionary implements Dictionary {
   }
 
   @Override
-  public long setOwner(String value, short owner) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public long setOwner(long id, short owner) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
   public String decode(long id) {
     try {
       return Iq80DBFactory.asString(decoder.get(NumberConversion.long2bytes(id)));

@@ -33,19 +33,6 @@ public interface GraphStatisticsDatabase extends Closeable {
    */
   public long[] getStatisticsForResource(long id);
 
-  public long[] getOwnerLoad();
-
-  /**
-   * updates the dictionary such that the first two bytes of id is set to owner.
-   * 
-   * @param id
-   * @param owner
-   * @return
-   * @throws IllegalArgumentException
-   *           if the first two bytes of id are not 0 or not equal to owner
-   */
-  public long setOwner(long id, short owner);
-
   public void clear();
 
   @Override

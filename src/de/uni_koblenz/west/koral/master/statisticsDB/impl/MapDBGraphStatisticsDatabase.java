@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl;
 
-import org.mapdb.BTreeKeySerializer.BasicKeySerializer;
+import org.mapdb.BTreeKeySerializer;
+import org.mapdb.Serializer;
 
 import de.uni_koblenz.west.koral.common.mapDB.BTreeMapWrapper;
 import de.uni_koblenz.west.koral.common.mapDB.HashTreeMapWrapper;
@@ -9,8 +10,6 @@ import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBMapWrapper;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
-
-import org.mapdb.Serializer;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -35,8 +34,6 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private long[] numberOfTriplesPerChunk;
 
-  private long[] ownerLoad;
-
   private final short numberOfChunks;
 
   private final MapDBMapWrapper<Long, long[]> map;
@@ -56,7 +53,6 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
       loadPersistenceFile();
     } else {
       numberOfTriplesPerChunk = new long[numberOfChunks];
-      ownerLoad = new long[numberOfChunks];
     }
 
     try {
@@ -65,7 +61,7 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
           map = new BTreeMapWrapper<>(storageType,
                   statisticsDir.getAbsolutePath() + File.separatorChar + "statistics.db",
                   useTransactions, writeAsynchronously, cacheType, "decoder",
-                  BasicKeySerializer.BASIC, Serializer.LONG_ARRAY, true);
+                  BTreeKeySerializer.BASIC, Serializer.LONG_ARRAY, true);
           break;
         case HASH_TREE_MAP:
         default:
@@ -84,7 +80,6 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
     try (DataInputStream in = new DataInputStream(
             new BufferedInputStream(new FileInputStream(persistenceFile)));) {
       numberOfTriplesPerChunk = readLongArray(in);
-      ownerLoad = readLongArray(in);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -113,7 +108,7 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   @Override
   public void incrementObjectCount(long object, int chunk) {
-    incrementValue(object, 2 * numberOfChunks + chunk);
+    incrementValue(object, (2 * numberOfChunks) + chunk);
   }
 
   @Override
@@ -125,9 +120,7 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
     try {
       long[] statistics = map.get(resourceID);
       if (statistics == null) {
-        statistics = new long[3 * numberOfChunks + 1];
-        int owner = (int) (resourceID >>> (Long.SIZE - Short.SIZE));
-        ownerLoad[owner]++;
+        statistics = new long[(3 * numberOfChunks) + 1];
       }
       statistics[column]++;
       // MapDB does not detect changes in array automatically
@@ -158,46 +151,12 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
   }
 
   @Override
-  public long[] getOwnerLoad() {
-    return Arrays.copyOf(ownerLoad, ownerLoad.length);
-  }
-
-  @Override
-  public long setOwner(long oldID, short owner) {
-    short oldOwner = (short) (oldID >>> 48);
-    if (oldOwner != 0 && oldOwner != owner) {
-      throw new IllegalArgumentException(
-              "the first two bytes of the id must be 0 or equal to the new owner " + owner);
-    }
-    if (oldOwner == owner) {
-      return oldID;
-    }
-    long newID = owner;
-    newID = newID << 48;
-    newID |= oldID;
-
-    try {
-      long[] statistics = map.get(oldID);
-      map.remove(oldID);
-      map.put(newID, statistics);
-    } catch (Throwable e) {
-      close();
-      throw e;
-    }
-    ownerLoad[oldOwner & 0x00_00_ff_ff]--;
-    ownerLoad[owner & 0x00_00_ff_ff]++;
-
-    return newID;
-  }
-
-  @Override
   public void clear() {
     if (persistenceFile.exists()) {
       persistenceFile.delete();
     }
     for (int i = 0; i < numberOfTriplesPerChunk.length; i++) {
       numberOfTriplesPerChunk[i] = 0;
-      ownerLoad[i] = 0;
     }
     map.clear();
   }
@@ -216,11 +175,6 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
       for (long l : numberOfTriplesPerChunk) {
         out.writeLong(l);
       }
-      // persist ownerLoad
-      out.writeShort((short) ownerLoad.length);
-      for (long l : ownerLoad) {
-        out.writeLong(l);
-      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -231,11 +185,6 @@ public class MapDBGraphStatisticsDatabase implements GraphStatisticsDatabase {
     StringBuilder sb = new StringBuilder();
     sb.append("TriplesPerChunk ");
     for (long l : numberOfTriplesPerChunk) {
-      sb.append("\t").append(l);
-    }
-    sb.append("\n");
-    sb.append("OwnerLoad ");
-    for (long l : ownerLoad) {
       sb.append("\t").append(l);
     }
     sb.append("\n");

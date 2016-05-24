@@ -202,23 +202,13 @@ public class TriplePatternJoinOperator extends QueryOperatorBase {
 
   @Override
   public long computeEstimatedLoad(GraphStatistics statistics, int slave, boolean setLoads) {
-    long load = 0;
-    long totalLoad = statistics.getTotalOwnerLoad();
-    if (totalLoad != 0) {
-      double loadFactor = ((double) statistics.getOwnerLoad(slave)) / totalLoad;
-      if (loadFactor != 0) {
-        long joinSize = computeTotalEstimatedLoad(statistics);
-        if (joinSize != 0) {
-          load = (long) (joinSize * loadFactor);
-        }
-      }
-    }
+    long joinSize = computeTotalEstimatedLoad(statistics) / statistics.getNumberOfChunks();
     if (setLoads) {
       ((QueryOperatorBase) getChildTask(0)).computeEstimatedLoad(statistics, slave, setLoads);
       ((QueryOperatorBase) getChildTask(1)).computeEstimatedLoad(statistics, slave, setLoads);
-      setEstimatedWorkLoad(load);
+      setEstimatedWorkLoad(joinSize);
     }
-    return load;
+    return joinSize;
   }
 
   @Override

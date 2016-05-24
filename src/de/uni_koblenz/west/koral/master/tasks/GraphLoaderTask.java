@@ -237,6 +237,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
       File[] chunks = createGraphChunks();
       File[] encodedFiles = encodeGraphFiles(chunks);
+      collectStatistis(encodedFiles);
 
       if (state != LoadingState.FINISHED) {
         setState(LoadingState.TRANSMITTING);
@@ -419,7 +420,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
       }
       clientConnections.send(clientId, MessageUtils.createStringMessage(
               MessageType.MASTER_WORK_IN_PROGRESS, "Started encoding of graph chunks.", logger));
-      encodedFiles = dictionary.encodeGraphChunks(plainGraphChunks, statistics, workingDir);
+
+      encodedFiles = dictionary.encodeGraphChunks(plainGraphChunks, workingDir);
+
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
                 System.currentTimeMillis());
@@ -430,9 +433,36 @@ public class GraphLoaderTask extends Thread implements Closeable {
       clientConnections.send(clientId, MessageUtils.createStringMessage(
               MessageType.MASTER_WORK_IN_PROGRESS, "Finished encoding of graph chunks.", logger));
     } else {
-      encodedFiles = dictionary.getEncodeGraphChunks(workingDir, numberOfGraphChunks);
+      encodedFiles = dictionary.getEncodedGraphChunks(workingDir, numberOfGraphChunks);
     }
     return encodedFiles;
+  }
+
+  private void collectStatistis(File[] encodedChunks) {
+    if ((state == LoadingState.ENCODING) || (state == LoadingState.STATISTIC_COLLECTION)) {
+      setState(LoadingState.STATISTIC_COLLECTION);
+      if (logger != null) {
+        logger.finer("collecting statistics");
+      }
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COLLECTING_STATISTICS_START,
+                System.currentTimeMillis());
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Started collecting statistics.", logger));
+
+      statistics.collectStatistics(encodedChunks);
+
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COLLECTING_STATISTICS_END,
+                System.currentTimeMillis());
+      }
+      if (logger != null) {
+        logger.finer("collecting statistics finished");
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Finished collecting statistics.", logger));
+    }
   }
 
   public boolean isGraphLoadingOrLoaded() {
@@ -477,5 +507,5 @@ public class GraphLoaderTask extends Thread implements Closeable {
 }
 
 enum LoadingState {
-  START, GRAPH_COVER_CREATION, N_HOP_REPLICATION, ENCODING, TRANSMITTING, FINISHED;
+  START, GRAPH_COVER_CREATION, N_HOP_REPLICATION, ENCODING, STATISTIC_COLLECTION, TRANSMITTING, FINISHED;
 }

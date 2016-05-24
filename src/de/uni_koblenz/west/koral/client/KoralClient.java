@@ -24,6 +24,7 @@ import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.CoverStrategyType;
+import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -201,7 +202,8 @@ public class KoralClient {
       }
 
       @Override
-      public long encode(Node node, boolean createNewEncodingForUnknownNodes) {
+      public long encode(Node node, boolean createNewEncodingForUnknownNodes,
+              GraphStatistics statistics) {
         return 0;
       }
 
@@ -209,8 +211,8 @@ public class KoralClient {
 
     // check syntax
     VariableDictionary dictionary = new VariableDictionary();
-    SparqlParser parser = new SparqlParser(new DummyDictionaryEncoder(null, null), null, (short) 0,
-            0, 0, 1, 0, null, 0, null, false, true, null);
+    SparqlParser parser = new SparqlParser(new DummyDictionaryEncoder(null, null), null, null,
+            (short) 0, 0, 0, 1, 0, null, 0, null, false, true, null);
     QueryOperatorTask task = parser.parse(query, treeType, dictionary);
     String queryString = QueryFactory.create(query).serialize();
     String[] vars = dictionary.decode(task.getResultVariables());

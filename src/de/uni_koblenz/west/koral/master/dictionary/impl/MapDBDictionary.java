@@ -119,41 +119,6 @@ public class MapDBDictionary implements Dictionary {
   }
 
   @Override
-  public long setOwner(String value, short owner) {
-    return setOwner(value, encode(value, false), owner);
-  }
-
-  @Override
-  public long setOwner(long id, short owner) {
-    return setOwner(decode(id), id, owner);
-  }
-
-  private long setOwner(String value, long oldID, short owner) {
-    short oldOwner = (short) (oldID >>> 48);
-    if ((oldOwner != 0) && (oldOwner != owner)) {
-      throw new IllegalArgumentException(
-              "the first two bytes of the id must be 0 or equal to the new owner " + owner);
-    }
-    if (oldOwner == owner) {
-      return oldID;
-    }
-    long newID = owner;
-    newID = newID << 48;
-    newID |= oldID;
-
-    try {
-      encoder.replace(value, oldID, newID);
-      decoder.remove(oldID, value);
-      decoder.put(newID, value);
-    } catch (Throwable e) {
-      close();
-      throw e;
-    }
-
-    return newID;
-  }
-
-  @Override
   public String decode(long id) {
     try {
       return decoder.get(id);

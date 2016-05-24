@@ -101,9 +101,9 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
     lastContactWithClient = System.currentTimeMillis();
     varDictionary = new VariableDictionary();
     this.emittedMappingsPerRound = emittedMappingsPerRound;
-    parser = new SparqlParser(dictionary, null, computerID, getQueryId(), getID(), numberOfSlaves,
-            cacheSize, cacheDir, emittedMappingsPerRound, storageType, useTransactions,
-            writeAsynchronously, cacheType, false);
+    parser = new SparqlParser(dictionary, statistics, null, computerID, getQueryId(), getID(),
+            numberOfSlaves, cacheSize, cacheDir, emittedMappingsPerRound, storageType,
+            useTransactions, writeAsynchronously, cacheType, false);
   }
 
   public void processQueryRequest(byte[][] arguments) {

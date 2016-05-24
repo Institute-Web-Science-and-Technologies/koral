@@ -4,9 +4,17 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.MapDBGraphStatisticsDatabase;
 
+import java.io.BufferedInputStream;
 import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.BitSet;
+import java.util.Random;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Stores statistical information about the occurrence of resources in the
@@ -31,6 +39,36 @@ public class GraphStatistics implements Closeable {
             conf.getStatisticsDataStructure(), conf.getStatisticsDir(),
             conf.useTransactionsForStatistics(), conf.areStatisticsAsynchronouslyWritten(),
             conf.getStatisticsCacheType(), numberOfChunks);
+  }
+
+  public void collectStatistics(File[] encodedChunks) {
+    clear();
+    for (int i = 0; i < encodedChunks.length; i++) {
+      collectStatistics(i, encodedChunks[i]);
+    }
+  }
+
+  private void collectStatistics(int chunkIndex, File chunk) {
+    if (chunk == null) {
+      return;
+    }
+    try (DataInputStream in = new DataInputStream(
+            new BufferedInputStream(new GZIPInputStream(new FileInputStream(chunk))));) {
+      while (true) {
+        long subject = in.readLong();
+        long property = in.readLong();
+        long object = in.readLong();
+        short containmentSize = in.readShort();
+        byte[] containment = new byte[containmentSize];
+        in.readFully(containment);
+        count(subject, property, object, chunkIndex);
+      }
+    } catch (EOFException e) {
+      // the end of the file has been reached
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
   }
 
   public void count(long subject, long property, long object, int chunk) {
@@ -78,10 +116,8 @@ public class GraphStatistics implements Closeable {
       return (short) ownerCandidates.nextSetBit(0);
     }
 
-    // check load of the different chunks
-    statistics = database.getOwnerLoad();
-    argMin(statistics, 0, ownerCandidates);
-    assert ownerCandidates.size() > 0;
+    // pick a random owner
+    pickRandom(statistics, 0, ownerCandidates);
     return (short) ownerCandidates.nextSetBit(0);
   }
 
@@ -99,31 +135,17 @@ public class GraphStatistics implements Closeable {
     }
   }
 
-  private void argMin(long[] statistics, int offset, BitSet ownerCandidates) {
-    long min = Long.MAX_VALUE;
-    int currentPos = ownerCandidates.nextSetBit(0);
-    while (currentPos > -1) {
-      if (statistics[offset + currentPos] > min) {
-        ownerCandidates.clear(currentPos);
-      } else if (statistics[offset + currentPos] < min) {
-        min = statistics[offset + currentPos];
-        ownerCandidates.set(0, currentPos, false);
+  private void pickRandom(long[] statistics, int offset, BitSet ownerCandidates) {
+    Random rand = new Random(System.currentTimeMillis());
+    while (ownerCandidates.cardinality() > 1) {
+      if (rand.nextBoolean()) {
+        // the first candidate is chosen
+        break;
       }
-      currentPos = ownerCandidates.nextSetBit(currentPos + 1);
+      // eliminate candidate
+      int currentPos = ownerCandidates.nextSetBit(0);
+      ownerCandidates.clear(currentPos);
     }
-  }
-
-  /**
-   * updates the dictionary such that the first two bytes of id is set to owner.
-   * 
-   * @param id
-   * @param owner
-   * @return
-   * @throws IllegalArgumentException
-   *           if the first two bytes of id are not 0 or not equal to owner
-   */
-  public long setOwner(long id, short owner) {
-    return database.setOwner(id, owner);
   }
 
   public long getSubjectFrequency(long subject, int slave) {
@@ -132,7 +154,7 @@ public class GraphStatistics implements Closeable {
       // this resource does not occur
       return 0;
     }
-    return statisticsForResource[0 * numberOfChunks + slave];
+    return statisticsForResource[(0 * numberOfChunks) + slave];
   }
 
   public long getPropertyFrequency(long property, int slave) {
@@ -141,7 +163,7 @@ public class GraphStatistics implements Closeable {
       // this resource does not occur
       return 0;
     }
-    return statisticsForResource[1 * numberOfChunks + slave];
+    return statisticsForResource[(1 * numberOfChunks) + slave];
   }
 
   public long getObjectFrequency(long object, int slave) {
@@ -150,11 +172,7 @@ public class GraphStatistics implements Closeable {
       // this resource does not occur
       return 0;
     }
-    return statisticsForResource[2 * numberOfChunks + slave];
-  }
-
-  public long getOwnerLoad(int slave) {
-    return database.getOwnerLoad()[slave];
+    return statisticsForResource[(2 * numberOfChunks) + slave];
   }
 
   public long getTotalSubjectFrequency(long subject) {
@@ -165,7 +183,7 @@ public class GraphStatistics implements Closeable {
       return 0;
     }
     for (int slave = 0; slave < numberOfChunks; slave++) {
-      totalFrequency += statisticsForResource[0 * numberOfChunks + slave];
+      totalFrequency += statisticsForResource[(0 * numberOfChunks) + slave];
     }
     return totalFrequency;
   }
@@ -178,7 +196,7 @@ public class GraphStatistics implements Closeable {
       return 0;
     }
     for (int slave = 0; slave < numberOfChunks; slave++) {
-      totalFrequency += statisticsForResource[1 * numberOfChunks + slave];
+      totalFrequency += statisticsForResource[(1 * numberOfChunks) + slave];
     }
     return totalFrequency;
   }
@@ -191,18 +209,13 @@ public class GraphStatistics implements Closeable {
       return 0;
     }
     for (int slave = 0; slave < numberOfChunks; slave++) {
-      totalFrequency += statisticsForResource[2 * numberOfChunks + slave];
+      totalFrequency += statisticsForResource[(2 * numberOfChunks) + slave];
     }
     return totalFrequency;
   }
 
-  public long getTotalOwnerLoad() {
-    long result = 0;
-    long[] ownerloads = database.getOwnerLoad();
-    for (long load : ownerloads) {
-      result += load;
-    }
-    return result;
+  public int getNumberOfChunks() {
+    return numberOfChunks;
   }
 
   public void clear() {

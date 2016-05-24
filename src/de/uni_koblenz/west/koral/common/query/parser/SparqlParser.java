@@ -53,6 +53,7 @@ import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorTaskFactory
 import de.uni_koblenz.west.koral.common.query.execution.operators.DefaultQueryOperatorTaskFactory;
 import de.uni_koblenz.west.koral.common.query.execution.operators.base_impl.QueryBaseOperatorTaskFactory;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
 import java.io.File;
@@ -98,20 +99,25 @@ public class SparqlParser implements OpVisitor {
 
   private final MapDBCacheOptions cacheType;
 
-  public SparqlParser(DictionaryEncoder dictionary, TripleStoreAccessor tripleStore, short slaveId,
-          int queryId, long coordinatorId, int numberOfSlaves, int cacheSize, File cacheDirectory,
-          int emittedMappingsPerRound, MapDBStorageOptions storageType, boolean useTransactions,
-          boolean writeAsynchronously, MapDBCacheOptions cacheType) {
-    this(dictionary, tripleStore, slaveId, queryId, coordinatorId, numberOfSlaves, cacheSize,
-            cacheDirectory, emittedMappingsPerRound, storageType, useTransactions,
+  private final GraphStatistics statistics;
+
+  public SparqlParser(DictionaryEncoder dictionary, GraphStatistics statistics,
+          TripleStoreAccessor tripleStore, short slaveId, int queryId, long coordinatorId,
+          int numberOfSlaves, int cacheSize, File cacheDirectory, int emittedMappingsPerRound,
+          MapDBStorageOptions storageType, boolean useTransactions, boolean writeAsynchronously,
+          MapDBCacheOptions cacheType) {
+    this(dictionary, statistics, tripleStore, slaveId, queryId, coordinatorId, numberOfSlaves,
+            cacheSize, cacheDirectory, emittedMappingsPerRound, storageType, useTransactions,
             writeAsynchronously, cacheType, false);
   }
 
-  public SparqlParser(DictionaryEncoder dictionary, TripleStoreAccessor tripleStore, short slaveId,
-          int queryId, long coordinatorId, int numberOfSlaves, int cacheSize, File cacheDirectory,
-          int emittedMappingsPerRound, MapDBStorageOptions storageType, boolean useTransactions,
-          boolean writeAsynchronously, MapDBCacheOptions cacheType, boolean useBaseImplementation) {
+  public SparqlParser(DictionaryEncoder dictionary, GraphStatistics statistics,
+          TripleStoreAccessor tripleStore, short slaveId, int queryId, long coordinatorId,
+          int numberOfSlaves, int cacheSize, File cacheDirectory, int emittedMappingsPerRound,
+          MapDBStorageOptions storageType, boolean useTransactions, boolean writeAsynchronously,
+          MapDBCacheOptions cacheType, boolean useBaseImplementation) {
     this.dictionary = dictionary;
+    this.statistics = statistics;
     this.tripleStore = tripleStore;
     stack = new ArrayDeque<>();
     this.slaveId = slaveId;
@@ -245,7 +251,7 @@ public class SparqlParser implements OpVisitor {
         subject = varDictionary.encode(subjectN.getName());
         type = TriplePatternType._PO;
       } else {
-        subject = dictionary.encode(subjectN, false);
+        subject = dictionary.encode(subjectN, false, statistics);
       }
 
       Node propertyN = triple.getPredicate();
@@ -257,7 +263,7 @@ public class SparqlParser implements OpVisitor {
           type = TriplePatternType.__O;
         }
       } else {
-        property = dictionary.encode(propertyN, false);
+        property = dictionary.encode(propertyN, false, statistics);
       }
 
       Node objectN = triple.getObject();
@@ -273,7 +279,7 @@ public class SparqlParser implements OpVisitor {
           type = TriplePatternType.___;
         }
       } else {
-        object = dictionary.encode(objectN, false);
+        object = dictionary.encode(objectN, false, statistics);
       }
     }
 

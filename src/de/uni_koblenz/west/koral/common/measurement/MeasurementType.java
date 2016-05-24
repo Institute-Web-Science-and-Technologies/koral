@@ -240,25 +240,19 @@ public enum MeasurementType {
    * measured on master<br>
    * timestamp
    */
-  LOAD_GRAPH_ENCODING_OWNERSHIP_START,
-
-  /**
-   * measured on master<br>
-   * timestamp
-   */
-  LOAD_GRAPH_ENCODING_OWNERSHIP_END,
-
-  /**
-   * measured on master<br>
-   * numberOfOwnedRessourcesPerSlave*
-   */
-  LOAD_GRAPH_ENCODING_OWNERLOAD,
-
-  /**
-   * measured on master<br>
-   * timestamp
-   */
   LOAD_GRAPH_ENCODING_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COLLECTING_STATISTICS_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COLLECTING_STATISTICS_END,
 
   /**
    * measured on slave<br>

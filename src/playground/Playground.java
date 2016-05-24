@@ -17,7 +17,7 @@ import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
@@ -51,10 +51,11 @@ public class Playground {
 
     // create cover
     RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
-    // GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
+    GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
     // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
     // null);
-    GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
+    // GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
+    // TODO METIS bug
     File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
 
     NHopReplicator replicator = new NHopReplicator(null, null);
@@ -62,8 +63,9 @@ public class Playground {
 
     // encode cover and collect statistics
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
+    File[] encodedFiles = encoder.encodeGraphChunks(cover, workingDir);
     GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
-    File[] encodedFiles = encoder.encodeGraphChunks(cover, statistics, workingDir);
+    statistics.collectStatistics(encodedFiles);
 
     System.out.println(statistics.toString());
 
@@ -97,7 +99,7 @@ public class Playground {
     System.out.println(query);
 
     VariableDictionary dictionary = new VariableDictionary();
-    SparqlParser parser = new SparqlParser(encoder, accessor, (short) 0, 0, 0, 4,
+    SparqlParser parser = new SparqlParser(encoder, statistics, accessor, (short) 0, 0, 0, 4,
             conf.getReceiverQueueSize(), workingDir, conf.getMaxEmittedMappingsPerRound(),
             conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
             conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
