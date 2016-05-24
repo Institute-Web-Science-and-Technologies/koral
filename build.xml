@@ -134,6 +134,38 @@
 			</fileset>
 			<globmapper from="META-INF/*" to="META-INF-commons-net/*" />
 		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/guava-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-guava/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/leveldb-0.*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-leveldb/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/leveldb-api-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-leveldb-api/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/snappy-java-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-snappy-java/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/core-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-core/*" />
+		</unjar>
 	</target>
 
 	<target name="jar" depends="compile, unjar_dependencies">

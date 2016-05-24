@@ -21,5 +21,11 @@ These libraries are:
 - Symas Lightning Memory-Mapped Database (LMDB) version: LMDB_0.9.16 from https://github.com/LMDB/lmdb.git [ http://symas.com/mdb/ ] (OpenLDAP Public License v 2.8 - compatible with LGPL)
 - LMDB JNI version: 0.4.4 from https://github.com/deephacks/lmdbjni.git (Apache License Version 2.0 - compatible with LGPL v3)
 
+- Leveldb version: 0.7 from http://central.maven.org/maven2/org/iq80/leveldb/leveldb/0.7/leveldb-0.7.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
+- Leveldb-api version: 0.7 from http://central.maven.org/maven2/org/iq80/leveldb/leveldb-api/0.7/leveldb-api-0.7.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
+- Guava version: 16.0.1 from http://central.maven.org/maven2/com/google/guava/guava/16.0.1/guava-16.0.1.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
+- Osgi.core version: 4.3.0 from http://central.maven.org/maven2/org/osgi/core/4.3.0/core-4.3.0.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
+- Snappy Java version: 1.0.3 from http://central.maven.org/maven2/org/xerial/snappy/snappy-java/1.0.3/snappy-java-1.0.3.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
+
 not used:
 - Oracle Berkeley DB Java Edition version: 6.4.9 from http://download.oracle.com/maven/com/sleepycat/je/6.4.9/je-6.4.9.jar (...-sources.jar (GNU AGPL v3 - NOT compatible with LGPL )

@@ -50,6 +50,8 @@ public interface Dictionary extends Closeable {
    */
   public String decode(long id);
 
+  public void flush();
+
   public boolean isEmpty();
 
   public void clear();

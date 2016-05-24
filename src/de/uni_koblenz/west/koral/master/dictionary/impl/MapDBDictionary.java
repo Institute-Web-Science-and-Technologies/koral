@@ -1,7 +1,7 @@
 package de.uni_koblenz.west.koral.master.dictionary.impl;
 
 import org.mapdb.BTreeKeySerializer;
-import org.mapdb.BTreeKeySerializer.BasicKeySerializer;
+import org.mapdb.Serializer;
 
 import de.uni_koblenz.west.koral.common.mapDB.BTreeMapWrapper;
 import de.uni_koblenz.west.koral.common.mapDB.HashTreeMapWrapper;
@@ -10,8 +10,6 @@ import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBMapWrapper;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.master.dictionary.Dictionary;
-
-import org.mapdb.Serializer;
 
 import java.io.File;
 
@@ -52,7 +50,7 @@ public class MapDBDictionary implements Dictionary {
           decoder = new BTreeMapWrapper<>(storageType,
                   dictionaryDir.getAbsolutePath() + File.separatorChar + "decoder.db",
                   useTransactions, writeAsynchronously, cacheType, "decoder",
-                  BasicKeySerializer.BASIC, Serializer.STRING, true);
+                  BTreeKeySerializer.BASIC, Serializer.STRING, true);
           break;
         case HASH_TREE_MAP:
         default:
@@ -132,7 +130,7 @@ public class MapDBDictionary implements Dictionary {
 
   private long setOwner(String value, long oldID, short owner) {
     short oldOwner = (short) (oldID >>> 48);
-    if (oldOwner != 0 && oldOwner != owner) {
+    if ((oldOwner != 0) && (oldOwner != owner)) {
       throw new IllegalArgumentException(
               "the first two bytes of the id must be 0 or equal to the new owner " + owner);
     }
@@ -168,6 +166,10 @@ public class MapDBDictionary implements Dictionary {
   @Override
   public boolean isEmpty() {
     return nextID == 1;
+  }
+
+  @Override
+  public void flush() {
   }
 
   @Override

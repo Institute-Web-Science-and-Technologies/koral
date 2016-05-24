@@ -26,5 +26,10 @@
 	<classpathentry kind="lib" path="lib/ftpserver-core-1.0.5.jar"/>
 	<classpathentry kind="lib" path="lib/mina-core-2.0.0-RC1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-net-3.4.jar" sourcepath="lib/commons-net-3.4-sources.jar"/>
+	<classpathentry kind="lib" path="lib/guava-16.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/leveldb-0.7.jar" sourcepath="lib/leveldb-0.7-sources.jar"/>
+	<classpathentry kind="lib" path="lib/leveldb-api-0.7.jar" sourcepath="lib/leveldb-api-0.7-sources.jar"/>
+	<classpathentry kind="lib" path="lib/core-4.3.0.jar"/>
+	<classpathentry kind="lib" path="lib/snappy-java-1.0.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
