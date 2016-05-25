@@ -4,7 +4,7 @@ import org.apache.jena.graph.Node;
 
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.dictionary.Dictionary;
-import de.uni_koblenz.west.koral.master.dictionary.impl.LevelDBDictionary;
+import de.uni_koblenz.west.koral.master.dictionary.impl.RocksDBDictionary;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 
 import java.io.File;
@@ -25,7 +25,8 @@ public class DictionaryTest {
               + " <storageDir> <graphDataFileOrFolder>");
       return;
     }
-    Dictionary dictionary = new LevelDBDictionary(args[0]);
+    Dictionary dictionary = new RocksDBDictionary(args[0]);
+    // Dictionary dictionary = new LevelDBDictionary(args[0]);
     // Dictionary dictionary = new
     // MapDBDictionary(MapDBStorageOptions.MEMORY_MAPPED_FILE,
     // MapDBDataStructureOptions.HASH_TREE_MAP, args[0], false, true,

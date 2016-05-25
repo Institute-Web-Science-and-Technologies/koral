@@ -166,6 +166,13 @@
 			</fileset>
 			<globmapper from="META-INF/*" to="META-INF-core/*" />
 		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/rocksdbjni-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-rocksdbjni/*" />
+		</unjar>
 	</target>
 
 	<target name="jar" depends="compile, unjar_dependencies">

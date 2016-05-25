@@ -49,6 +49,7 @@ def resolveDependencies():
     resolveMapDB()
     resolveFtpServer()
     resolveCommonsNet()
+    resolveRocksDB()
     resolveLevelDB()
 
 def resolveCLI():
@@ -114,7 +115,15 @@ def resolveCommonsNet():
     run("mv commons-net-3.4/commons-net-3.4.jar koral/lib/commons-net-3.4.jar")
     run("rm -r commons-net-3.4")
 
-def resolveLeveldB():
+def resolveRocksDB():
+    run("wget http://central.maven.org/maven2/org/rocksdb/rocksdbjni/4.5.1/rocksdbjni-4.5.1.jar")
+    run("mv rocksdbjni-4.5.1.jar koral/lib/rocksdbjni-4.5.1.jar")
+    run("wget http://central.maven.org/maven2/org/osgi/core/4.3.0/core-4.3.0.jar")
+    run("mv core-4.3.0.jar koral/lib/core-4.3.0.jar")
+    run("wget http://central.maven.org/maven2/org/xerial/snappy/snappy-java/1.0.3/snappy-java-1.0.3.jar")
+    run("mv snappy-java-1.0.3.jar koral/lib/snappy-java-1.0.3.jar")
+
+def resolveLevelDB():
     run("wget http://central.maven.org/maven2/org/iq80/leveldb/leveldb/0.7/leveldb-0.7.jar")
     run("mv leveldb-0.7.jar koral/lib/leveldb-0.7.jar")
     run("wget http://central.maven.org/maven2/org/iq80/leveldb/leveldb-api/0.7/leveldb-api-0.7.jar")
