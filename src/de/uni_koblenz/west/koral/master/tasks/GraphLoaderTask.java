@@ -238,7 +238,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       File[] chunks = createGraphChunks();
       File[] encodedFiles = encodeGraphFiles(chunks);
       collectStatistis(encodedFiles);
-      encodedFiles = adjustOwnership(chunks);
+      encodedFiles = adjustOwnership(encodedFiles);
 
       if (state != LoadingState.FINISHED) {
         setState(LoadingState.TRANSMITTING);
