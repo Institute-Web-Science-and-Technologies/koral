@@ -63,13 +63,12 @@ public class DictionaryEncoder implements Closeable {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_START,
               System.currentTimeMillis());
     }
-    File[] result = new File[plainGraphChunks.length];
+    File[] result = getEncodedGraphChunks(workingDir, plainGraphChunks.length);
     for (int i = 0; i < plainGraphChunks.length; i++) {
       if (plainGraphChunks[i] == null) {
+        result[i] = null;
         continue;
       }
-      result[i] = new File(plainGraphChunks[i].getParentFile().getAbsolutePath()
-              + File.separatorChar + "chunk" + i + ".enc.int.gz");
       try (RDFFileIterator iter = new RDFFileIterator(plainGraphChunks[i], false, logger);
               DataOutputStream out = new DataOutputStream(new BufferedOutputStream(
                       new GZIPOutputStream(new FileOutputStream(result[i]))));) {
@@ -124,11 +123,7 @@ public class DictionaryEncoder implements Closeable {
     if (id == 0) {
       return id;
     }
-    short owner = statistics.getOwner(id);
-    long newID = owner;
-    newID = newID << 48;
-    newID |= id;
-    return newID;
+    return statistics.getIDWithOwner(id);
   }
 
   public boolean isEmpty() {

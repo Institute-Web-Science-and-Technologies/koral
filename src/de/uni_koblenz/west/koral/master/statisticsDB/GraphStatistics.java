@@ -5,16 +5,20 @@ import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.MapDBGraphStatisticsDatabase;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Stores statistical information about the occurrence of resources in the
@@ -83,6 +87,60 @@ public class GraphStatistics implements Closeable {
 
   public long[] getChunkSizes() {
     return database.getChunkSizes();
+  }
+
+  public File[] adjustOwnership(File[] encodedChunks, File workingDir) {
+    File[] result = getAdjustedFiles(workingDir);
+    for (int i = 0; i < encodedChunks.length; i++) {
+      if (encodedChunks[i] == null) {
+        result[i] = null;
+        continue;
+      }
+      try (DataInputStream in = new DataInputStream(
+              new BufferedInputStream(new GZIPInputStream(new FileInputStream(encodedChunks[i]))));
+              DataOutputStream out = new DataOutputStream(new BufferedOutputStream(
+                      new GZIPOutputStream(new FileOutputStream(result[i]))));) {
+        while (true) {
+          long subject = in.readLong();
+          long property = in.readLong();
+          long object = in.readLong();
+          int containmentLength = in.readShort() & 0xff_ff;
+          byte[] containment = new byte[containmentLength];
+          in.readFully(containment);
+
+          out.writeLong(getIDWithOwner(subject));
+          out.writeLong(getIDWithOwner(property));
+          out.writeLong(getIDWithOwner(object));
+          out.writeShort((short) containment.length);
+          out.write(containment);
+        }
+      } catch (EOFException e) {
+        // the input file is read completely
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    for (File file : encodedChunks) {
+      file.delete();
+    }
+    return result;
+  }
+
+  public File[] getAdjustedFiles(File workingDir) {
+    File[] chunkFiles = new File[numberOfChunks];
+    for (int i = 0; i < chunkFiles.length; i++) {
+      chunkFiles[i] = new File(
+              workingDir.getAbsolutePath() + File.separatorChar + "chunk" + i + ".adj.gz");
+    }
+    return chunkFiles;
+  }
+
+  public long getIDWithOwner(long id) {
+    long newID = getOwner(id);
+    newID = newID << 48;
+    newID |= id;
+    return newID;
   }
 
   public short getOwner(long id) {

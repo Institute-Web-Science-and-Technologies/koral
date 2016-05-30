@@ -255,6 +255,18 @@ public enum MeasurementType {
   LOAD_GRAPH_COLLECTING_STATISTICS_END,
 
   /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_ADJUSTING_OWNERSHIP_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_ADJUSTING_OWNERSHIP_END,
+
+  /**
    * measured on slave<br>
    * timestamp
    */

@@ -238,6 +238,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       File[] chunks = createGraphChunks();
       File[] encodedFiles = encodeGraphFiles(chunks);
       collectStatistis(encodedFiles);
+      encodedFiles = adjustOwnership(chunks);
 
       if (state != LoadingState.FINISHED) {
         setState(LoadingState.TRANSMITTING);
@@ -465,6 +466,36 @@ public class GraphLoaderTask extends Thread implements Closeable {
     }
   }
 
+  private File[] adjustOwnership(File[] encodedChunks) {
+    if ((state == LoadingState.STATISTIC_COLLECTION) || (state == LoadingState.SETTING_OWNERSHIP)) {
+      setState(LoadingState.SETTING_OWNERSHIP);
+      if (logger != null) {
+        logger.finer("adjusting ownership");
+      }
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ADJUSTING_OWNERSHIP_START,
+                System.currentTimeMillis());
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Started adjusting ownership.", logger));
+
+      File[] result = statistics.adjustOwnership(encodedChunks, workingDir);
+
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ADJUSTING_OWNERSHIP_END,
+                System.currentTimeMillis());
+      }
+      if (logger != null) {
+        logger.finer("adjusting ownership finished");
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Finished adjusting ownership.", logger));
+      return result;
+    } else {
+      return statistics.getAdjustedFiles(workingDir);
+    }
+  }
+
   public boolean isGraphLoadingOrLoaded() {
     return graphIsLoadingOrLoaded;
   }
@@ -507,5 +538,5 @@ public class GraphLoaderTask extends Thread implements Closeable {
 }
 
 enum LoadingState {
-  START, GRAPH_COVER_CREATION, N_HOP_REPLICATION, ENCODING, STATISTIC_COLLECTION, TRANSMITTING, FINISHED;
+  START, GRAPH_COVER_CREATION, N_HOP_REPLICATION, ENCODING, STATISTIC_COLLECTION, SETTING_OWNERSHIP, TRANSMITTING, FINISHED;
 }
