@@ -122,7 +122,9 @@ public class GraphStatistics implements Closeable {
     }
 
     for (File file : encodedChunks) {
-      file.delete();
+      if (file != null) {
+        file.delete();
+      }
     }
     return result;
   }
@@ -207,6 +209,7 @@ public class GraphStatistics implements Closeable {
   }
 
   public long getSubjectFrequency(long subject, int slave) {
+    subject = subject & 0x00_00_ff_ff_ff_ff_ff_ffL;
     long[] statisticsForResource = database.getStatisticsForResource(subject);
     if (statisticsForResource == null) {
       // this resource does not occur
@@ -216,6 +219,7 @@ public class GraphStatistics implements Closeable {
   }
 
   public long getPropertyFrequency(long property, int slave) {
+    property = property & 0x00_00_ff_ff_ff_ff_ff_ffL;
     long[] statisticsForResource = database.getStatisticsForResource(property);
     if (statisticsForResource == null) {
       // this resource does not occur
@@ -225,6 +229,7 @@ public class GraphStatistics implements Closeable {
   }
 
   public long getObjectFrequency(long object, int slave) {
+    object = object & 0x00_00_ff_ff_ff_ff_ff_ffL;
     long[] statisticsForResource = database.getStatisticsForResource(object);
     if (statisticsForResource == null) {
       // this resource does not occur
@@ -234,6 +239,7 @@ public class GraphStatistics implements Closeable {
   }
 
   public long getTotalSubjectFrequency(long subject) {
+    subject = subject & 0x00_00_ff_ff_ff_ff_ff_ffL;
     long totalFrequency = 0;
     long[] statisticsForResource = database.getStatisticsForResource(subject);
     if (statisticsForResource == null) {
@@ -247,6 +253,7 @@ public class GraphStatistics implements Closeable {
   }
 
   public long getTotalPropertyFrequency(long property) {
+    property = property & 0x00_00_ff_ff_ff_ff_ff_ffL;
     long totalFrequency = 0;
     long[] statisticsForResource = database.getStatisticsForResource(property);
     if (statisticsForResource == null) {
@@ -260,6 +267,7 @@ public class GraphStatistics implements Closeable {
   }
 
   public long getTotalObjectFrequency(long object) {
+    object = object & 0x00_00_ff_ff_ff_ff_ff_ffL;
     long totalFrequency = 0;
     long[] statisticsForResource = database.getStatisticsForResource(object);
     if (statisticsForResource == null) {

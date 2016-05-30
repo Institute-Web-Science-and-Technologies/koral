@@ -65,6 +65,7 @@ public class Playground {
     File[] encodedFiles = encoder.encodeGraphChunks(cover, workingDir);
     GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
     statistics.collectStatistics(encodedFiles);
+    encodedFiles = statistics.adjustOwnership(encodedFiles, workingDir);
 
     System.out.println(statistics.toString());
 

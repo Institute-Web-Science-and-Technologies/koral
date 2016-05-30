@@ -88,13 +88,16 @@ public class DictionaryEncoder implements Closeable {
         throw new RuntimeException(e);
       }
     }
+    dictionary.flush();
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_END,
               System.currentTimeMillis());
     }
 
     for (File file : plainGraphChunks) {
-      file.delete();
+      if (file != null) {
+        file.delete();
+      }
     }
     return result;
   }
