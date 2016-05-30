@@ -50,7 +50,6 @@ def resolveDependencies():
     resolveFtpServer()
     resolveCommonsNet()
     resolveRocksDB()
-    resolveLevelDB()
 
 def resolveCLI():
     run("wget http://apache.mirror.digionline.de//commons/cli/binaries/commons-cli-1.3.1-bin.tar.gz")
@@ -118,18 +117,6 @@ def resolveCommonsNet():
 def resolveRocksDB():
     run("wget http://central.maven.org/maven2/org/rocksdb/rocksdbjni/4.5.1/rocksdbjni-4.5.1.jar")
     run("mv rocksdbjni-4.5.1.jar koral/lib/rocksdbjni-4.5.1.jar")
-    run("wget http://central.maven.org/maven2/org/osgi/core/4.3.0/core-4.3.0.jar")
-    run("mv core-4.3.0.jar koral/lib/core-4.3.0.jar")
-    run("wget http://central.maven.org/maven2/org/xerial/snappy/snappy-java/1.0.3/snappy-java-1.0.3.jar")
-    run("mv snappy-java-1.0.3.jar koral/lib/snappy-java-1.0.3.jar")
-
-def resolveLevelDB():
-    run("wget http://central.maven.org/maven2/org/iq80/leveldb/leveldb/0.7/leveldb-0.7.jar")
-    run("mv leveldb-0.7.jar koral/lib/leveldb-0.7.jar")
-    run("wget http://central.maven.org/maven2/org/iq80/leveldb/leveldb-api/0.7/leveldb-api-0.7.jar")
-    run("mv leveldb-api-0.7.jar koral/lib/leveldb-api-0.7.jar")
-    run("wget http://central.maven.org/maven2/com/google/guava/guava/16.0.1/guava-16.0.1.jar")
-    run("mv guava-16.0.1.jar.jar koral/lib/guava-16.0.1.jar")
     run("wget http://central.maven.org/maven2/org/osgi/core/4.3.0/core-4.3.0.jar")
     run("mv core-4.3.0.jar koral/lib/core-4.3.0.jar")
     run("wget http://central.maven.org/maven2/org/xerial/snappy/snappy-java/1.0.3/snappy-java-1.0.3.jar")

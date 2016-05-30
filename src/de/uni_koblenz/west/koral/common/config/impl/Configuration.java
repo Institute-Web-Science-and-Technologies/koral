@@ -7,6 +7,7 @@ import de.uni_koblenz.west.koral.common.config.Property;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
+import de.uni_koblenz.west.koral.master.dictionary.impl.RocksDBDictionary;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -121,8 +122,7 @@ public class Configuration implements Configurable {
     this.clientPort = clientPort;
   }
 
-  // TODO reduce timeout again
-  public static final long CLIENT_CONNECTION_TIMEOUT = 1000 * 60 * 60;
+  public static final long CLIENT_CONNECTION_TIMEOUT = 10000;
 
   public static final long CLIENT_KEEP_ALIVE_INTERVAL = 3000;
 
@@ -193,33 +193,6 @@ public class Configuration implements Configurable {
     this.tmpDir = tmpDir;
   }
 
-  @Property(name = "dictionaryStorageType", description = "Defines how the dictionary is persisted:"
-          + "\nMEMORY = dictionary is only stored in memory"
-          + "\nMEMORY_MAPPED_FILE = dictionary is stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required."
-          + "\nRANDOM_ACCESS_FILE = dictionary is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.")
-  private MapDBStorageOptions dictionaryStorageType = MapDBStorageOptions.MEMORY_MAPPED_FILE;
-
-  public MapDBStorageOptions getDictionaryStorageType() {
-    return dictionaryStorageType;
-  }
-
-  public void setDictionaryStorageType(MapDBStorageOptions dictionaryStorageType) {
-    this.dictionaryStorageType = dictionaryStorageType;
-  }
-
-  @Property(name = "dictionaryDataStructure", description = "Defines the data structure used for storing the dictionary:"
-          + "\nHASH_TREE_MAP = fast single thread access, slow concurrent access, memory efficient"
-          + "\nB_TREE_MAP = slower single thread access, faster concurrent access, costs more memory")
-  private MapDBDataStructureOptions dictionaryDataStructure = MapDBDataStructureOptions.HASH_TREE_MAP;
-
-  public MapDBDataStructureOptions getDictionaryDataStructure() {
-    return dictionaryDataStructure;
-  }
-
-  public void setDictionaryDataStructure(MapDBDataStructureOptions dictionaryDataStructure) {
-    this.dictionaryDataStructure = dictionaryDataStructure;
-  }
-
   @Property(name = "dictionaryDir", description = "Defines a non-existing directory where the dictionary is stored.")
   private String dictionaryDir = "." + File.separatorChar + "dictionary";
 
@@ -231,45 +204,15 @@ public class Configuration implements Configurable {
     this.dictionaryDir = dictionaryDir;
   }
 
-  // @Property(name = "enableTransactionsForDictionary", description = "If set
-  // to true, transactions are used. Transactions are only required if
-  // processing updates in future work.")
-  private boolean useTransactionsForDictionary = false;
+  @Property(name = "maxDictionaryWriteBatchSize", description = "The number of dictionary entries that are stored before writing them to the database as an atomic write operation.")
+  private int maxDictionaryWriteBatchSize = RocksDBDictionary.DEFAULT_MAX_BATCH_SIZE;
 
-  public boolean useTransactionsForDictionary() {
-    return useTransactionsForDictionary;
+  public int getMaxDictionaryWriteBatchSize() {
+    return maxDictionaryWriteBatchSize;
   }
 
-  public void setUseTransactionsForDictionary(boolean useTransactions) {
-    useTransactionsForDictionary = useTransactions;
-  }
-
-  @Property(name = "enableAsynchronousWritesForDictionary", description = "If set to true, updates are written in a separate thread asynchronously.")
-  private boolean isDictionaryAsynchronouslyWritten = true;
-
-  public boolean isDictionaryAsynchronouslyWritten() {
-    return isDictionaryAsynchronouslyWritten;
-  }
-
-  public void setDictionaryAsynchronouslyWritten(boolean isAsynchronousWritten) {
-    isDictionaryAsynchronouslyWritten = isAsynchronousWritten;
-  }
-
-  @Property(name = "dictionaryCacheType", description = "Defines how the instance cache works:"
-          + "\nNONE = no instances are cached"
-          + "\nHASH_TABLE = a cached instance is deleted, if a hash collision occurs"
-          + "\nLEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size"
-          + "\nHARD_REFERENCE = no instance is removed from the cache automatically"
-          + "\nSOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full"
-          + "\nWEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them")
-  private MapDBCacheOptions dictionaryCacheType = MapDBCacheOptions.HASH_TABLE;
-
-  public MapDBCacheOptions getDictionaryCacheType() {
-    return dictionaryCacheType;
-  }
-
-  public void setDictionaryCacheType(MapDBCacheOptions dictionaryCacheType) {
-    this.dictionaryCacheType = dictionaryCacheType;
+  public void setMaxDictionaryWriteBatchSize(int maxDictionaryWriteBatchSize) {
+    this.maxDictionaryWriteBatchSize = maxDictionaryWriteBatchSize;
   }
 
   @Property(name = "statisticsStorageType", description = "Defines how the statistics tables are persisted:"

@@ -6,7 +6,7 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
-import de.uni_koblenz.west.koral.master.dictionary.impl.MapDBDictionary;
+import de.uni_koblenz.west.koral.master.dictionary.impl.RocksDBDictionary;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 
@@ -50,10 +50,8 @@ public class DictionaryEncoder implements Closeable {
     this.logger = logger;
     measurementCollector = collector;
     if (conf != null) {
-      dictionary = new MapDBDictionary(conf.getDictionaryStorageType(),
-              conf.getDictionaryDataStructure(), conf.getDictionaryDir(),
-              conf.useTransactionsForDictionary(), conf.isDictionaryAsynchronouslyWritten(),
-              conf.getDictionaryCacheType());
+      dictionary = new RocksDBDictionary(conf.getDictionaryDir(),
+              conf.getMaxDictionaryWriteBatchSize());
     } else {
       dictionary = null;
     }

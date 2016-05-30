@@ -76,54 +76,16 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
     }
   }
 
-  public void deserializeDictionaryStorageType(Configuration conf, String storageType) {
-    if ((storageType != null) && !storageType.isEmpty()) {
-      try {
-        conf.setDictionaryStorageType(MapDBStorageOptions.valueOf(storageType.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
-    }
-  }
-
-  public void deserializeDictionaryDataStructure(Configuration conf, String dataStructure) {
-    if ((dataStructure != null) && !dataStructure.isEmpty()) {
-      try {
-        conf.setDictionaryDataStructure(
-                MapDBDataStructureOptions.valueOf(dataStructure.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
-    }
-  }
-
   public void deserializeDictionaryDir(Configuration conf, String dictionaryDir) {
     if ((dictionaryDir != null) && !dictionaryDir.isEmpty()) {
       conf.setDictionaryDir(dictionaryDir);
     }
   }
 
-  public void deserializeEnableTransactionsForDictionary(Configuration conf,
-          String enableTransactions) {
-    if ((enableTransactions != null) && !enableTransactions.isEmpty()) {
-      conf.setUseTransactionsForDictionary(Boolean.parseBoolean(enableTransactions));
-    }
-  }
-
-  public void deserializeEnableAsynchronousWritesForDictionary(Configuration conf,
-          String writeAsynchronously) {
-    if ((writeAsynchronously != null) && !writeAsynchronously.isEmpty()) {
-      conf.setDictionaryAsynchronouslyWritten(Boolean.parseBoolean(writeAsynchronously));
-    }
-  }
-
-  public void deserializeDictionaryCacheType(Configuration conf, String cacheType) {
-    if ((cacheType != null) && !cacheType.isEmpty()) {
-      try {
-        conf.setDictionaryCacheType(MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
+  public void deserializeMaxDictionaryWriteBatchSize(Configuration conf,
+          String maxDictionaryWriteBatchSize) {
+    if ((maxDictionaryWriteBatchSize != null) && !maxDictionaryWriteBatchSize.isEmpty()) {
+      conf.setMaxDictionaryWriteBatchSize(Integer.parseInt(maxDictionaryWriteBatchSize));
     }
   }
 

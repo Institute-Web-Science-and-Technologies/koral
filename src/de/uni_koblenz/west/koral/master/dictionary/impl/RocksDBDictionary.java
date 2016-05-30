@@ -20,6 +20,8 @@ import java.util.Map;
  */
 public class RocksDBDictionary implements Dictionary {
 
+  public static final int DEFAULT_MAX_BATCH_SIZE = 100000;
+
   private final String storageDir;
 
   private RocksDB encoder;
@@ -32,16 +34,21 @@ public class RocksDBDictionary implements Dictionary {
 
   private Map<String, Long> entriesInBatch;
 
-  private final int maxBatchEntries = 100000;
+  private final int maxBatchEntries;
 
   /**
    * id 0 indicates that a string in a query has not been encoded yet
    */
   private long nextID = 1;
 
-  private final long maxID = 0x0000ffffffffffffl;
+  private final long maxID = 0x0000ffffffffffffL;
 
   public RocksDBDictionary(String storageDir) {
+    this(storageDir, RocksDBDictionary.DEFAULT_MAX_BATCH_SIZE);
+  }
+
+  public RocksDBDictionary(String storageDir, int maxBatchEntries) {
+    this.maxBatchEntries = maxBatchEntries;
     this.storageDir = storageDir;
     File dictionaryDir = new File(storageDir);
     if (!dictionaryDir.exists()) {
