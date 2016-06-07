@@ -70,7 +70,7 @@ public class EncodedFileInputStream implements AutoCloseable {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() throws IOException {
     if (input != null) {
       input.close();
     }
