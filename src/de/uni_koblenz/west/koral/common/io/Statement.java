@@ -119,6 +119,7 @@ public class Statement {
     Statement.singleton.subject = subject;
     Statement.singleton.property = property;
     Statement.singleton.object = object;
+    Statement.singleton.containment = containment;
     return Statement.singleton;
   }
 }
