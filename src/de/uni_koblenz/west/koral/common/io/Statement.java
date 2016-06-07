@@ -41,14 +41,14 @@ public class Statement {
   }
 
   public String getSubjectAsString() {
-    if (!format.isSubjectEncoded()) {
+    if (format.isSubjectEncoded()) {
       throw new RuntimeException("Subject is a long and not a String. Call getSubjectAsLong()");
     }
     return convertToString(subject);
   }
 
   public long getSubjectAsLong() {
-    if (format.isSubjectEncoded()) {
+    if (!format.isSubjectEncoded()) {
       throw new RuntimeException("Subject is a String and not a long. Call getSubjectAsString()");
     }
     return NumberConversion.bytes2long(subject);
@@ -63,14 +63,14 @@ public class Statement {
   }
 
   public String getPropertyAsString() {
-    if (!format.isPropertyEncoded()) {
+    if (format.isPropertyEncoded()) {
       throw new RuntimeException("Property is a long and not a String. Call getPropertyAsLong()");
     }
     return convertToString(property);
   }
 
   public long getPropertyAsLong() {
-    if (format.isPropertyEncoded()) {
+    if (!format.isPropertyEncoded()) {
       throw new RuntimeException("Property is a String and not a long. Call getPropertyAsString()");
     }
     return NumberConversion.bytes2long(property);
@@ -85,14 +85,14 @@ public class Statement {
   }
 
   public String getObjectAsString() {
-    if (!format.isObjectEncoded()) {
+    if (format.isObjectEncoded()) {
       throw new RuntimeException("Object is a long and not a String. Call getObjectAsLong()");
     }
     return convertToString(object);
   }
 
   public long getObjectAsLong() {
-    if (format.isObjectEncoded()) {
+    if (!format.isObjectEncoded()) {
       throw new RuntimeException("Object is a String and not a long. Call getObjectAsString()");
     }
     return NumberConversion.bytes2long(object);
