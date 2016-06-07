@@ -66,7 +66,7 @@ public class EncodedFileInputStream implements AutoCloseable {
       long value = currentBlock & 0b0111_1111;
       result = result | value;
     } while (currentBlock >= 0);
-    return NumberConversion.long2bytes(currentBlock);
+    return NumberConversion.long2bytes(result);
   }
 
   @Override
