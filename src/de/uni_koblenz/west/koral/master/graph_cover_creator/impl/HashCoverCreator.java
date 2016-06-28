@@ -1,13 +1,14 @@
 package de.uni_koblenz.west.koral.master.graph_cover_creator.impl;
 
-import org.apache.jena.graph.Node;
-
+import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodedFileOutputStream;
+import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
-import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
+import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 
 import java.io.File;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -23,6 +24,11 @@ public class HashCoverCreator extends GraphCoverCreatorBase {
 
   private final MessageDigest digest;
 
+  @Override
+  public EncodingFileFormat getRequiredInputEncoding() {
+    return EncodingFileFormat.UEE;
+  }
+
   public HashCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
     super(logger, measurementCollector);
     try {
@@ -37,19 +43,18 @@ public class HashCoverCreator extends GraphCoverCreatorBase {
   }
 
   @Override
-  protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
-          OutputStream[] outputs, boolean[] writtenFiles, File workingDir) {
-    for (Node[] statement : rdfFiles) {
+  protected void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
+          int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
+          File workingDir) {
+    for (Statement statement : input) {
       processStatement(numberOfGraphChunks, outputs, writtenFiles, statement);
     }
   }
 
-  protected void processStatement(int numberOfGraphChunks, OutputStream[] outputs,
-          boolean[] writtenFiles, Node[] statement) {
-    transformBlankNodes(statement);
+  protected void processStatement(int numberOfGraphChunks, EncodedFileOutputStream[] outputs,
+          boolean[] writtenFiles, Statement statement) {
     // assign to triple to chunk according to hash on subject
-    String subjectString = statement[0].toString();
-    int targetChunk = computeHash(subjectString) % outputs.length;
+    int targetChunk = computeHash(statement.getSubjectAsString()) % outputs.length;
     if (targetChunk < 0) {
       targetChunk *= -1;
     }

@@ -1,34 +1,31 @@
 package de.uni_koblenz.west.koral.master.graph_cover_creator.impl;
 
-import org.apache.jena.graph.Node;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 
+import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodedFileOutputStream;
+import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
-import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
+import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.Dictionary;
+import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.dictionary.impl.MapDBDictionary;
 import de.uni_koblenz.west.koral.master.utils.AdjacencyMatrix;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -36,10 +33,9 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Creates a minimal edge-cut cover with the help of
@@ -57,14 +53,21 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
   }
 
   @Override
-  protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
-          OutputStream[] outputs, boolean[] writtenFiles, File workingDir) {
+  public EncodingFileFormat getRequiredInputEncoding() {
+    return EncodingFileFormat.EEE;
+  }
+
+  @Override
+  protected void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
+          int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
+          File workingDir) {
     File dictionaryFolder = new File(
             workingDir.getAbsolutePath() + File.separator + "minEdgeCutDictionary");
     if (!dictionaryFolder.exists()) {
       dictionaryFolder.mkdirs();
     }
-    Dictionary dictionary = new MapDBDictionary(MapDBStorageOptions.MEMORY_MAPPED_FILE,
+    // TODO use a long2long dictionary
+    Dictionary localDictionary = new MapDBDictionary(MapDBStorageOptions.MEMORY_MAPPED_FILE,
             MapDBDataStructureOptions.HASH_TREE_MAP, dictionaryFolder.getAbsolutePath(), false,
             true, MapDBCacheOptions.HASH_TABLE);
 
@@ -78,14 +81,14 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       File metisInputGraph = new File(workingDir.getAbsolutePath() + File.separator + "metisInput");
 
       try {
-        createMetisInputFile(rdfFiles, dictionary, encodedRDFGraph, metisInputGraph, ignoredTriples,
-                workingDir);
+        createMetisInputFile(dictionary, input, localDictionary, encodedRDFGraph, metisInputGraph,
+                ignoredTriples, workingDir);
         metisOutputGraph = runMetis(metisInputGraph, numberOfGraphChunks);
       } finally {
         metisInputGraph.delete();
       }
 
-      createGraphCover(encodedRDFGraph, dictionary, metisOutputGraph, ignoredTriples, outputs,
+      createGraphCover(encodedRDFGraph, localDictionary, metisOutputGraph, ignoredTriples, outputs,
               writtenFiles, numberOfGraphChunks, workingDir);
     } finally {
       if (encodedRDFGraph != null) {
@@ -97,13 +100,14 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       if (ignoredTriples.exists()) {
         ignoredTriples.delete();
       }
-      dictionary.close();
+      localDictionary.close();
       deleteFolder(dictionaryFolder);
     }
   }
 
-  private void createMetisInputFile(RDFFileIterator rdfFiles, Dictionary dictionary,
-          File encodedRDFGraph, File metisInputGraph, File ignoredTriples, File workingDir) {
+  private void createMetisInputFile(DictionaryEncoder dictionary, EncodedFileInputStream input,
+          Dictionary localDictionary, File encodedRDFGraph, File metisInputGraph,
+          File ignoredTriples, File workingDir) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(
               MeasurementType.LOAD_GRAPH_COVER_CREATION_METIS_INPUT_FILE_CREATION_START,
@@ -115,6 +119,10 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       metisInputTempFolder.mkdirs();
     }
 
+    long encodedRdfTypeLabel = dictionary.encodeWithoutOwnership(
+            DeSerializer.deserializeNode("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"),
+            false);
+
     long numberOfVertices = 0;
     long numberOfEdges = 0;
     long numberOfUsedTriples = 0;
@@ -123,44 +131,36 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     AdjacencyMatrix adjacencyMatrix = new AdjacencyMatrix(metisInputTempFolder);
     // create adjacency lists
     try {
-      try (DataOutputStream encodedGraphOutput = new DataOutputStream(new BufferedOutputStream(
-              new GZIPOutputStream(new FileOutputStream(encodedRDFGraph))));
-              DataOutputStream ignoredTriplesOutput = new DataOutputStream(new BufferedOutputStream(
-                      new GZIPOutputStream(new FileOutputStream(ignoredTriples))))) {
-        for (Node[] statement : rdfFiles) {
-          transformBlankNodes(statement);
-          if (statement[0].equals(statement[2]) || DeSerializer.serializeNode(statement[1])
-                  .equals("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")) {
+      try (EncodedFileOutputStream encodedGraphOutput = new EncodedFileOutputStream(
+              encodedRDFGraph);
+              EncodedFileOutputStream ignoredTriplesOutput = new EncodedFileOutputStream(
+                      ignoredTriples);) {
+        for (Statement statement : input) {
+          if (Arrays.equals(statement.getSubject(), statement.getObject())
+                  || (statement.getPropertyAsLong() == encodedRdfTypeLabel)) {
             // this is a self loop that is forbidden in METIS or
             // it is a rdf:type triple
             // store it as ignored triple
             numberOfIgnoredTriples++;
-            byte[] subject = DeSerializer.serializeNode(statement[0]).getBytes("UTF-8");
-            byte[] property = DeSerializer.serializeNode(statement[1]).getBytes("UTF-8");
-            byte[] object = DeSerializer.serializeNode(statement[2]).getBytes("UTF-8");
-            ignoredTriplesOutput.writeInt(subject.length);
-            ignoredTriplesOutput.write(subject);
-            ignoredTriplesOutput.writeInt(property.length);
-            ignoredTriplesOutput.write(property);
-            ignoredTriplesOutput.writeInt(object.length);
-            ignoredTriplesOutput.write(object);
+            ignoredTriplesOutput.writeStatement(statement);
             continue;
           }
           numberOfUsedTriples++;
-          long encodedSubject = dictionary.encode(DeSerializer.serializeNode(statement[0]), true);
+          long encodedSubject = localDictionary.encode(Long.toString(statement.getSubjectAsLong()),
+                  true);
           if (encodedSubject > numberOfVertices) {
             numberOfVertices = encodedSubject;
           }
-          long encodedObject = dictionary.encode(DeSerializer.serializeNode(statement[2]), true);
+          long encodedObject = localDictionary.encode(Long.toString(statement.getObjectAsLong()),
+                  true);
           if (encodedObject > numberOfVertices) {
             numberOfVertices = encodedObject;
           }
           // write encoded triple to graph file
-          encodedGraphOutput.writeLong(encodedSubject);
-          String property = DeSerializer.serializeNode(statement[1]);
-          encodedGraphOutput.writeInt(property.length());
-          encodedGraphOutput.writeBytes(property);
-          encodedGraphOutput.writeLong(encodedObject);
+          Statement encodedStatement = Statement.getStatement(getRequiredInputEncoding(),
+                  NumberConversion.long2bytes(encodedSubject), statement.getProperty(),
+                  NumberConversion.long2bytes(encodedObject), statement.getContainment());
+          encodedGraphOutput.writeStatement(encodedStatement);
 
           adjacencyMatrix.addEdge(encodedSubject, encodedObject);
         }
@@ -246,7 +246,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
   }
 
   private void createGraphCover(File encodedRDFGraph, Dictionary dictionary, File metisOutputGraph,
-          File ignoredTriples, OutputStream[] outputs, boolean[] writtenFiles,
+          File ignoredTriples, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
           int numberOfGraphChunks, File workingDir) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
@@ -281,26 +281,17 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       }
 
       // assign partitioned triples
-      try (DataInputStream graphInput = new DataInputStream(new BufferedInputStream(
-              new GZIPInputStream(new FileInputStream(encodedRDFGraph))));) {
+      try (EncodedFileInputStream graphInput = new EncodedFileInputStream(
+              getRequiredInputEncoding(), encodedRDFGraph);) {
         long lastVertex = -1;
         int lastChunkIndex = -1;
 
-        while (true) {
-          long subject = graphInput.readLong();
-          String subjectString = dictionary.decode(subject);
-
-          int propertyLength = graphInput.readInt();
-          byte[] propertyString = new byte[propertyLength];
-          graphInput.readFully(propertyString);
-          String property = new String(propertyString);
-
-          long object = graphInput.readLong();
-          String objectString = dictionary.decode(object);
-
-          Node[] statement = new Node[] { DeSerializer.deserializeNode(subjectString),
-                  DeSerializer.deserializeNode(property),
-                  DeSerializer.deserializeNode(objectString) };
+        for (Statement statement : graphInput) {
+          long subject = Long.parseLong(dictionary.decode(statement.getSubjectAsLong()));
+          long object = Long.parseLong(dictionary.decode(statement.getObjectAsLong()));
+          Statement newStatement = Statement.getStatement(getRequiredInputEncoding(),
+                  NumberConversion.long2bytes(subject), statement.getProperty(),
+                  NumberConversion.long2bytes(object), statement.getContainment());
 
           int targetChunk = -1;
           if (subject == lastVertex) {
@@ -318,42 +309,22 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             lastChunkIndex = targetChunk;
           }
 
-          writeStatementToChunk(targetChunk, numberOfGraphChunks, statement, outputs, writtenFiles);
+          writeStatementToChunk(targetChunk, numberOfGraphChunks, newStatement, outputs,
+                  writtenFiles);
         }
-      } catch (EOFException e1) {
-        // when encoded graph file is completely processed, this exception is
-        // thrown
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
 
       if (ignoredTriples.exists()) {
         // assign ignored triples
-        try (DataInputStream graphInput = new DataInputStream(new BufferedInputStream(
-                new GZIPInputStream(new FileInputStream(ignoredTriples))));) {
+        try (EncodedFileInputStream graphInput = new EncodedFileInputStream(
+                getRequiredInputEncoding(), ignoredTriples);) {
           long lastVertex = -1;
           int lastChunkIndex = -1;
 
-          while (true) {
-            int subjectLength = graphInput.readInt();
-            byte[] subjectByteArray = new byte[subjectLength];
-            graphInput.readFully(subjectByteArray);
-            String subjectString = new String(subjectByteArray, "UTF-8");
-            long subject = dictionary.encode(subjectString, false);
-
-            int propertyLength = graphInput.readInt();
-            byte[] propertyString = new byte[propertyLength];
-            graphInput.readFully(propertyString);
-            String property = new String(propertyString, "UTF-8");
-
-            int objectLength = graphInput.readInt();
-            byte[] objectByteArray = new byte[objectLength];
-            graphInput.readFully(objectByteArray);
-            String objectString = new String(objectByteArray, "UTF-8");
-
-            Node[] statement = new Node[] { DeSerializer.deserializeNode(subjectString),
-                    DeSerializer.deserializeNode(property),
-                    DeSerializer.deserializeNode(objectString) };
+          for (Statement statement : graphInput) {
+            long subject = statement.getSubjectAsLong();
 
             int targetChunk = -1;
             if (subject == lastVertex) {
@@ -374,9 +345,6 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             writeStatementToChunk(targetChunk, numberOfGraphChunks, statement, outputs,
                     writtenFiles);
           }
-        } catch (EOFException e1) {
-          // when encoded graph file is completely processed, this exception is
-          // thrown
         } catch (IOException e) {
           throw new RuntimeException(e);
         }

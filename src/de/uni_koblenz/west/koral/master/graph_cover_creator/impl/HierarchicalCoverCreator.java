@@ -1,16 +1,19 @@
 package de.uni_koblenz.west.koral.master.graph_cover_creator.impl;
 
-import org.apache.jena.graph.Node;
 import org.apache.jena.iri.IRI;
 import org.apache.jena.riot.system.IRIResolver;
 
+import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodedFileOutputStream;
+import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
-import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
-import de.uni_koblenz.west.koral.master.utils.DeSerializer;
+import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 
 import java.io.File;
-import java.io.OutputStream;
+import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -27,19 +30,31 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
   }
 
   @Override
-  protected void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
-          OutputStream[] outputs, boolean[] writtenFiles, File workingDir) {
-    int hierarchyLevel = identifyHierarchyLevel(new RDFFileIterator(rdfFiles, false),
-            numberOfGraphChunks);
+  public EncodingFileFormat getRequiredInputEncoding() {
+    return EncodingFileFormat.UEE;
+  }
+
+  @Override
+  protected void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
+          int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
+          File workingDir) {
+    int hierarchyLevel = identifyHierarchyLevel(input, numberOfGraphChunks);
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
               System.currentTimeMillis());
     }
-    for (Node[] statement : rdfFiles) {
-      if (!statement[0].isURI()) {
+    try {
+      input.close();
+      input = new EncodedFileInputStream(input);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    for (Statement statement : input) {
+      String subjectString = statement.getSubjectAsString();
+      if (!isUri(subjectString)) {
         processStatement(numberOfGraphChunks, outputs, writtenFiles, statement);
       } else {
-        String[] iriParts = getIRIHierarchy(DeSerializer.serializeNode(statement[0]));
+        String[] iriParts = getIRIHierarchy(subjectString);
         String iriPrefix = getIriPrefix(iriParts, hierarchyLevel);
         int targetChunk = computeHash(iriPrefix) % outputs.length;
         if (targetChunk < 0) {
@@ -55,7 +70,17 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
     }
   }
 
-  private int identifyHierarchyLevel(RDFFileIterator rdfFiles, int numberOfGraphChunks) {
+  private boolean isUri(String subjectString) {
+    if (subjectString.startsWith("<")) {
+      subjectString = subjectString.substring(1);
+      if (subjectString.endsWith(">")) {
+        subjectString = subjectString.substring(0, subjectString.length() - 1);
+      }
+    }
+    return !subjectString.startsWith(Configuration.BLANK_NODE_URI_PREFIX);
+  }
+
+  private int identifyHierarchyLevel(EncodedFileInputStream input, int numberOfGraphChunks) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(
               MeasurementType.LOAD_GRAPH_COVER_CREATION_HIERARCHY_LEVEL_IDENTIFICATION_START,
@@ -77,7 +102,7 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
      * short IRIs)
      */
     long[][][] tripleOccurences = new long[1][numberOfGraphChunks][2];
-    tripleOccurences = computeTripleFrequencyPerHierarchyLevel(tripleOccurences, rdfFiles,
+    tripleOccurences = computeTripleFrequencyPerHierarchyLevel(tripleOccurences, input,
             numberOfGraphChunks);
 
     int balancedHierarchyLevel = Integer.MAX_VALUE;
@@ -117,19 +142,18 @@ public class HierarchicalCoverCreator extends HashCoverCreator {
   }
 
   private long[][][] computeTripleFrequencyPerHierarchyLevel(long[][][] tripleOccurences,
-          RDFFileIterator rdfFiles, int numberOfGraphChunks) {
-    for (Node[] statement : rdfFiles) {
-      if (!statement[0].isURI()) {
-        transformBlankNodes(statement);
+          EncodedFileInputStream input, int numberOfGraphChunks) {
+    for (Statement statement : input) {
+      String subjectString = statement.getSubjectAsString();
+      if (!isUri(subjectString)) {
         // assign to triple to chunk according to hash on subject
-        String subjectString = statement[0].toString();
         int targetChunk = computeHash(subjectString) % numberOfGraphChunks;
         if (targetChunk < 0) {
           targetChunk *= -1;
         }
         tripleOccurences[0][targetChunk][0]++;
       } else {
-        String[] iriParts = getIRIHierarchy(DeSerializer.serializeNode(statement[0]));
+        String[] iriParts = getIRIHierarchy(subjectString);
         if (iriParts.length >= tripleOccurences.length) {
           tripleOccurences = extendArray(tripleOccurences, iriParts.length);
         }

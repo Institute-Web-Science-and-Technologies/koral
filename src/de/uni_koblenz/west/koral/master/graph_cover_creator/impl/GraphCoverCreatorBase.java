@@ -1,27 +1,19 @@
 package de.uni_koblenz.west.koral.master.graph_cover_creator.impl;
 
 import org.apache.jena.graph.Node;
-import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.sparql.core.DatasetGraph;
-import org.apache.jena.sparql.core.DatasetGraphFactory;
-import org.apache.jena.sparql.core.Quad;
 
-import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodedFileOutputStream;
+import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
-import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
+import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
-import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Logger;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * provides the base implementation for all {@link GraphCoverCreator}.
@@ -43,16 +35,20 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
   }
 
   @Override
-  public File[] createGraphCover(RDFFileIterator rdfFiles, File workingDir,
+  public File[] createGraphCover(DictionaryEncoder dictionary, File rdfFile, File workingDir,
           int numberOfGraphChunks) {
     File[] chunkFiles = getGraphChunkFiles(workingDir, numberOfGraphChunks);
-    OutputStream[] outputs = getOutputStreams(chunkFiles);
+    EncodedFileOutputStream[] outputs = getOutputStreams(chunkFiles);
     boolean[] writtenFiles = new boolean[chunkFiles.length];
     try {
-      createCover(rdfFiles, numberOfGraphChunks, outputs, writtenFiles, workingDir);
+      try (EncodedFileInputStream input = new EncodedFileInputStream(getRequiredInputEncoding(),
+              rdfFile);) {
+        createCover(dictionary, input, numberOfGraphChunks, outputs, writtenFiles, workingDir);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     } finally {
-      rdfFiles.close();
-      for (OutputStream stream : outputs) {
+      for (EncodedFileOutputStream stream : outputs) {
         try {
           if (stream != null) {
             stream.close();
@@ -90,47 +86,46 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
    * {@link GraphCoverCreatorBase#writeStatementToChunk(int, int, Node[], OutputStream[], boolean[])}
    * . Blank nodes have to be encoded via {@link #transformBlankNodes(Node[])} .
    * 
-   * @param rdfFiles
-   *          iterator over all input triples or quadruples
+   * @param dictionary
+   * @param input
+   *          input {@link File} containing triples or quadruples
    * @param numberOfGraphChunks
    * @param outputs
-   *          the {@link OutputStream}s that are used to write the output files
+   *          the {@link EncodedFileOutputStream}s that are used to write the
+   *          output files
    * @param writtenFiles
    *          has to be set to true, if a triple is written to a specific file
    *          (chunk)
    * @param workingDir
    */
-  protected abstract void createCover(RDFFileIterator rdfFiles, int numberOfGraphChunks,
-          OutputStream[] outputs, boolean[] writtenFiles, File workingDir);
+  protected abstract void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
+          int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
+          File workingDir);
 
-  protected void writeStatementToChunk(int targetChunk, int numberOfGraphChunks, Node[] statement,
-          OutputStream[] outputs, boolean[] writtenFiles) {
+  protected void writeStatementToChunk(int targetChunk, int numberOfGraphChunks,
+          Statement statement, EncodedFileOutputStream[] outputs, boolean[] writtenFiles) {
     if (measurementCollector != null) {
       if (numberOfTriplesPerChunk == null) {
         numberOfTriplesPerChunk = new long[numberOfGraphChunks];
       }
       numberOfTriplesPerChunk[targetChunk]++;
     }
-    // ignore graphs and add all triples to the same graph
-    // encode the containment information as graph name
-    DatasetGraph graph = DatasetGraphFactory.createMem();
-    graph.add(new Quad(encodeContainmentInformation(targetChunk, numberOfGraphChunks), statement[0],
-            statement[1], statement[2]));
-    RDFDataMgr.write(outputs[targetChunk], graph, RDFFormat.NQ);
-    graph.clear();
+    Statement outputStatement = Statement.getStatement(getRequiredInputEncoding(),
+            statement.getSubject(), statement.getProperty(), statement.getObject(),
+            setContainment(targetChunk, statement.getContainment()));
+    try {
+      outputs[targetChunk].writeStatement(outputStatement);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
     writtenFiles[targetChunk] = true;
   }
 
-  private Node encodeContainmentInformation(int targetChunk, int numberOfGraphChunks) {
-    int bitsetSize = numberOfGraphChunks / Byte.SIZE;
-    if ((numberOfGraphChunks % Byte.SIZE) != 0) {
-      bitsetSize += 1;
-    }
-    byte[] bitset = new byte[bitsetSize];
+  private byte[] setContainment(int targetChunk, byte[] containment) {
     int bitsetIndex = targetChunk / Byte.SIZE;
     byte bitsetMask = getBitMaskFor(targetChunk + 1);
-    bitset[bitsetIndex] |= bitsetMask;
-    return DeSerializer.serializeBitSetAsNode(bitset);
+    containment[bitsetIndex] |= bitsetMask;
+    return containment;
   }
 
   private byte getBitMaskFor(int computerId) {
@@ -156,22 +151,11 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
     return 0;
   }
 
-  protected void transformBlankNodes(Node[] statement) {
-    for (int i = 0; i < statement.length; i++) {
-      Node node = statement[i];
-      if (node.isBlank()) {
-        statement[i] = NodeFactory
-                .createURI(Configuration.BLANK_NODE_URI_PREFIX + node.getBlankNodeId());
-      }
-    }
-  }
-
-  private OutputStream[] getOutputStreams(File[] chunkFiles) {
-    OutputStream[] outputs = new OutputStream[chunkFiles.length];
+  private EncodedFileOutputStream[] getOutputStreams(File[] chunkFiles) {
+    EncodedFileOutputStream[] outputs = new EncodedFileOutputStream[chunkFiles.length];
     for (int i = 0; i < outputs.length; i++) {
       try {
-        outputs[i] = new BufferedOutputStream(
-                new GZIPOutputStream(new FileOutputStream(chunkFiles[i])));
+        outputs[i] = new EncodedFileOutputStream(chunkFiles[i]);
       } catch (IOException e) {
         for (int j = i; i >= 0; j--) {
           if (outputs[j] != null) {
@@ -187,6 +171,7 @@ public abstract class GraphCoverCreatorBase implements GraphCoverCreator {
     return outputs;
   }
 
+  @Override
   public File[] getGraphChunkFiles(File workingDir, int numberOfGraphChunks) {
     File[] chunkFiles = new File[numberOfGraphChunks];
     for (int i = 0; i < chunkFiles.length; i++) {

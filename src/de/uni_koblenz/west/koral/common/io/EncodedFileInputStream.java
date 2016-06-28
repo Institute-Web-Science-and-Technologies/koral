@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -18,15 +19,30 @@ import java.util.zip.GZIPInputStream;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class EncodedFileInputStream implements AutoCloseable {
+public class EncodedFileInputStream implements AutoCloseable, Iterable<Statement> {
 
   private final EncodingFileFormat inputFormat;
 
   private final DataInputStream input;
 
+  private final File inputFile;
+
+  /**
+   * The input must be closed!
+   * 
+   * @param input
+   * @throws FileNotFoundException
+   * @throws IOException
+   */
+  public EncodedFileInputStream(EncodedFileInputStream input)
+          throws FileNotFoundException, IOException {
+    this(input.inputFormat, input.inputFile);
+  }
+
   public EncodedFileInputStream(EncodingFileFormat inputFormat, File inputFile)
           throws FileNotFoundException, IOException {
     super();
+    this.inputFile = inputFile;
     this.inputFormat = inputFormat;
     input = new DataInputStream(
             new BufferedInputStream(new GZIPInputStream(new FileInputStream(inputFile))));
@@ -67,6 +83,11 @@ public class EncodedFileInputStream implements AutoCloseable {
       result = result | value;
     } while (currentBlock >= 0);
     return NumberConversion.long2bytes(result);
+  }
+
+  @Override
+  public Iterator<Statement> iterator() {
+    return new EncodedFileInputIterator(this);
   }
 
   @Override

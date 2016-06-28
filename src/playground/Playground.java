@@ -13,11 +13,11 @@ import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.koral.common.query.parser.QueryExecutionTreeType;
 import de.uni_koblenz.west.koral.common.query.parser.SparqlParser;
 import de.uni_koblenz.west.koral.common.query.parser.VariableDictionary;
-import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
+import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
@@ -49,32 +49,40 @@ public class Playground {
     conf.setDictionaryDir(workingDir.getAbsolutePath() + File.separator + "dictionary");
     conf.setStatisticsDir(workingDir.getAbsolutePath() + File.separator + "statistics");
 
-    // create cover
-    RDFFileIterator iterator = new RDFFileIterator(inputFile, false, null);
-    // GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
+    GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
     // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
     // null);
-    GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
-    File[] cover = coverCreator.createGraphCover(iterator, workingDir, 4);
+    // GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
+
+    // encode graph
+    DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
+    File encodedInput = encoder.encodeOriginalGraphFiles(
+            inputFile.isDirectory() ? inputFile.listFiles(new GraphFileFilter())
+                    : new File[] { inputFile },
+            workingDir, coverCreator.getRequiredInputEncoding(), 4);
+
+    // create cover
+    File[] cover = coverCreator.createGraphCover(encoder, encodedInput, workingDir, 4);
+
+    cover = encoder.encodeGraphChunksCompletely(cover, workingDir,
+            coverCreator.getRequiredInputEncoding());
 
     NHopReplicator replicator = new NHopReplicator(null, null);
     cover = replicator.createNHopReplication(cover, workingDir, 0);
 
-    // encode cover and collect statistics
-    DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
-    File[] encodedFiles = encoder.encodeGraphChunks(cover, workingDir);
+    // collect statistics
     GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
-    statistics.collectStatistics(encodedFiles);
-    encodedFiles = statistics.adjustOwnership(encodedFiles, workingDir);
+    statistics.collectStatistics(cover);
+    cover = statistics.adjustOwnership(cover, workingDir);
 
     System.out.println(statistics.toString());
 
-    Playground.printContentOfChunks(encodedFiles, encoder, conf, workingDir);
+    Playground.printContentOfChunks(cover, encoder, conf, workingDir);
 
     // store triples
     conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
     TripleStoreAccessor accessor = new TripleStoreAccessor(conf, null);
-    for (File file : encodedFiles) {
+    for (File file : cover) {
       if (file != null) {
         accessor.storeTriples(file);
       }

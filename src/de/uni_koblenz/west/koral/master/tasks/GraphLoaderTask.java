@@ -7,8 +7,8 @@ import de.uni_koblenz.west.koral.common.messages.MessageNotifier;
 import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.common.messages.MessageUtils;
 import de.uni_koblenz.west.koral.common.networManager.NetworkManager;
+import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
-import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 import de.uni_koblenz.west.koral.master.client_manager.ClientConnectionManager;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.CoverStrategyType;
@@ -235,8 +235,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
       keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections, clientId);
       keepAliveThread.start();
 
-      File[] chunks = createGraphChunks();
-      File[] encodedFiles = encodeGraphFiles(chunks);
+      File encodedGraphFile = encodeGraphFilesInitially();
+      File[] chunks = createGraphChunks(encodedGraphFile);
+      File[] encodedFiles = encodeGraphChunks(chunks);
       collectStatistis(encodedFiles);
       encodedFiles = adjustOwnership(encodedFiles);
 
@@ -352,7 +353,42 @@ public class GraphLoaderTask extends Thread implements Closeable {
   // statistics.clear();
   // }
 
-  private File[] createGraphChunks() {
+  private File encodeGraphFilesInitially() {
+    File encodedFiles = null;
+    if ((state == LoadingState.START) || (state == LoadingState.INITIAL_ENCODING)) {
+      setState(LoadingState.INITIAL_ENCODING);
+      if (logger != null) {
+        logger.finer("initial encoding of graph chunks");
+      }
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_START,
+                System.currentTimeMillis());
+      }
+      clientConnections.send(clientId, MessageUtils.createStringMessage(
+              MessageType.MASTER_WORK_IN_PROGRESS, "Started initial encoding of graph.", logger));
+
+      encodedFiles = dictionary.encodeOriginalGraphFiles(
+              graphFilesDir.isDirectory() ? graphFilesDir.listFiles(new GraphFileFilter())
+                      : new File[] { graphFilesDir },
+              workingDir, coverCreator.getRequiredInputEncoding(), numberOfGraphChunks);
+
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
+                System.currentTimeMillis());
+      }
+      if (logger != null) {
+        logger.finer("initial encoding of graph finished");
+      }
+      clientConnections.send(clientId,
+              MessageUtils.createStringMessage(MessageType.MASTER_WORK_IN_PROGRESS,
+                      "Finished initial encoding of graph chunks.", logger));
+    } else {
+      encodedFiles = dictionary.getSemiEncodedGraphFile(workingDir);
+    }
+    return encodedFiles;
+  }
+
+  private File[] createGraphChunks(File encodedGraphFile) {
     File[] chunks = null;
     if ((state == LoadingState.START) || (state == LoadingState.GRAPH_COVER_CREATION)) {
       setState(LoadingState.GRAPH_COVER_CREATION);
@@ -366,10 +402,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_START,
                 System.currentTimeMillis());
       }
-      RDFFileIterator rdfFiles = new RDFFileIterator(graphFilesDir, false, logger);
-      chunks = coverCreator.createGraphCover(rdfFiles, workingDir, numberOfGraphChunks);
-      deleteContent(graphFilesDir);
-      graphFilesDir.delete();
+      chunks = coverCreator.createGraphCover(dictionary, encodedGraphFile, workingDir,
+              numberOfGraphChunks);
+      encodedGraphFile.delete();
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_END,
                 System.currentTimeMillis());
@@ -379,6 +414,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
     }
 
     if (replicationPathLength != 0) {
+      chunks = encodeGraphChunks(chunks);
       NHopReplicator replicator = new NHopReplicator(logger, measurementCollector);
       if ((state == LoadingState.GRAPH_COVER_CREATION)
               || (state == LoadingState.N_HOP_REPLICATION)) {
@@ -407,40 +443,43 @@ public class GraphLoaderTask extends Thread implements Closeable {
     return chunks;
   }
 
-  private File[] encodeGraphFiles(File[] plainGraphChunks) {
+  private File[] encodeGraphChunks(File[] plainGraphChunks) {
     File[] encodedFiles = null;
     if ((state == LoadingState.GRAPH_COVER_CREATION) || (state == LoadingState.N_HOP_REPLICATION)
-            || (state == LoadingState.ENCODING)) {
-      setState(LoadingState.ENCODING);
+            || (state == LoadingState.FINAL_ENCODING)) {
+      setState(LoadingState.FINAL_ENCODING);
       if (logger != null) {
-        logger.finer("encoding of graph chunks");
+        logger.finer("final encoding of graph chunks");
       }
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_START,
                 System.currentTimeMillis());
       }
-      clientConnections.send(clientId, MessageUtils.createStringMessage(
-              MessageType.MASTER_WORK_IN_PROGRESS, "Started encoding of graph chunks.", logger));
+      clientConnections.send(clientId,
+              MessageUtils.createStringMessage(MessageType.MASTER_WORK_IN_PROGRESS,
+                      "Started final encoding of graph chunks.", logger));
 
-      encodedFiles = dictionary.encodeGraphChunks(plainGraphChunks, workingDir);
+      encodedFiles = dictionary.encodeGraphChunksCompletely(plainGraphChunks, workingDir,
+              coverCreator.getRequiredInputEncoding());
 
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
                 System.currentTimeMillis());
       }
       if (logger != null) {
-        logger.finer("encoding of graph chunks finished");
+        logger.finer("final encoding of graph chunks finished");
       }
-      clientConnections.send(clientId, MessageUtils.createStringMessage(
-              MessageType.MASTER_WORK_IN_PROGRESS, "Finished encoding of graph chunks.", logger));
+      clientConnections.send(clientId,
+              MessageUtils.createStringMessage(MessageType.MASTER_WORK_IN_PROGRESS,
+                      "Finished final encoding of graph chunks.", logger));
     } else {
-      encodedFiles = dictionary.getEncodedGraphChunks(workingDir, numberOfGraphChunks);
+      encodedFiles = dictionary.getFullyEncodedGraphChunks(workingDir, numberOfGraphChunks);
     }
     return encodedFiles;
   }
 
   private void collectStatistis(File[] encodedChunks) {
-    if ((state == LoadingState.ENCODING) || (state == LoadingState.STATISTIC_COLLECTION)) {
+    if ((state == LoadingState.FINAL_ENCODING) || (state == LoadingState.STATISTIC_COLLECTION)) {
       setState(LoadingState.STATISTIC_COLLECTION);
       if (logger != null) {
         logger.finer("collecting statistics");
@@ -538,5 +577,5 @@ public class GraphLoaderTask extends Thread implements Closeable {
 }
 
 enum LoadingState {
-  START, GRAPH_COVER_CREATION, N_HOP_REPLICATION, ENCODING, STATISTIC_COLLECTION, SETTING_OWNERSHIP, TRANSMITTING, FINISHED;
+  START, GRAPH_COVER_CREATION, N_HOP_REPLICATION, INITIAL_ENCODING, FINAL_ENCODING, STATISTIC_COLLECTION, SETTING_OWNERSHIP, TRANSMITTING, FINISHED;
 }
