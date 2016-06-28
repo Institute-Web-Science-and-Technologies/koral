@@ -1,20 +1,18 @@
 package de.uni_koblenz.west.koral.slave.triple_store;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.koral.common.query.TriplePattern;
 import de.uni_koblenz.west.koral.slave.triple_store.impl.MapDBTripleStore;
 
-import java.io.BufferedInputStream;
 import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
 
 /**
  * Provides access to the local triple store. I.e., methods to store all triples
@@ -37,24 +35,13 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
   }
 
   public void storeTriples(File file) {
-    try (DataInputStream in = new DataInputStream(
-            new BufferedInputStream(new GZIPInputStream(new FileInputStream(file))));) {
+    try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, file);) {
       long alreadyLoadedTriples = 0;
-      while (true) {
-        long subject;
-        try {
-          subject = in.readLong();
-        } catch (EOFException e) {
-          break;
-        }
-        long property = in.readLong();
-        long object = in.readLong();
-        short length = in.readShort();
-        byte[] containment = new byte[length];
-        in.readFully(containment);
-        tripleStore.storeTriple(subject, property, object, containment);
+      for (Statement statement : in) {
+        tripleStore.storeTriple(statement.getSubjectAsLong(), statement.getPropertyAsLong(),
+                statement.getObjectAsLong(), statement.getContainment());
         alreadyLoadedTriples++;
-        if (logger != null && alreadyLoadedTriples % 10000 == 0) {
+        if ((logger != null) && ((alreadyLoadedTriples % 10000) == 0)) {
           logger.finer("loaded " + alreadyLoadedTriples + " triples");
         }
       }

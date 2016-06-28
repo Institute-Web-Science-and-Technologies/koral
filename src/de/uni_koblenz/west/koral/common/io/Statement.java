@@ -3,6 +3,7 @@ package de.uni_koblenz.west.koral.common.io;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 /**
  * A singleton class that provides method to get triple elements as String or
@@ -108,6 +109,14 @@ public class Statement {
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public String toString() {
+    return "Statement(" + (isSubjectEncoded() ? getSubjectAsLong() : getSubjectAsString()) + ", "
+            + (isPropertyEncoded() ? getPropertyAsLong() : getPropertyAsString()) + ", "
+            + (isObjectEncoded() ? getObjectAsLong() : getObjectAsString()) + ", "
+            + Arrays.toString(getContainment()) + ")";
   }
 
   public static Statement getStatement(EncodingFileFormat format, byte[] subject, byte[] property,

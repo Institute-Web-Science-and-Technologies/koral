@@ -121,12 +121,6 @@ public class DictionaryEncoder implements Closeable {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_END,
               System.currentTimeMillis());
     }
-
-    for (File file : plainGraphChunks) {
-      if (file != null) {
-        file.delete();
-      }
-    }
     return result;
   }
 
@@ -179,7 +173,7 @@ public class DictionaryEncoder implements Closeable {
 
           byte[] property;
           if (statement.isPropertyEncoded()) {
-            property = statement.getSubject();
+            property = statement.getProperty();
           } else {
             property = NumberConversion
                     .long2bytes(dictionary.encode(statement.getPropertyAsString(), true));
@@ -195,8 +189,8 @@ public class DictionaryEncoder implements Closeable {
 
           byte[] containment = statement.getContainment();
 
-          Statement outStatement = Statement.getStatement(inputFormat, subject, property, object,
-                  containment);
+          Statement outStatement = Statement.getStatement(EncodingFileFormat.EEE, subject, property,
+                  object, containment);
           out.writeStatement(outStatement);
         }
       } catch (IOException e) {

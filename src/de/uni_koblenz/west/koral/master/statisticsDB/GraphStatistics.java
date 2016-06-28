@@ -1,24 +1,20 @@
 package de.uni_koblenz.west.koral.master.statisticsDB;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodedFileOutputStream;
+import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.io.Statement;
+import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.MapDBGraphStatisticsDatabase;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Random;
 import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Stores statistical information about the occurrence of resources in the
@@ -56,19 +52,11 @@ public class GraphStatistics implements Closeable {
     if (chunk == null) {
       return;
     }
-    try (DataInputStream in = new DataInputStream(
-            new BufferedInputStream(new GZIPInputStream(new FileInputStream(chunk))));) {
-      while (true) {
-        long subject = in.readLong();
-        long property = in.readLong();
-        long object = in.readLong();
-        short containmentSize = in.readShort();
-        byte[] containment = new byte[containmentSize];
-        in.readFully(containment);
-        count(subject, property, object, chunkIndex);
+    try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, chunk);) {
+      for (Statement statement : in) {
+        count(statement.getSubjectAsLong(), statement.getPropertyAsLong(),
+                statement.getObjectAsLong(), chunkIndex);
       }
-    } catch (EOFException e) {
-      // the end of the file has been reached
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -96,26 +84,17 @@ public class GraphStatistics implements Closeable {
         result[i] = null;
         continue;
       }
-      try (DataInputStream in = new DataInputStream(
-              new BufferedInputStream(new GZIPInputStream(new FileInputStream(encodedChunks[i]))));
-              DataOutputStream out = new DataOutputStream(new BufferedOutputStream(
-                      new GZIPOutputStream(new FileOutputStream(result[i]))));) {
-        while (true) {
-          long subject = in.readLong();
-          long property = in.readLong();
-          long object = in.readLong();
-          int containmentLength = in.readShort() & 0xff_ff;
-          byte[] containment = new byte[containmentLength];
-          in.readFully(containment);
-
-          out.writeLong(getIDWithOwner(subject));
-          out.writeLong(getIDWithOwner(property));
-          out.writeLong(getIDWithOwner(object));
-          out.writeShort((short) containment.length);
-          out.write(containment);
+      try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE,
+              encodedChunks[i]);
+              EncodedFileOutputStream out = new EncodedFileOutputStream(result[i]);) {
+        for (Statement statement : in) {
+          Statement newStatement = Statement.getStatement(EncodingFileFormat.EEE,
+                  NumberConversion.long2bytes(getIDWithOwner(statement.getSubjectAsLong())),
+                  NumberConversion.long2bytes(getIDWithOwner(statement.getPropertyAsLong())),
+                  NumberConversion.long2bytes(getIDWithOwner(statement.getObjectAsLong())),
+                  statement.getContainment());
+          out.writeStatement(newStatement);
         }
-      } catch (EOFException e) {
-        // the input file is read completely
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

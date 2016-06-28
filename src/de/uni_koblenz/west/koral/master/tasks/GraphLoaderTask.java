@@ -238,6 +238,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       File encodedGraphFile = encodeGraphFilesInitially();
       File[] chunks = createGraphChunks(encodedGraphFile);
       File[] encodedFiles = encodeGraphChunks(chunks);
+      // TODO continue from here to adapt to new file format
       collectStatistis(encodedFiles);
       encodedFiles = adjustOwnership(encodedFiles);
 
@@ -367,10 +368,16 @@ public class GraphLoaderTask extends Thread implements Closeable {
       clientConnections.send(clientId, MessageUtils.createStringMessage(
               MessageType.MASTER_WORK_IN_PROGRESS, "Started initial encoding of graph.", logger));
 
-      encodedFiles = dictionary.encodeOriginalGraphFiles(
-              graphFilesDir.isDirectory() ? graphFilesDir.listFiles(new GraphFileFilter())
-                      : new File[] { graphFilesDir },
-              workingDir, coverCreator.getRequiredInputEncoding(), numberOfGraphChunks);
+      File[] graphFiles = graphFilesDir.isDirectory()
+              ? graphFilesDir.listFiles(new GraphFileFilter()) : new File[] { graphFilesDir };
+      encodedFiles = dictionary.encodeOriginalGraphFiles(graphFiles, workingDir,
+              coverCreator.getRequiredInputEncoding(), numberOfGraphChunks);
+
+      for (File file : graphFiles) {
+        if (file != null) {
+          file.delete();
+        }
+      }
 
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,

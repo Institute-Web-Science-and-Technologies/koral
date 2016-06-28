@@ -50,6 +50,8 @@ public class NHopReplicator {
     this.measurementCollector = measurementCollector;
   }
 
+  // TODO adapt
+
   public File[] createNHopReplication(File[] graphCover, File workingDir, int numberOfHops) {
     if (logger != null) {
       logger.info("Starting " + numberOfHops + "-hop replication.");

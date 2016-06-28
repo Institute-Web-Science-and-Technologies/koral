@@ -3,10 +3,9 @@ package playground;
 import org.apache.jena.query.QueryFactory;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
-import de.uni_koblenz.west.koral.common.query.Mapping;
-import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
-import de.uni_koblenz.west.koral.common.query.TriplePattern;
-import de.uni_koblenz.west.koral.common.query.TriplePatternType;
+import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.query.execution.QueryExecutionTreeDeserializer;
 import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorTask;
@@ -77,7 +76,7 @@ public class Playground {
 
     System.out.println(statistics.toString());
 
-    Playground.printContentOfChunks(cover, encoder, conf, workingDir);
+    Playground.printContentOfChunks(cover, encoder, EncodingFileFormat.EEE);
 
     // store triples
     conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
@@ -130,35 +129,20 @@ public class Playground {
   }
 
   private static void printContentOfChunks(File[] encodedFiles, DictionaryEncoder encoder,
-          Configuration conf, File workingDir) {
-
-    TripleStoreAccessor[] accessors = new TripleStoreAccessor[encodedFiles.length];
-    for (int i = 0; i < encodedFiles.length; i++) {
-      if (encodedFiles[i] != null) {
-        conf.setTripleStoreDir(
-                workingDir.getAbsolutePath() + File.separator + "tripleStore_chunk" + i);
-        accessors[i] = new TripleStoreAccessor(conf, null);
-        accessors[i].storeTriples(encodedFiles[i]);
-      }
-    }
-
-    MappingRecycleCache cache = new MappingRecycleCache(10, 4);
-    long[] resultVars = new long[] { 0, 1, 2 };
-    for (int i = 0; i < accessors.length; i++) {
-      if (accessors[i] != null) {
-        System.out.println("\nChunk " + i + "\n");
-        TripleStoreAccessor accessor = accessors[i];
-        for (Mapping result : accessor.lookup(cache,
-                new TriplePattern(TriplePatternType.___, 0, 1, 2))) {
-          System.out.print(result.printContainment());
-          for (long var : resultVars) {
-            System.out.print(" " + encoder.decode(result.getValue(var, resultVars)));
+          EncodingFileFormat format) {
+    for (File encodedFile : encodedFiles) {
+      System.out.println("\nChunk " + encodedFile + "\n");
+      if (encodedFile != null) {
+        try (EncodedFileInputStream input = new EncodedFileInputStream(format, encodedFile);) {
+          for (Statement statement : input) {
+            System.out.println(" " + statement);
           }
-          System.out.println();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
         }
-        accessor.close();
       }
     }
+    System.out.println();
 
   }
 
