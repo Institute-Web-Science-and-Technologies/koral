@@ -20,8 +20,13 @@ public class EncodedFileOutputStream implements AutoCloseable {
   private final DataOutputStream out;
 
   public EncodedFileOutputStream(File outputFile) throws FileNotFoundException, IOException {
-    out = new DataOutputStream(
-            new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile))));
+    this(outputFile, false);
+  }
+
+  public EncodedFileOutputStream(File outputFile, boolean append)
+          throws FileNotFoundException, IOException {
+    out = new DataOutputStream(new BufferedOutputStream(
+            new GZIPOutputStream(new FileOutputStream(outputFile, append))));
   }
 
   public void writeStatement(Statement statement) throws IOException {

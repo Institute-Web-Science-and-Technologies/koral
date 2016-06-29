@@ -1,28 +1,22 @@
 package de.uni_koblenz.west.koral.master.graph_cover_creator;
 
-import org.apache.jena.graph.Node;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.sparql.core.DatasetGraph;
-import org.apache.jena.sparql.core.DatasetGraphFactory;
-import org.apache.jena.sparql.core.Quad;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 
+import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodedFileOutputStream;
+import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
-import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
-import de.uni_koblenz.west.koral.master.utils.DeSerializer;
-import de.uni_koblenz.west.koral.master.utils.FileStringTupleSet;
+import de.uni_koblenz.west.koral.common.utils.NumberConversion;
+import de.uni_koblenz.west.koral.master.utils.FileTupleSet;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -30,12 +24,13 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.zip.GZIPOutputStream;
 
 public class NHopReplicator {
 
@@ -72,8 +67,8 @@ public class NHopReplicator {
       DB database = dbmaker.make();
 
       try {
-        HTreeMap<String, String> moleculeMap = database.createHashMap("molecules").makeOrGet();
-        Set<String>[] cover = createInitialCover(database, moleculeMap, graphCover, mapFolder);
+        HTreeMap<Long, String> moleculeMap = database.createHashMap("molecules").makeOrGet();
+        Set<Long>[] cover = createInitialCover(database, moleculeMap, graphCover, mapFolder);
 
         // perform n-hop replication
         for (int n = 1; n <= numberOfHops; n++) {
@@ -118,14 +113,14 @@ public class NHopReplicator {
     return nHopReplicatedFiles;
   }
 
-  private Set<String>[] createInitialCover(DB database, HTreeMap<String, String> moleculeMap,
+  private Set<Long>[] createInitialCover(DB database, HTreeMap<Long, String> moleculeMap,
           File[] graphCover, File mapFolder) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_INIT_START,
               System.currentTimeMillis());
     }
     @SuppressWarnings("unchecked")
-    Set<String>[] subjectSets = new Set[graphCover.length];
+    Set<Long>[] subjectSets = new Set[graphCover.length];
     for (int i = 0; i < graphCover.length; i++) {
       if (logger != null) {
         logger.info("preprocessiong chunk " + i);
@@ -139,28 +134,27 @@ public class NHopReplicator {
     return subjectSets;
   }
 
-  private Set<String> createMapOutOfFile(DB database, File mapFolder,
-          HTreeMap<String, String> moleculeMap, File file, int chunkNumber) {
+  private Set<Long> createMapOutOfFile(DB database, File mapFolder,
+          HTreeMap<Long, String> moleculeMap, File file, int chunkNumber) {
     if (file == null) {
       return null;
     }
-    Comparator<String[]> comparator = new ArrayComparator<>();
-    Set<String> subjectSet = database.createHashSet("subjectsOfChunk" + chunkNumber).makeOrGet();
-    try (RDFFileIterator iterator = new RDFFileIterator(file, false, logger);) {
-      SortedSet<String[]> buffer = new TreeSet<>(comparator);
+    Comparator<byte[][]> comparator = new ArrayComparator();
+    Set<Long> subjectSet = database.createHashSet("subjectsOfChunk" + chunkNumber).makeOrGet();
+    try (EncodedFileInputStream input = new EncodedFileInputStream(EncodingFileFormat.EEE, file);) {
+      Iterator<Statement> iterator = input.iterator();
+      SortedSet<byte[][]> buffer = new TreeSet<>(comparator);
       while (iterator.hasNext() && (buffer.size() < 1000)) {
-        Node[] tripleNodes = iterator.next();
-        String[] triple = new String[] { DeSerializer.serializeNode(tripleNodes[0]),
-                DeSerializer.serializeNode(tripleNodes[1]),
-                DeSerializer.serializeNode(tripleNodes[2]),
-                DeSerializer.serializeNode(tripleNodes[3]) };
+        Statement statement = iterator.next();
+        byte[][] triple = new byte[][] { statement.getSubject(), statement.getProperty(),
+                statement.getObject(), statement.getContainment() };
         buffer.add(triple);
       }
-      String lastSubject = null;
-      FileStringTupleSet lastMolecule = null;
+      byte[] lastSubject = null;
+      FileTupleSet lastMolecule = null;
       while (!buffer.isEmpty()) {
-        String[] triple = buffer.first();
-        if ((lastMolecule == null) || !lastSubject.equals(triple[0])) {
+        byte[][] triple = buffer.first();
+        if ((lastMolecule == null) || !Arrays.equals(lastSubject, triple[0])) {
           if (lastMolecule != null) {
             lastMolecule.close();
           }
@@ -168,37 +162,38 @@ public class NHopReplicator {
           lastMolecule = getMolecule(mapFolder, moleculeMap, triple[0]);
         }
         lastMolecule.append(triple);
-        subjectSet.add(triple[0]);
+        subjectSet.add(NumberConversion.bytes2long(triple[0]));
         // update buffer
         buffer.remove(triple);
         if (iterator.hasNext()) {
-          Node[] tripleNodes = iterator.next();
-          String[] nextTriple = new String[] { DeSerializer.serializeNode(tripleNodes[0]),
-                  DeSerializer.serializeNode(tripleNodes[1]),
-                  DeSerializer.serializeNode(tripleNodes[2]),
-                  DeSerializer.serializeNode(tripleNodes[3]) };
+          Statement statement = iterator.next();
+          byte[][] nextTriple = new byte[][] { statement.getSubject(), statement.getProperty(),
+                  statement.getObject(), statement.getContainment() };
           buffer.add(nextTriple);
         }
       }
       if (lastMolecule != null) {
         lastMolecule.close();
       }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
     return subjectSet;
   }
 
-  private FileStringTupleSet getMolecule(File mapFolder, HTreeMap<String, String> map,
-          String subject) {
-    String moleculeFileName = map.get(subject);
+  private FileTupleSet getMolecule(File mapFolder, HTreeMap<Long, String> map,
+          byte[] subject) {
+    Long subjectLong = NumberConversion.bytes2long(subject);
+    String moleculeFileName = map.get(subjectLong);
     if (moleculeFileName == null) {
       moleculeFileName = mapFolder.getAbsolutePath() + File.separator + moleculeNumber++;
-      map.put(subject, moleculeFileName);
+      map.put(subjectLong, moleculeFileName);
     }
-    return new FileStringTupleSet(new File(moleculeFileName));
+    return new FileTupleSet(new File(moleculeFileName));
   }
 
-  private void performHopStep(DB database, Set<String>[] cover,
-          HTreeMap<String, String> moleculeMap, int hopNumber) {
+  private void performHopStep(DB database, Set<Long>[] cover, HTreeMap<Long, String> moleculeMap,
+          int hopNumber) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_STEP_START,
               System.currentTimeMillis(), Integer.toString(hopNumber));
@@ -215,42 +210,41 @@ public class NHopReplicator {
     }
   }
 
-  private void replicateTriples(DB database, Set<String> chunk,
-          HTreeMap<String, String> moleculeMap) {
+  private void replicateTriples(DB database, Set<Long> chunk, HTreeMap<Long, String> moleculeMap) {
     if (chunk == null) {
       return;
     }
-    for (String subject : chunk) {
+    for (Long subject : chunk) {
       String moleculeFileName = moleculeMap.get(subject);
       if (moleculeFileName != null) {
-        FileStringTupleSet molecule = new FileStringTupleSet(new File(moleculeFileName));
-        for (String[] triple : molecule) {
+        FileTupleSet molecule = new FileTupleSet(new File(moleculeFileName));
+        for (byte[][] triple : molecule) {
           // add object to current chunk
-          chunk.add(triple[2]);
+          chunk.add(NumberConversion.bytes2long(triple[2]));
         }
         molecule.close();
       }
     }
   }
 
-  private void adjustContainment(int currentChunkIndex, Set<String> chunk,
-          HTreeMap<String, String> moleculeMap) {
+  private void adjustContainment(int currentChunkIndex, Set<Long> chunk,
+          HTreeMap<Long, String> moleculeMap) {
     if (chunk == null) {
       return;
     }
     if (logger != null) {
       logger.finer("adjusting containment of chunk " + currentChunkIndex);
     }
-    for (String subject : chunk) {
+    for (Long subject : chunk) {
       String orignialFileName = moleculeMap.get(subject);
       if (orignialFileName == null) {
         continue;
       }
       File originalFile = new File(orignialFileName);
       File updatedFile = getNewFile(originalFile);
-      FileStringTupleSet molecule = new FileStringTupleSet(originalFile);
-      FileStringTupleSet updatedMolecule = new FileStringTupleSet(updatedFile);
-      for (String[] triple : molecule) {
+      FileTupleSet molecule = new FileTupleSet(originalFile);
+      FileTupleSet updatedMolecule = new FileTupleSet(updatedFile);
+      for (byte[][] triple : molecule) {
         // update containment information
         updateContainment(triple, currentChunkIndex);
         updatedMolecule.append(triple);
@@ -279,14 +273,12 @@ public class NHopReplicator {
     }
   }
 
-  private void updateContainment(String[] triple, int targetChunk) {
-    byte[] containment = DeSerializer
-            .deserializeBitSetFromNode(DeSerializer.deserializeNode(triple[triple.length - 1]));
+  private void updateContainment(byte[][] triple, int targetChunk) {
+    byte[] containment = triple[triple.length - 1];
     int bitsetIndex = targetChunk / Byte.SIZE;
     byte bitsetMask = getBitMaskFor(targetChunk + 1);
     containment[bitsetIndex] |= bitsetMask;
-    triple[triple.length - 1] = DeSerializer
-            .serializeNode(DeSerializer.serializeBitSetAsNode(containment));
+    triple[triple.length - 1] = containment;
   }
 
   private byte getBitMaskFor(int computerId) {
@@ -312,7 +304,7 @@ public class NHopReplicator {
     return 0;
   }
 
-  private File[] convertToFiles(Set<String>[] cover, HTreeMap<String, String> moleculeMap,
+  private File[] convertToFiles(Set<Long>[] cover, HTreeMap<Long, String> moleculeMap,
           File workingDir) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_FILEWRITE_START,
@@ -336,8 +328,8 @@ public class NHopReplicator {
     return chunks;
   }
 
-  private File convertToFile(Set<String> subjects, int chunkIndex,
-          HTreeMap<String, String> moleculeMap, File workingDir, long[] numberOfTriples) {
+  private File convertToFile(Set<Long> subjects, int chunkIndex, HTreeMap<Long, String> moleculeMap,
+          File workingDir, long[] numberOfTriples) {
     if (subjects == null) {
       return null;
     }
@@ -345,22 +337,16 @@ public class NHopReplicator {
       logger.finer("Converting chunk " + chunkIndex + " into a file.");
     }
     File chunkFile = getFile(chunkIndex, workingDir);
-    try (OutputStream output = new BufferedOutputStream(
-            new GZIPOutputStream(new FileOutputStream(chunkFile)));) {
-      DatasetGraph graph = DatasetGraphFactory.createMem();
-      for (String subject : subjects) {
+    try (EncodedFileOutputStream output = new EncodedFileOutputStream(chunkFile);) {
+      for (Long subject : subjects) {
         String moleculeFileName = moleculeMap.get(subject);
         if (moleculeFileName != null) {
-          FileStringTupleSet molecule = new FileStringTupleSet(new File(moleculeFileName));
-          for (String[] triple : molecule) {
+          FileTupleSet molecule = new FileTupleSet(new File(moleculeFileName));
+          for (byte[][] triple : molecule) {
             numberOfTriples[chunkIndex]++;
-            Node[] statement = new Node[triple.length];
-            for (int i = 0; i < triple.length; i++) {
-              statement[i] = DeSerializer.deserializeNode(triple[i]);
-            }
-            graph.add(new Quad(statement[3], statement[0], statement[1], statement[2]));
-            RDFDataMgr.write(output, graph, RDFFormat.NQ);
-            graph.clear();
+            Statement statement = Statement.getStatement(EncodingFileFormat.EEE, triple[0],
+                    triple[1], triple[2], triple[3]);
+            output.writeStatement(statement);
           }
           molecule.close();
         }
@@ -420,13 +406,12 @@ public class NHopReplicator {
     mapFolder.delete();
   }
 
-  private static class ArrayComparator<V extends Comparable<V>>
-          implements Comparator<V[]>, Serializable {
+  private static class ArrayComparator implements Comparator<byte[][]>, Serializable {
 
     private static final long serialVersionUID = 4931864666201142295L;
 
     @Override
-    public int compare(V[] o1, V[] o2) {
+    public int compare(byte[][] o1, byte[][] o2) {
       if ((o1 == null) && (o2 == null)) {
         return 0;
       } else if (o1 == null) {
@@ -436,7 +421,26 @@ public class NHopReplicator {
       } else {
         int minLength = o1.length < o2.length ? o1.length : o2.length;
         for (int i = 0; i < minLength; i++) {
-          int comparison = o1[i].compareTo(o2[i]);
+          int comparison = compare(o1[i], o2[i]);
+          if (comparison != 0) {
+            return comparison;
+          }
+        }
+        return o1.length - o2.length;
+      }
+    }
+
+    private int compare(byte[] o1, byte[] o2) {
+      if ((o1 == null) && (o2 == null)) {
+        return 0;
+      } else if (o1 == null) {
+        return -1;
+      } else if (o2 == null) {
+        return 1;
+      } else {
+        int minLength = o1.length < o2.length ? o1.length : o2.length;
+        for (int i = 0; i < minLength; i++) {
+          int comparison = o1[i] - o2[i];
           if (comparison != 0) {
             return comparison;
           }
