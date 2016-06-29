@@ -45,8 +45,6 @@ public class NHopReplicator {
     this.measurementCollector = measurementCollector;
   }
 
-  // TODO adapt
-
   public File[] createNHopReplication(File[] graphCover, File workingDir, int numberOfHops) {
     if (logger != null) {
       logger.info("Starting " + numberOfHops + "-hop replication.");
@@ -181,8 +179,7 @@ public class NHopReplicator {
     return subjectSet;
   }
 
-  private FileTupleSet getMolecule(File mapFolder, HTreeMap<Long, String> map,
-          byte[] subject) {
+  private FileTupleSet getMolecule(File mapFolder, HTreeMap<Long, String> map, byte[] subject) {
     Long subjectLong = NumberConversion.bytes2long(subject);
     String moleculeFileName = map.get(subjectLong);
     if (moleculeFileName == null) {

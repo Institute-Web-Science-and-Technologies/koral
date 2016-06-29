@@ -238,7 +238,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
       File encodedGraphFile = encodeGraphFilesInitially();
       File[] chunks = createGraphChunks(encodedGraphFile);
       File[] encodedFiles = encodeGraphChunks(chunks);
-      // TODO continue from here to adapt to new file format
       collectStatistis(encodedFiles);
       encodedFiles = adjustOwnership(encodedFiles);
 
