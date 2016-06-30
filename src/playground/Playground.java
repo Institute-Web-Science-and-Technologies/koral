@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * A class to test source code. Not used within Koral.
@@ -61,13 +62,13 @@ public class Playground {
             workingDir, coverCreator.getRequiredInputEncoding(), 4);
 
     // create cover
-    File[] cover = coverCreator.createGraphCover(encoder, encodedInput, workingDir, 4);
+    File[] cover = coverCreator.createGraphCover(encoder, encodedInput, workingDir, 0);
 
     cover = encoder.encodeGraphChunksCompletely(cover, workingDir,
             coverCreator.getRequiredInputEncoding());
 
     NHopReplicator replicator = new NHopReplicator(null, null);
-    cover = replicator.createNHopReplication(cover, workingDir, 0);
+    cover = replicator.createNHopReplication(cover, workingDir, 2);
 
     // collect statistics
     GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
@@ -135,7 +136,10 @@ public class Playground {
       if (encodedFile != null) {
         try (EncodedFileInputStream input = new EncodedFileInputStream(format, encodedFile);) {
           for (Statement statement : input) {
-            System.out.println(" " + statement);
+            System.out.println(" " + encoder.decode(statement.getSubjectAsLong()) + " "
+                    + encoder.decode(statement.getPropertyAsLong()) + " "
+                    + encoder.decode(statement.getObjectAsLong()) + " "
+                    + Arrays.toString(statement.getContainment()));
           }
         } catch (IOException e) {
           throw new RuntimeException(e);
