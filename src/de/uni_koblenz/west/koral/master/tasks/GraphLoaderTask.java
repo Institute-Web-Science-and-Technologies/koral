@@ -397,7 +397,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   private File[] createGraphChunks(File encodedGraphFile) {
     File[] chunks = null;
-    if ((state == LoadingState.START) || (state == LoadingState.GRAPH_COVER_CREATION)) {
+    if ((state == LoadingState.INITIAL_ENCODING) || (state == LoadingState.GRAPH_COVER_CREATION)) {
       setState(LoadingState.GRAPH_COVER_CREATION);
       if (logger != null) {
         logger.finer("creation of graph cover started");
