@@ -327,7 +327,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
         // clearDatabase();
         String errorMessage = null;
         try {
-          errorMessage = new String(message, 3, message.length, "UTF-8");
+          errorMessage = new String(message, Byte.BYTES + Short.BYTES,
+                  message.length - Byte.BYTES - Short.BYTES, "UTF-8");
         } catch (UnsupportedEncodingException e) {
           errorMessage = e.getMessage();
         }
