@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.koral.master.tasks;
 
 import de.uni_koblenz.west.koral.common.ftp.FTPServer;
+import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.messages.MessageNotifier;
@@ -237,7 +238,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
       File encodedGraphFile = encodeGraphFilesInitially();
       File[] chunks = createGraphChunks(encodedGraphFile);
-      File[] encodedFiles = encodeGraphChunks(chunks);
+      File[] encodedFiles = encodeGraphChunks(chunks, replicationPathLength != 0
+              ? EncodingFileFormat.EEE : coverCreator.getRequiredInputEncoding());
       collectStatistis(encodedFiles);
       encodedFiles = adjustOwnership(encodedFiles);
 
@@ -421,7 +423,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
     }
 
     if (replicationPathLength != 0) {
-      chunks = encodeGraphChunks(chunks);
+      chunks = encodeGraphChunks(chunks, coverCreator.getRequiredInputEncoding());
       setState(LoadingState.N_HOP_REPLICATION);
       NHopReplicator replicator = new NHopReplicator(logger, measurementCollector);
       if ((state == LoadingState.GRAPH_COVER_CREATION)
@@ -451,7 +453,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
     return chunks;
   }
 
-  private File[] encodeGraphChunks(File[] plainGraphChunks) {
+  private File[] encodeGraphChunks(File[] plainGraphChunks,
+          EncodingFileFormat inputEncodingFormat) {
     File[] encodedFiles = null;
     if ((state == LoadingState.GRAPH_COVER_CREATION) || (state == LoadingState.N_HOP_REPLICATION)
             || (state == LoadingState.FINAL_ENCODING)) {
@@ -468,7 +471,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
                       "Started final encoding of graph chunks.", logger));
 
       encodedFiles = dictionary.encodeGraphChunksCompletely(plainGraphChunks, workingDir,
-              coverCreator.getRequiredInputEncoding());
+              inputEncodingFormat);
 
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
