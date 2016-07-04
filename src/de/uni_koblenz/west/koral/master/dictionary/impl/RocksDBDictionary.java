@@ -8,17 +8,20 @@ import org.rocksdb.WriteOptions;
 
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.Dictionary;
+import de.uni_koblenz.west.koral.master.dictionary.LongDictionary;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class RocksDBDictionary implements Dictionary {
+public class RocksDBDictionary implements Dictionary, LongDictionary {
 
   public static final int DEFAULT_MAX_BATCH_SIZE = 100000;
 
@@ -32,7 +35,7 @@ public class RocksDBDictionary implements Dictionary {
 
   private WriteBatch decoderBatch;
 
-  private Map<String, Long> entriesInBatch;
+  private Map<ArrayWrapper, byte[]> entriesInBatch;
 
   private final int maxBatchEntries;
 
@@ -81,14 +84,21 @@ public class RocksDBDictionary implements Dictionary {
     } catch (UnsupportedEncodingException e1) {
       throw new RuntimeException(e1);
     }
+    return internalEncode(valueBytes, createNewEncodingForUnknownNodes);
+  }
+
+  @Override
+  public long encode(long value, boolean createNewEncodingForUnknownNodes) {
+    byte[] valueBytes = NumberConversion.long2bytes(value);
+    return internalEncode(valueBytes, createNewEncodingForUnknownNodes);
+  }
+
+  private long internalEncode(byte[] valueBytes, boolean createNewEncodingForUnknownNodes) {
     byte[] id = null;
     try {
       // check cache, first
       if (entriesInBatch != null) {
-        Long longId = entriesInBatch.get(value);
-        if (longId != null) {
-          id = NumberConversion.long2bytes(longId);
-        }
+        id = entriesInBatch.get(new ArrayWrapper(valueBytes));
       }
       if (id == null) {
         id = encoder.get(valueBytes);
@@ -104,18 +114,18 @@ public class RocksDBDictionary implements Dictionary {
         return 0;
       } else {
         id = NumberConversion.long2bytes(nextID);
-        put(value, valueBytes, nextID, id);
+        put(valueBytes, id);
         nextID++;
       }
     }
     return NumberConversion.bytes2long(id);
   }
 
-  private void put(String value, byte[] valueBytes, long longId, byte[] id) {
+  private void put(byte[] valueBytes, byte[] id) {
     if (entriesInBatch == null) {
       entriesInBatch = new HashMap<>();
     }
-    entriesInBatch.put(value, longId);
+    entriesInBatch.put(new ArrayWrapper(valueBytes), id);
     if (encoderBatch == null) {
       encoderBatch = new WriteBatch();
     }
@@ -138,6 +148,20 @@ public class RocksDBDictionary implements Dictionary {
       }
       return new String(valueBytes, "UTF-8");
     } catch (RocksDBException | UnsupportedEncodingException e) {
+      close();
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public long decodeLong(long id) {
+    try {
+      byte[] valueBytes = decoder.get(NumberConversion.long2bytes(id));
+      if (valueBytes == null) {
+        throw new NoSuchElementException("The id " + id + " has not been encoded, yet.");
+      }
+      return NumberConversion.bytes2long(valueBytes);
+    } catch (RocksDBException e) {
       close();
       throw new RuntimeException(e);
     }
@@ -218,6 +242,41 @@ public class RocksDBDictionary implements Dictionary {
     if (decoder != null) {
       decoder.close();
     }
+  }
+
+  private static class ArrayWrapper {
+    private final byte[] array;
+
+    public ArrayWrapper(byte[] array) {
+      this.array = array;
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = (prime * result) + Arrays.hashCode(array);
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      ArrayWrapper other = (ArrayWrapper) obj;
+      if (!Arrays.equals(array, other.array)) {
+        return false;
+      }
+      return true;
+    }
+
   }
 
 }

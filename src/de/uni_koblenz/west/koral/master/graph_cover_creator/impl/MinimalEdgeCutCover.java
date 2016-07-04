@@ -9,14 +9,13 @@ import de.uni_koblenz.west.koral.common.io.EncodedFileOutputStream;
 import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
-import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
-import de.uni_koblenz.west.koral.master.dictionary.Dictionary;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
-import de.uni_koblenz.west.koral.master.dictionary.impl.MapDBDictionary;
+import de.uni_koblenz.west.koral.master.dictionary.LongDictionary;
+import de.uni_koblenz.west.koral.master.dictionary.impl.RocksDBDictionary;
 import de.uni_koblenz.west.koral.master.utils.AdjacencyMatrix;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
@@ -66,10 +65,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     if (!dictionaryFolder.exists()) {
       dictionaryFolder.mkdirs();
     }
-    // TODO use a long2long dictionary
-    Dictionary localDictionary = new MapDBDictionary(MapDBStorageOptions.MEMORY_MAPPED_FILE,
-            MapDBDataStructureOptions.HASH_TREE_MAP, dictionaryFolder.getAbsolutePath(), false,
-            true, MapDBCacheOptions.HASH_TABLE);
+    LongDictionary localDictionary = new RocksDBDictionary(dictionaryFolder.getAbsolutePath());
 
     File encodedRDFGraph = null;
     File metisOutputGraph = null;
@@ -106,7 +102,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
   }
 
   private void createMetisInputFile(DictionaryEncoder dictionary, EncodedFileInputStream input,
-          Dictionary localDictionary, File encodedRDFGraph, File metisInputGraph,
+          LongDictionary localDictionary, File encodedRDFGraph, File metisInputGraph,
           File ignoredTriples, File workingDir) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(
@@ -146,13 +142,11 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             continue;
           }
           numberOfUsedTriples++;
-          long encodedSubject = localDictionary.encode(Long.toString(statement.getSubjectAsLong()),
-                  true);
+          long encodedSubject = localDictionary.encode(statement.getSubjectAsLong(), true);
           if (encodedSubject > numberOfVertices) {
             numberOfVertices = encodedSubject;
           }
-          long encodedObject = localDictionary.encode(Long.toString(statement.getObjectAsLong()),
-                  true);
+          long encodedObject = localDictionary.encode(statement.getObjectAsLong(), true);
           if (encodedObject > numberOfVertices) {
             numberOfVertices = encodedObject;
           }
@@ -201,6 +195,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       }
 
     } finally {
+      localDictionary.flush();
       adjacencyMatrix.close();
       deleteFolder(metisInputTempFolder);
       if (measurementCollector != null) {
@@ -245,9 +240,9 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     }
   }
 
-  private void createGraphCover(File encodedRDFGraph, Dictionary dictionary, File metisOutputGraph,
-          File ignoredTriples, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
-          int numberOfGraphChunks, File workingDir) {
+  private void createGraphCover(File encodedRDFGraph, LongDictionary dictionary,
+          File metisOutputGraph, File ignoredTriples, EncodedFileOutputStream[] outputs,
+          boolean[] writtenFiles, int numberOfGraphChunks, File workingDir) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
               System.currentTimeMillis());
@@ -287,8 +282,8 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
         int lastChunkIndex = -1;
 
         for (Statement statement : graphInput) {
-          long subject = Long.parseLong(dictionary.decode(statement.getSubjectAsLong()));
-          long object = Long.parseLong(dictionary.decode(statement.getObjectAsLong()));
+          long subject = dictionary.decodeLong(statement.getSubjectAsLong());
+          long object = dictionary.decodeLong(statement.getObjectAsLong());
           Statement newStatement = Statement.getStatement(getRequiredInputEncoding(),
                   NumberConversion.long2bytes(subject), statement.getProperty(),
                   NumberConversion.long2bytes(object), statement.getContainment());

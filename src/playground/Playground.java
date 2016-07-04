@@ -16,7 +16,7 @@ import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
@@ -49,10 +49,10 @@ public class Playground {
     conf.setDictionaryDir(workingDir.getAbsolutePath() + File.separator + "dictionary");
     conf.setStatisticsDir(workingDir.getAbsolutePath() + File.separator + "statistics");
 
-    GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
+    // GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
     // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
     // null);
-    // GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
+    GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
 
     // encode graph
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
@@ -62,13 +62,13 @@ public class Playground {
             workingDir, coverCreator.getRequiredInputEncoding(), 4);
 
     // create cover
-    File[] cover = coverCreator.createGraphCover(encoder, encodedInput, workingDir, 0);
+    File[] cover = coverCreator.createGraphCover(encoder, encodedInput, workingDir, 4);
 
     cover = encoder.encodeGraphChunksCompletely(cover, workingDir,
             coverCreator.getRequiredInputEncoding());
 
     NHopReplicator replicator = new NHopReplicator(null, null);
-    cover = replicator.createNHopReplication(cover, workingDir, 2);
+    cover = replicator.createNHopReplication(cover, workingDir, 0);
 
     // collect statistics
     GraphStatistics statistics = new GraphStatistics(conf, (short) 4, null);
