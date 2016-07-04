@@ -1,15 +1,13 @@
 package de.uni_koblenz.west.koral.master.graph_cover_creator.impl;
 
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.HTreeMap;
+import org.rocksdb.Options;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
 
 import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedFileOutputStream;
 import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
-import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
-import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
@@ -252,26 +250,27 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     if (!vertex2chunkIndexFolder.exists()) {
       vertex2chunkIndexFolder.mkdirs();
     }
-    DBMaker<?> dbmaker = MapDBStorageOptions.MEMORY_MAPPED_FILE
-            .getDBMaker(vertex2chunkIndexFolder.getAbsolutePath() + File.separator
-                    + "vertex2chunkIndex")
-            .transactionDisable().closeOnJvmShutdown().asyncWriteEnable();
-    dbmaker = MapDBCacheOptions.HASH_TABLE.setCaching(dbmaker);
-    DB database = dbmaker.make();
 
+    RocksDB vertex2chunkIndex = null;
+    Options options = new Options();
+    options.setCreateIfMissing(true);
+    options.setMaxOpenFiles(800);
+    options.setAllowOsBuffer(true);
+    options.setWriteBufferSize(64 * 1024 * 1024);
     try {
       // load mapping vertex -> chunkIndex from metis output
-      HTreeMap<Long, Integer> vertex2chunkIndex = database.createHashMap("vertex2chunkIndex")
-              .makeOrGet();
+      vertex2chunkIndex = RocksDB.open(
+              vertex2chunkIndexFolder.getAbsolutePath() + File.separator + "vertex2chunkIndex");
       try (Scanner scanner = new Scanner(metisOutputGraph);) {
         scanner.useDelimiter("\\r?\\n");
         long vertex = 1;
         while (scanner.hasNextInt()) {
           int chunkIndex = scanner.nextInt();
-          vertex2chunkIndex.put(vertex, chunkIndex);
+          vertex2chunkIndex.put(NumberConversion.long2bytes(vertex),
+                  NumberConversion.int2bytes(chunkIndex));
           vertex++;
         }
-      } catch (FileNotFoundException e) {
+      } catch (FileNotFoundException | RocksDBException e) {
         throw new RuntimeException(e);
       }
 
@@ -292,12 +291,15 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           if (subject == lastVertex) {
             targetChunk = lastChunkIndex;
           } else {
-            Integer target = vertex2chunkIndex.get(subject);
-            if (target == null) {
+            byte[] targetBytes = vertex2chunkIndex.get(NumberConversion.long2bytes(subject));
+            int target;
+            if (targetBytes == null) {
               // if a vertex only occurs in a self loop or with a rdf:type
               // property it is not partitioned by
               // metis
               target = 0;
+            } else {
+              target = NumberConversion.bytes2int(targetBytes);
             }
             targetChunk = target;
             lastVertex = subject;
@@ -307,7 +309,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           writeStatementToChunk(targetChunk, numberOfGraphChunks, newStatement, outputs,
                   writtenFiles);
         }
-      } catch (IOException e) {
+      } catch (IOException | RocksDBException e) {
         throw new RuntimeException(e);
       }
 
@@ -325,12 +327,15 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             if (subject == lastVertex) {
               targetChunk = lastChunkIndex;
             } else {
-              Integer target = vertex2chunkIndex.get(subject);
-              if (target == null) {
+              byte[] targetBytes = vertex2chunkIndex.get(NumberConversion.long2bytes(subject));
+              int target;
+              if (targetBytes == null) {
                 // if a vertex only occurs in a self loop or with a rdf:type
                 // property it is not partitioned by
                 // metis
                 target = 0;
+              } else {
+                target = NumberConversion.bytes2int(targetBytes);
               }
               targetChunk = target;
               lastVertex = subject;
@@ -340,13 +345,17 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             writeStatementToChunk(targetChunk, numberOfGraphChunks, statement, outputs,
                     writtenFiles);
           }
-        } catch (IOException e) {
+        } catch (IOException | RocksDBException e) {
           throw new RuntimeException(e);
         }
       }
 
+    } catch (RocksDBException e1) {
+      throw new RuntimeException(e1);
     } finally {
-      database.close();
+      if (vertex2chunkIndex != null) {
+        vertex2chunkIndex.close();
+      }
       deleteFolder(vertex2chunkIndexFolder);
     }
     if (measurementCollector != null) {
