@@ -14,7 +14,7 @@ import java.util.zip.GZIPOutputStream;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class FileLongSet implements Closeable {
+public class FileLongSet implements Closeable, AdjacencyList {
 
   private final File file;
 
@@ -52,6 +52,7 @@ public class FileLongSet implements Closeable {
     }
   }
 
+  @Override
   public void append(long value) {
     try {
       if (output == null) {
@@ -64,6 +65,7 @@ public class FileLongSet implements Closeable {
     }
   }
 
+  @Override
   public LongIterator iterator() {
     close();
     return new LongIterator(getFile());

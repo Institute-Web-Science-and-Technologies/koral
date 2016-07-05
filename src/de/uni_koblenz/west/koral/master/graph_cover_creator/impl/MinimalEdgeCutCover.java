@@ -17,6 +17,7 @@ import de.uni_koblenz.west.koral.master.dictionary.impl.RocksDBDictionary;
 import de.uni_koblenz.west.koral.master.utils.AdjacencyMatrix;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
+import de.uni_koblenz.west.koral.master.utils.MultiFileAdjacencyMatrix;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -122,7 +123,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     long numberOfUsedTriples = 0;
     long numberOfIgnoredTriples = 0;
 
-    AdjacencyMatrix adjacencyMatrix = new AdjacencyMatrix(metisInputTempFolder);
+    AdjacencyMatrix adjacencyMatrix = new MultiFileAdjacencyMatrix(metisInputTempFolder);
     // create adjacency lists
     try {
       try (EncodedFileOutputStream encodedGraphOutput = new EncodedFileOutputStream(
