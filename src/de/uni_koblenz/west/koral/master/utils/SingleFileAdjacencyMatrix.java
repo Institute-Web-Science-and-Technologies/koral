@@ -161,6 +161,8 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
       if (offsetLengthArray != null) {
         previous = NumberConversion.bytes2long(offsetLengthArray, 0);
         length = NumberConversion.bytes2long(offsetLengthArray, Long.BYTES);
+      } else {
+        offsetLengthArray = new byte[Long.BYTES * 2];
       }
       long offset = fileSize;
 
