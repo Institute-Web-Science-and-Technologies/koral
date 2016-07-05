@@ -68,7 +68,7 @@ public class FileLongSet implements Closeable, AdjacencyList {
   @Override
   public LongIterator iterator() {
     close();
-    return new LongIterator(getFile());
+    return new FileLongSetLongIterator(getFile());
   }
 
   @Override

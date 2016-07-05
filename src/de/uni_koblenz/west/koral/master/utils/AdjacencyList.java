@@ -8,7 +8,7 @@ package de.uni_koblenz.west.koral.master.utils;
  */
 public interface AdjacencyList {
 
-  public void append(long value);
+  public void append(long adjacency);
 
   public LongIterator iterator();
 

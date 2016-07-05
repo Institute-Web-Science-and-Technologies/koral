@@ -67,6 +67,10 @@ public abstract class AdjacencyMatrix implements Closeable {
     areDuplicatesRemoved = true;
   }
 
+  /**
+   * @param numberOfVertices
+   * @return number of directed edges
+   */
   protected abstract long removeDuplicatesFromAdjacencyLists(long numberOfVertices);
 
   @Override
