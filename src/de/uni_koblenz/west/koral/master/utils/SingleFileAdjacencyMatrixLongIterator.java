@@ -17,9 +17,9 @@ import java.util.NoSuchElementException;
  */
 public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
 
-  private static final int NUMBER_OF_ENTRIES_IN_MEMORY = 1024 * 1024;
+  private static final int NUMBER_OF_ENTRIES_IN_MEMORY = 10;// 1024 * 1024;
 
-  private static final int SIZE_TILL_MAPPING_IS_APPLIED = 1024 * 1024;
+  private static final int SIZE_TILL_MAPPING_IS_APPLIED = 10;// 1024 * 1024;
 
   private final RandomAccessFile adjacencyMatrix;
 
@@ -35,7 +35,13 @@ public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
 
   public SingleFileAdjacencyMatrixLongIterator(File adjacencyMatrixFile,
           long offsetOfAdjacencyListHead, long sizeOfAdjacencyList) {
+    try {
+      adjacencyMatrix = new RandomAccessFile(adjacencyMatrixFile, "r");
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException(e);
+    }
     size = sizeOfAdjacencyList;
+    nextOffset = offsetOfAdjacencyListHead;
     if (isMemoryMappingApplied()) {
       lengthOfPage = size < SingleFileAdjacencyMatrixLongIterator.NUMBER_OF_ENTRIES_IN_MEMORY
               ? size * 2 * Long.BYTES
@@ -43,12 +49,6 @@ public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
       mapPageInMemory();
     } else {
       lengthOfPage = -1;
-    }
-    nextOffset = offsetOfAdjacencyListHead;
-    try {
-      adjacencyMatrix = new RandomAccessFile(adjacencyMatrixFile, "r");
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException(e);
     }
   }
 
@@ -58,9 +58,9 @@ public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
 
   private void mapPageInMemory() {
     try {
-      if (hasNext() || (currentPage == null) || (nextOffset < firstByteInPageOffset)
-              || (nextOffset >= (firstByteInPageOffset + lengthOfPage))) {
-        firstByteInPageOffset = Math.max(0, nextOffset - lengthOfPage);
+      if (hasNext() && ((currentPage == null) || (nextOffset < firstByteInPageOffset)
+              || (nextOffset >= (firstByteInPageOffset + lengthOfPage)))) {
+        firstByteInPageOffset = Math.max(0, (nextOffset - lengthOfPage) + (2 * Long.BYTES));
         currentPage = adjacencyMatrix.getChannel().map(MapMode.READ_ONLY, firstByteInPageOffset,
                 lengthOfPage);
       }
