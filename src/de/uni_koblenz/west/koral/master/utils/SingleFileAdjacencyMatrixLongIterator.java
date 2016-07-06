@@ -17,9 +17,9 @@ import java.util.NoSuchElementException;
  */
 public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
 
-  private static final int NUMBER_OF_ENTRIES_IN_MEMORY = 1024 * 1024;
+  private static final int NUMBER_OF_ENTRIES_IN_MEMORY = 10;// 1024 * 1024;
 
-  private static final int SIZE_TILL_MAPPING_IS_APPLIED = 1024 * 1024;
+  private static final int SIZE_TILL_MAPPING_IS_APPLIED = 10;// 1024 * 1024;
 
   private final RandomAccessFile adjacencyMatrix;
 
