@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel.MapMode;
 import java.util.NoSuchElementException;
 
 /**
@@ -17,54 +15,19 @@ import java.util.NoSuchElementException;
  */
 public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
 
-  private static final int NUMBER_OF_ENTRIES_IN_MEMORY = 1024 * 1024;
-
-  private static final int SIZE_TILL_MAPPING_IS_APPLIED = 1024 * 1024;
-
   private final RandomAccessFile adjacencyMatrix;
 
   private long nextOffset;
 
   private final long size;
 
-  private MappedByteBuffer currentPage;
-
-  private long firstByteInPageOffset;
-
-  private final long lengthOfPage;
-
   public SingleFileAdjacencyMatrixLongIterator(File adjacencyMatrixFile,
           long offsetOfAdjacencyListHead, long sizeOfAdjacencyList) {
     size = sizeOfAdjacencyList;
-    if (isMemoryMappingApplied()) {
-      lengthOfPage = size < SingleFileAdjacencyMatrixLongIterator.NUMBER_OF_ENTRIES_IN_MEMORY
-              ? size * 2 * Long.BYTES
-              : SingleFileAdjacencyMatrixLongIterator.NUMBER_OF_ENTRIES_IN_MEMORY * 2 * Long.BYTES;
-      mapPageInMemory();
-    } else {
-      lengthOfPage = -1;
-    }
     nextOffset = offsetOfAdjacencyListHead;
     try {
       adjacencyMatrix = new RandomAccessFile(adjacencyMatrixFile, "r");
     } catch (FileNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private boolean isMemoryMappingApplied() {
-    return size() < SingleFileAdjacencyMatrixLongIterator.SIZE_TILL_MAPPING_IS_APPLIED;
-  }
-
-  private void mapPageInMemory() {
-    try {
-      if (hasNext() || (currentPage == null) || (nextOffset < firstByteInPageOffset)
-              || (nextOffset >= (firstByteInPageOffset + lengthOfPage))) {
-        firstByteInPageOffset = Math.max(0, nextOffset - lengthOfPage);
-        currentPage = adjacencyMatrix.getChannel().map(MapMode.READ_ONLY, firstByteInPageOffset,
-                lengthOfPage);
-      }
-    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -84,18 +47,10 @@ public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
       throw new NoSuchElementException();
     }
     try {
-      if (isMemoryMappingApplied()) {
-        mapPageInMemory();
-        currentPage.position((int) (nextOffset - firstByteInPageOffset));
-        long adjacency = currentPage.getLong();
-        nextOffset = currentPage.getLong();
-        return adjacency;
-      } else {
-        adjacencyMatrix.seek(nextOffset);
-        long adjacency = adjacencyMatrix.readLong();
-        nextOffset = adjacencyMatrix.readLong();
-        return adjacency;
-      }
+      adjacencyMatrix.seek(nextOffset);
+      long adjacency = adjacencyMatrix.readLong();
+      nextOffset = adjacencyMatrix.readLong();
+      return adjacency;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
