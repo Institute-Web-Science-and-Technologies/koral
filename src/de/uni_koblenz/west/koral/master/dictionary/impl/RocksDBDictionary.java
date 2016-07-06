@@ -27,6 +27,8 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
 
   private final String storageDir;
 
+  private final int maxOpenFiles;
+
   private RocksDB encoder;
 
   private WriteBatch encoderBatch;
@@ -51,13 +53,18 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
   }
 
   public RocksDBDictionary(String storageDir, int maxBatchEntries) {
+    this(storageDir, maxBatchEntries, 400);
+  }
+
+  public RocksDBDictionary(String storageDir, int maxBatchEntries, int maxOpenFiles) {
+    this.maxOpenFiles = maxOpenFiles;
     this.maxBatchEntries = maxBatchEntries;
     this.storageDir = storageDir;
     File dictionaryDir = new File(storageDir);
     if (!dictionaryDir.exists()) {
       dictionaryDir.mkdirs();
     }
-    Options options = getOptions();
+    Options options = getOptions(maxOpenFiles);
     try {
       encoder = RocksDB.open(options, storageDir + File.separator + "encoder");
       decoder = RocksDB.open(options, storageDir + File.separator + "decoder");
@@ -67,10 +74,10 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
     }
   }
 
-  private Options getOptions() {
+  private Options getOptions(int maxOpenFiles) {
     Options options = new Options();
     options.setCreateIfMissing(true);
-    options.setMaxOpenFiles(800);
+    options.setMaxOpenFiles(maxOpenFiles);
     options.setAllowOsBuffer(true);
     options.setWriteBufferSize(64 * 1024 * 1024);
     return options;
@@ -206,7 +213,7 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
   @Override
   public void clear() {
     close();
-    Options options = getOptions();
+    Options options = getOptions(maxOpenFiles);
     try {
       File encoderFile = new File(storageDir + File.separator + "encoder");
       deleteFile(encoderFile);

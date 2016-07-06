@@ -17,7 +17,7 @@ import de.uni_koblenz.west.koral.master.dictionary.impl.RocksDBDictionary;
 import de.uni_koblenz.west.koral.master.utils.AdjacencyMatrix;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
-import de.uni_koblenz.west.koral.master.utils.MultiFileAdjacencyMatrix;
+import de.uni_koblenz.west.koral.master.utils.SingleFileAdjacencyMatrix;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -64,7 +64,8 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     if (!dictionaryFolder.exists()) {
       dictionaryFolder.mkdirs();
     }
-    LongDictionary localDictionary = new RocksDBDictionary(dictionaryFolder.getAbsolutePath());
+    LongDictionary localDictionary = new RocksDBDictionary(dictionaryFolder.getAbsolutePath(),
+            RocksDBDictionary.DEFAULT_MAX_BATCH_SIZE, 50);
 
     File encodedRDFGraph = null;
     File metisOutputGraph = null;
@@ -123,7 +124,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     long numberOfUsedTriples = 0;
     long numberOfIgnoredTriples = 0;
 
-    AdjacencyMatrix adjacencyMatrix = new MultiFileAdjacencyMatrix(metisInputTempFolder);
+    AdjacencyMatrix adjacencyMatrix = new SingleFileAdjacencyMatrix(metisInputTempFolder);
     // create adjacency lists
     try {
       try (EncodedFileOutputStream encodedGraphOutput = new EncodedFileOutputStream(

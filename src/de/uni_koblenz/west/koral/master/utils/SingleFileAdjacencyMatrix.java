@@ -52,7 +52,7 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
     super(workingDir);
     Options options = new Options();
     options.setCreateIfMissing(true);
-    options.setMaxOpenFiles(800);
+    options.setMaxOpenFiles(50);
     options.setAllowOsBuffer(true);
     options.setWriteBufferSize(64 * 1024 * 1024);
     vertex2lastElementOffsetFolder = rocksDBFolder;
@@ -127,6 +127,7 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
           list.append(adjacency);
         }
       }
+      iterator.close();
       adjacencySet.clear();
     }
     internalClose();
