@@ -14,16 +14,24 @@ public class EncodedFileInputIterator implements Iterator<Statement> {
 
   private final EncodedFileInputStream input;
 
-  private Statement next;
+  private EncodingFileFormat format;
+
+  private byte[][] next;
 
   public EncodedFileInputIterator(EncodedFileInputStream input) {
     this.input = input;
+    next = new byte[4][];
     getNext();
   }
 
   private void getNext() {
     try {
-      next = input.read();
+      Statement statement = input.read();
+      format = statement.getFormat();
+      next[0] = statement.getSubject();
+      next[1] = statement.getProperty();
+      next[2] = statement.getObject();
+      next[3] = statement.getContainment();
     } catch (EOFException e) {
       // the input is read completely
       next = null;
@@ -39,9 +47,12 @@ public class EncodedFileInputIterator implements Iterator<Statement> {
 
   @Override
   public Statement next() {
-    Statement nextS = next;
+    byte[] subject = next[0];
+    byte[] property = next[1];
+    byte[] object = next[2];
+    byte[] containment = next[3];
     getNext();
-    return nextS;
+    return Statement.getStatement(format, subject, property, object, containment);
   }
 
 }

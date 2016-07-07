@@ -44,8 +44,7 @@ public class EncoderTest {
 
   private static void decode(File inputFile, Dictionary dictionary, EncodingFileFormat format) {
     try (EncodedFileInputStream in = new EncodedFileInputStream(format, inputFile);) {
-      while (true) {
-        Statement statement = in.read();
+      for (Statement statement : in) {
         System.out.print("\n"
                 + (statement.isSubjectEncoded() ? dictionary.decode(statement.getSubjectAsLong())
                         : statement.getSubjectAsString()));
