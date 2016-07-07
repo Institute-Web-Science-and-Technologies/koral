@@ -39,6 +39,8 @@ public class GraphStatistics implements Closeable {
             conf.getStatisticsDataStructure(), conf.getStatisticsDir(),
             conf.useTransactionsForStatistics(), conf.areStatisticsAsynchronouslyWritten(),
             conf.getStatisticsCacheType(), numberOfChunks);
+    // database = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(),
+    // numberOfChunks);
   }
 
   public void collectStatistics(File[] encodedChunks) {
