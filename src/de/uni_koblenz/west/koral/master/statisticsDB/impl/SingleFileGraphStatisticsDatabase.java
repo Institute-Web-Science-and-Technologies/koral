@@ -159,6 +159,7 @@ public class SingleFileGraphStatisticsDatabase implements GraphStatisticsDatabas
   @Override
   public void clear() {
     close();
+    statisticsFile.delete();
     createStatistics();
   }
 
