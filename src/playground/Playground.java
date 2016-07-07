@@ -156,7 +156,7 @@ public class Playground {
 
   }
 
-  private static void delete(File dir) {
+  static void delete(File dir) {
     for (File file : dir.listFiles()) {
       if (file.isDirectory()) {
         Playground.delete(file);
