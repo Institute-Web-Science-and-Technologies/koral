@@ -16,7 +16,7 @@ import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
@@ -49,10 +49,10 @@ public class Playground {
     conf.setDictionaryDir(workingDir.getAbsolutePath() + File.separator + "dictionary");
     conf.setStatisticsDir(workingDir.getAbsolutePath() + File.separator + "statistics");
 
-    // GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
+    GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
     // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
     // null);
-    GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
+    // GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
 
     // encode graph
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
@@ -136,10 +136,16 @@ public class Playground {
       if (encodedFile != null) {
         try (EncodedFileInputStream input = new EncodedFileInputStream(format, encodedFile);) {
           for (Statement statement : input) {
-            System.out.println(" " + encoder.decode(statement.getSubjectAsLong()) + " "
-                    + encoder.decode(statement.getPropertyAsLong()) + " "
-                    + encoder.decode(statement.getObjectAsLong()) + " "
-                    + Arrays.toString(statement.getContainment()));
+            System.out.println(" "
+                    + (statement.isSubjectEncoded() ? encoder.decode(statement.getSubjectAsLong())
+                            : statement.getSubjectAsString())
+                    + " "
+                    + (statement.isPropertyEncoded() ? encoder.decode(statement.getPropertyAsLong())
+                            : statement.getPropertyAsString())
+                    + " "
+                    + (statement.isObjectEncoded() ? encoder.decode(statement.getObjectAsLong())
+                            : statement.getObjectAsString())
+                    + " " + Arrays.toString(statement.getContainment()));
           }
         } catch (IOException e) {
           throw new RuntimeException(e);
