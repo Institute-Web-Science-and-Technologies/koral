@@ -351,11 +351,6 @@ public class GraphLoaderTask extends Thread implements Closeable {
     }
   }
 
-  // private void clearDatabase() {
-  // dictionary.clear();
-  // statistics.clear();
-  // }
-
   private File encodeGraphFilesInitially() {
     File encodedFiles = null;
     if ((state == LoadingState.START) || (state == LoadingState.INITIAL_ENCODING)) {
@@ -364,7 +359,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
         logger.finer("initial encoding of graph chunks");
       }
       if (measurementCollector != null) {
-        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_START,
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_INITIAL_ENCODING_START,
                 System.currentTimeMillis());
       }
       clientConnections.send(clientId, MessageUtils.createStringMessage(
@@ -382,7 +377,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       }
 
       if (measurementCollector != null) {
-        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_INITIAL_ENCODING_END,
                 System.currentTimeMillis());
       }
       if (logger != null) {
@@ -463,7 +458,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
         logger.finer("final encoding of graph chunks");
       }
       if (measurementCollector != null) {
-        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_START,
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINAL_ENCODING_START,
                 System.currentTimeMillis());
       }
       clientConnections.send(clientId,
@@ -474,7 +469,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
               inputEncodingFormat);
 
       if (measurementCollector != null) {
-        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_END,
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINAL_ENCODING_END,
                 System.currentTimeMillis());
       }
       if (logger != null) {

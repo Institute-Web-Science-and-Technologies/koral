@@ -222,25 +222,49 @@ public enum MeasurementType {
    * measured on master<br>
    * timestamp
    */
-  LOAD_GRAPH_ENCODING_START,
+  LOAD_GRAPH_INITIAL_ENCODING_START,
 
   /**
    * measured on master<br>
    * timestamp
    */
-  LOAD_GRAPH_ENCODING_ENCODING_START,
+  LOAD_GRAPH_INITIAL_ENCODING_ENCODING_START,
 
   /**
    * measured on master<br>
    * timestamp
    */
-  LOAD_GRAPH_ENCODING_ENCODING_END,
+  LOAD_GRAPH_INITIAL_ENCODING_ENCODING_END,
 
   /**
    * measured on master<br>
    * timestamp
    */
-  LOAD_GRAPH_ENCODING_END,
+  LOAD_GRAPH_INITIAL_ENCODING_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_FINAL_ENCODING_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_FINAL_ENCODING_ENCODING_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_FINAL_ENCODING_ENCODING_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_FINAL_ENCODING_END,
 
   /**
    * measured on master<br>

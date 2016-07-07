@@ -63,7 +63,7 @@ public class DictionaryEncoder implements Closeable {
           EncodingFileFormat outputFormat, int numberOfGraphChunks) {
     clear();
     if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_START,
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_INITIAL_ENCODING_ENCODING_START,
               System.currentTimeMillis());
     }
     File result = getSemiEncodedGraphFile(workingDir);
@@ -118,7 +118,7 @@ public class DictionaryEncoder implements Closeable {
     }
     dictionary.flush();
     if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_END,
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_INITIAL_ENCODING_ENCODING_END,
               System.currentTimeMillis());
     }
     return result;
@@ -143,7 +143,7 @@ public class DictionaryEncoder implements Closeable {
   public File[] encodeGraphChunksCompletely(File[] semiEncodedGraphChunks, File workingDir,
           EncodingFileFormat inputFormat) {
     if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_START,
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINAL_ENCODING_ENCODING_START,
               System.currentTimeMillis());
     }
     File[] result = getFullyEncodedGraphChunks(workingDir, semiEncodedGraphChunks.length);
@@ -199,7 +199,7 @@ public class DictionaryEncoder implements Closeable {
     }
     dictionary.flush();
     if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_ENCODING_ENCODING_END,
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINAL_ENCODING_ENCODING_END,
               System.currentTimeMillis());
     }
 
