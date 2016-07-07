@@ -86,6 +86,7 @@ public class NHopReplicator {
         for (File file : graphCover) {
           file.delete();
         }
+        moleculeLists.close();
       } finally {
         // clean up
         database.close();
