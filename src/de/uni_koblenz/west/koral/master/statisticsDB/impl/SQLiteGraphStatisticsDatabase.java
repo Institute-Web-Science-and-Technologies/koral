@@ -21,11 +21,17 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private final int numberOfChunks;
 
+  private File databaseFile;
+
   private final Connection dbConnection;
 
   private boolean isCommitted;
 
-  private File databaseFile;
+  private PreparedStatement incrementTupleFrequency;
+
+  private PreparedStatement[] updateStatistics;
+
+  private PreparedStatement[] insertStatistics;
 
   public SQLiteGraphStatisticsDatabase(String statisticsDir, short numberOfChunks) {
     this.numberOfChunks = numberOfChunks;
@@ -39,11 +45,16 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
               statisticsDirFile.getAbsolutePath() + File.separator + "statistics.db");
       boolean doesDatabaseExist = databaseFile.exists();
       dbConnection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath());
-      dbConnection.setAutoCommit(false);
       if (!doesDatabaseExist) {
+        // OS should write it to disk
+        Statement statement = dbConnection.createStatement();
+        statement.executeUpdate("PRAGMA synchronous = OFF");
+        statement.close();
+
         initializeDatabase();
       }
       isCommitted = true;
+
     } catch (ClassNotFoundException | SQLException e) {
       throw new RuntimeException(e);
     }
@@ -51,6 +62,8 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private void initializeDatabase() {
     try {
+      dbConnection.setAutoCommit(false);
+      dbConnection.commit();
       Statement statement = dbConnection.createStatement();
 
       // create table that counts the triples per chunk
@@ -94,61 +107,74 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   @Override
   public void incrementSubjectCount(long subject, int chunk) {
-    String tableName = "STATISTICS";
-    String updateColumnName = "CHUNK_" + chunk + "_SUBJECT";
-    String keyColumnName = "RESOURCE_ID";
-    increment(subject, tableName, updateColumnName, keyColumnName);
+    startTransaction();
+    increment(subject, updateStatistics[(3 * chunk) + 0], insertStatistics[(3 * chunk) + 0]);
   }
 
   @Override
   public void incrementPropertyCount(long property, int chunk) {
-    String tableName = "STATISTICS";
-    String updateColumnName = "CHUNK_" + chunk + "_PROPERTY";
-    String keyColumnName = "RESOURCE_ID";
-    increment(property, tableName, updateColumnName, keyColumnName);
+    startTransaction();
+    increment(property, updateStatistics[(3 * chunk) + 1], insertStatistics[(3 * chunk) + 1]);
   }
 
   @Override
   public void incrementObjectCount(long object, int chunk) {
-    String tableName = "STATISTICS";
-    String updateColumnName = "CHUNK_" + chunk + "_OBJECT";
-    String keyColumnName = "RESOURCE_ID";
-    increment(object, tableName, updateColumnName, keyColumnName);
+    startTransaction();
+    increment(object, updateStatistics[(3 * chunk) + 2], insertStatistics[(3 * chunk) + 2]);
   }
 
   @Override
   public void incrementRessourceOccurrences(long resource, int chunk) {
-    String tableName = "STATISTICS";
-    String updateColumnName = "OCCURENCES";
-    String keyColumnName = "RESOURCE_ID";
-    increment(resource, tableName, updateColumnName, keyColumnName);
+    startTransaction();
+    increment(resource, updateStatistics[updateStatistics.length - 1],
+            insertStatistics[insertStatistics.length - 1]);
   }
 
   @Override
   public void incrementNumberOfTriplesPerChunk(int chunk) {
-    String tableName = "TRIPLES_PER_CHUNK";
-    String updateColumnName = "NUMBER_OF_TRIPLES";
-    String keyColumnName = "CHUNK_ID";
-    increment(chunk, tableName, updateColumnName, keyColumnName);
+    increment(chunk, tripleChunkIncrement, null);
   }
 
-  private void increment(long rowKey, String tableName, String updateColumnName,
-          String keyColumnName) {
-    isCommitted = false;
-
-    String updateQuery = "UPDATE " + tableName + " SET " + updateColumnName + " = "
-            + updateColumnName + " + 1 WHERE " + keyColumnName + " == " + rowKey + ";";
-
-    String insertQuery = "INSERT INTO " + tableName + " (" + keyColumnName + ", " + updateColumnName
-            + ") VALUES (" + rowKey + ", 1);";
-
+  private void increment(long rowIndex, PreparedStatement updateStatement,
+          PreparedStatement insertStatement) {
     try {
-      Statement statement = dbConnection.createStatement();
-      int result = statement.executeUpdate(updateQuery.toString());
+      updateStatement.setLong(1, rowIndex);
+      int result = updateStatement.executeUpdate();
       if (result == 0) {
-        statement.executeUpdate(insertQuery.toString());
+        insertStatement.setLong(1, rowIndex);
+        insertStatement.executeUpdate();
       }
-      statement.close();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void startTransaction() {
+    isCommitted = false;
+    try {
+      incrementTupleFrequency = dbConnection.prepareStatement(
+              "UPDATE TRIPLES_PER_CHUNK SET NUMBER_OF_TRIPLES = NUMBER_OF_TRIPLES + 1 WHERE CHUNK_ID == ?;");
+
+      updateStatistics = new PreparedStatement[(3 * numberOfChunks) + 1];
+      insertStatistics = new PreparedStatement[(3 * numberOfChunks) + 1];
+      for (int i = 0; i < numberOfChunks; i++) {
+        updateStatistics[(3 * i) + 0] = dbConnection.prepareStatement("UPDATE STATISTICS SET CHUNK_"
+                + i + "_SUBJECT = CHUNK_" + i + "_SUBJECT + 1 WHERE RESOURCE_ID == ?;");
+        insertStatistics[(3 * i) + 0] = dbConnection.prepareStatement(
+                "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_SUBJECT) VALUES (?, 1);");
+        updateStatistics[(3 * i) + 1] = dbConnection.prepareStatement("UPDATE STATISTICS SET CHUNK_"
+                + i + "_PROPERTY = CHUNK_" + i + "_PROPERTY + 1 WHERE RESOURCE_ID == ?;");
+        insertStatistics[(3 * i) + 1] = dbConnection.prepareStatement(
+                "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_PROPERTY) VALUES (?, 1);");
+        updateStatistics[(3 * i) + 2] = dbConnection.prepareStatement("UPDATE STATISTICS SET CHUNK_"
+                + i + "_OBJECT = CHUNK_" + i + "_OBJECT + 1 WHERE RESOURCE_ID == ?;");
+        insertStatistics[(3 * i) + 2] = dbConnection.prepareStatement(
+                "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_OBJECT) VALUES (?, 1);");
+      }
+      updateStatistics[updateStatistics.length - 1] = dbConnection.prepareStatement(
+              "UPDATE STATISTICS SET OCCURENCES = OCCURENCES + 1 WHERE RESOURCE_ID == ?;");
+      insertStatistics[insertStatistics.length - 1] = dbConnection
+              .prepareStatement("INSERT INTO STATISTICS (RESOURCE_ID, OCCURENCES) VALUES (?, 1);");
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -162,8 +188,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     String query = "SELECT * FROM TRIPLES_PER_CHUNK;";
     try {
       if (!isCommitted) {
-        dbConnection.commit();
-        isCommitted = true;
+        endTransaction();
       }
       Statement statement = dbConnection.createStatement();
       ResultSet result = statement.executeQuery(query);
@@ -184,8 +209,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     String query = "SELECT * FROM STATISTICS WHERE RESOURCE_ID == " + id + ";";
     try {
       if (!isCommitted) {
-        dbConnection.commit();
-        isCommitted = true;
+        endTransaction();
       }
       Statement statement = dbConnection.createStatement();
       ResultSet result = statement.executeQuery(query);
@@ -203,6 +227,28 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     return statistics;
   }
 
+  private void endTransaction() throws SQLException {
+    if (incrementTupleFrequency != null) {
+      incrementTupleFrequency.close();
+    }
+    if (updateStatistics != null) {
+      for (PreparedStatement s : updateStatistics) {
+        if (s != null) {
+          s.close();
+        }
+      }
+    }
+    if (insertStatistics != null) {
+      for (PreparedStatement s : insertStatistics) {
+        if (s != null) {
+          s.close();
+        }
+      }
+    }
+    dbConnection.commit();
+    isCommitted = true;
+  }
+
   @Override
   public void clear() {
     try {
@@ -210,6 +256,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
       statement.executeUpdate("DROP TABLE TRIPLES_PER_CHUNK;");
       statement.executeUpdate("DROP TABLE STATISTICS;");
       statement.close();
+      endTransaction();
       initializeDatabase();
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -219,6 +266,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
   @Override
   public void close() {
     try {
+      endTransaction();
       dbConnection.close();
     } catch (SQLException e) {
       throw new RuntimeException(e);
