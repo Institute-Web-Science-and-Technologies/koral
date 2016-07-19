@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -33,6 +32,10 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private PreparedStatement[] insertStatistics;
 
+  private int numberOfInsertions;
+
+  private final static int MAX_BATCH_SIZE = 50000;
+
   public SQLiteGraphStatisticsDatabase(String statisticsDir, short numberOfChunks) {
     this.numberOfChunks = numberOfChunks;
     File statisticsDirFile = new File(statisticsDir);
@@ -54,6 +57,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
         initializeDatabase();
       }
       isCommitted = true;
+      numberOfInsertions = 0;
 
     } catch (ClassNotFoundException | SQLException e) {
       throw new RuntimeException(e);
@@ -140,9 +144,15 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     try {
       updateStatement.setLong(1, rowIndex);
       int result = updateStatement.executeUpdate();
+      numberOfInsertions++;
       if (result == 0) {
         insertStatement.setLong(1, rowIndex);
         insertStatement.executeUpdate();
+        numberOfInsertions++;
+      }
+      if (numberOfInsertions > SQLiteGraphStatisticsDatabase.MAX_BATCH_SIZE) {
+        dbConnection.commit();
+        numberOfInsertions = 0;
       }
     } catch (SQLException e) {
       throw new RuntimeException(e);
@@ -271,27 +281,6 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  public static void main(String[] args) throws SQLException {
-    SQLiteGraphStatisticsDatabase stat = new SQLiteGraphStatisticsDatabase("/tmp/statistics",
-            (short) 4);
-    stat.incrementSubjectCount(1, 0);
-    stat.incrementSubjectCount(1, 0);
-    stat.incrementSubjectCount(1, 0);
-    stat.incrementSubjectCount(1, 0);
-    Statement s = stat.dbConnection.createStatement();
-    ResultSet result = s.executeQuery("SELECT * FROM STATISTICS;");
-    ResultSetMetaData metaData = result.getMetaData();
-    while (result.next()) {
-      for (int i = 1; i <= metaData.getColumnCount(); i++) {
-        System.out.println(metaData.getColumnName(i) + "=" + result.getLong(i));
-      }
-      System.out.println();
-    }
-
-    s.close();
-    stat.close();
   }
 
 }
