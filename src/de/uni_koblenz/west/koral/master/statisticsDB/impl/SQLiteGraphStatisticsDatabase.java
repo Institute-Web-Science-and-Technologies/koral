@@ -5,7 +5,9 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -21,6 +23,8 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private final Connection dbConnection;
 
+  private boolean isCommitted;
+
   private File databaseFile;
 
   public SQLiteGraphStatisticsDatabase(String statisticsDir, short numberOfChunks) {
@@ -35,9 +39,11 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
               statisticsDirFile.getAbsolutePath() + File.separator + "statistics.db");
       boolean doesDatabaseExist = databaseFile.exists();
       dbConnection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath());
+      dbConnection.setAutoCommit(false);
       if (!doesDatabaseExist) {
         initializeDatabase();
       }
+      isCommitted = true;
     } catch (ClassNotFoundException | SQLException e) {
       throw new RuntimeException(e);
     }
@@ -80,6 +86,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
       statement.executeBatch();
       statement.close();
+      dbConnection.commit();
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -127,17 +134,17 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private void increment(long rowKey, String tableName, String updateColumnName,
           String keyColumnName) {
+    isCommitted = false;
 
     String updateQuery = "UPDATE " + tableName + " SET " + updateColumnName + " = "
             + updateColumnName + " + 1 WHERE " + keyColumnName + " == " + rowKey + ";";
 
     String insertQuery = "INSERT INTO " + tableName + " (" + keyColumnName + ", " + updateColumnName
-            + ")  VALUES (" + rowKey + ", 1);";
+            + ") VALUES (" + rowKey + ", 1);";
 
     try {
       Statement statement = dbConnection.createStatement();
       int result = statement.executeUpdate(updateQuery.toString());
-      System.out.println(result);
       if (result == 0) {
         statement.executeUpdate(insertQuery.toString());
       }
@@ -147,11 +154,17 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     }
   }
 
+  private PreparedStatement tripleChunkIncrement;
+
   @Override
   public long[] getChunkSizes() {
     long[] chunkSizes = new long[numberOfChunks];
     String query = "SELECT * FROM TRIPLES_PER_CHUNK;";
     try {
+      if (!isCommitted) {
+        dbConnection.commit();
+        isCommitted = true;
+      }
       Statement statement = dbConnection.createStatement();
       ResultSet result = statement.executeQuery(query);
       int nextChunk = 0;
@@ -170,6 +183,10 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     long[] statistics = new long[(numberOfChunks * 3) + 1];
     String query = "SELECT * FROM STATISTICS WHERE RESOURCE_ID == " + id + ";";
     try {
+      if (!isCommitted) {
+        dbConnection.commit();
+        isCommitted = true;
+      }
       Statement statement = dbConnection.createStatement();
       ResultSet result = statement.executeQuery(query);
       result.next();
@@ -206,6 +223,27 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static void main(String[] args) throws SQLException {
+    SQLiteGraphStatisticsDatabase stat = new SQLiteGraphStatisticsDatabase("/tmp/statistics",
+            (short) 4);
+    stat.incrementSubjectCount(1, 0);
+    stat.incrementSubjectCount(1, 0);
+    stat.incrementSubjectCount(1, 0);
+    stat.incrementSubjectCount(1, 0);
+    Statement s = stat.dbConnection.createStatement();
+    ResultSet result = s.executeQuery("SELECT * FROM STATISTICS;");
+    ResultSetMetaData metaData = result.getMetaData();
+    while (result.next()) {
+      for (int i = 1; i <= metaData.getColumnCount(); i++) {
+        System.out.println(metaData.getColumnName(i) + "=" + result.getLong(i));
+      }
+      System.out.println();
+    }
+
+    s.close();
+    stat.close();
   }
 
 }
