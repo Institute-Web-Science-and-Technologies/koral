@@ -50,6 +50,7 @@ def resolveDependencies():
     resolveFtpServer()
     resolveCommonsNet()
     resolveRocksDB()
+    resolveSQLite()
 
 def resolveCLI():
     run("wget http://apache.mirror.digionline.de//commons/cli/binaries/commons-cli-1.3.1-bin.tar.gz")
@@ -121,6 +122,10 @@ def resolveRocksDB():
     run("mv core-4.3.0.jar koral/lib/core-4.3.0.jar")
     run("wget http://central.maven.org/maven2/org/xerial/snappy/snappy-java/1.0.3/snappy-java-1.0.3.jar")
     run("mv snappy-java-1.0.3.jar koral/lib/snappy-java-1.0.3.jar")
+
+def resolveSQLite():
+    run("wget http://central.maven.org/maven2/org/xerial/sqlite-jdbc/3.8.11.2/sqlite-jdbc-3.8.11.2.jar")
+    run("mv sqlite-jdbc-3.8.11.2.jar koral/lib/sqlite-jdbc-3.8.11.2.jar")
 
 def buildKoral():
     with cd("koral"):

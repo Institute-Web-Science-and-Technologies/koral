@@ -16,15 +16,15 @@ These libraries are:
 - mapdb from version: 1.0.8  https://github.com/jankotek/mapdb.git [ http://www.mapdb.org/ ] (Apache Licence Version 2.0 - compatible with LGPL v3)
 - Apache FtpServer version: 1.0.5 from http://archive.apache.org/dist/mina/ftpserver/1.0.5/ftpserver-1.0.5.zip (Apache Licence Version 2.0 - compatible with LGPL v3)
 - Apache Commons Net version: 3.4 from http://mirror.softaculous.com/apache//commons/net/binaries/commons-net-3.4-bin.tar.gz (Apache Licence Version 2.0 - compatible with LGPL v3)
-
-
-- Symas Lightning Memory-Mapped Database (LMDB) version: LMDB_0.9.16 from https://github.com/LMDB/lmdb.git [ http://symas.com/mdb/ ] (OpenLDAP Public License v 2.8 - compatible with LGPL)
-- LMDB JNI version: 0.4.4 from https://github.com/deephacks/lmdbjni.git (Apache License Version 2.0 - compatible with LGPL v3)
-
 - RockDB (modified BSD (3 clauses) - compatible with LGPL v3)
 - RocksDB JNI version: 4.5.1 from http://central.maven.org/maven2/org/rocksdb/rocksdbjni/4.5.1/rocksdbjni-4.5.1.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
 - Osgi.core version: 4.3.0 from http://central.maven.org/maven2/org/osgi/core/4.3.0/core-4.3.0.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
 - Snappy Java version: 1.0.3 from http://central.maven.org/maven2/org/xerial/snappy/snappy-java/1.0.3/snappy-java-1.0.3.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
+
+- SQLite JDBC version: 3.8.11.2 from http://central.maven.org/maven2/org/xerial/sqlite-jdbc/3.8.11.2/sqlite-jdbc-3.8.11.2.jar (Apache Licence Version 2.0 - compatible with LGPL v3)
+
+- Symas Lightning Memory-Mapped Database (LMDB) version: LMDB_0.9.16 from https://github.com/LMDB/lmdb.git [ http://symas.com/mdb/ ] (OpenLDAP Public License v 2.8 - compatible with LGPL)
+- LMDB JNI version: 0.4.4 from https://github.com/deephacks/lmdbjni.git (Apache License Version 2.0 - compatible with LGPL v3)
 
 not used:
 - Oracle Berkeley DB Java Edition version: 6.4.9 from http://download.oracle.com/maven/com/sleepycat/je/6.4.9/je-6.4.9.jar (...-sources.jar (GNU AGPL v3 - NOT compatible with LGPL )
