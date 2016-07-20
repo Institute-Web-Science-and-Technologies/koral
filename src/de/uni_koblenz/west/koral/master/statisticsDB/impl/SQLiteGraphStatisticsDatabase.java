@@ -34,7 +34,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private int numberOfInsertions;
 
-  private final static int MAX_BATCH_SIZE = 50000;
+  private final static int MAX_BATCH_SIZE = 1_000_000;
 
   public SQLiteGraphStatisticsDatabase(String statisticsDir, short numberOfChunks) {
     this.numberOfChunks = numberOfChunks;
@@ -49,9 +49,13 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
       boolean doesDatabaseExist = databaseFile.exists();
       dbConnection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath());
       if (!doesDatabaseExist) {
-        // OS should write it to disk
         Statement statement = dbConnection.createStatement();
+        // OS should write it to disk
         statement.executeUpdate("PRAGMA synchronous = OFF");
+        statement.executeUpdate("PRAGMA page_size = 4096");
+        statement.executeUpdate("PRAGMA cache_size = 2000");
+        statement.executeUpdate("PRAGMA journal_mode = MEMORY");
+        statement.executeUpdate("PRAGMA temp_store = MEMORY");
         statement.close();
 
         initializeDatabase();
