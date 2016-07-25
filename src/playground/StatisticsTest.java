@@ -89,7 +89,7 @@ public class StatisticsTest {
     System.out.println("\t\tend: " + format.format(new Date(end)));
     long duration = end - start;
     System.out.println("\t\trequired time: " + duration + " msec = "
-            + String.format("%d:%02d:%02d.%03d", duration / 3_600_000, (duration / 60_000) % 3600,
+            + String.format("%d:%02d:%02d.%03d", duration / 3_600_000, (duration / 60_000) % 60,
                     ((duration / 1000) % 60), duration % 1000));
 
     System.out.println("\tadjusting ownership");
@@ -100,7 +100,7 @@ public class StatisticsTest {
     System.out.println("\t\tend: " + format.format(new Date(end)));
     duration = end - start;
     System.out.println("\t\trequired time: " + duration + " msec = "
-            + String.format("%d:%02d:%02d.%03d", duration / 3_600_000, (duration / 60_000) % 3600,
+            + String.format("%d:%02d:%02d.%03d", duration / 3_600_000, (duration / 60_000) % 60,
                     ((duration / 1000) % 60), duration % 1000));
 
     statistics.close();
