@@ -4,6 +4,9 @@ import org.apache.jena.ext.com.google.common.io.Files;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
+import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
+import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
@@ -50,9 +53,8 @@ public class StatisticsTest {
 
     System.out.println("measuring mapDB:");
     GraphStatisticsDatabase database = new MapDBGraphStatisticsDatabase(
-            conf.getStatisticsStorageType(), conf.getStatisticsDataStructure(),
-            conf.getStatisticsDir(), conf.useTransactionsForStatistics(),
-            conf.areStatisticsAsynchronouslyWritten(), conf.getStatisticsCacheType(), (short) 4);
+            MapDBStorageOptions.MEMORY_MAPPED_FILE, MapDBDataStructureOptions.HASH_TREE_MAP,
+            conf.getStatisticsDir(), false, true, MapDBCacheOptions.HASH_TABLE, (short) 4);
     StatisticsTest.collectStatistics(database, encodedInput, workingDir);
 
     if (!workingDir.exists()) {

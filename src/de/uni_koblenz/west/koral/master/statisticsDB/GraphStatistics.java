@@ -7,7 +7,7 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.MapDBGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.SQLiteGraphStatisticsDatabase;
 
 import java.io.Closeable;
 import java.io.File;
@@ -35,10 +35,7 @@ public class GraphStatistics implements Closeable {
   public GraphStatistics(Configuration conf, short numberOfChunks, Logger logger) {
     this.logger = logger;
     this.numberOfChunks = numberOfChunks;
-    database = new MapDBGraphStatisticsDatabase(conf.getStatisticsStorageType(),
-            conf.getStatisticsDataStructure(), conf.getStatisticsDir(),
-            conf.useTransactionsForStatistics(), conf.areStatisticsAsynchronouslyWritten(),
-            conf.getStatisticsCacheType(), numberOfChunks);
+    database = new SQLiteGraphStatisticsDatabase(conf.getStatisticsDir(), numberOfChunks);
   }
 
   public GraphStatistics(GraphStatisticsDatabase database, short numberOfChunks, Logger logger) {

@@ -2,7 +2,6 @@ package de.uni_koblenz.west.koral.common.config.impl;
 
 import de.uni_koblenz.west.koral.common.config.ConfigurableDeserializer;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
-import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 
 import java.util.logging.Level;
@@ -89,54 +88,9 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
     }
   }
 
-  public void deserializeStatisticsStorageType(Configuration conf, String storageType) {
-    if ((storageType != null) && !storageType.isEmpty()) {
-      try {
-        conf.setStatisticsStorageType(MapDBStorageOptions.valueOf(storageType.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
-    }
-  }
-
-  public void deserializeStatisticsDataStructure(Configuration conf, String dataStructure) {
-    if ((dataStructure != null) && !dataStructure.isEmpty()) {
-      try {
-        conf.setStatisticsDataStructure(
-                MapDBDataStructureOptions.valueOf(dataStructure.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
-    }
-  }
-
   public void deserializeStatisticsDir(Configuration conf, String statisticsDir) {
     if ((statisticsDir != null) && !statisticsDir.isEmpty()) {
       conf.setStatisticsDir(statisticsDir);
-    }
-  }
-
-  public void deserializeEnableTransactionsForStatistics(Configuration conf,
-          String enableTransactions) {
-    if ((enableTransactions != null) && !enableTransactions.isEmpty()) {
-      conf.setUseTransactionsForStatistics(Boolean.parseBoolean(enableTransactions));
-    }
-  }
-
-  public void deserializeEnableAsynchronousWritesForStatistics(Configuration conf,
-          String writeAsynchronously) {
-    if ((writeAsynchronously != null) && !writeAsynchronously.isEmpty()) {
-      conf.setStatisticsAsynchronouslyWritten(Boolean.parseBoolean(writeAsynchronously));
-    }
-  }
-
-  public void deserializeStatisticsCacheType(Configuration conf, String cacheType) {
-    if ((cacheType != null) && !cacheType.isEmpty()) {
-      try {
-        conf.setStatisticsCacheType(MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
     }
   }
 

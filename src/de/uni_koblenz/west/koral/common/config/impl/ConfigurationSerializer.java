@@ -74,28 +74,8 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
     return new Integer(conf.getMaxDictionaryWriteBatchSize()).toString();
   }
 
-  public String serializeStatisticsStorageType(Configuration conf) {
-    return conf.getStatisticsStorageType().name();
-  }
-
-  public String serializeStatisticsDataStructure(Configuration conf) {
-    return conf.getStatisticsDataStructure().name();
-  }
-
   public String serializeStatisticsDir(Configuration conf) {
     return conf.getStatisticsDir();
-  }
-
-  public String serializeEnableTransactionsForStatistics(Configuration conf) {
-    return new Boolean(conf.useTransactionsForStatistics()).toString();
-  }
-
-  public String serializeEnableAsynchronousWritesForStatistics(Configuration conf) {
-    return new Boolean(conf.areStatisticsAsynchronouslyWritten()).toString();
-  }
-
-  public String serializeStatisticsCacheType(Configuration conf) {
-    return conf.getStatisticsCacheType().name();
   }
 
   public String serializeTripleStoreStorageType(Configuration conf) {
