@@ -32,6 +32,8 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private PreparedStatement[] insertStatistics;
 
+  private PreparedStatement tripleChunkIncrement;
+
   private int numberOfInsertions;
 
   private final static int MAX_BATCH_SIZE = 1_000_000;
@@ -140,6 +142,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   @Override
   public void incrementNumberOfTriplesPerChunk(int chunk) {
+    startTransaction();
     increment(chunk, tripleChunkIncrement, null);
   }
 
@@ -165,36 +168,39 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private void startTransaction() {
     isCommitted = false;
-    try {
-      incrementTupleFrequency = dbConnection.prepareStatement(
-              "UPDATE TRIPLES_PER_CHUNK SET NUMBER_OF_TRIPLES = NUMBER_OF_TRIPLES + 1 WHERE CHUNK_ID == ?;");
+    if (incrementTupleFrequency == null) {
+      try {
+        incrementTupleFrequency = dbConnection.prepareStatement(
+                "UPDATE TRIPLES_PER_CHUNK SET NUMBER_OF_TRIPLES = NUMBER_OF_TRIPLES + 1 WHERE CHUNK_ID == ?;");
 
-      updateStatistics = new PreparedStatement[(3 * numberOfChunks) + 1];
-      insertStatistics = new PreparedStatement[(3 * numberOfChunks) + 1];
-      for (int i = 0; i < numberOfChunks; i++) {
-        updateStatistics[(3 * i) + 0] = dbConnection.prepareStatement("UPDATE STATISTICS SET CHUNK_"
-                + i + "_SUBJECT = CHUNK_" + i + "_SUBJECT + 1 WHERE RESOURCE_ID == ?;");
-        insertStatistics[(3 * i) + 0] = dbConnection.prepareStatement(
-                "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_SUBJECT) VALUES (?, 1);");
-        updateStatistics[(3 * i) + 1] = dbConnection.prepareStatement("UPDATE STATISTICS SET CHUNK_"
-                + i + "_PROPERTY = CHUNK_" + i + "_PROPERTY + 1 WHERE RESOURCE_ID == ?;");
-        insertStatistics[(3 * i) + 1] = dbConnection.prepareStatement(
-                "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_PROPERTY) VALUES (?, 1);");
-        updateStatistics[(3 * i) + 2] = dbConnection.prepareStatement("UPDATE STATISTICS SET CHUNK_"
-                + i + "_OBJECT = CHUNK_" + i + "_OBJECT + 1 WHERE RESOURCE_ID == ?;");
-        insertStatistics[(3 * i) + 2] = dbConnection.prepareStatement(
-                "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_OBJECT) VALUES (?, 1);");
+        updateStatistics = new PreparedStatement[(3 * numberOfChunks) + 1];
+        insertStatistics = new PreparedStatement[(3 * numberOfChunks) + 1];
+        for (int i = 0; i < numberOfChunks; i++) {
+          updateStatistics[(3 * i) + 0] = dbConnection
+                  .prepareStatement("UPDATE STATISTICS SET CHUNK_" + i + "_SUBJECT = CHUNK_" + i
+                          + "_SUBJECT + 1 WHERE RESOURCE_ID == ?;");
+          insertStatistics[(3 * i) + 0] = dbConnection.prepareStatement(
+                  "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_SUBJECT) VALUES (?, 1);");
+          updateStatistics[(3 * i) + 1] = dbConnection
+                  .prepareStatement("UPDATE STATISTICS SET CHUNK_" + i + "_PROPERTY = CHUNK_" + i
+                          + "_PROPERTY + 1 WHERE RESOURCE_ID == ?;");
+          insertStatistics[(3 * i) + 1] = dbConnection.prepareStatement(
+                  "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_PROPERTY) VALUES (?, 1);");
+          updateStatistics[(3 * i) + 2] = dbConnection
+                  .prepareStatement("UPDATE STATISTICS SET CHUNK_" + i + "_OBJECT = CHUNK_" + i
+                          + "_OBJECT + 1 WHERE RESOURCE_ID == ?;");
+          insertStatistics[(3 * i) + 2] = dbConnection.prepareStatement(
+                  "INSERT INTO STATISTICS (RESOURCE_ID, CHUNK_" + i + "_OBJECT) VALUES (?, 1);");
+        }
+        updateStatistics[updateStatistics.length - 1] = dbConnection.prepareStatement(
+                "UPDATE STATISTICS SET OCCURENCES = OCCURENCES + 1 WHERE RESOURCE_ID == ?;");
+        insertStatistics[insertStatistics.length - 1] = dbConnection.prepareStatement(
+                "INSERT INTO STATISTICS (RESOURCE_ID, OCCURENCES) VALUES (?, 1);");
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
       }
-      updateStatistics[updateStatistics.length - 1] = dbConnection.prepareStatement(
-              "UPDATE STATISTICS SET OCCURENCES = OCCURENCES + 1 WHERE RESOURCE_ID == ?;");
-      insertStatistics[insertStatistics.length - 1] = dbConnection
-              .prepareStatement("INSERT INTO STATISTICS (RESOURCE_ID, OCCURENCES) VALUES (?, 1);");
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
     }
   }
-
-  private PreparedStatement tripleChunkIncrement;
 
   @Override
   public long[] getChunkSizes() {
