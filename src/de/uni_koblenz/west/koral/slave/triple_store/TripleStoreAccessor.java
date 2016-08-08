@@ -7,7 +7,6 @@ import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.koral.common.query.TriplePattern;
-import de.uni_koblenz.west.koral.slave.triple_store.impl.MapDBTripleStore;
 
 import java.io.Closeable;
 import java.io.File;
@@ -25,11 +24,12 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
 
   private final Logger logger;
 
-  private final MapDBTripleStore tripleStore;
+  private final TripleStore tripleStore;
 
   public TripleStoreAccessor(Configuration conf, Logger logger) {
     this.logger = logger;
-    tripleStore = new MapDBTripleStore(conf.getTripleStoreStorageType(), conf.getTripleStoreDir(),
+    tripleStore = new de.uni_koblenz.west.koral.slave.triple_store.impl.TripleStore(
+            conf.getTripleStoreStorageType(), conf.getTripleStoreDir(),
             conf.useTransactionsForTripleStore(), conf.isTripleStoreAsynchronouslyWritten(),
             conf.getTripleStoreCacheType());
   }

@@ -6,7 +6,6 @@ import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.koral.common.query.TriplePattern;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
-import de.uni_koblenz.west.koral.slave.triple_store.TripleStore;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -18,7 +17,7 @@ import java.nio.ByteBuffer;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class MapDBTripleStore implements TripleStore {
+public class TripleStore implements de.uni_koblenz.west.koral.slave.triple_store.TripleStore {
 
   private final MultiMap spo;
 
@@ -26,7 +25,7 @@ public class MapDBTripleStore implements TripleStore {
 
   private final MultiMap pos;
 
-  public MapDBTripleStore(MapDBStorageOptions storageType, String tripleStoreDir,
+  public TripleStore(MapDBStorageOptions storageType, String tripleStoreDir,
           boolean useTransactions, boolean writeAsynchronously, MapDBCacheOptions cacheType) {
     File dir = new File(tripleStoreDir);
     if (!dir.exists()) {
