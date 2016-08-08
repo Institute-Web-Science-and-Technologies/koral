@@ -10,7 +10,6 @@ import de.uni_koblenz.west.koral.slave.triple_store.TripleStore;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.NavigableSet;
 
 /**
  * A MapDB implementation of the local triple store. Each triple is stored in
@@ -33,12 +32,12 @@ public class MapDBTripleStore implements TripleStore {
     if (!dir.exists()) {
       dir.mkdirs();
     }
-    spo = new MultiMap(storageType, tripleStoreDir + File.separatorChar + "spo", useTransactions,
-            writeAsynchronously, cacheType, "spo");
-    osp = new MultiMap(storageType, tripleStoreDir + File.separatorChar + "osp", useTransactions,
-            writeAsynchronously, cacheType, "osp");
-    pos = new MultiMap(storageType, tripleStoreDir + File.separatorChar + "pos", useTransactions,
-            writeAsynchronously, cacheType, "pos");
+    spo = new MapDBMultiMap(storageType, tripleStoreDir + File.separatorChar + "spo",
+            useTransactions, writeAsynchronously, cacheType, "spo");
+    osp = new MapDBMultiMap(storageType, tripleStoreDir + File.separatorChar + "osp",
+            useTransactions, writeAsynchronously, cacheType, "osp");
+    pos = new MapDBMultiMap(storageType, tripleStoreDir + File.separatorChar + "pos",
+            useTransactions, writeAsynchronously, cacheType, "pos");
   }
 
   @Override
@@ -49,7 +48,7 @@ public class MapDBTripleStore implements TripleStore {
   }
 
   private byte[] createByteArray(long value1, long value2, long value3, byte[] containment) {
-    byte[] result = new byte[3 * Long.BYTES + containment.length];
+    byte[] result = new byte[(3 * Long.BYTES) + containment.length];
     NumberConversion.long2bytes(value1, result, 0);
     NumberConversion.long2bytes(value2, result, Long.BYTES);
     NumberConversion.long2bytes(value3, result, 2 * Long.BYTES);
@@ -60,7 +59,7 @@ public class MapDBTripleStore implements TripleStore {
   @Override
   public Iterable<Mapping> lookup(MappingRecycleCache cache, TriplePattern triplePattern) {
     byte[] queryPrefix = null;
-    NavigableSet<byte[]> matches = null;
+    Iterable<byte[]> matches = null;
     IndexType indexType = null;
     switch (triplePattern.getType()) {
       case ___:
