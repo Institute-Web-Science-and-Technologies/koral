@@ -11,6 +11,10 @@ import java.util.Iterator;
  */
 public interface MultiMap extends Closeable, AutoCloseable, Iterable<byte[]> {
 
+  public int size();
+
+  public boolean isEmpty();
+
   public boolean containsKey(byte[] prefix);
 
   public Iterable<byte[]> get(byte[] prefix);

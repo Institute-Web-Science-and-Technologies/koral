@@ -71,10 +71,12 @@ public class MapDBMultiMap implements MultiMap {
     }
   }
 
+  @Override
   public int size() {
     return multiMap.size();
   }
 
+  @Override
   public boolean isEmpty() {
     return multiMap.isEmpty();
   }
