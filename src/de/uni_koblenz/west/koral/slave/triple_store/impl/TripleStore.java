@@ -39,6 +39,16 @@ public class TripleStore implements de.uni_koblenz.west.koral.slave.triple_store
             useTransactions, writeAsynchronously, cacheType, "pos");
   }
 
+  public TripleStore(String tripleStoreDir) {
+    File dir = new File(tripleStoreDir);
+    if (!dir.exists()) {
+      dir.mkdirs();
+    }
+    spo = new RocksDBMultiMap(tripleStoreDir + File.separatorChar + "spo");
+    osp = new RocksDBMultiMap(tripleStoreDir + File.separatorChar + "osp");
+    pos = new RocksDBMultiMap(tripleStoreDir + File.separatorChar + "pos");
+  }
+
   @Override
   public void storeTriple(long subject, long property, long object, byte[] containment) {
     spo.put(createByteArray(subject, property, object, containment));
@@ -112,6 +122,13 @@ public class TripleStore implements de.uni_koblenz.west.koral.slave.triple_store
   @Override
   public String toString() {
     return spo.toString();
+  }
+
+  @Override
+  public void flush() {
+    spo.flush();
+    osp.flush();
+    pos.flush();
   }
 
   @Override

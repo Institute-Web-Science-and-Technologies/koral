@@ -6,6 +6,7 @@ import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorBase;
 import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorType;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
+import de.uni_koblenz.west.koral.slave.triple_store.impl.MappingIteratorWrapper;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -171,6 +172,9 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
   @Override
   protected void closeInternal() {
+    if (iterator instanceof MappingIteratorWrapper) {
+      ((MappingIteratorWrapper) iterator).close();
+    }
   }
 
   @Override

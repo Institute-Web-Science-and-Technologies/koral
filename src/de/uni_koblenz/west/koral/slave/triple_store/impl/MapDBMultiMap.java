@@ -204,6 +204,10 @@ public class MapDBMultiMap implements MultiMap {
   }
 
   @Override
+  public void flush() {
+  }
+
+  @Override
   public void clear() {
     multiMap.clear();
     maxElementLength = 0;

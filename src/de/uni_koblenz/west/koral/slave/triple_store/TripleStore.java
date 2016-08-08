@@ -19,6 +19,8 @@ public interface TripleStore extends Closeable, AutoCloseable {
 
   public Iterable<Mapping> lookup(MappingRecycleCache cache, TriplePattern triplePattern);
 
+  public void flush();
+
   public void clear();
 
   @Override

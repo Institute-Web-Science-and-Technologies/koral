@@ -28,6 +28,8 @@ public interface MultiMap extends Closeable, AutoCloseable, Iterable<byte[]> {
   @Override
   public Iterator<byte[]> iterator();
 
+  public void flush();
+
   public void clear();
 
   @Override

@@ -48,4 +48,10 @@ public class MappingIteratorWrapper implements Iterable<Mapping>, Iterator<Mappi
     return this;
   }
 
+  public void close() {
+    if (iter instanceof RocksIteratorKeyWrapper) {
+      ((RocksIteratorKeyWrapper) iter).close();
+    }
+  }
+
 }

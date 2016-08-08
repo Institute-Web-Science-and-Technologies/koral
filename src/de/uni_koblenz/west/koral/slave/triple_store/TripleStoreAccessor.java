@@ -4,6 +4,7 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
+import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 import de.uni_koblenz.west.koral.common.query.TriplePattern;
@@ -28,10 +29,15 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
 
   public TripleStoreAccessor(Configuration conf, Logger logger) {
     this.logger = logger;
-    tripleStore = new de.uni_koblenz.west.koral.slave.triple_store.impl.TripleStore(
-            conf.getTripleStoreStorageType(), conf.getTripleStoreDir(),
-            conf.useTransactionsForTripleStore(), conf.isTripleStoreAsynchronouslyWritten(),
-            conf.getTripleStoreCacheType());
+    if (conf.getTripleStoreStorageType() == MapDBStorageOptions.MEMORY) {
+      tripleStore = new de.uni_koblenz.west.koral.slave.triple_store.impl.TripleStore(
+              conf.getTripleStoreStorageType(), conf.getTripleStoreDir(),
+              conf.useTransactionsForTripleStore(), conf.isTripleStoreAsynchronouslyWritten(),
+              conf.getTripleStoreCacheType());
+    } else {
+      tripleStore = new de.uni_koblenz.west.koral.slave.triple_store.impl.TripleStore(
+              conf.getTripleStoreDir());
+    }
   }
 
   public void storeTriples(File file) {
@@ -45,6 +51,7 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
           logger.finer("loaded " + alreadyLoadedTriples + " triples");
         }
       }
+      tripleStore.flush();
       if (logger != null) {
         logger.finer("finished loading of " + alreadyLoadedTriples + " triples from file "
                 + file.getAbsolutePath());
