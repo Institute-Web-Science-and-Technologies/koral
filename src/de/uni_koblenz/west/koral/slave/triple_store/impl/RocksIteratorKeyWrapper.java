@@ -33,7 +33,7 @@ public class RocksIteratorKeyWrapper implements Iterable<byte[]>, Iterator<byte[
 
   @Override
   public boolean hasNext() {
-    if (next == null) {
+    if ((next == null) && (iterator != null)) {
       iterator.dispose();
       iterator = null;
     }
