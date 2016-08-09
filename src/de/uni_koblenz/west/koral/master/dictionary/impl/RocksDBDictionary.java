@@ -237,7 +237,14 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
         deleteFile(f);
       }
     }
-    file.delete();
+    int attempts = 0;
+    while (!file.delete() && (attempts < 10)) {
+      attempts++;
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+      }
+    }
   }
 
   @Override
