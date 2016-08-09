@@ -563,8 +563,9 @@ public class GraphLoaderTask extends Thread implements Closeable {
     ftpServer.close();
     if ((state == LoadingState.START) || (state == LoadingState.FINISHED)) {
       cleanWorkingDirs();
-    } else if (state != LoadingState.TRANSMITTING) {
+    } else if (state == LoadingState.INITIAL_ENCODING) {
       dictionary.clear();
+    } else if (state == LoadingState.STATISTIC_COLLECTION) {
       statistics.clear();
     }
     if (measurementCollector != null) {
