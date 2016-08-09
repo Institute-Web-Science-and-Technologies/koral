@@ -48,6 +48,8 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
               statisticsDirFile.getAbsolutePath() + File.separator + "statistics.db");
       boolean doesDatabaseExist = databaseFile.exists();
       dbConnection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath());
+      dbConnection.setAutoCommit(false);
+      dbConnection.commit();
       if (!doesDatabaseExist) {
         Statement statement = dbConnection.createStatement();
         // OS should write it to disk
@@ -70,8 +72,6 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private void initializeDatabase() {
     try {
-      dbConnection.setAutoCommit(false);
-      dbConnection.commit();
       Statement statement = dbConnection.createStatement();
 
       // create table that counts the triples per chunk
