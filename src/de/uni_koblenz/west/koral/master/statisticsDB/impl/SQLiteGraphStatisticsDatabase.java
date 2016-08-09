@@ -32,8 +32,6 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   private PreparedStatement[] insertStatistics;
 
-  private PreparedStatement tripleChunkIncrement;
-
   private int numberOfInsertions;
 
   private final static int MAX_BATCH_SIZE = 1_000_000;
@@ -143,7 +141,7 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
   @Override
   public void incrementNumberOfTriplesPerChunk(int chunk) {
     startTransaction();
-    increment(chunk, tripleChunkIncrement, null);
+    increment(chunk, incrementTupleFrequency, null);
   }
 
   private void increment(long rowIndex, PreparedStatement updateStatement,
