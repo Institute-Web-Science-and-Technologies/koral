@@ -11,7 +11,7 @@ def startMaster(remoteLogger=-1, remoteMeasurementCollector=-1, startStandAlone=
         additionalArgs += " -m " + remoteMeasurementCollector;
     if (startStandAlone != -1):
         additionalArgs += " -o ";
-    run("nohup java -jar koral.jar master" + additionalArgs + " >& /dev/null < /dev/null & echo $! > koralMaster.pid &", pty=False)
+    run("nohup java -jar koral.jar master" + additionalArgs + " >& master.out < /dev/null & echo $! > koralMaster.pid &", pty=False)
 
 @roles('master')
 def stopMaster():
@@ -26,7 +26,7 @@ def startSlave(remoteLogger=-1, remoteMeasurementCollector=-1):
         additionalArgs += " -r " + remoteLogger;
     if (remoteMeasurementCollector != -1):
         additionalArgs += " -m " + remoteMeasurementCollector;
-    run("nohup java -jar koral.jar slave" + additionalArgs + " >& /dev/null < /dev/null & echo $! > koralSlave.pid &", pty=False)
+    run("nohup java -jar koral.jar slave" + additionalArgs + " >& slave.out < /dev/null & echo $! > koralSlave.pid &", pty=False)
 
 @roles('slaves')
 def stopSlave():
