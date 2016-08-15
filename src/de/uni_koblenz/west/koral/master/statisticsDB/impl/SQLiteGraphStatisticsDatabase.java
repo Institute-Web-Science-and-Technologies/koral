@@ -48,8 +48,6 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
               statisticsDirFile.getAbsolutePath() + File.separator + "statistics.db");
       boolean doesDatabaseExist = databaseFile.exists();
       dbConnection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath());
-      dbConnection.setAutoCommit(false);
-      dbConnection.commit();
       if (!doesDatabaseExist) {
         Statement statement = dbConnection.createStatement();
         // OS should write it to disk
@@ -60,7 +58,12 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
         statement.executeUpdate("PRAGMA temp_store = MEMORY");
         statement.close();
 
+        dbConnection.setAutoCommit(false);
+        dbConnection.commit();
         initializeDatabase();
+      } else {
+        dbConnection.setAutoCommit(false);
+        dbConnection.commit();
       }
       isCommitted = true;
       numberOfInsertions = 0;
