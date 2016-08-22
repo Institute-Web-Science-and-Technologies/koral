@@ -418,8 +418,10 @@ public class GraphLoaderTask extends Thread implements Closeable {
     }
 
     if (replicationPathLength != 0) {
-      chunks = encodeGraphChunks(chunks, coverCreator.getRequiredInputEncoding());
-      setState(LoadingState.N_HOP_REPLICATION);
+      if (state == LoadingState.GRAPH_COVER_CREATION) {
+        chunks = encodeGraphChunks(chunks, coverCreator.getRequiredInputEncoding());
+        setState(LoadingState.N_HOP_REPLICATION);
+      }
       NHopReplicator replicator = new NHopReplicator(logger, measurementCollector);
       if ((state == LoadingState.GRAPH_COVER_CREATION)
               || (state == LoadingState.N_HOP_REPLICATION)) {
