@@ -121,7 +121,7 @@ public class Configuration implements Configurable {
     this.clientPort = clientPort;
   }
 
-  public static final long CLIENT_CONNECTION_TIMEOUT = 10000;
+  public static final long CLIENT_CONNECTION_TIMEOUT = Long.MAX_VALUE;// 10000;
 
   public static final long CLIENT_KEEP_ALIVE_INTERVAL = 3000;
 
