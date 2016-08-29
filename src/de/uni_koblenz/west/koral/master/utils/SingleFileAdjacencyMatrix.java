@@ -60,8 +60,9 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
       vertex2lastElementOffsetFolder.mkdirs();
     }
     try {
-      vertex2lastElementOffset = RocksDB.open(vertex2lastElementOffsetFolder.getAbsolutePath()
-              + File.separator + "vertex2lastElementOffset");
+      vertex2lastElementOffset = RocksDB.open(options,
+              vertex2lastElementOffsetFolder.getAbsolutePath() + File.separator
+                      + "vertex2lastElementOffset");
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
