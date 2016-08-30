@@ -97,7 +97,10 @@ public class FTPClient {
           ftpClient.disconnect();
         }
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        if (logger != null) {
+          logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
+                  e);
+        }
       }
     }
   }

@@ -285,14 +285,12 @@ public class GraphLoaderTask extends Thread implements Closeable {
       }
 
       keepAliveThread.interrupt();
-      if (contactSlaves) {
-        setState(LoadingState.FINISHED);
-      }
 
       if (numberOfBusySlaves == 0) {
         clientConnections.send(clientId,
                 new byte[] { MessageType.CLIENT_COMMAND_SUCCEEDED.getValue() });
         if (contactSlaves) {
+          setState(LoadingState.FINISHED);
           cleanWorkingDirs();
         }
       } else {

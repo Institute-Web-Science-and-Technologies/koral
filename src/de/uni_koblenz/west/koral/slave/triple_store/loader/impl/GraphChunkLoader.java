@@ -138,6 +138,11 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
                   System.currentTimeMillis());
         }
       }
+
+      if (!isInterrupted()) {
+        connection.sendFinish(slaveID);
+      }
+      close();
     } catch (RuntimeException e) {
       if (logger != null) {
         logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
@@ -146,11 +151,6 @@ public class GraphChunkLoader extends Thread implements GraphChunkListener {
       connection.sendFailNotification(slaveID, e.getMessage());
       close();
     }
-
-    if (!isInterrupted()) {
-      connection.sendFinish(slaveID);
-    }
-    close();
   }
 
   @Override
