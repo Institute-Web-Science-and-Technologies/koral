@@ -206,7 +206,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
     this.replicationPathLength = replicationPathLength;
     this.numberOfGraphChunks = numberOfGraphChunks;
     if (state == LoadingState.START) {
-      ftpServer.start(externalFtpIpAddress, ftpPort, graphFilesDir);
+      ftpServer.start(externalFtpIpAddress, ftpPort, graphFilesDir, 1);
       clientConnections.send(clientId, MessageUtils.createStringMessage(
               MessageType.MASTER_SEND_FILES, externalFtpIpAddress + ":" + ftpPort, logger));
       if (measurementCollector != null) {
@@ -246,7 +246,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       if (state != LoadingState.FINISHED) {
         setState(LoadingState.TRANSMITTING);
         if (contactSlaves) {
-          ftpServer.start(internalFtpIpAddress, ftpPort, workingDir);
+          ftpServer.start(internalFtpIpAddress, ftpPort, workingDir, numberOfGraphChunks);
           numberOfBusySlaves = 0;
           List<GraphLoaderListener> listeners = new ArrayList<>();
           for (int i = 0; i < encodedFiles.length; i++) {

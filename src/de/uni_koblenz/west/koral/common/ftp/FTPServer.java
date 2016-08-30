@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.koral.common.ftp;
 
+import org.apache.ftpserver.ConnectionConfigFactory;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.FtpServerFactory;
 import org.apache.ftpserver.ftplet.Authority;
@@ -34,12 +35,13 @@ public class FTPServer implements Closeable {
 
   private FtpServer server;
 
-  public void start(String ipAddress, String port, File workingDir) {
-    start(ipAddress, port, workingDir, FTPServer.DEFAULT_USER_NAME, FTPServer.DEFAULT_PASSWORD);
+  public void start(String ipAddress, String port, File workingDir, int maxNumberOfLogins) {
+    start(ipAddress, port, workingDir, FTPServer.DEFAULT_USER_NAME, FTPServer.DEFAULT_PASSWORD,
+            maxNumberOfLogins);
   }
 
   public void start(String ipAddress, String port, File workingDir, String username,
-          String password) {
+          String password, int maxNumberOfLogins) {
     ftpFolder = new File(workingDir.getAbsolutePath() + File.separator + "ftp");
     if (!ftpFolder.exists()) {
       ftpFolder.mkdirs();
@@ -68,10 +70,15 @@ public class FTPServer implements Closeable {
       user.setAuthorities(authorities);
       userManager.save(user);
 
+      ConnectionConfigFactory connectionConfig = new ConnectionConfigFactory();
+      connectionConfig.setMaxLogins(maxNumberOfLogins);
+      connectionConfig.setAnonymousLoginEnabled(false);
+
       // crate and start server
       FtpServerFactory serverFactory = new FtpServerFactory();
       serverFactory.addListener("default", factory.createListener());
       serverFactory.setUserManager(userManager);
+      serverFactory.setConnectionConfig(connectionConfig.createConnectionConfig());
       server = serverFactory.createServer();
       server.start();
     } catch (IOException | FtpException e) {
