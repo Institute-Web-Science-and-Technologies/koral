@@ -71,34 +71,30 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     File metisOutputGraph = null;
     File ignoredTriples = new File(
             workingDir.getAbsolutePath() + File.separator + "ignoredTriples.gz");
-    try {
-      encodedRDFGraph = new File(
-              workingDir.getAbsolutePath() + File.separator + "encodedRDFGraph.gz");
-      File metisInputGraph = new File(workingDir.getAbsolutePath() + File.separator + "metisInput");
+    encodedRDFGraph = new File(
+            workingDir.getAbsolutePath() + File.separator + "encodedRDFGraph.gz");
+    File metisInputGraph = new File(workingDir.getAbsolutePath() + File.separator + "metisInput");
 
-      try {
-        createMetisInputFile(dictionary, input, localDictionary, encodedRDFGraph, metisInputGraph,
-                ignoredTriples, workingDir);
-        metisOutputGraph = runMetis(metisInputGraph, numberOfGraphChunks);
-      } finally {
-        metisInputGraph.delete();
-      }
+    createMetisInputFile(dictionary, input, localDictionary, encodedRDFGraph, metisInputGraph,
+            ignoredTriples, workingDir);
+    metisOutputGraph = runMetis(metisInputGraph, numberOfGraphChunks);
 
-      createGraphCover(encodedRDFGraph, localDictionary, metisOutputGraph, ignoredTriples, outputs,
-              writtenFiles, numberOfGraphChunks, workingDir);
-    } finally {
-      if (encodedRDFGraph != null) {
-        encodedRDFGraph.delete();
-      }
-      if (metisOutputGraph != null) {
-        metisOutputGraph.delete();
-      }
-      if (ignoredTriples.exists()) {
-        ignoredTriples.delete();
-      }
-      localDictionary.close();
-      deleteFolder(dictionaryFolder);
+    createGraphCover(encodedRDFGraph, localDictionary, metisOutputGraph, ignoredTriples, outputs,
+            writtenFiles, numberOfGraphChunks, workingDir);
+
+    // tidy up
+    metisInputGraph.delete();
+    if (encodedRDFGraph != null) {
+      encodedRDFGraph.delete();
     }
+    if (metisOutputGraph != null) {
+      metisOutputGraph.delete();
+    }
+    if (ignoredTriples.exists()) {
+      ignoredTriples.delete();
+    }
+    localDictionary.close();
+    deleteFolder(dictionaryFolder);
   }
 
   private void createMetisInputFile(DictionaryEncoder dictionary, EncodedFileInputStream input,
@@ -197,13 +193,13 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     } finally {
       localDictionary.flush();
       adjacencyMatrix.close();
-      deleteFolder(metisInputTempFolder);
       if (measurementCollector != null) {
         measurementCollector.measureValue(
                 MeasurementType.LOAD_GRAPH_COVER_CREATION_METIS_INPUT_FILE_CREATION_END,
                 System.currentTimeMillis());
       }
     }
+    deleteFolder(metisInputTempFolder);
   }
 
   private File runMetis(File metisInputGraph, int numberOfGraphChunks) {
@@ -358,8 +354,8 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       if (vertex2chunkIndex != null) {
         vertex2chunkIndex.close();
       }
-      deleteFolder(vertex2chunkIndexFolder);
     }
+    deleteFolder(vertex2chunkIndexFolder);
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_END,
               System.currentTimeMillis());
