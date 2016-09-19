@@ -74,6 +74,8 @@ public class NHopReplicator {
                   System.currentTimeMillis());
         }
         for (int i = 0; i < cover.length; i++) {
+          // TODO remove
+          System.out.println("\tadjust containment " + i);
           adjustContainment(i, cover[i], moleculeLists);
         }
         if (measurementCollector != null) {
