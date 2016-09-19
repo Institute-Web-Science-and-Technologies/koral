@@ -146,11 +146,19 @@ public class NHopReplicator {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_STEP_START,
               System.currentTimeMillis(), Integer.toString(hopNumber));
     }
+    Set<Long> tmpSet = database.getHashSet("tempSubjectSet");
+    // TODO remove
+    System.out.println("perform hop step " + hopNumber);
     for (int currentCoverIndex = 0; currentCoverIndex < cover.length; currentCoverIndex++) {
       if (logger != null) {
         logger.info("performing hop " + hopNumber + " for chunk " + currentCoverIndex);
       }
-      replicateTriples(database, cover[currentCoverIndex], moleculeLists);
+      // TODO remove
+      System.out.println("\tchunk " + currentCoverIndex);
+      if (currentCoverIndex != 0) {
+        tmpSet.clear();
+      }
+      replicateTriples(database, cover[currentCoverIndex], moleculeLists, tmpSet);
     }
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_NHOP_REPLICATION_STEP_END,
@@ -158,7 +166,8 @@ public class NHopReplicator {
     }
   }
 
-  private void replicateTriples(DB database, Set<Long> chunk, MoleculeLists moleculeLists) {
+  private void replicateTriples(DB database, Set<Long> chunk, MoleculeLists moleculeLists,
+          Set<Long> tmpSet) {
     if (chunk == null) {
       return;
     }
@@ -167,9 +176,12 @@ public class NHopReplicator {
       while (iterator.hasNext()) {
         byte[][] statement = iterator.next();
         // add object to current chunk
-        chunk.add(NumberConversion.bytes2long(statement[2]));
+        tmpSet.add(NumberConversion.bytes2long(statement[2]));
       }
       iterator.close();
+    }
+    for (Long subject : tmpSet) {
+      chunk.add(subject);
     }
   }
 
