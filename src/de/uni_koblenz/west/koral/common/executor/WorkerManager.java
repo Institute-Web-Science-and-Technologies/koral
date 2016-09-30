@@ -179,7 +179,16 @@ public class WorkerManager implements Closeable, AutoCloseable {
     // now assign current tasks to WorkerThreads
     for (WorkerTask task : workingSet.descendingSet()) {
       int workerWithMinimalWorkload = findMinimal(estimatedWorkLoad);
-      workers[workerWithMinimalWorkload].addWorkerTask(task);
+      try {
+        workers[workerWithMinimalWorkload].addWorkerTask(task);
+      } catch (IllegalThreadStateException e) {
+        if (logger != null) {
+          logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
+                  e);
+        }
+        workers[workerWithMinimalWorkload] = new WorkerThread(workers[workerWithMinimalWorkload]);
+        workers[workerWithMinimalWorkload].addWorkerTask(task);
+      }
       estimatedWorkLoad[workerWithMinimalWorkload] += task.getEstimatedTaskLoad();
     }
   }

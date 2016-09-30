@@ -64,6 +64,31 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
     this.messageSender = messageSender;
   }
 
+  public WorkerThread(WorkerThread workerThread) {
+    logger = workerThread.logger;
+    measurementCollector = workerThread.measurementCollector;
+    id = workerThread.id;
+    setName("WorkerThread " + id);
+    mappingCache = workerThread.mappingCache;
+    messageSender = workerThread.messageSender;
+    receiver = workerThread.receiver;
+    previous = workerThread.previous;
+    if (previous != workerThread) {
+      previous.next = this;
+    } else {
+      previous = this;
+    }
+    next = workerThread.next;
+    if (next != workerThread) {
+      next.previous = this;
+    } else {
+      next = this;
+    }
+    unbalanceThreshold = workerThread.unbalanceThreshold;
+    tasks = workerThread.tasks;
+    currentLoad = workerThread.currentLoad;
+  }
+
   private WorkerThread getPrevious() {
     return previous;
   }
