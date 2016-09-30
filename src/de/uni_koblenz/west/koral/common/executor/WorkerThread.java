@@ -168,7 +168,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
           } else {
             currentLoad += currentLoadOfThisTask;
           }
-        } catch (Exception e) {
+        } catch (Exception | IllegalAccessError e) {
           if (logger != null) {
             logger.throwing(e.getStackTrace()[0].getClassName(),
                     e.getStackTrace()[0].getMethodName(), e);

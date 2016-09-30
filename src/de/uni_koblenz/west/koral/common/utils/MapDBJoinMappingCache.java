@@ -55,7 +55,7 @@ public class MapDBJoinMappingCache implements JoinMappingCache {
           boolean writeAsynchronously, MapDBCacheOptions cacheType, File cacheDirectory,
           MappingRecycleCache recycleCache, String uniqueFileNameSuffix, long[] mappingVariables,
           int[] variableComparisonOrder, int numberOfJoinVars) {
-    assert storageType != MapDBStorageOptions.MEMORY || cacheDirectory != null;
+    assert (storageType != MapDBStorageOptions.MEMORY) || (cacheDirectory != null);
     this.recycleCache = recycleCache;
     variables = mappingVariables;
     joinVarIndices = new int[numberOfJoinVars];
@@ -94,7 +94,7 @@ public class MapDBJoinMappingCache implements JoinMappingCache {
   }
 
   @Override
-  public void add(Mapping mapping) {
+  public synchronized void add(Mapping mapping) {
     if (database.isClosed()) {
       throw new RuntimeException("Adding a mapping not possible because the "
               + MapDBJoinMappingCache.class.getSimpleName() + " is already closed.");
@@ -107,18 +107,18 @@ public class MapDBJoinMappingCache implements JoinMappingCache {
   }
 
   @Override
-  public Iterator<Mapping> getMatchCandidates(Mapping mapping, long[] mappingVars) {
+  public synchronized Iterator<Mapping> getMatchCandidates(Mapping mapping, long[] mappingVars) {
     int headerSize = Mapping.getHeaderSize();
-    byte[] min = new byte[headerSize + variables.length * Long.BYTES
+    byte[] min = new byte[headerSize + (variables.length * Long.BYTES)
             + mapping.getNumberOfContainmentBytes()];
-    byte[] max = new byte[headerSize + variables.length * Long.BYTES
+    byte[] max = new byte[headerSize + (variables.length * Long.BYTES)
             + mapping.getNumberOfContainmentBytes()];
     // set join vars
     for (int varIndex : joinVarIndices) {
       NumberConversion.long2bytes(mapping.getValue(variables[varIndex], mappingVars), min,
-              headerSize + varIndex * Long.BYTES);
+              headerSize + (varIndex * Long.BYTES));
       NumberConversion.long2bytes(mapping.getValue(variables[varIndex], mappingVars), max,
-              headerSize + varIndex * Long.BYTES);
+              headerSize + (varIndex * Long.BYTES));
     }
     // set non join vars
     for (int i = 0; i < min.length; i++) {
@@ -136,7 +136,7 @@ public class MapDBJoinMappingCache implements JoinMappingCache {
   private boolean isFirstIndexOfAJoinVar(int index) {
     int headerSize = Mapping.getHeaderSize();
     for (int varIndex : joinVarIndices) {
-      if (index == headerSize + varIndex * Long.BYTES) {
+      if (index == (headerSize + (varIndex * Long.BYTES))) {
         return true;
       }
     }
@@ -144,12 +144,12 @@ public class MapDBJoinMappingCache implements JoinMappingCache {
   }
 
   @Override
-  public Iterator<Mapping> iterator() {
+  public synchronized Iterator<Mapping> iterator() {
     return new MappingIteratorWrapper(multiMap.iterator(), recycleCache);
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
     if (!database.isClosed()) {
       database.close();
     }
@@ -192,7 +192,7 @@ public class MapDBJoinMappingCache implements JoinMappingCache {
       }
       // compare containment information
       final int len = Math.min(thisMapping.length, otherMapping.length);
-      for (int i = offset + comparisonOrder.length * Long.BYTES; i < len; i++) {
+      for (int i = offset + (comparisonOrder.length * Long.BYTES); i < len; i++) {
         if (thisMapping[i] < otherMapping[i]) {
           return -1;
         }
@@ -205,7 +205,7 @@ public class MapDBJoinMappingCache implements JoinMappingCache {
     }
 
     private long getVar(int varIndex, byte[] mapping) {
-      return NumberConversion.bytes2long(mapping, offset + varIndex * Long.BYTES);
+      return NumberConversion.bytes2long(mapping, offset + (varIndex * Long.BYTES));
     }
 
     private int intCompare(int x, int y) {
