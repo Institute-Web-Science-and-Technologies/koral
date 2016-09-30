@@ -99,11 +99,13 @@ public class MessageReceiverListener implements MessageListener {
               error = e;
             }
             if ((task == null) || (error != null)) {
-              if (logger != null) {
-                long receiver = NumberConversion.bytes2long(message, currentIndex + Byte.BYTES);
-                logger.info("Discarding a mapping from " + sender + " because the receiving task "
-                        + receiver + " is not present.");
-              }
+              // if (logger != null) {
+              // long receiver = NumberConversion.bytes2long(message,
+              // currentIndex + Byte.BYTES);
+              // logger.finest("Discarding a mapping from " + sender + " because
+              // the receiving task "
+              // + receiver + " is not present.");
+              // }
             } else {
               task.enqueueMessage(sender, message, currentIndex, lengthOfMapping);
             }
@@ -123,7 +125,7 @@ public class MessageReceiverListener implements MessageListener {
           if ((task == null) || (error != null)) {
             if (logger != null) {
               long receiver = NumberConversion.bytes2long(message, 3);
-              logger.info("Discarding a " + messageType.name()
+              logger.finest("Discarding a " + messageType.name()
                       + " message because the receiving task " + receiver + " is not present.");
             }
           } else {
