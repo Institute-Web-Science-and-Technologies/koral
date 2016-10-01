@@ -12,6 +12,7 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Logger;
 
 /**
@@ -46,6 +47,8 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
 
   private final ConcurrentLinkedQueue<WorkerTask> tasks;
 
+  private final ConcurrentSkipListSet<WorkerTask> removableTasks;
+
   private long currentLoad;
 
   public WorkerThread(int id, int sizeOfMappingRecycleCache, double unbalanceThreshold,
@@ -62,6 +65,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
     this.unbalanceThreshold = unbalanceThreshold;
     this.receiver = receiver;
     this.messageSender = messageSender;
+    removableTasks = new ConcurrentSkipListSet<>();
   }
 
   public WorkerThread(WorkerThread workerThread) {
@@ -87,6 +91,10 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
     unbalanceThreshold = workerThread.unbalanceThreshold;
     tasks = workerThread.tasks;
     currentLoad = workerThread.currentLoad;
+    removableTasks = workerThread.removableTasks;
+    if (!tasks.isEmpty() && !isAlive()) {
+      start();
+    }
   }
 
   private WorkerThread getPrevious() {
@@ -146,7 +154,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
     while (iterator.hasNext()) {
       WorkerTask task = iterator.next();
       if (queryTasks.contains(task)) {
-        removeTask(iterator, task);
+        removeTask(task);
       }
     }
   }
@@ -158,13 +166,16 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
       Iterator<WorkerTask> iterator = tasks.iterator();
       while (!isInterrupted() && iterator.hasNext()) {
         WorkerTask task = iterator.next();
+        if (removableTasks.contains(task)) {
+          continue;
+        }
         try {
           long currentLoadOfThisTask = task.getCurrentTaskLoad();
           if (task.hasInput() || task.hasToPerformFinalSteps()) {
             task.execute();
           }
           if (task.isInFinalState()) {
-            removeTask(iterator, task);
+            removeTask(task);
           } else {
             currentLoad += currentLoadOfThisTask;
           }
@@ -173,11 +184,15 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
             logger.throwing(e.getStackTrace()[0].getClassName(),
                     e.getStackTrace()[0].getMethodName(), e);
           }
-          removeTask(iterator, task);
+          removeTask(task);
           messageSender.sendQueryTaskFailed(0, task.getCoordinatorID(), "Execution of task " + task
                   + "failed. Cause:\n" + e.getClass().getName() + ": " + e.getMessage());
         }
       }
+      for (WorkerTask task : removableTasks) {
+        tasks.remove(task);
+      }
+      removableTasks.clear();
       this.currentLoad = currentLoad;
       if (isInterrupted()) {
         messageSender.sendAllBufferedMessages(mappingCache);
@@ -192,16 +207,12 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
     }
   }
 
-  /**
-   * <code>task = iterator.next()</code> has to be called in advance!
-   * 
-   * @param iterator
-   * @param task
-   */
-  private void removeTask(Iterator<WorkerTask> iterator, WorkerTask task) {
-    iterator.remove();
-    receiver.unregister(task);
-    task.close();
+  private void removeTask(WorkerTask task) {
+    boolean wasRemoved = removableTasks.add(task);
+    if (wasRemoved) {
+      receiver.unregister(task);
+      task.close();
+    }
   }
 
   private void rebalance() {
@@ -290,7 +301,7 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
       Iterator<WorkerTask> iter = tasks.iterator();
       while (iter.hasNext()) {
         WorkerTask task = iter.next();
-        removeTask(iter, task);
+        removeTask(task);
       }
     }
   }
