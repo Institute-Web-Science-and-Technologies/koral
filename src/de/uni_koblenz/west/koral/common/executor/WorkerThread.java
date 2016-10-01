@@ -189,8 +189,10 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
                   + "failed. Cause:\n" + e.getClass().getName() + ": " + e.getMessage());
         }
       }
-      for (WorkerTask task : removableTasks) {
-        tasks.remove(task);
+      synchronized (removableTasks) {
+        for (WorkerTask task : removableTasks) {
+          tasks.remove(task);
+        }
       }
       removableTasks.clear();
       this.currentLoad = currentLoad;
@@ -208,10 +210,12 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
   }
 
   private void removeTask(WorkerTask task) {
-    boolean wasRemoved = removableTasks.add(task);
-    if (wasRemoved) {
-      receiver.unregister(task);
-      task.close();
+    synchronized (removableTasks) {
+      boolean wasRemoved = removableTasks.add(task);
+      if (wasRemoved) {
+        receiver.unregister(task);
+        task.close();
+      }
     }
   }
 
