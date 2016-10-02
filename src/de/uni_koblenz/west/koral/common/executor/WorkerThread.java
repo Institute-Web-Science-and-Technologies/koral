@@ -6,6 +6,7 @@ import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 
 import java.io.Closeable;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NavigableSet;
@@ -65,7 +66,19 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
     this.unbalanceThreshold = unbalanceThreshold;
     this.receiver = receiver;
     this.messageSender = messageSender;
-    removableTasks = new ConcurrentSkipListSet<>();
+    removableTasks = new ConcurrentSkipListSet<>(new Comparator<WorkerTask>() {
+
+      @Override
+      public int compare(WorkerTask o1, WorkerTask o2) {
+        if (o1 == null) {
+          return -1;
+        } else if (o2 == null) {
+          return 1;
+        } else {
+          return o1.hashCode() - o2.hashCode();
+        }
+      }
+    });
   }
 
   public WorkerThread(WorkerThread workerThread) {
