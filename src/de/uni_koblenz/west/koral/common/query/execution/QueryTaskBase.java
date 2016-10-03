@@ -105,6 +105,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
   @Override
   public void execute() {
+    updateChildrenFinished();
     synchronized (numberOfUnprocessedFinishMessages) {
       int messages = numberOfUnprocessedFinishMessages.get();
       numberOfMissingFinishedMessages -= messages;

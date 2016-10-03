@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
@@ -41,12 +42,15 @@ public abstract class WorkerTaskBase implements WorkerTask {
 
   private WorkerTask[] children;
 
+  private final AtomicBoolean areChildrenFinished;
+
   public WorkerTaskBase(long id, int cacheSize, File cacheDirectory) {
     this.id = id;
     this.cacheSize = cacheSize;
     this.cacheDirectory = new File((cacheDirectory != null ? cacheDirectory
             : new File(System.getProperty("java.io.tmpdir"))).getAbsolutePath() + File.separatorChar
             + "workerTask_" + this.id);
+    areChildrenFinished = new AtomicBoolean(false);
   }
 
   @Override
@@ -188,14 +192,18 @@ public abstract class WorkerTaskBase implements WorkerTask {
   }
 
   protected boolean areAllChildrenFinished() {
+    return areChildrenFinished.get();
+  }
+
+  protected void updateChildrenFinished() {
     if (children != null) {
       for (WorkerTask child : children) {
         if (!child.isInFinalState()) {
-          return false;
+          return;
         }
       }
     }
-    return true;
+    areChildrenFinished.set(true);
   }
 
   @Override
