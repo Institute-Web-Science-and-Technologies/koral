@@ -81,7 +81,14 @@ public class KoralSlave extends KoralSystem {
   public void runOneIteration() {
     byte[] receive = getNetworkManager().receive();
     if (receive != null) {
-      processMessage(receive);
+      try {
+        processMessage(receive);
+      } catch (Exception e) {
+        if (logger != null) {
+          logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
+                  e);
+        }
+      }
       if (!isInterrupted()) {
         try {
           Thread.sleep(100);

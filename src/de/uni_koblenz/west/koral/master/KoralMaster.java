@@ -82,7 +82,14 @@ public class KoralMaster extends KoralSystem {
     byte[] receive = getNetworkManager().receive();
     if (receive != null) {
       messageReceived = true;
-      processMessage(receive);
+      try {
+        processMessage(receive);
+      } catch (Exception e) {
+        if (logger != null) {
+          logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
+                  e);
+        }
+      }
     }
     if (!isInterrupted() && !messageReceived) {
       try {
