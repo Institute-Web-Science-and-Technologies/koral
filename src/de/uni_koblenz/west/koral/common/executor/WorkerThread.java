@@ -206,8 +206,8 @@ public class WorkerThread extends Thread implements Closeable, AutoCloseable {
         for (WorkerTask task : removableTasks) {
           tasks.remove(task);
         }
+        removableTasks.clear();
       }
-      removableTasks.clear();
       this.currentLoad = currentLoad;
       if (isInterrupted()) {
         messageSender.sendAllBufferedMessages(mappingCache);
