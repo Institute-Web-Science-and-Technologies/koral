@@ -99,7 +99,7 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
   public boolean hasToPerformFinalSteps() {
     return (!isSubQueryExecutionTreeFinished() && (state == QueryTaskState.STARTED))
             || ((state == QueryTaskState.WAITING_FOR_OTHERS_TO_FINISH)
-                    && (numberOfMissingFinishedMessages == 0))
+                    && (numberOfMissingFinishedMessages >= 0))
             || super.hasToPerformFinalSteps();
   }
 
