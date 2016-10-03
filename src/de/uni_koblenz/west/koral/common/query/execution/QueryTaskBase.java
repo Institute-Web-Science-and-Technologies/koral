@@ -29,20 +29,20 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
   protected volatile int numberOfMissingFinishedMessages;
 
-  private AtomicInteger numberOfUnprocessedFinishMessages;
+  private final AtomicInteger numberOfUnprocessedFinishMessages;
 
   public QueryTaskBase(short slaveId, int queryId, short taskId, int numberOfSlaves, int cacheSize,
           File cacheDirectory) {
     this((((((long) slaveId) << Integer.SIZE)
             | (queryId & 0x00_00_00_00_ff_ff_ff_ffl)) << Short.SIZE)
             | (taskId & 0x00_00_00_00_00_00_ff_ffl), numberOfSlaves, cacheSize, cacheDirectory);
-    numberOfUnprocessedFinishMessages = new AtomicInteger(0);
   }
 
   public QueryTaskBase(long id, int numberOfSlaves, int cacheSize, File cacheDirectory) {
     super(id, cacheSize, cacheDirectory);
     numberOfMissingFinishedMessages = numberOfSlaves;
     state = QueryTaskState.CREATED;
+    numberOfUnprocessedFinishMessages = new AtomicInteger(0);
   }
 
   @Override
