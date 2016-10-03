@@ -8,6 +8,7 @@ import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -26,13 +27,16 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
   private QueryTaskState state;
 
-  protected int numberOfMissingFinishedMessages;
+  protected volatile int numberOfMissingFinishedMessages;
+
+  private AtomicInteger numberOfUnprocessedFinishMessages;
 
   public QueryTaskBase(short slaveId, int queryId, short taskId, int numberOfSlaves, int cacheSize,
           File cacheDirectory) {
     this((((((long) slaveId) << Integer.SIZE)
             | (queryId & 0x00_00_00_00_ff_ff_ff_ffl)) << Short.SIZE)
             | (taskId & 0x00_00_00_00_00_00_ff_ffl), numberOfSlaves, cacheSize, cacheDirectory);
+    numberOfUnprocessedFinishMessages = new AtomicInteger(0);
   }
 
   public QueryTaskBase(long id, int numberOfSlaves, int cacheSize, File cacheDirectory) {
@@ -72,7 +76,9 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
     MessageType mType = MessageType.valueOf(message[firstIndex]);
     switch (mType) {
       case QUERY_TASK_FINISHED:
-        numberOfMissingFinishedMessages--;
+        synchronized (numberOfUnprocessedFinishMessages) {
+          numberOfUnprocessedFinishMessages.incrementAndGet();
+        }
         handleFinishNotification(sender, message, firstIndex, messageLength);
         break;
       case QUERY_MAPPING_BATCH:
@@ -99,6 +105,11 @@ public abstract class QueryTaskBase extends WorkerTaskBase {
 
   @Override
   public void execute() {
+    synchronized (numberOfUnprocessedFinishMessages) {
+      int messages = numberOfUnprocessedFinishMessages.get();
+      numberOfMissingFinishedMessages -= messages;
+      numberOfUnprocessedFinishMessages.addAndGet(-messages);
+    }
     if (state == QueryTaskState.CREATED) {
       executePreStartStep();
     } else if (state == QueryTaskState.STARTED) {
