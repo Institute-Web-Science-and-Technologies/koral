@@ -23,6 +23,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -58,6 +59,8 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
   private long[] resultVariables;
 
   private int numberOfMissingFinishNotificationsFromSlaves;
+
+  private final AtomicInteger numberOfUnprocessedFinishMessagesFromSlaves;
 
   /**
    * index of first result that is returned
@@ -104,6 +107,7 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
     parser = new SparqlParser(dictionary, statistics, null, computerID, getQueryId(), getID(),
             numberOfSlaves, cacheSize, cacheDir, emittedMappingsPerRound, storageType,
             useTransactions, writeAsynchronously, cacheType, false);
+    numberOfUnprocessedFinishMessagesFromSlaves = new AtomicInteger(0);
   }
 
   public void processQueryRequest(byte[][] arguments) {
@@ -194,7 +198,9 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
   @Override
   protected void handleFinishNotification(long sender, Object object, int firstIndex,
           int messageLength) {
-    numberOfMissingFinishNotificationsFromSlaves--;
+    synchronized (numberOfUnprocessedFinishMessagesFromSlaves) {
+      numberOfUnprocessedFinishMessagesFromSlaves.incrementAndGet();
+    }
   }
 
   @Override
@@ -249,6 +255,11 @@ public class QueryExecutionCoordinator extends QueryTaskBase {
 
   @Override
   protected void executeOperationStep() {
+    synchronized (numberOfUnprocessedFinishMessagesFromSlaves) {
+      int messages = numberOfUnprocessedFinishMessagesFromSlaves.get();
+      numberOfMissingFinishNotificationsFromSlaves -= messages;
+      numberOfUnprocessedFinishMessagesFromSlaves.addAndGet(-messages);
+    }
     long firstSentResultMappingNumber = lastSentResultMappingNumber + 1;
     StringBuilder result = new StringBuilder();
     int numberOfAlreadyEmittedMessages = 0;
