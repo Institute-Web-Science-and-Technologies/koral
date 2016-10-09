@@ -549,30 +549,33 @@ public class GraphLoaderTask extends Thread implements Closeable {
 
   @Override
   public void close() {
-    coverCreator.close();
-    if (isAlive()) {
-      interrupt();
-      clientConnections.send(clientId,
-              MessageUtils.createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
-                      "GraphLoaderTask has been closed before it could finish.", logger));
-      graphIsLoadingOrLoaded = false;
-    } else if (!isStarted) {
-      graphIsLoadingOrLoaded = false;
-    }
-    if ((keepAliveThread != null) && keepAliveThread.isAlive()) {
-      keepAliveThread.interrupt();
-    }
-    ftpServer.close();
-    if ((state == LoadingState.START) || (state == LoadingState.FINISHED)) {
-      cleanWorkingDirs();
-    } else if (state == LoadingState.INITIAL_ENCODING) {
-      dictionary.clear();
-    } else if (state == LoadingState.STATISTIC_COLLECTION) {
-      statistics.clear();
-    }
-    if (measurementCollector != null) {
-      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINISHED,
-              System.currentTimeMillis());
+    try {
+      coverCreator.close();
+      if (isAlive()) {
+        interrupt();
+        clientConnections.send(clientId,
+                MessageUtils.createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
+                        "GraphLoaderTask has been closed before it could finish.", logger));
+        graphIsLoadingOrLoaded = false;
+      } else if (!isStarted) {
+        graphIsLoadingOrLoaded = false;
+      }
+      if ((keepAliveThread != null) && keepAliveThread.isAlive()) {
+        keepAliveThread.interrupt();
+      }
+      ftpServer.close();
+      if ((state == LoadingState.START) || (state == LoadingState.FINISHED)) {
+        cleanWorkingDirs();
+      } else if (state == LoadingState.INITIAL_ENCODING) {
+        dictionary.clear();
+      } else if (state == LoadingState.STATISTIC_COLLECTION) {
+        statistics.clear();
+      }
+    } finally {
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINISHED,
+                System.currentTimeMillis());
+      }
     }
   }
 
