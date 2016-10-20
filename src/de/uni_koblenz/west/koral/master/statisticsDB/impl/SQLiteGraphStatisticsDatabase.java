@@ -226,6 +226,9 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
   @Override
   public long[] getStatisticsForResource(long id) {
+    if (id == 0) {
+      return null;
+    }
     long[] statistics = new long[(numberOfChunks * 3) + 1];
     String query = "SELECT * FROM STATISTICS WHERE RESOURCE_ID == " + id + ";";
     try {

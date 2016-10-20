@@ -134,6 +134,9 @@ public class MemoryMappedFileGraphStatisticsDatabase implements GraphStatisticsD
 
   @Override
   public long[] getStatisticsForResource(long id) {
+    if (id == 0) {
+      return null;
+    }
     adjustPage(id);
     int offset = (int) ((id - minId) * getRowSize());
 

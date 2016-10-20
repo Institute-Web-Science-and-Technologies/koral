@@ -136,6 +136,9 @@ public class GraphStatistics implements Closeable {
       return owner;
     }
     long[] statistics = database.getStatisticsForResource(id);
+    if (statistics == null) {
+      return owner;
+    }
 
     BitSet ownerCandidates = new BitSet(numberOfChunks);
     ownerCandidates.set(0, numberOfChunks, true);

@@ -132,6 +132,9 @@ public class SingleFileGraphStatisticsDatabase implements GraphStatisticsDatabas
 
   @Override
   public long[] getStatisticsForResource(long id) {
+    if (id == 0) {
+      return null;
+    }
     try {
       int sizeOfRow = (Long.BYTES * numberOfChunks * 3) + Long.BYTES;
       long sizeOfTriplesPerChunk = Long.BYTES * numberOfChunks;
