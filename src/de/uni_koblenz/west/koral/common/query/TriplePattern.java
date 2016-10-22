@@ -1,3 +1,21 @@
+/*
+ * This file is part of Koral.
+ *
+ * Koral is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Koral is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Leser General Public License
+ * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2016 Daniel Janke
+ */
 package de.uni_koblenz.west.koral.common.query;
 
 /**
@@ -28,8 +46,8 @@ public class TriplePattern {
   }
 
   public boolean isSubjectVariable() {
-    return type == TriplePatternType.___ || type == TriplePatternType.__O
-            || type == TriplePatternType._P_ || type == TriplePatternType._PO;
+    return (type == TriplePatternType.___) || (type == TriplePatternType.__O)
+            || (type == TriplePatternType._P_) || (type == TriplePatternType._PO);
   }
 
   public long getSubject() {
@@ -37,8 +55,8 @@ public class TriplePattern {
   }
 
   public boolean isPropertyVariable() {
-    return type == TriplePatternType.___ || type == TriplePatternType.S__
-            || type == TriplePatternType.__O || type == TriplePatternType.S_O;
+    return (type == TriplePatternType.___) || (type == TriplePatternType.S__)
+            || (type == TriplePatternType.__O) || (type == TriplePatternType.S_O);
   }
 
   public long getProperty() {
@@ -46,8 +64,8 @@ public class TriplePattern {
   }
 
   public boolean isObjectVariable() {
-    return type == TriplePatternType.___ || type == TriplePatternType.S__
-            || type == TriplePatternType._P_ || type == TriplePatternType.SP_;
+    return (type == TriplePatternType.___) || (type == TriplePatternType.S__)
+            || (type == TriplePatternType._P_) || (type == TriplePatternType.SP_);
   }
 
   public long getObject() {

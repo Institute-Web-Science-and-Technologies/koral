@@ -1,3 +1,21 @@
+/*
+ * This file is part of Koral.
+ *
+ * Koral is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Koral is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Leser General Public License
+ * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2016 Daniel Janke
+ */
 package de.uni_koblenz.west.koral.common.utils;
 
 import de.uni_koblenz.west.koral.common.query.Mapping;
@@ -58,7 +76,7 @@ public interface JoinMappingCache extends Closeable, Iterable<Mapping> {
       }
       // compare containment information
       final int len = Math.min(thisMapping.length, otherMapping.length);
-      for (int i = offset + comparisonOrder.length * Long.BYTES; i < len; i++) {
+      for (int i = offset + (comparisonOrder.length * Long.BYTES); i < len; i++) {
         if (thisMapping[i] < otherMapping[i]) {
           return -1;
         }
@@ -71,7 +89,7 @@ public interface JoinMappingCache extends Closeable, Iterable<Mapping> {
     }
 
     private long getVar(int varIndex, byte[] mapping) {
-      return NumberConversion.bytes2long(mapping, offset + varIndex * Long.BYTES);
+      return NumberConversion.bytes2long(mapping, offset + (varIndex * Long.BYTES));
     }
 
     private int intCompare(int x, int y) {

@@ -1,3 +1,21 @@
+/*
+ * This file is part of Koral.
+ *
+ * Koral is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Koral is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Leser General Public License
+ * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2016 Daniel Janke
+ */
 package de.uni_koblenz.west.koral.common.logger;
 
 import org.zeromq.ZContext;
@@ -31,7 +49,7 @@ public class JeromqStreamHandler extends Handler {
   public JeromqStreamHandler(Configuration conf, String[] currentServer, String receiver) {
     super();
     if (!receiver.contains(":")) {
-      receiver += ":" + DEFAULT_PORT;
+      receiver += ":" + JeromqStreamHandler.DEFAULT_PORT;
     }
     context = NetworkContextFactory.getNetworkContext();
     socket = context.createSocket(ZMQ.PUSH);
@@ -57,7 +75,7 @@ public class JeromqStreamHandler extends Handler {
   }
 
   private void send(String message) {
-    if (message != null && !message.isEmpty()) {
+    if ((message != null) && !message.isEmpty()) {
       synchronized (socket) {
         socket.send(message);
       }

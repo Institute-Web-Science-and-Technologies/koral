@@ -1,3 +1,21 @@
+/*
+ * This file is part of Koral.
+ *
+ * Koral is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Koral is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Leser General Public License
+ * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2016 Daniel Janke
+ */
 package playground;
 
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
@@ -25,7 +43,7 @@ public class JoinCacheTest {
     for (long s = 0; s < 10; s++) {
       for (long p = 0; p < 10; p++) {
         for (long o = 0; o < 10; o++) {
-          byte[] triple = new byte[Long.BYTES * 3 + 1];
+          byte[] triple = new byte[(Long.BYTES * 3) + 1];
           NumberConversion.long2bytes(s, triple, 0 * Long.BYTES);
           NumberConversion.long2bytes(p, triple, 1 * Long.BYTES);
           NumberConversion.long2bytes(o, triple, 2 * Long.BYTES);
@@ -36,7 +54,7 @@ public class JoinCacheTest {
       }
     }
 
-    byte[] triple = new byte[Long.BYTES * 3 + 1];
+    byte[] triple = new byte[(Long.BYTES * 3) + 1];
     NumberConversion.long2bytes(0, triple, 0 * Long.BYTES);
     NumberConversion.long2bytes(5, triple, 1 * Long.BYTES);
     NumberConversion.long2bytes(1, triple, 2 * Long.BYTES);

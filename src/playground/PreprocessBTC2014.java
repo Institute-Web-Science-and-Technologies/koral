@@ -1,3 +1,21 @@
+/*
+ * This file is part of Koral.
+ *
+ * Koral is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Koral is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Leser General Public License
+ * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2016 Daniel Janke
+ */
 package playground;
 
 import org.apache.jena.graph.Graph;
@@ -46,14 +64,14 @@ public class PreprocessBTC2014 {
       inputDir.mkdirs();
     }
     if (inputDir.listFiles().length == 0) {
-      downloadDataset(inputDir);
+      PreprocessBTC2014.downloadDataset(inputDir);
     }
 
     File outputDir = new File(args[1]);
     if (!outputDir.exists()) {
       outputDir.mkdirs();
     }
-    preprocessFiles(inputDir, outputDir);
+    PreprocessBTC2014.preprocessFiles(inputDir, outputDir);
   }
 
   private static void preprocessFiles(File inputDir, File outputDir) {
@@ -66,10 +84,10 @@ public class PreprocessBTC2014 {
               "The input directory " + inputDir.getAbsolutePath() + " does not exist.");
     }
     if (inputDir.isFile()) {
-      preprocessFile(inputDir, outputDir, conf, graph);
+      PreprocessBTC2014.preprocessFile(inputDir, outputDir, conf, graph);
     } else {
       for (File inputFile : inputDir.listFiles(new GraphFileFilter())) {
-        preprocessFile(inputFile, outputDir, conf, graph);
+        PreprocessBTC2014.preprocessFile(inputFile, outputDir, conf, graph);
       }
     }
   }
@@ -112,13 +130,14 @@ public class PreprocessBTC2014 {
 
   private static void downloadDataset(File inputDir) {
     try (LineNumberReader urlInput = new LineNumberReader(new BufferedReader(new InputStreamReader(
-            getInputStream("http://km.aifb.kit.edu/projects/btc-2014/000-CONTENTS"),
+            PreprocessBTC2014
+                    .getInputStream("http://km.aifb.kit.edu/projects/btc-2014/000-CONTENTS"),
             Charset.forName("UTF-8"))))) {
       for (String line = urlInput.readLine(); line != null; line = urlInput.readLine()) {
         if (!line.contains("/data.nq")) {
           continue;
         }
-        downloadFile(getOutputFile(inputDir, line), line);
+        PreprocessBTC2014.downloadFile(PreprocessBTC2014.getOutputFile(inputDir, line), line);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -126,7 +145,8 @@ public class PreprocessBTC2014 {
   }
 
   private static void downloadFile(File outputFile, String urlOfFile) throws IOException {
-    try (BufferedInputStream input = new BufferedInputStream(getInputStream(urlOfFile));
+    try (BufferedInputStream input = new BufferedInputStream(
+            PreprocessBTC2014.getInputStream(urlOfFile));
             BufferedOutputStream output = new BufferedOutputStream(
                     new FileOutputStream(outputFile))) {
       byte[] buffer = new byte[4096];
@@ -142,7 +162,7 @@ public class PreprocessBTC2014 {
     StringBuilder outputFileName = new StringBuilder();
     outputFileName.append(inputDir.getAbsolutePath()).append(File.separator);
     outputFileName.append(pathHierarchy[pathHierarchy.length - 2]).append(filenameParts[0]);
-    for (int i = 2; i < filenameParts.length - 1; i++) {
+    for (int i = 2; i < (filenameParts.length - 1); i++) {
       outputFileName.append("-").append(filenameParts[i]);
     }
     outputFileName.append(".").append(filenameParts[1]).append(".")
@@ -155,10 +175,11 @@ public class PreprocessBTC2014 {
     connection.setInstanceFollowRedirects(true);
     int status = connection.getResponseCode();
     if (status != HttpURLConnection.HTTP_OK) {
-      if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM
-              || status == HttpURLConnection.HTTP_SEE_OTHER) {
+      if ((status == HttpURLConnection.HTTP_MOVED_TEMP)
+              || (status == HttpURLConnection.HTTP_MOVED_PERM)
+              || (status == HttpURLConnection.HTTP_SEE_OTHER)) {
         // Process redirects
-        return getInputStream(connection.getHeaderField("Location"));
+        return PreprocessBTC2014.getInputStream(connection.getHeaderField("Location"));
       }
     }
     return connection.getInputStream();
