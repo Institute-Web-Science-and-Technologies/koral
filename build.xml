@@ -5,6 +5,7 @@
 	<property name="class.dir" value="${build.dir}/classes" />
 	<property name="jar.dir" value="${build.dir}" />
 	<property name="lib.dir" value="lib" />
+	<property name="licence.dir" value="licence" />
 	<property name="project_name" value="koral" />
 	<property name="mainclass" value="de.uni_koblenz.west.koral.Koral" />
 
@@ -187,6 +188,7 @@
 			<manifest>
 				<attribute name="Main-Class" value="${mainclass}" />
 			</manifest>
+			<fileset dir="${licence.dir}"> <include name="**/*" /> </fileset>
 			<!--<fileset dir="${build.dir}"> <include name="**/*.class" /> </fileset> -->
 		</jar>
 	</target>
