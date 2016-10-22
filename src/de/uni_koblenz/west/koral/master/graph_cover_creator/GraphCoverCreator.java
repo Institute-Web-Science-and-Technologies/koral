@@ -46,8 +46,18 @@ public interface GraphCoverCreator {
   public File[] createGraphCover(DictionaryEncoder dictionary, File rdfFile, File workingDir,
           int numberOfGraphChunks);
 
+  /**
+   * @param workingDir
+   * @param numberOfGraphChunks
+   * @return the set of files containing the graph chunks
+   */
   public File[] getGraphChunkFiles(File workingDir, int numberOfGraphChunks);
 
+  /**
+   * 
+   * @return defines which parts of the triple can be dictionary encoded and
+   *         which ones should be preserved unencoded.
+   */
   public EncodingFileFormat getRequiredInputEncoding();
 
   public void close();
