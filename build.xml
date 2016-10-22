@@ -5,7 +5,7 @@
 	<property name="class.dir" value="${build.dir}/classes" />
 	<property name="jar.dir" value="${build.dir}" />
 	<property name="lib.dir" value="lib" />
-	<property name="licence.dir" value="licence" />
+	<property name="licence.dir" value="license" />
 	<property name="project_name" value="koral" />
 	<property name="mainclass" value="de.uni_koblenz.west.koral.Koral" />
 
