@@ -39,7 +39,8 @@ def installAnt():
 def cloneKoral():
     if exists("koral", use_sudo=True):
         sudo("rm -r koral")
-    run("git clone server.djanke-diss:/git/koral.git")
+    #run("git clone server.djanke-diss:/git/koral.git")
+    run("git clone https://github.com/Institute-Web-Science-and-Technologies/koral.git")
 
 def resolveDependencies():
     resolveCLI()

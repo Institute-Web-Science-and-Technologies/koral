@@ -3,6 +3,10 @@ import updateKoral
 import manageKoral
 from fabric.api import *
 
+@roles('master','slaves')
+def test():
+    run("echo \"" + env.host + ": It works\"")
+
 def install():
     execute(installKoral.installMaster)
     execute(installKoral.installSlave)
