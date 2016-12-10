@@ -425,6 +425,12 @@ public enum MeasurementType {
 
   /**
    * measured on master<br>
+   * queryId;(receiverSlave;numberOfMappings;)+
+   */
+  SLAVE_SENT_MAPPING_BATCHES_TO_SLAVE,
+
+  /**
+   * measured on master<br>
    * queryId;taskId;numberOfFinishNotifications
    */
   QUERY_OPERATION_SENT_FINISH_NOTIFICATIONS_TO_OTHER_SLAVES,

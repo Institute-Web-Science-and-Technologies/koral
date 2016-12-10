@@ -18,6 +18,8 @@
  */
 package de.uni_koblenz.west.koral.common.executor.messagePassing;
 
+import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.messages.MessageType;
 import de.uni_koblenz.west.koral.common.query.Mapping;
 import de.uni_koblenz.west.koral.common.query.MappingRecycleCache;
@@ -60,6 +62,10 @@ public class MessageSenderBuffer {
 
   private final Logger logger;
 
+  private final MeasurementCollector measurementCollector;
+
+  private final long[] sentMessages;
+
   private final MessageSender messageSender;
 
   private final MessageReceiverListener localMessageReceiver;
@@ -71,13 +77,16 @@ public class MessageSenderBuffer {
   private final int numberOfSlaves;
 
   public MessageSenderBuffer(int numberOfSlaves, int bundleSize, MessageSender messageSender,
-          MessageReceiverListener localMessageReceiver, Logger logger) {
+          MessageReceiverListener localMessageReceiver, Logger logger,
+          MeasurementCollector measurementCollector) {
     this.logger = logger;
     this.messageSender = messageSender;
     this.localMessageReceiver = localMessageReceiver;
     mappingBuffer = new Mapping[numberOfSlaves + 1][bundleSize];
     nextIndex = new int[numberOfSlaves + 1];
     this.numberOfSlaves = numberOfSlaves;
+    this.measurementCollector = measurementCollector;
+    sentMessages = new long[numberOfSlaves];
   }
 
   public int getNumberOfSlaves() {
@@ -177,7 +186,20 @@ public class MessageSenderBuffer {
               .putShort((short) messageSender.getCurrentID()).putLong(coordinatorID)
               .putLong(finishedTaskID);
       messageSender.send(getComputerID(coordinatorID), message.array());
+      if (measurementCollector != null) {
+        measureSentMessages((int) (finishedTaskID >>> Short.SIZE));
+      }
     }
+  }
+
+  private void measureSentMessages(int queryID) {
+    String[] values = new String[1 + (sentMessages.length * 2)];
+    values[0] = Integer.toString(queryID);
+    for (int i = 0; i < sentMessages.length; i++) {
+      values[i + 1] = Integer.toString(i);
+      values[i + 2] = Long.toString(sentMessages[i]);
+    }
+    measurementCollector.measureValue(MeasurementType.SLAVE_SENT_MAPPING_BATCHES_TO_SLAVE, values);
   }
 
   private int getComputerID(long taskID) {
@@ -218,6 +240,9 @@ public class MessageSenderBuffer {
     // send message
     if (buffer != null) {
       messageSender.send(receivingComputer, buffer.array());
+      if (measurementCollector != null) {
+        sentMessages[receivingComputer] += 1;
+      }
     }
   }
 
@@ -265,6 +290,9 @@ public class MessageSenderBuffer {
     ByteBuffer message = ByteBuffer.allocate(Byte.BYTES + Integer.BYTES);
     message.put(MessageType.QUERY_ABORTION.getValue()).putInt(queryID);
     messageSender.sendToAllSlaves(message.array());
+    if (measurementCollector != null) {
+      measureSentMessages(queryID);
+    }
   }
 
   public void clear() {
@@ -275,10 +303,20 @@ public class MessageSenderBuffer {
         nextIndex[i] = 0;
       }
     }
+    if (measurementCollector != null) {
+      for (int i = 0; i < sentMessages.length; i++) {
+        sentMessages[i] = 0;
+      }
+    }
   }
 
   public void close(MappingRecycleCache mappingCache) {
     sendAllBufferedMessages(mappingCache);
+    if (measurementCollector != null) {
+      for (int i = 0; i < sentMessages.length; i++) {
+        sentMessages[i] = 0;
+      }
+    }
   }
 
 }

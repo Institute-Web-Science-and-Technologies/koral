@@ -93,7 +93,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
     messageNotifier = notifier;
     messageReceiver = new MessageReceiverListener(logger);
     this.messageSender = new MessageSenderBuffer(conf.getNumberOfSlaves(),
-            conf.getMappingBundleSize(), messageSender, messageReceiver, logger);
+            conf.getMappingBundleSize(), messageSender, messageReceiver, logger,
+            measurementCollector);
     messageNotifier.registerMessageListener(messageReceiver.getClass(), messageReceiver);
     numberOfSlaves = conf.getNumberOfSlaves();
     this.tripleStore = tripleStore;
