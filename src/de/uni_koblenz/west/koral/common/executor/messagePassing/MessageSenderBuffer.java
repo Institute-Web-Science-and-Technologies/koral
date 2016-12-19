@@ -86,7 +86,7 @@ public class MessageSenderBuffer {
     nextIndex = new int[numberOfSlaves + 1];
     this.numberOfSlaves = numberOfSlaves;
     this.measurementCollector = measurementCollector;
-    sentMessages = new long[numberOfSlaves];
+    sentMessages = new long[numberOfSlaves + 1];
   }
 
   public int getNumberOfSlaves() {
@@ -195,9 +195,9 @@ public class MessageSenderBuffer {
   private void measureSentMessages(int queryID) {
     String[] values = new String[1 + (sentMessages.length * 2)];
     values[0] = Integer.toString(queryID);
-    for (int i = 0; i < sentMessages.length; i++) {
-      values[i + 1] = Integer.toString(i);
-      values[i + 2] = Long.toString(sentMessages[i]);
+    for (int i = 1; i < sentMessages.length; i++) {
+      values[i] = Integer.toString(i);
+      values[i + 1] = Long.toString(sentMessages[i]);
     }
     measurementCollector.measureValue(MeasurementType.SLAVE_SENT_MAPPING_BATCHES_TO_SLAVE, values);
   }
