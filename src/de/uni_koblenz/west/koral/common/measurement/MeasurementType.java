@@ -442,6 +442,12 @@ public enum MeasurementType {
   QUERY_OPERATION_JOIN_NUMBER_OF_COMPARISONS,
 
   /**
+   * measured on slavesr<br>
+   * timestamp;queryId;taskId
+   */
+  QUERY_OPERATION_LOCAL_FINISH,
+
+  /**
    * measured on master<br>
    * timestamp;queryId;taskId;idleTime;processingTime;
    * numberOfMappingsEmmittedToMaster;numberOfMappingsEmmittedToSlaves+

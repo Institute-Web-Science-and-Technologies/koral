@@ -185,6 +185,11 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
   protected void executeFinalStep() {
     messageSender.sendQueryTaskFinished(getID(), getParentTask() == null, getCoordinatorID(),
             recycleCache);
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_LOCAL_FINISH,
+              System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
+              Long.toString(getID() & 0xff_ffL));
+    }
   }
 
   @Override
