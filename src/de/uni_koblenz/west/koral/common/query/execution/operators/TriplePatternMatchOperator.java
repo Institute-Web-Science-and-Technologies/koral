@@ -197,14 +197,12 @@ public class TriplePatternMatchOperator extends QueryOperatorBase {
 
   @Override
   protected void executeOperationStep() {
+    startWorkTime();
     if ((getEstimatedTaskLoad() == 0) || (tripleStore == null)) {
       return;
     }
     if (iterator == null) {
-      startWorkTime();
       iterator = tripleStore.lookup(recycleCache, pattern).iterator();
-    } else {
-      startWorkTime();
     }
     for (int i = 0; (i < getEmittedMappingsPerRound()) && iterator.hasNext(); i++) {
       Mapping mapping = iterator.next();

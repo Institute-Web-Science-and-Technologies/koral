@@ -131,8 +131,9 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
 
   @Override
   public void start() {
-    super.start();
+    startTimeMeasurement();
     startIdleTime();
+    super.start();
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_START,
               System.currentTimeMillis(), Integer.toString((int) (getID() >>> Short.SIZE)),
