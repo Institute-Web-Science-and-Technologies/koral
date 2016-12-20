@@ -386,6 +386,9 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
       values[values.length - 1] = Integer.toString(getResultVariables().length);
       measurementCollector.measureValue(MeasurementType.QUERY_OPERATION_SENT_MAPPINGS_TO_SLAVE,
               values);
+      if (parent == null) {
+        messageSender.measureSentMessages((int) (getID() >>> Short.SIZE));
+      }
     }
   }
 

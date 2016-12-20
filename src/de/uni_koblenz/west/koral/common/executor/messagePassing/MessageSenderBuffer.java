@@ -186,20 +186,19 @@ public class MessageSenderBuffer {
               .putShort((short) messageSender.getCurrentID()).putLong(coordinatorID)
               .putLong(finishedTaskID);
       messageSender.send(getComputerID(coordinatorID), message.array());
-      if (measurementCollector != null) {
-        measureSentMessages((int) (finishedTaskID >>> Short.SIZE));
-      }
     }
   }
 
-  private void measureSentMessages(int queryID) {
-    String[] values = new String[1 + (sentMessages.length * 2)];
-    values[0] = Integer.toString(queryID);
-    for (int i = 1; i < sentMessages.length; i++) {
-      values[i] = Integer.toString(i);
-      values[i + 1] = Long.toString(sentMessages[i]);
+  public void measureSentMessages(int queryID) {
+    if (measurementCollector != null) {
+      String[] values = new String[1 + (sentMessages.length * 2)];
+      values[0] = Integer.toString(queryID);
+      for (int i = 1; i < sentMessages.length; i++) {
+        values[i] = Long.toString(sentMessages[i]);
+      }
+      measurementCollector.measureValue(MeasurementType.SLAVE_SENT_MAPPING_BATCHES_TO_SLAVE,
+              values);
     }
-    measurementCollector.measureValue(MeasurementType.SLAVE_SENT_MAPPING_BATCHES_TO_SLAVE, values);
   }
 
   private int getComputerID(long taskID) {
@@ -290,9 +289,6 @@ public class MessageSenderBuffer {
     ByteBuffer message = ByteBuffer.allocate(Byte.BYTES + Integer.BYTES);
     message.put(MessageType.QUERY_ABORTION.getValue()).putInt(queryID);
     messageSender.sendToAllSlaves(message.array());
-    if (measurementCollector != null) {
-      measureSentMessages(queryID);
-    }
   }
 
   public void clear() {
