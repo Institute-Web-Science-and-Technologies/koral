@@ -86,7 +86,7 @@ public class MessageSenderBuffer {
     nextIndex = new int[numberOfSlaves + 1];
     this.numberOfSlaves = numberOfSlaves;
     this.measurementCollector = measurementCollector;
-    sentMessages = new long[numberOfSlaves + 1];
+    sentMessages = new long[numberOfSlaves];
   }
 
   public int getNumberOfSlaves() {
