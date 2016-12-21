@@ -195,6 +195,7 @@ public class MessageSenderBuffer {
       values[0] = Integer.toString(queryID);
       for (int i = 1; i < sentMessages.length; i++) {
         values[i] = Long.toString(sentMessages[i]);
+        sentMessages[i] = 0;
       }
       measurementCollector.measureValue(MeasurementType.SLAVE_SENT_MAPPING_BATCHES_TO_SLAVE,
               values);
