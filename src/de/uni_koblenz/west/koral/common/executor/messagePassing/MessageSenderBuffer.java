@@ -191,7 +191,7 @@ public class MessageSenderBuffer {
 
   public void measureSentMessages(int queryID) {
     if (measurementCollector != null) {
-      String[] values = new String[1 + (sentMessages.length * 2)];
+      String[] values = new String[1 + sentMessages.length];
       values[0] = Integer.toString(queryID);
       for (int i = 1; i < sentMessages.length; i++) {
         values[i] = Long.toString(sentMessages[i]);
