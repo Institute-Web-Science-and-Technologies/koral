@@ -22,6 +22,7 @@ import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HierarchicalCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.VerticalCoverCreator;
 
 import java.util.logging.Logger;
 
@@ -43,6 +44,8 @@ public class GraphCoverCreatorFactory {
         return new HierarchicalCoverCreator(logger, measurementCollector);
       case MIN_EDGE_CUT:
         return new MinimalEdgeCutCover(logger, measurementCollector);
+      case VERTICAL:
+        return new VerticalCoverCreator(logger, measurementCollector);
       default:
         return null;
 
