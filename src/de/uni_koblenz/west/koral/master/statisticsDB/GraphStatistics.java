@@ -148,7 +148,7 @@ public class GraphStatistics implements Closeable {
     return newID;
   }
 
-  public short getOwner(long id) {
+  private short getOwner(long id) {
     short owner = (short) (id >>> 48);
     if (owner != 0) {
       return owner;
