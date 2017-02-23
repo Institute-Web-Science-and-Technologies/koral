@@ -31,7 +31,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Random;
 import java.util.logging.Logger;
 
 /**
@@ -182,8 +181,7 @@ public class GraphStatistics implements Closeable {
       return (short) ownerCandidates.nextSetBit(0);
     }
 
-    // pick a random owner
-    pickRandom(statistics, 0, ownerCandidates);
+    // select first compute node
     return (short) ownerCandidates.nextSetBit(0);
   }
 
@@ -198,19 +196,6 @@ public class GraphStatistics implements Closeable {
         ownerCandidates.set(0, currentPos, false);
       }
       currentPos = ownerCandidates.nextSetBit(currentPos + 1);
-    }
-  }
-
-  private void pickRandom(long[] statistics, int offset, BitSet ownerCandidates) {
-    Random rand = new Random(System.currentTimeMillis());
-    while (ownerCandidates.cardinality() > 1) {
-      if (rand.nextBoolean()) {
-        // the first candidate is chosen
-        break;
-      }
-      // eliminate candidate
-      int currentPos = ownerCandidates.nextSetBit(0);
-      ownerCandidates.clear(currentPos);
     }
   }
 
