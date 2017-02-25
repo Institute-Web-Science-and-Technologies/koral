@@ -255,7 +255,8 @@ public class RDFFileIterator
   }
 
   private void createIterator(String baseIRI, TypedInputStream in) {
-    iterator = new PipedRDFIterator<>();
+    iterator = new PipedRDFIterator<>(PipedRDFIterator.DEFAULT_BUFFER_SIZE, false,
+            PipedRDFIterator.DEFAULT_POLL_TIMEOUT * 100, PipedRDFIterator.DEFAULT_MAX_POLLS * 100);
     Lang lang = RDFLanguages.filenameToLang(rdfFiles[currentFile].getName());
     isQuad = RDFLanguages.isQuads(lang);
     @SuppressWarnings("unchecked")
