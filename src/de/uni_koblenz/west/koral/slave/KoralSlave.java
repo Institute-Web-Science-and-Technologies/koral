@@ -206,6 +206,9 @@ public class KoralSlave extends KoralSystem {
     Options options = KoralSystem.createCommandLineOptions();
     try {
       CommandLine line = KoralSystem.parseCommandLineArgs(options, args);
+      if (line == null) {
+        return;
+      }
       Configuration conf = KoralSystem.initializeConfiguration(options, line, className,
               additionalArgs);
 

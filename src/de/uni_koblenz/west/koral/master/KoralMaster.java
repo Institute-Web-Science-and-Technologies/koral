@@ -193,6 +193,9 @@ public class KoralMaster extends KoralSystem {
     Options options = KoralMaster.createCommandLineOptions();
     try {
       CommandLine line = KoralSystem.parseCommandLineArgs(options, args);
+      if (line == null) {
+        return;
+      }
       Configuration conf = KoralSystem.initializeConfiguration(options, line, className,
               additionalArgs);
 
