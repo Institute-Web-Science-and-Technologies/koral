@@ -28,7 +28,7 @@
 	<classpathentry kind="lib" path="lib/commons-net-3.4.jar" sourcepath="lib/commons-net-3.4-sources.jar"/>
 	<classpathentry kind="lib" path="lib/core-4.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/snappy-java-1.0.3.jar"/>
-	<classpathentry kind="lib" path="lib/rocksdbjni-4.5.1.jar" sourcepath="lib/rocksdbjni-4.5.1-sources.jar"/>
+	<classpathentry kind="lib" path="lib/rocksdbjni-4.13.5.jar"/>
 	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.8.11.2.jar" sourcepath="lib/sqlite-jdbc-3.8.11.2-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
