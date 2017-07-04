@@ -17,7 +17,7 @@
 	<classpathentry kind="lib" path="lib/xml-apis-1.4.01.jar"/>
 	<classpathentry kind="lib" path="lib/jena-iri-3.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-nop-1.7.25.jar"/>
-	<classpathentry kind="lib" path="lib/mapdb-3.0.4.jar"/>
+	<classpathentry kind="lib" path="lib/mapdb-1.0.9.jar"/>
 	<classpathentry kind="lib" path="lib/ftplet-api-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/ftpserver-core-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/mina-core-2.0.16.jar"/>

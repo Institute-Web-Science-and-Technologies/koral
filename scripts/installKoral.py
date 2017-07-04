@@ -89,8 +89,8 @@ def resolveJena():
     run("rm -r slf4j-1.7.25")
 
 def resolveMapDB():
-    run("wget http://central.maven.org/maven2/org/mapdb/mapdb/3.0.4/mapdb-3.0.4.jar")
-    run("mv mapdb-3.0.4.jar koral/lib/mapdb-3.0.4.jar")
+    run("wget http://central.maven.org/maven2/org/mapdb/mapdb/1.0.9/mapdb-1.0.9.jar")
+    run("mv mapdb-1.0.9.jar koral/lib/mapdb-1.0.9.jar")
 
 def resolveFtpServer():
     run("wget http://archive.apache.org/dist/mina/ftpserver/1.1.1/ftpserver-1.1.1.zip")
