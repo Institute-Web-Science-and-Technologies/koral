@@ -52,7 +52,7 @@ public class RocksIteratorKeyWrapper implements Iterable<byte[]>, Iterator<byte[
   @Override
   public synchronized boolean hasNext() {
     if ((next == null) && (iterator != null)) {
-      iterator.dispose();
+      iterator.close();
       iterator = null;
     }
     return next != null;
@@ -101,7 +101,7 @@ public class RocksIteratorKeyWrapper implements Iterable<byte[]>, Iterator<byte[
 
   public synchronized void close() {
     if (iterator != null) {
-      iterator.dispose();
+      iterator.close();
       iterator = null;
     }
   }

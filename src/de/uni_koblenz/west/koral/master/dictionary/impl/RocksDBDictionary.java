@@ -96,7 +96,7 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
     Options options = new Options();
     options.setCreateIfMissing(true);
     options.setMaxOpenFiles(maxOpenFiles);
-    options.setAllowOsBuffer(true);
+    //options.setAllowOsBuffer(true); TODO has been removed
     options.setWriteBufferSize(64 * 1024 * 1024);
     return options;
   }

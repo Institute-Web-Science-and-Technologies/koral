@@ -19,22 +19,20 @@
 package de.uni_koblenz.west.koral.common.utils;
 
 import org.apache.jena.atlas.io.IO;
-import org.apache.jena.atlas.web.ContentType;
 import org.apache.jena.atlas.web.TypedInputStream;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.lang.csv.CSV2RDF;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
-import org.apache.jena.riot.ReaderRIOT;
+import org.apache.jena.riot.RDFParser;
 import org.apache.jena.riot.RiotException;
-import org.apache.jena.riot.WebContent;
 import org.apache.jena.riot.lang.PipedQuadsStream;
 import org.apache.jena.riot.lang.PipedRDFIterator;
 import org.apache.jena.riot.lang.PipedRDFStream;
 import org.apache.jena.riot.lang.PipedTriplesStream;
 import org.apache.jena.riot.system.ErrorHandlerFactory;
-import org.apache.jena.riot.system.RiotLib;
 import org.apache.jena.riot.system.StreamRDF;
 import org.apache.jena.sparql.core.Quad;
 
@@ -124,7 +122,7 @@ public class RDFFileIterator
 
   private boolean isCurrentFileSkippable() {
     Lang lang = RDFLanguages.filenameToLang(rdfFiles[currentFile].getName());
-    return (lang == Lang.CSV) || (lang == Lang.N3) || (lang == Lang.NQ) || (lang == Lang.NQUADS)
+    return (lang == CSV2RDF.CSV) || (lang == Lang.N3) || (lang == Lang.NQ) || (lang == Lang.NQUADS)
             || (lang == Lang.NT) || (lang == Lang.NTRIPLES);
   }
 
@@ -351,13 +349,12 @@ class GraphReaderRunnable implements Runnable {
 
   private Thread currentThread;
 
-  private final ReaderRIOT reader;
+  private final  RDFParser parser;
 
   private final TypedInputStream in;
-
-  private final ContentType contentType;
-
-  private final String baseIRI;
+  
+  //  private final ContentType contentType;
+  //  private final String baseIRI;
 
   private final StreamRDF outputStream;
 
@@ -368,13 +365,14 @@ class GraphReaderRunnable implements Runnable {
   public GraphReaderRunnable(TypedInputStream in, Lang lang, String baseIRI,
           StreamRDF outputStream) {
     this.in = in;
-    this.baseIRI = baseIRI;
+    //this.baseIRI = baseIRI;
     this.outputStream = outputStream;
-    contentType = WebContent.determineCT(in.getContentType(), lang, baseIRI);
-    reader = RDFDataMgr.createReader(lang);
-    reader.setErrorHandler(ErrorHandlerFactory.errorHandlerWarn);
-    reader.setParserProfile(
-            RiotLib.profile(baseIRI, false, false, ErrorHandlerFactory.errorHandlerWarn));
+    //contentType = WebContent.determineCT(in.getContentType(), lang, baseIRI);
+    //reader = RDFDataMgr.createReader(lang);
+    parser = RDFParser.create().lang(lang).base(baseIRI).errorHandler(ErrorHandlerFactory.errorHandlerWarn).source(in).build();
+    //reader.setErrorHandler(ErrorHandlerFactory.errorHandlerWarn); // TODO has been removed
+    //  RiotLib.profile(baseIRI, false, false, ErrorHandlerFactory.errorHandlerWarn)
+    // baseIri, resolveIRIs, checking, errorHandler
     isFinished = false;
   }
 
@@ -383,7 +381,8 @@ class GraphReaderRunnable implements Runnable {
     try {
       currentThread = Thread.currentThread();
       outputStream.start();
-      reader.read(in, baseIRI, contentType, outputStream, null);
+      //reader.read(in, baseIRI, contentType, outputStream, null);// TODO has been removed+
+      parser.parse(outputStream);
     } catch (RiotException e) {
       exception = e;
     } finally {

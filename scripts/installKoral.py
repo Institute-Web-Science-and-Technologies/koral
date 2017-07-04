@@ -87,6 +87,9 @@ def resolveJena():
     run("rm slf4j-1.7.25.tar.gz")
     run("mv slf4j-1.7.25/slf4j-nop-1.7.25.jar koral/lib/slf4j-nop-1.7.25.jar")
     run("rm -r slf4j-1.7.25")
+	# add jena csv
+	run("wget http://central.maven.org/maven2/org/apache/jena/jena-csv/3.3.0/jena-csv-3.3.0.jar")
+	run("mv jena-csv-3.3.0.jar koral/lib/jena-csv-3.3.0.jar")
 
 def resolveMapDB():
     run("wget http://central.maven.org/maven2/org/mapdb/mapdb/1.0.9/mapdb-1.0.9.jar")

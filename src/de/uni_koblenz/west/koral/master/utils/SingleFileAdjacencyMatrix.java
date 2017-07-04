@@ -71,7 +71,7 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
     Options options = new Options();
     options.setCreateIfMissing(true);
     options.setMaxOpenFiles(50);
-    options.setAllowOsBuffer(true);
+    //options.setAllowOsBuffer(true); TODO has been removed
     options.setWriteBufferSize(64 * 1024 * 1024);
     vertex2lastElementOffsetFolder = rocksDBFolder;
     if (!vertex2lastElementOffsetFolder.exists()) {
@@ -86,6 +86,7 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
     }
     this.adjacencyMatrixFile = adjacencyMatrixFile;
     fileSize = 0;
+    options.close(); // todo closing options
   }
 
   @Override

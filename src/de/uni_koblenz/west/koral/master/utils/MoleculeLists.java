@@ -69,8 +69,9 @@ public class MoleculeLists implements Closeable {
     Options options = new Options();
     options.setCreateIfMissing(true);
     options.setMaxOpenFiles(50);
-    options.setAllowOsBuffer(true);
-    options.setWriteBufferSize(64 * 1024 * 1024);
+    //options.setAllowOsBuffer(true); TODO has been removed
+    options.setWriteBufferSize(64 * 1024 * 1024); // TODO wo wird dashier überhaupt genutzt?
+    options.close(); // TODO closing options, could be nicer
     vertex2lastElementOffsetFolder = rocksDBFolder;
     if (!vertex2lastElementOffsetFolder.exists()) {
       vertex2lastElementOffsetFolder.mkdirs();
