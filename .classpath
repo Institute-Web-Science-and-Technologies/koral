@@ -2,33 +2,29 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="lib/commons-cli-1.3.1.jar">
+	<classpathentry kind="lib" path="lib/commons-cli-1.4.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/koral/lib/commons-cli-1.3.1-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/koral/lib/commons-cli-1.4-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/jeromq-0.3.5.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/koral/lib/jeromq-0.3.5-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="lib/jena-arq-3.0.0.jar" sourcepath="lib/jena-arq-3.0.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/jena-core-3.0.0.jar" sourcepath="lib/jena-core-3.0.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-api-1.7.12.jar"/>
-	<classpathentry kind="lib" path="lib/jena-base-3.0.0.jar"/>
-	<classpathentry kind="lib" path="lib/jena-shaded-guava-3.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/jeromq-0.4.0.jar"/>
+	<classpathentry kind="lib" path="lib/jena-arq-3.3.0.jar" sourcepath="lib/jena-arq-3.3.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/jena-core-3.3.0.jar" sourcepath="lib/jena-core-3.3.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.7.21.jar"/>
+	<classpathentry kind="lib" path="lib/jena-base-3.3.0.jar"/>
+	<classpathentry kind="lib" path="lib/jena-shaded-guava-3.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/xercesImpl-2.11.0.jar"/>
 	<classpathentry kind="lib" path="lib/xml-apis-1.4.01.jar"/>
-	<classpathentry kind="lib" path="lib/jena-iri-3.0.0.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-nop-1.7.12.jar"/>
-	<classpathentry kind="lib" path="lib/mapdb-1.0.8.jar" sourcepath="lib/mapdb-1.0.8-sources.jar"/>
-	<classpathentry kind="lib" path="lib/ftplet-api-1.0.5.jar"/>
-	<classpathentry kind="lib" path="lib/ftpserver-core-1.0.5.jar"/>
-	<classpathentry kind="lib" path="lib/mina-core-2.0.0-RC1.jar"/>
-	<classpathentry kind="lib" path="lib/commons-net-3.4.jar" sourcepath="lib/commons-net-3.4-sources.jar"/>
-	<classpathentry kind="lib" path="lib/core-4.3.0.jar"/>
-	<classpathentry kind="lib" path="lib/snappy-java-1.0.3.jar"/>
-	<classpathentry kind="lib" path="lib/rocksdbjni-4.13.5.jar"/>
-	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.8.11.2.jar" sourcepath="lib/sqlite-jdbc-3.8.11.2-sources.jar"/>
+	<classpathentry kind="lib" path="lib/jena-iri-3.3.0.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-nop-1.7.25.jar"/>
+	<classpathentry kind="lib" path="lib/mapdb-3.0.4.jar"/>
+	<classpathentry kind="lib" path="lib/ftplet-api-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/ftpserver-core-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/mina-core-2.0.16.jar"/>
+	<classpathentry kind="lib" path="lib/commons-net-3.6.jar" sourcepath="lib/commons-net-3.6-sources.jar"/>
+	<classpathentry kind="lib" path="lib/org.osgi.core-6.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/snappy-java-1.1.4.jar"/>
+	<classpathentry kind="lib" path="lib/rocksdbjni-5.4.5.jar"/>
+	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.19.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
