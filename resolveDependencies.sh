@@ -24,6 +24,8 @@ mv apache-jena-3.3.0/lib/xercesImpl-2.11.0.jar koral/lib/xercesImpl-2.11.0.jar
 mv apache-jena-3.3.0/lib/xml-apis-1.4.01.jar koral/lib/xml-apis-1.4.01.jar
 mv apache-jena-3.3.0/lib/slf4j-api-1.7.21.jar koral/lib/slf4j-api-1.7.21.jar
 rm -r apache-jena-3.3.0
+wget wget http://central.maven.org/maven2/org/apache/jena/jena-csv/3.3.0/jena-csv-3.3.0.jar
+mv jena-csv-3.3.0.jar koral/lib/jena-csv-3.3.0.jar
 
 # discard Jena's logging
 wget http://www.slf4j.org/dist/slf4j-1.7.25.tar.gz
@@ -33,8 +35,8 @@ mv slf4j-1.7.25/slf4j-nop-1.7.25.jar koral/lib/slf4j-nop-1.7.25.jar
 rm -r slf4j-1.7.25
 
 # resolve dependency MapDB
-wget http://central.maven.org/maven2/org/mapdb/mapdb/3.0.4/mapdb-3.0.4.jar
-mv mapdb-3.0.4.jar koral/lib/mapdb-3.0.4.jar
+wget http://central.maven.org/maven2/org/mapdb/mapdb/1.0.9/mapdb-1.0.9.jar
+mv mapdb-1.0.9.jar koral/lib/mapdb-1.0.9.jar
 
 # resolve Apache Mina FTP Server
 wget http://archive.apache.org/dist/mina/ftpserver/1.1.1/ftpserver-1.1.1.zip
