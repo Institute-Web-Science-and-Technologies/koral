@@ -84,9 +84,7 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
     }
     Options options = getOptions(maxOpenFiles);
     try {
-    	System.out.println("\t opening rocksDB encoder");
       encoder = RocksDB.open(options, storageDir + File.separator + "encoder");
-      System.out.println("\t opening rocksDB decoder");
       decoder = RocksDB.open(options, storageDir + File.separator + "decoder");
     } catch (RocksDBException e) {
       close();
@@ -237,11 +235,9 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
     try {
       File encoderFile = new File(storageDir + File.separator + "encoder");
       deleteFile(encoderFile);
-      System.out.println("\t opening rocksDB encoder - clear");
       encoder = RocksDB.open(options, encoderFile.getAbsolutePath());
       File decoderFile = new File(storageDir + File.separator + "decoder");
       deleteFile(decoderFile);
-      System.out.println("\t opening rocksDB decoder - clear");
       decoder = RocksDB.open(options, decoderFile.getAbsolutePath());
     } catch (RocksDBException e) {
       close();
