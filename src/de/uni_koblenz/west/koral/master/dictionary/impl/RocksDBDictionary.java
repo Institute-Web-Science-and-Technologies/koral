@@ -84,7 +84,9 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
     }
     Options options = getOptions(maxOpenFiles);
     try {
+    	System.out.println("\t opening rocksDB encoder");
       encoder = RocksDB.open(options, storageDir + File.separator + "encoder");
+      System.out.println("\t opening rocksDB decoder");
       decoder = RocksDB.open(options, storageDir + File.separator + "decoder");
     } catch (RocksDBException e) {
       close();
@@ -96,6 +98,7 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
     Options options = new Options();
     options.setCreateIfMissing(true);
     options.setMaxOpenFiles(maxOpenFiles);
+   	options.setMaxFileOpeningThreads(1);
     //options.setAllowOsBuffer(true); TODO has been removed
     options.setWriteBufferSize(64 * 1024 * 1024);
     return options;
@@ -235,9 +238,11 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
     try {
       File encoderFile = new File(storageDir + File.separator + "encoder");
       deleteFile(encoderFile);
+      System.out.println("\t opening rocksDB encoder - clear");
       encoder = RocksDB.open(options, encoderFile.getAbsolutePath());
       File decoderFile = new File(storageDir + File.separator + "decoder");
       deleteFile(decoderFile);
+      System.out.println("\t opening rocksDB decoder - clear");
       decoder = RocksDB.open(options, decoderFile.getAbsolutePath());
     } catch (RocksDBException e) {
       close();
@@ -269,9 +274,15 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
   public void close() {
     internalFlush();
     if (encoder != null) {
+    	// TODO encoder still open? or locked?
+    	// TODO loaderThread beim MasterThread abmelden bei Fehler 
+    	// TODO check if afterwards still to many clear - close combinations
+    	// TODO aufräumen -> Master bescheid geben -> client bescheid geben
+    	System.out.println("\t closing rocksDB encoder");
       encoder.close();
     }
     if (decoder != null) {
+    	System.out.println("\t closing rocksDB decoder");
       decoder.close();
     }
   }

@@ -77,6 +77,8 @@ public class MoleculeLists implements Closeable {
       vertex2lastElementOffsetFolder.mkdirs();
     }
     try {
+    	// TODO give RocksDB.open options
+    	// TODO check options.close() to check when options can be closed (e.g. after rocksdb.close or before)
       vertex2lastElementOffset = RocksDB.open(vertex2lastElementOffsetFolder.getAbsolutePath()
               + File.separator + "vertex2lastElementOffset");
     } catch (RocksDBException e) {

@@ -89,6 +89,7 @@ public class KoralClient {
   public void loadGraph(CoverStrategyType graphCover, int nHopReplicationPathLength,
           String... inputPaths) {
     List<File> files = getFiles(inputPaths);
+    System.out.println("loadGraph method called");
     if (files.isEmpty()) {
       throw new RuntimeException("No graph file could be found.");
     }
