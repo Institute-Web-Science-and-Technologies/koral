@@ -23,6 +23,7 @@ mv apache-jena-3.3.0/lib/jena-shaded-guava-3.3.0.jar koral/lib/jena-shaded-guava
 mv apache-jena-3.3.0/lib/xercesImpl-2.11.0.jar koral/lib/xercesImpl-2.11.0.jar
 mv apache-jena-3.3.0/lib/xml-apis-1.4.01.jar koral/lib/xml-apis-1.4.01.jar
 mv apache-jena-3.3.0/lib/slf4j-api-1.7.21.jar koral/lib/slf4j-api-1.7.21.jar
+mv apache-jena-3.3.0/lib/collection-0.6.jar koral/lib/collection-0.6.jar
 rm -r apache-jena-3.3.0
 wget wget http://central.maven.org/maven2/org/apache/jena/jena-csv/3.3.0/jena-csv-3.3.0.jar
 mv jena-csv-3.3.0.jar koral/lib/jena-csv-3.3.0.jar

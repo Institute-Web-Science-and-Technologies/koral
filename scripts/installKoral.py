@@ -44,7 +44,6 @@ def cloneKoral():
 
 def resolveDependencies():
     resolveCLI()
-    installMaven()
     resolveJeromq()
     resolveJena()
     resolveMapDB()
@@ -64,10 +63,6 @@ def resolveJeromq():
     run("wget http://central.maven.org/maven2/org/zeromq/jeromq/0.4.0/jeromq-0.4.0.jar")
     run("mv jeromq-0.4.0.jar koral/lib/jeromq-0.4.0.jar")
 
-def installMaven():
-    sudo("apt-get update")
-    sudo("apt-get -y install maven")
-
 def resolveJena():
     run("wget https://archive.apache.org/dist/jena/binaries/apache-jena-3.3.0.tar.gz")
     run("tar -xf apache-jena-3.3.0.tar.gz")
@@ -80,6 +75,7 @@ def resolveJena():
     run("mv apache-jena-3.3.0/lib/xercesImpl-2.11.0.jar koral/lib/xercesImpl-2.11.0.jar")
     run("mv apache-jena-3.3.0/lib/xml-apis-1.4.01.jar koral/lib/xml-apis-1.4.01.jar")
     run("mv apache-jena-3.3.0/lib/slf4j-api-1.7.21.jar koral/lib/slf4j-api-1.7.21.jar")
+	run("mv apache-jena-3.3.0/lib/collection-0.6.jar koral/lib/collection-0.6.jar")
     run("rm -r apache-jena-3.3.0")
     # use logger that discards log messages
     run("wget http://www.slf4j.org/dist/slf4j-1.7.25.tar.gz")
