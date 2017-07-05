@@ -78,7 +78,7 @@ public class PreprocessBTC2014 {
     Configuration conf = new Configuration();
     conf.setLoglevel(Level.ALL);
     conf.setLogDirectory(outputDir.getAbsolutePath());
-    DatasetGraph graph = DatasetGraphFactory.createGeneral();
+    DatasetGraph graph = DatasetGraphFactory.createMem();// TODO back to createGeneral();
     if (!inputDir.exists()) {
       throw new RuntimeException(
               "The input directory " + inputDir.getAbsolutePath() + " does not exist.");

@@ -67,7 +67,7 @@ public class SubsetCreator {
             OutputStream out = new BufferedOutputStream(
                     new GZIPOutputStream(new FileOutputStream(outputFile)));) {
 
-      DatasetGraph graph = DatasetGraphFactory.createGeneral();
+      DatasetGraph graph = DatasetGraphFactory.createMem(); // TODO back to createGeneral();
       for (long i = 0; iter.hasNext() && (i < numberOfSelectedTriples); i++) {
         if ((i % (numberOfSelectedTriples / 100)) == 0) {
           System.out.println(i + "/" + numberOfSelectedTriples);
