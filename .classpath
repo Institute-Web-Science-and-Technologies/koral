@@ -9,15 +9,15 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/jeromq-0.4.0.jar"/>
 	<classpathentry kind="lib" path="lib/jena-arq-3.3.0.jar" sourcepath="lib/jena-arq-3.3.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/jena-core-3.3.0.jar" sourcepath="lib/jena-core-3.3.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-api-1.7.21.jar"/>
+	<classpathentry kind="lib" path="lib/jena-core-3.3.0.jar" sourcepath="lib/jena-core-3.3.0-sources.jar"/>´
 	<classpathentry kind="lib" path="lib/jena-base-3.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/jena-shaded-guava-3.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/jena-csv-3.3.0.jar"/>
+	<classpathentry kind="lib" path="lib/jena-iri-3.3.0.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.7.21.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-nop-1.7.25.jar"/>
 	<classpathentry kind="lib" path="lib/xercesImpl-2.11.0.jar"/>
 	<classpathentry kind="lib" path="lib/xml-apis-1.4.01.jar"/>
-	<classpathentry kind="lib" path="lib/jena-iri-3.3.0.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-nop-1.7.25.jar"/>
 	<classpathentry kind="lib" path="lib/mapdb-1.0.9.jar"/>
 	<classpathentry kind="lib" path="lib/ftplet-api-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/ftpserver-core-1.1.1.jar"/>

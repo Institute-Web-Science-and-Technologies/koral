@@ -319,6 +319,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       }
     } catch (Throwable e) {
       // clearDatabase();
+    	e.printStackTrace(System.out);
       if (logger != null) {
         logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
                 e);

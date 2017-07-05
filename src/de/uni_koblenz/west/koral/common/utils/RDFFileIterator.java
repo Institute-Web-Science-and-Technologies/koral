@@ -381,7 +381,7 @@ class GraphReaderRunnable implements Runnable {
     try {
       currentThread = Thread.currentThread();
       outputStream.start();
-      //reader.read(in, baseIRI, contentType, outputStream, null);// TODO has been removed+
+      //reader.read(in, baseIRI, contentType, outputStream, null);// TODO has been removed
       parser.parse(outputStream);
     } catch (RiotException e) {
       exception = e;
