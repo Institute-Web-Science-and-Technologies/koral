@@ -69,17 +69,13 @@ public class MoleculeLists implements Closeable {
     Options options = new Options();
     options.setCreateIfMissing(true);
     options.setMaxOpenFiles(50);
-    //options.setAllowOsBuffer(true); TODO has been removed
-    options.setWriteBufferSize(64 * 1024 * 1024); // TODO wo wird dashier überhaupt genutzt?
-    options.close(); // TODO closing options, could be nicer
+    options.setWriteBufferSize(64 * 1024 * 1024); 
     vertex2lastElementOffsetFolder = rocksDBFolder;
     if (!vertex2lastElementOffsetFolder.exists()) {
       vertex2lastElementOffsetFolder.mkdirs();
     }
     try {
-    	// TODO give RocksDB.open options
-    	// TODO check options.close() to check when options can be closed (e.g. after rocksdb.close or before)
-      vertex2lastElementOffset = RocksDB.open(vertex2lastElementOffsetFolder.getAbsolutePath()
+      vertex2lastElementOffset = RocksDB.open(options, vertex2lastElementOffsetFolder.getAbsolutePath()
               + File.separator + "vertex2lastElementOffset");
     } catch (RocksDBException e) {
       throw new RuntimeException(e);

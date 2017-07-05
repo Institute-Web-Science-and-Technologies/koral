@@ -268,15 +268,13 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     }
 
     RocksDB vertex2chunkIndex = null;
-    Options options = new Options(); // TODO wo wird das hier überhaupt genutzt?
+    Options options = new Options();
     options.setCreateIfMissing(true);
     options.setMaxOpenFiles(800);
-    //options.setAllowOsBuffer(true); TODO has been removed
     options.setWriteBufferSize(64 * 1024 * 1024);
-    options.close(); // TODO closing options, could be nicer
     try {
       // load mapping vertex -> chunkIndex from metis output
-      vertex2chunkIndex = RocksDB.open(
+      vertex2chunkIndex = RocksDB.open(options,
               vertex2chunkIndexFolder.getAbsolutePath() + File.separator + "vertex2chunkIndex");
       try (Scanner scanner = new Scanner(metisOutputGraph);) {
         scanner.useDelimiter("\\r?\\n");

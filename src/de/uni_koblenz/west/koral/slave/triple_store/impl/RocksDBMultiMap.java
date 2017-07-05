@@ -81,7 +81,6 @@ public class RocksDBMultiMap implements MultiMap {
       Options options = new Options();
       options.setCreateIfMissing(true);
       options.setMaxOpenFiles(100);
-      //options.setAllowOsBuffer(true); TODO has been removed
       options.setWriteBufferSize(64 * 1024 * 1024);
       multiMap = RocksDB.open(options, storageDir);
     } catch (RocksDBException e) {

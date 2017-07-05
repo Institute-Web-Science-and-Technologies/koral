@@ -326,7 +326,7 @@ public class GraphLoaderTask extends Thread implements Closeable {
       clientConnections.send(clientId,
               MessageUtils.createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
                       e.getClass().getName() + ":" + e.getMessage(), logger));
-      close();
+      //close(); // TODO dont close, let CLientMessageProcessor handle this (like e.g. a bit above for CLIENT_COMMAND_FAILED)
     }
   }
 

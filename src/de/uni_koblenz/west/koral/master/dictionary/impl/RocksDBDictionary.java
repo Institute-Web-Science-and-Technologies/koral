@@ -99,7 +99,6 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
     options.setCreateIfMissing(true);
     options.setMaxOpenFiles(maxOpenFiles);
    	options.setMaxFileOpeningThreads(1);
-    //options.setAllowOsBuffer(true); TODO has been removed
     options.setWriteBufferSize(64 * 1024 * 1024);
     return options;
   }
@@ -274,15 +273,9 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
   public void close() {
     internalFlush();
     if (encoder != null) {
-    	// TODO encoder still open? or locked?
-    	// TODO loaderThread beim MasterThread abmelden bei Fehler 
-    	// TODO check if afterwards still to many clear - close combinations
-    	// TODO aufräumen -> Master bescheid geben -> client bescheid geben
-    	System.out.println("\t closing rocksDB encoder");
       encoder.close();
     }
     if (decoder != null) {
-    	System.out.println("\t closing rocksDB decoder");
       decoder.close();
     }
   }
