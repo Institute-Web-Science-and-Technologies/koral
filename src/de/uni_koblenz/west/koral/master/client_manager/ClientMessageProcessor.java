@@ -408,7 +408,6 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
   }
 
   private void terminateTask(String address) {
-	System.out.println("\t \t Terminating task - " + address);
     GraphLoaderTask task = clientAddress2GraphLoaderTask.get(address);
     if (task != null) {
       task.close();
