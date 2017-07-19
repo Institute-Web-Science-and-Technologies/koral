@@ -1,7 +1,7 @@
 Put all required libraries into this folder. Do not commit libraries contained in this folder to the repository.
 These libraries are:
 - Apache Commons CLI version: 1.4 from http://artfiles.org/apache.org//commons/cli/binaries/commons-cli-1.4-bin.tar.gz (Apache Licence Version 2.0 - compatible with LGPL v3)
-- Jeromq version: 0.4.0 from http://central.maven.org/maven2/org/zeromq/jeromq/0.4.0/jeromq-0.4.0.jar (LGPL v3)
+- Jeromq version: 0.4.0 from http://central.maven.org/maven2/org/zeromq/jeromq/0.4.0/jeromq-0.4.0.jar (MPL 2.0 - compatible with LGPL v3)
 - Apache Jena version: 3.3.0 from http://mirror.23media.de/apache/jena/binaries/apache-jena-3.3.0.tar.gz (Apache Licence Version 2.0 - compatible with LGPL v3)
 	- arq
 	- base
