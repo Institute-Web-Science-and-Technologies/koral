@@ -19,13 +19,13 @@ mv apache-jena-3.3.0/lib/jena-arq-3.3.0.jar koral/lib/jena-arq-3.3.0.jar
 mv apache-jena-3.3.0/lib/jena-base-3.3.0.jar koral/lib/jena-base-3.3.0.jar
 mv apache-jena-3.3.0/lib/jena-core-3.3.0.jar koral/lib/jena-core-3.3.0.jar
 mv apache-jena-3.3.0/lib/jena-iri-3.3.0.jar koral/lib/jena-iri-3.3.0.jar
-mv apache-jena-3.3.0/lib/jena-shaded-guava-3.3.0.jar koral/lib/jena-shaded-guava-3.3.0.j ar
+mv apache-jena-3.3.0/lib/jena-shaded-guava-3.3.0.jar koral/lib/jena-shaded-guava-3.3.0.jar
 mv apache-jena-3.3.0/lib/xercesImpl-2.11.0.jar koral/lib/xercesImpl-2.11.0.jar
 mv apache-jena-3.3.0/lib/xml-apis-1.4.01.jar koral/lib/xml-apis-1.4.01.jar
 mv apache-jena-3.3.0/lib/slf4j-api-1.7.21.jar koral/lib/slf4j-api-1.7.21.jar
 mv apache-jena-3.3.0/lib/collection-0.6.jar koral/lib/collection-0.6.jar
 rm -r apache-jena-3.3.0
-wget wget http://central.maven.org/maven2/org/apache/jena/jena-csv/3.3.0/jena-csv-3.3.0.jar
+wget http://central.maven.org/maven2/org/apache/jena/jena-csv/3.3.0/jena-csv-3.3.0.jar
 mv jena-csv-3.3.0.jar koral/lib/jena-csv-3.3.0.jar
 
 # discard Jena's logging
@@ -40,9 +40,9 @@ wget http://central.maven.org/maven2/org/mapdb/mapdb/1.0.9/mapdb-1.0.9.jar
 mv mapdb-1.0.9.jar koral/lib/mapdb-1.0.9.jar
 
 # resolve Apache Mina FTP Server
-wget http://archive.apache.org/dist/mina/ftpserver/1.1.1/ftpserver-1.1.1.zip
-unzip ftpserver-1.1.1.zip
-rm ftpserver-1.1.1.zip
+wget https://archive.apache.org/dist/mina/ftpserver/1.1.1/dist/apache-ftpserver-1.1.1.zip
+unzip apache-ftpserver-1.1.1.zip
+rm apache-ftpserver-1.1.1.zip
 mv apache-ftpserver-1.1.1/common/lib/ftplet-api-1.1.1.jar koral/lib/ftplet-api-1.1.1.jar
 mv apache-ftpserver-1.1.1/common/lib/ftpserver-core-1.1.1.jar koral/lib/ftpserver-core-1.1.1.jar
 mv apache-ftpserver-1.1.1/common/lib/mina-core-2.0.16.jar koral/lib/mina-core-2.0.16.jar
