@@ -92,7 +92,7 @@ def resolveMapDB():
     run("mv mapdb-1.0.9.jar koral/lib/mapdb-1.0.9.jar")
 
 def resolveFtpServer():
-    run("wget http://archive.apache.org/dist/mina/ftpserver/1.1.1/ftpserver-1.1.1.zip")
+    run("wget http://archive.apache.org/dist/mina/ftpserver/1.1.1/dist/apache-ftpserver-1.1.1.zip")
     run("unzip ftpserver-1.1.1.zip")
     run("rm ftpserver-1.1.1.zip")
     run("mv apache-ftpserver-1.1.1/common/lib/ftplet-api-1.1.1.jar koral/lib/ftplet-api-1.1.1.jar")
