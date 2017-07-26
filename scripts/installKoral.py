@@ -76,6 +76,7 @@ def resolveJena():
     run("mv apache-jena-3.3.0/lib/xml-apis-1.4.01.jar koral/lib/xml-apis-1.4.01.jar")
     run("mv apache-jena-3.3.0/lib/slf4j-api-1.7.21.jar koral/lib/slf4j-api-1.7.21.jar")
 	run("mv apache-jena-3.3.0/lib/collection-0.6.jar koral/lib/collection-0.6.jar")
+	run("mv apache-jena-3.3.0/lib/libthrift-0.9.3.jar koral/lib/libthrift-0.9.3.jar")
     run("rm -r apache-jena-3.3.0")
     # use logger that discards log messages
     run("wget http://www.slf4j.org/dist/slf4j-1.7.25.tar.gz")

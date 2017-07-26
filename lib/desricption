@@ -12,6 +12,8 @@ These libraries are:
 		- xercesImpl
 		- xml-apis
 	- slf4j-api version: 1.7.21 (MIT licence (X11 Licence) - compatible with LGPL v3)
+	- libthrift
+	- collection
 - Apache Jena-CSV version: 3.3.0 from http://central.maven.org/maven2/org/apache/jena/jena-csv/3.3.0/jena-csv-3.3.0.jar
 - slf4j-nop version: 1.7.25 from http://www.slf4j.org/dist/slf4j-1.7.25.tar.gz (MIT licence (X11 Licence) - compatible with LGPL v3)
 - mapdb from version: 1.0.9  http://central.maven.org/maven2/org/mapdb/mapdb/1.0.9/mapdb-1.0.9.jar [ http://www.mapdb.org/ ] (Apache Licence Version 2.0 - compatible with LGPL v3)

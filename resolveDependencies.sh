@@ -16,14 +16,17 @@ wget https://archive.apache.org/dist/jena/binaries/apache-jena-3.3.0.tar.gz
 tar -xf apache-jena-3.3.0.tar.gz
 rm apache-jena-3.3.0.tar.gz
 mv apache-jena-3.3.0/lib/jena-arq-3.3.0.jar koral/lib/jena-arq-3.3.0.jar
+mv apache-jena-3.3.0/lib/jena-arq-3.3.0-sources.jar koral/lib/jena-arq-3.3.0-sources.jar
 mv apache-jena-3.3.0/lib/jena-base-3.3.0.jar koral/lib/jena-base-3.3.0.jar
 mv apache-jena-3.3.0/lib/jena-core-3.3.0.jar koral/lib/jena-core-3.3.0.jar
+mv apache-jena-3.3.0/lib/jena-core-3.3.0-sources.jar koral/lib/jena-core-3.3.0-sources.jar
 mv apache-jena-3.3.0/lib/jena-iri-3.3.0.jar koral/lib/jena-iri-3.3.0.jar
 mv apache-jena-3.3.0/lib/jena-shaded-guava-3.3.0.jar koral/lib/jena-shaded-guava-3.3.0.jar
 mv apache-jena-3.3.0/lib/xercesImpl-2.11.0.jar koral/lib/xercesImpl-2.11.0.jar
 mv apache-jena-3.3.0/lib/xml-apis-1.4.01.jar koral/lib/xml-apis-1.4.01.jar
 mv apache-jena-3.3.0/lib/slf4j-api-1.7.21.jar koral/lib/slf4j-api-1.7.21.jar
 mv apache-jena-3.3.0/lib/collection-0.6.jar koral/lib/collection-0.6.jar
+mv apache-jena-3.3.0/lib/libthrift-0.9.3.jar koral/lib/libthrift-0.9.3.jar
 rm -r apache-jena-3.3.0
 wget http://central.maven.org/maven2/org/apache/jena/jena-csv/3.3.0/jena-csv-3.3.0.jar
 mv jena-csv-3.3.0.jar koral/lib/jena-csv-3.3.0.jar
