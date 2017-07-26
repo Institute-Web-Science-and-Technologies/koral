@@ -60,6 +60,7 @@ public class Configuration implements Configurable {
    * @return {@link String} string
    */
   private String getSubFolder() {
+    // TODO remove system-prints
     System.out.println("getSubFolder called");
     System.out.println(flag_checkedCurrentSlave);
     System.out.println(currentSlave);
@@ -156,6 +157,7 @@ public class Configuration implements Configurable {
   }
 
   public String[] getCurrentSlave() throws ConfigurationException {
+    // TODO remove system-prints
     System.out.println("getCurrentSlave called");
     System.out.println(flag_checkedCurrentSlave);
     System.out.println(currentSlave);

@@ -2,7 +2,7 @@ Put all required libraries into this folder. Do not commit libraries contained i
 These libraries are:
 - Apache Commons CLI version: 1.4 from http://artfiles.org/apache.org//commons/cli/binaries/commons-cli-1.4-bin.tar.gz (Apache Licence Version 2.0 - compatible with LGPL v3)
 - Jeromq version: 0.4.0 from http://central.maven.org/maven2/org/zeromq/jeromq/0.4.0/jeromq-0.4.0.jar (MPL 2.0 - compatible with LGPL v3)
-- Apache Jena version: 3.3.0 from http://mirror.23media.de/apache/jena/binaries/apache-jena-3.3.0.tar.gz (Apache Licence Version 2.0 - compatible with LGPL v3)
+- Apache Jena version: 3.3.0 from http://mirror.23media.de/apache/jena/binaries/apache-jena-3.4.0.tar.gz (Apache Licence Version 2.0 - compatible with LGPL v3)
 	- arq
 	- base
 	- core
@@ -14,7 +14,7 @@ These libraries are:
 	- slf4j-api version: 1.7.21 (MIT licence (X11 Licence) - compatible with LGPL v3)
 	- libthrift
 	- collection
-- Apache Jena-CSV version: 3.3.0 from http://central.maven.org/maven2/org/apache/jena/jena-csv/3.3.0/jena-csv-3.3.0.jar
+- Apache Jena-CSV version: 3.3.0 from http://central.maven.org/maven2/org/apache/jena/jena-csv/3.4.0/jena-csv-3.4.0.jar
 - slf4j-nop version: 1.7.25 from http://www.slf4j.org/dist/slf4j-1.7.25.tar.gz (MIT licence (X11 Licence) - compatible with LGPL v3)
 - mapdb from version: 1.0.9  http://central.maven.org/maven2/org/mapdb/mapdb/1.0.9/mapdb-1.0.9.jar [ http://www.mapdb.org/ ] (Apache Licence Version 2.0 - compatible with LGPL v3)
 - Apache FtpServer version: 1.1.1 from http://archive.apache.org/dist/mina/ftpserver/1.0.5/ftpserver-1.1.1.zip (Apache Licence Version 2.0 - compatible with LGPL v3)
