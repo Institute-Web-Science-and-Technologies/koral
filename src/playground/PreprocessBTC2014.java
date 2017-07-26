@@ -1,37 +1,20 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package playground;
-
-import org.apache.jena.graph.Graph;
-import org.apache.jena.graph.Node;
-import org.apache.jena.graph.Triple;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.sparql.core.DatasetGraph;
-import org.apache.jena.sparql.core.DatasetGraphFactory;
-import org.apache.jena.sparql.core.Quad;
-
-import de.uni_koblenz.west.koral.common.config.impl.Configuration;
-import de.uni_koblenz.west.koral.common.logger.CSVFileHandler;
-import de.uni_koblenz.west.koral.common.logger.LoggerFactory;
-import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
-import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -51,12 +34,27 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.DatasetGraphFactory;
+import org.apache.jena.sparql.core.Quad;
+
+import de.uni_koblenz.west.koral.common.config.impl.Configuration;
+import de.uni_koblenz.west.koral.common.logger.CSVFileHandler;
+import de.uni_koblenz.west.koral.common.logger.LoggerFactory;
+import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
+import de.uni_koblenz.west.koral.common.utils.RDFFileIterator;
+
 public class PreprocessBTC2014 {
 
   public static void main(String[] args) {
     if (args.length != 2) {
-      System.out.println(
-              "Usage: java " + PreprocessBTC2014.class.getName() + " <inputDir> <outputDir>");
+      System.out
+          .println("Usage: java " + PreprocessBTC2014.class.getName() + " <inputDir> <outputDir>");
       return;
     }
     File inputDir = new File(args[0]);
@@ -77,11 +75,12 @@ public class PreprocessBTC2014 {
   private static void preprocessFiles(File inputDir, File outputDir) {
     Configuration conf = new Configuration();
     conf.setLoglevel(Level.ALL);
-    conf.setLogDirectory(outputDir.getAbsolutePath());
+    // TODO is that needed somehow?
+    // conf.setLogDirectory(outputDir.getAbsolutePath());
     DatasetGraph graph = DatasetGraphFactory.createGeneral();
     if (!inputDir.exists()) {
       throw new RuntimeException(
-              "The input directory " + inputDir.getAbsolutePath() + " does not exist.");
+          "The input directory " + inputDir.getAbsolutePath() + " does not exist.");
     }
     if (inputDir.isFile()) {
       PreprocessBTC2014.preprocessFile(inputDir, outputDir, conf, graph);
@@ -93,15 +92,15 @@ public class PreprocessBTC2014 {
   }
 
   private static void preprocessFile(File inputFile, File outputDir, Configuration conf,
-          DatasetGraph graph) {
+      DatasetGraph graph) {
     Logger csvFileLogger = null;
     try {
       csvFileLogger = LoggerFactory.getCSVFileLogger(conf,
-              new String[] { "cleaned", inputFile.getName() }, PreprocessBTC2014.class.getName());
+          new String[] {"cleaned", inputFile.getName()}, PreprocessBTC2014.class.getName());
       try (RDFFileIterator iterator = new RDFFileIterator(inputFile, false, csvFileLogger);
-              BufferedOutputStream output = new BufferedOutputStream(
-                      new GZIPOutputStream(new FileOutputStream(outputDir.getAbsolutePath()
-                              + File.separator + "cleaned_" + inputFile.getName())));) {
+          BufferedOutputStream output = new BufferedOutputStream(
+              new GZIPOutputStream(new FileOutputStream(outputDir.getAbsolutePath() + File.separator
+                  + "cleaned_" + inputFile.getName())));) {
         for (Node[] tuple : iterator) {
           if (tuple.length == 3) {
             Graph defaultGraph = graph.getDefaultGraph();
@@ -130,9 +129,8 @@ public class PreprocessBTC2014 {
 
   private static void downloadDataset(File inputDir) {
     try (LineNumberReader urlInput = new LineNumberReader(new BufferedReader(new InputStreamReader(
-            PreprocessBTC2014
-                    .getInputStream("http://km.aifb.kit.edu/projects/btc-2014/000-CONTENTS"),
-            Charset.forName("UTF-8"))))) {
+        PreprocessBTC2014.getInputStream("http://km.aifb.kit.edu/projects/btc-2014/000-CONTENTS"),
+        Charset.forName("UTF-8"))))) {
       for (String line = urlInput.readLine(); line != null; line = urlInput.readLine()) {
         if (!line.contains("/data.nq")) {
           continue;
@@ -145,10 +143,10 @@ public class PreprocessBTC2014 {
   }
 
   private static void downloadFile(File outputFile, String urlOfFile) throws IOException {
-    try (BufferedInputStream input = new BufferedInputStream(
-            PreprocessBTC2014.getInputStream(urlOfFile));
-            BufferedOutputStream output = new BufferedOutputStream(
-                    new FileOutputStream(outputFile))) {
+    try (
+        BufferedInputStream input =
+            new BufferedInputStream(PreprocessBTC2014.getInputStream(urlOfFile));
+        BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(outputFile))) {
       byte[] buffer = new byte[4096];
       for (int readBytes = input.read(buffer); readBytes != -1; readBytes = input.read(buffer)) {
         output.write(buffer, 0, readBytes);
@@ -166,7 +164,7 @@ public class PreprocessBTC2014 {
       outputFileName.append("-").append(filenameParts[i]);
     }
     outputFileName.append(".").append(filenameParts[1]).append(".")
-            .append(filenameParts[filenameParts.length - 1]);
+        .append(filenameParts[filenameParts.length - 1]);
     return new File(outputFileName.toString());
   }
 
@@ -176,8 +174,8 @@ public class PreprocessBTC2014 {
     int status = connection.getResponseCode();
     if (status != HttpURLConnection.HTTP_OK) {
       if ((status == HttpURLConnection.HTTP_MOVED_TEMP)
-              || (status == HttpURLConnection.HTTP_MOVED_PERM)
-              || (status == HttpURLConnection.HTTP_SEE_OTHER)) {
+          || (status == HttpURLConnection.HTTP_MOVED_PERM)
+          || (status == HttpURLConnection.HTTP_SEE_OTHER)) {
         // Process redirects
         return PreprocessBTC2014.getInputStream(connection.getHeaderField("Location"));
       }

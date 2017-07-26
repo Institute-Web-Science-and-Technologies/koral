@@ -31,29 +31,19 @@
 		<value>INFO</value>
 	</property>
 	<property>
-		<name>loggingDirectory</name>
-		<description>Defines an existing directory in which the log files are written.</description>
-		<value>.</value>
-	</property>
-	<property>
 		<name>tmpDir</name>
 		<description>Defines the directory where intermediate data is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.</description>
 		<value>/tmp</value>
 	</property>
 	<property>
-		<name>dictionaryDir</name>
-		<description>Defines a non-existing directory where the dictionary is stored.</description>
-		<value>./dictionary</value>
+		<name>dataDir</name>
+		<description>Defines the directory where data (e.g. triplestore, dictionary and statistics) is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.</description>
+		<value>/data</value>
 	</property>
 	<property>
 		<name>maxDictionaryWriteBatchSize</name>
 		<description>The number of dictionary entries that are stored before writing them to the database as an atomic write operation.</description>
 		<value>100000</value>
-	</property>
-	<property>
-		<name>statisticsDir</name>
-		<description>Defines a non-existing directory where the statistics are stored.</description>
-		<value>./statistics</value>
 	</property>
 	<property>
 		<name>tripleStoreStorageType</name>
@@ -62,11 +52,6 @@ MEMORY = triples are only stored in memory
 MEMORY_MAPPED_FILE = triples are stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required.
 RANDOM_ACCESS_FILE = triples are is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.</description>
 		<value>MEMORY_MAPPED_FILE</value>
-	</property>
-	<property>
-		<name>tripleStoreDir</name>
-		<description>Defines a non-existing directory where the triples are stored.</description>
-		<value>./tripleStore</value>
 	</property>
 	<property>
 		<name>enableAsynchronousWritesForTripleStore</name>

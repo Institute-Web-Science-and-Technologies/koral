@@ -1,22 +1,37 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package de.uni_koblenz.west.koral.common.utils;
+
+import java.io.BufferedInputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.jena.atlas.io.IO;
 import org.apache.jena.atlas.web.TypedInputStream;
@@ -36,44 +51,25 @@ import org.apache.jena.riot.system.ErrorHandlerFactory;
 import org.apache.jena.riot.system.StreamRDF;
 import org.apache.jena.sparql.core.Quad;
 
-import java.io.BufferedInputStream;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
-
 /**
  * <p>
- * Iterates over all triples contained in one graph file or in any graph file
- * contained in a folder. Blank nodes get an id unique to the computer on which
- * the graph file is read first. (Probably, blank nodes with the same label in
- * different files will receive different ids.)
+ * Iterates over all triples contained in one graph file or in any graph file contained in a folder.
+ * Blank nodes get an id unique to the computer on which the graph file is read first. (Probably,
+ * blank nodes with the same label in different files will receive different ids.)
  * </p>
  * 
  * <p>
- * {@link RDFFileIterator} parses files with two threads: One reads some triples
- * or quadruples in a buffer while the other consumes the triples or quadruples.
- * In the case that the input file is {@link #isCurrentFileSkippable()}, the
- * iterator skips the line with the error and continues with the next line, if
- * an syntax error is found.
+ * {@link RDFFileIterator} parses files with two threads: One reads some triples or quadruples in a
+ * buffer while the other consumes the triples or quadruples. In the case that the input file is
+ * {@link #isCurrentFileSkippable()}, the iterator skips the line with the error and continues with
+ * the next line, if an syntax error is found.
  * </p>
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
 public class RDFFileIterator
-        implements Iterable<Node[]>, Iterator<Node[]>, Closeable, AutoCloseable {
+    implements Iterable<Node[]>, Iterator<Node[]>, Closeable, AutoCloseable {
 
   private final static int MAX_NUMBER_OF_STORED_LINE_OFFSETS = 1000000;
 
@@ -104,7 +100,7 @@ public class RDFFileIterator
     deleteReadFiles = deleteFiles;
     GraphFileFilter filter = new GraphFileFilter();
     if (file.exists() && file.isFile() && filter.accept(file)) {
-      rdfFiles = new File[] { file };
+      rdfFiles = new File[] {file};
     } else if (file.exists() && file.isDirectory()) {
       rdfFiles = file.listFiles(filter);
     } else {
@@ -115,33 +111,34 @@ public class RDFFileIterator
   }
 
   public RDFFileIterator(RDFFileIterator iterator, boolean deleteReadFiles) {
-    this(iterator.rdfFiles.length == 1 ? iterator.rdfFiles[0]
+    this(
+        iterator.rdfFiles.length == 1 ? iterator.rdfFiles[0]
             : iterator.rdfFiles.length == 0 ? null : iterator.rdfFiles[0].getParentFile(),
-            deleteReadFiles, iterator.logger);
+        deleteReadFiles, iterator.logger);
   }
 
   private boolean isCurrentFileSkippable() {
     Lang lang = RDFLanguages.filenameToLang(rdfFiles[currentFile].getName());
     return (lang == CSV2RDF.CSV) || (lang == Lang.N3) || (lang == Lang.NQ) || (lang == Lang.NQUADS)
-            || (lang == Lang.NT) || (lang == Lang.NTRIPLES);
+        || (lang == Lang.NT) || (lang == Lang.NTRIPLES);
   }
 
   private void handleParseError(RiotException e) {
     currentFile--;
     if (!isCurrentFileSkippable()) {
       if (logger != null) {
-        logger.finer("Skipping rest of file " + rdfFiles[currentFile].getAbsolutePath() // TODO was currentFile - 1 resulting in outOfBoundException
-                + " because of the following error:");
+        logger.finer("Skipping rest of file " + rdfFiles[currentFile].getAbsolutePath()
+            + " because of the following error:");
         logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                e);
+            e);
       }
       currentFile++;
       getNextIterator();
       return;
     }
     String message = e.getMessage();
-    int lineWithError = skippedLineNumbers
-            + Integer.parseInt(message.substring(7, message.indexOf(',')));
+    int lineWithError =
+        skippedLineNumbers + Integer.parseInt(message.substring(7, message.indexOf(',')));
     if (message.contains("(newline)")) {
       lineWithError--;
     }
@@ -149,10 +146,10 @@ public class RDFFileIterator
       String prefix = message.substring(0, 7);
       String suffix = message.substring(message.indexOf(','));
       logger.finer("Skipping rest of line of file " + rdfFiles[currentFile].getAbsolutePath()
-              + " because of the following error: " + prefix + lineWithError + suffix);
+          + " because of the following error: " + prefix + lineWithError + suffix);
     }
     if ((lineNumber2Offset == null) || lineNumber2Offset.isEmpty()
-            || (lineNumber2Offset.lastKey() < lineWithError)) {
+        || (lineNumber2Offset.lastKey() < lineWithError)) {
       createLineNumberMapping(lineWithError);
     }
     String baseIRI = rdfFiles[currentFile].getAbsolutePath();
@@ -173,10 +170,10 @@ public class RDFFileIterator
     }
     lineNumber2Offset = new TreeMap<>();
     boolean isGzip = rdfFiles[currentFile].getName().toLowerCase().endsWith(".gz");
-    try (InputStream input = isGzip
-            ? new GZIPInputStream(new FileInputStream(rdfFiles[currentFile]))
+    try (
+        InputStream input = isGzip ? new GZIPInputStream(new FileInputStream(rdfFiles[currentFile]))
             : new FileInputStream(rdfFiles[currentFile]);
-            BufferedInputStream bufferedInput = new BufferedInputStream(input);) {
+        BufferedInputStream bufferedInput = new BufferedInputStream(input);) {
       long skippedBytes = 0;
       while (skippedBytes < offset) {
         skippedBytes += bufferedInput.skip(offset - skippedBytes);
@@ -228,9 +225,9 @@ public class RDFFileIterator
     } catch (IOException e1) {
       if (logger != null) {
         logger.finer("Skipping rest of file " + rdfFiles[currentFile - 1].getAbsolutePath()
-                + " because of the following error:");
+            + " because of the following error:");
         logger.throwing(e1.getStackTrace()[0].getClassName(), e1.getStackTrace()[0].getMethodName(),
-                e1);
+            e1);
       }
       e1.printStackTrace();
     }
@@ -254,12 +251,12 @@ public class RDFFileIterator
 
   private void createIterator(String baseIRI, TypedInputStream in) {
     iterator = new PipedRDFIterator<>(PipedRDFIterator.DEFAULT_BUFFER_SIZE, false,
-            PipedRDFIterator.DEFAULT_POLL_TIMEOUT * 100, PipedRDFIterator.DEFAULT_MAX_POLLS * 100);
+        PipedRDFIterator.DEFAULT_POLL_TIMEOUT * 100, PipedRDFIterator.DEFAULT_MAX_POLLS * 100);
     Lang lang = RDFLanguages.filenameToLang(rdfFiles[currentFile].getName());
     isQuad = RDFLanguages.isQuads(lang);
     @SuppressWarnings("unchecked")
-    PipedRDFStream<?> outputStream = isQuad
-            ? new PipedQuadsStream((PipedRDFIterator<Quad>) iterator)
+    PipedRDFStream<?> outputStream =
+        isQuad ? new PipedQuadsStream((PipedRDFIterator<Quad>) iterator)
             : new PipedTriplesStream((PipedRDFIterator<Triple>) iterator);
 
     if (readerRunner != null) {
@@ -345,11 +342,12 @@ public class RDFFileIterator
 
 }
 
+
 class GraphReaderRunnable implements Runnable {
 
   private Thread currentThread;
 
-  private final  RDFParser parser;
+  private final RDFParser parser;
 
   private final TypedInputStream in;
 
@@ -360,11 +358,12 @@ class GraphReaderRunnable implements Runnable {
   private volatile RiotException exception;
 
   public GraphReaderRunnable(TypedInputStream in, Lang lang, String baseIRI,
-          StreamRDF outputStream) {
-	  this.in = in;
-	  this.outputStream = outputStream;
-	  parser = RDFParser.create().lang(lang).base(baseIRI).errorHandler(ErrorHandlerFactory.errorHandlerWarn).source(in).build();
-	  isFinished = false;
+      StreamRDF outputStream) {
+    this.in = in;
+    this.outputStream = outputStream;
+    parser = RDFParser.create().lang(lang).base(baseIRI)
+        .errorHandler(ErrorHandlerFactory.errorHandlerWarn).source(in).build();
+    isFinished = false;
   }
 
   @Override

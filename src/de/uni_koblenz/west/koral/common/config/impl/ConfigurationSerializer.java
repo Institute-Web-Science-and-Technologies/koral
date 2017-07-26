@@ -1,18 +1,16 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
@@ -21,8 +19,8 @@ package de.uni_koblenz.west.koral.common.config.impl;
 import de.uni_koblenz.west.koral.common.config.ConfigurableSerializer;
 
 /**
- * Provides methods to convert the field values of {@link Configuration} to the
- * property values in the configuration file.
+ * Provides methods to convert the field values of {@link Configuration} to the property values in
+ * the configuration file.
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
@@ -76,32 +74,20 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
     return conf.getLoglevel().getName();
   }
 
-  public String serializeLoggingDirectory(Configuration conf) {
-    return conf.getLogDirectory();
-  }
-
   public String serializeTmpDir(Configuration conf) {
     return conf.getTmpDir();
   }
 
-  public String serializeDictionaryDir(Configuration conf) {
-    return conf.getDictionaryDir();
+  public String serializeDataDir(Configuration conf) {
+    return conf.getDataDir();
   }
 
   public String serializeMaxDictionaryWriteBatchSize(Configuration conf) {
     return new Integer(conf.getMaxDictionaryWriteBatchSize()).toString();
   }
 
-  public String serializeStatisticsDir(Configuration conf) {
-    return conf.getStatisticsDir();
-  }
-
   public String serializeTripleStoreStorageType(Configuration conf) {
     return conf.getTripleStoreStorageType().name();
-  }
-
-  public String serializeTripleStoreDir(Configuration conf) {
-    return conf.getTripleStoreDir();
   }
 
   public String serializeEnableTransactionsForTripleStore(Configuration conf) {

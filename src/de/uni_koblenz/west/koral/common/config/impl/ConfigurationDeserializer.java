@@ -1,33 +1,31 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package de.uni_koblenz.west.koral.common.config.impl;
 
+import java.util.logging.Level;
+import java.util.regex.Pattern;
+
 import de.uni_koblenz.west.koral.common.config.ConfigurableDeserializer;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 
-import java.util.logging.Level;
-import java.util.regex.Pattern;
-
 /**
- * Provides methods to convert the property values in the configuration file to
- * the field values of {@link Configuration}.
+ * Provides methods to convert the property values in the configuration file to the field values of
+ * {@link Configuration}.
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
@@ -75,16 +73,12 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
   }
 
   public void deserializeClientConnectionTimeout(Configuration conf,
-          String clientConnectionTimeout) {
+      String clientConnectionTimeout) {
     conf.setClientConnectionTimeout(Long.parseLong(clientConnectionTimeout));
   }
 
   public void deserializeLogLevel(Configuration conf, String logLevel) {
     conf.setLoglevel(Level.parse(logLevel));
-  }
-
-  public void deserializeLoggingDirectory(Configuration conf, String logDirectory) {
-    conf.setLogDirectory(logDirectory);
   }
 
   public void deserializeTmpDir(Configuration conf, String tmpDir) {
@@ -93,22 +87,16 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
     }
   }
 
-  public void deserializeDictionaryDir(Configuration conf, String dictionaryDir) {
-    if ((dictionaryDir != null) && !dictionaryDir.isEmpty()) {
-      conf.setDictionaryDir(dictionaryDir);
+  public void deserializeDataDir(Configuration conf, String dataDir) {
+    if ((dataDir != null) && !dataDir.isEmpty()) {
+      conf.setDataDir(dataDir);
     }
   }
 
   public void deserializeMaxDictionaryWriteBatchSize(Configuration conf,
-          String maxDictionaryWriteBatchSize) {
+      String maxDictionaryWriteBatchSize) {
     if ((maxDictionaryWriteBatchSize != null) && !maxDictionaryWriteBatchSize.isEmpty()) {
       conf.setMaxDictionaryWriteBatchSize(Integer.parseInt(maxDictionaryWriteBatchSize));
-    }
-  }
-
-  public void deserializeStatisticsDir(Configuration conf, String statisticsDir) {
-    if ((statisticsDir != null) && !statisticsDir.isEmpty()) {
-      conf.setStatisticsDir(statisticsDir);
     }
   }
 
@@ -122,21 +110,15 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
     }
   }
 
-  public void deserializeTripleStoreDir(Configuration conf, String tripleStoreDir) {
-    if ((tripleStoreDir != null) && !tripleStoreDir.isEmpty()) {
-      conf.setTripleStoreDir(tripleStoreDir);
-    }
-  }
-
   public void deserializeEnableTransactionsForTripleStore(Configuration conf,
-          String enableTransactions) {
+      String enableTransactions) {
     if ((enableTransactions != null) && !enableTransactions.isEmpty()) {
       conf.setUseTransactionsForTripleStore(Boolean.parseBoolean(enableTransactions));
     }
   }
 
   public void deserializeEnableAsynchronousWritesForTripleStore(Configuration conf,
-          String writeAsynchronously) {
+      String writeAsynchronously) {
     if ((writeAsynchronously != null) && !writeAsynchronously.isEmpty()) {
       conf.setTripleStoreAsynchronouslyWritten(Boolean.parseBoolean(writeAsynchronously));
     }
@@ -183,14 +165,14 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
   }
 
   public void deserializeEnableTransactionsForJoinCache(Configuration conf,
-          String enableTransactions) {
+      String enableTransactions) {
     if ((enableTransactions != null) && !enableTransactions.isEmpty()) {
       conf.setUseTransactionsForJoinCache(Boolean.parseBoolean(enableTransactions));
     }
   }
 
   public void deserializeEnableAsynchronousWritesForJoinCache(Configuration conf,
-          String writeAsynchronously) {
+      String writeAsynchronously) {
     if ((writeAsynchronously != null) && !writeAsynchronously.isEmpty()) {
       conf.setJoinCacheAsynchronouslyWritten(Boolean.parseBoolean(writeAsynchronously));
     }

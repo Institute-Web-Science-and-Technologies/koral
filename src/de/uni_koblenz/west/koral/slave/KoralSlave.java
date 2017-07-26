@@ -1,22 +1,23 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package de.uni_koblenz.west.koral.slave;
+
+import java.io.File;
+import java.nio.BufferUnderflowException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -33,13 +34,6 @@ import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 import de.uni_koblenz.west.koral.slave.triple_store.loader.GraphChunkListener;
 import de.uni_koblenz.west.koral.slave.triple_store.loader.impl.GraphChunkLoader;
 
-import java.io.File;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.nio.BufferUnderflowException;
-
 /**
  * The implementation of the Koral slaves.
  * 
@@ -53,8 +47,7 @@ public class KoralSlave extends KoralSystem {
   private TripleStoreAccessor tripleStore;
 
   public KoralSlave(Configuration conf) throws ConfigurationException {
-    super(conf, KoralSlave.getCurrentIP(conf),
-            new SlaveNetworkManager(conf, KoralSlave.getCurrentIP(conf)));
+    super(conf, conf.getCurrentSlave(), new SlaveNetworkManager(conf, conf.getCurrentSlave()));
     try {
       tmpDir = new File(conf.getTmpDir());
       if (!tmpDir.exists()) {
@@ -64,7 +57,7 @@ public class KoralSlave extends KoralSystem {
     } catch (Throwable t) {
       if (logger != null) {
         logger.throwing(t.getStackTrace()[0].getClassName(), t.getStackTrace()[0].getMethodName(),
-                t);
+            t);
         try {
           Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -80,21 +73,6 @@ public class KoralSlave extends KoralSystem {
     super.setTripleStore(tripleStore);
   }
 
-  private static String[] getCurrentIP(Configuration conf) throws ConfigurationException {
-    for (int i = 0; i < conf.getNumberOfSlaves(); i++) {
-      String[] slave = conf.getSlave(i);
-      try {
-        NetworkInterface ni = NetworkInterface.getByInetAddress(InetAddress.getByName(slave[0]));
-        if (ni != null) {
-          return slave;
-        }
-      } catch (SocketException | UnknownHostException e) {
-      }
-    }
-    throw new ConfigurationException(
-            "The current slave cannot be found in the configuration file.");
-  }
-
   @Override
   public void runOneIteration() {
     byte[] receive = getNetworkManager().receive();
@@ -104,7 +82,7 @@ public class KoralSlave extends KoralSystem {
       } catch (Exception e) {
         if (logger != null) {
           logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                  e);
+              e);
         }
       }
       if (!isInterrupted()) {
@@ -132,13 +110,13 @@ public class KoralSlave extends KoralSystem {
           case START_FILE_TRANSFER:
             clear();
             byte[][] message = new byte[3][];
-            message[0] = new byte[] { receivedMessage[0] };
+            message[0] = new byte[] {receivedMessage[0]};
             message[1] = getNetworkManager().receive(true);
             message[2] = getNetworkManager().receive(true);
-            File workingDir = new File(
-                    tmpDir.getAbsolutePath() + File.separatorChar + "graphLoader" + slaveID);
-            GraphChunkListener loader = new GraphChunkLoader(slaveID,
-                    getNetworkManager().getNumberOfSlaves(), workingDir,
+            File workingDir =
+                new File(tmpDir.getAbsolutePath() + File.separatorChar + "graphLoader" + slaveID);
+            GraphChunkListener loader =
+                new GraphChunkLoader(slaveID, getNetworkManager().getNumberOfSlaves(), workingDir,
                     (SlaveNetworkManager) getNetworkManager(), tripleStore, this, logger,
                     measurementCollector);
             registerMessageListener(GraphChunkListener.class, loader);
@@ -167,20 +145,20 @@ public class KoralSlave extends KoralSystem {
         if (logger != null) {
           logger.finer("Unknown message type: " + receivedMessage[0]);
           logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                  e);
+              e);
         }
       } catch (BufferUnderflowException | IndexOutOfBoundsException e) {
         if (logger != null) {
           logger.finer("Message of type " + messageType + " is too short with only "
-                  + receivedMessage.length + " received bytes.");
+              + receivedMessage.length + " received bytes.");
           logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                  e);
+              e);
         }
       }
     } catch (RuntimeException e) {
       if (logger != null) {
         logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                e);
+            e);
       }
     }
   }
@@ -209,8 +187,9 @@ public class KoralSlave extends KoralSystem {
       if (line == null) {
         return;
       }
-      Configuration conf = KoralSystem.initializeConfiguration(options, line, className,
-              additionalArgs);
+
+      Configuration conf =
+          KoralSystem.initializeConfiguration(options, line, className, additionalArgs);
 
       KoralSlave slave;
       try {

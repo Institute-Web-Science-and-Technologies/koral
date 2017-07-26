@@ -1,22 +1,26 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package playground;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.jena.query.QueryFactory;
 
@@ -38,12 +42,6 @@ import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreato
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
-
 /**
  * A class to test source code. Not used within Koral.
  * 
@@ -64,8 +62,9 @@ public class Playground {
 
     File inputFile = new File(args[0]);
     Configuration conf = new Configuration();
-    conf.setDictionaryDir(workingDir.getAbsolutePath() + File.separator + "dictionary");
-    conf.setStatisticsDir(workingDir.getAbsolutePath() + File.separator + "statistics");
+    // TODO can be removed, seems unneeded
+    // conf.setDictionaryDir(workingDir.getAbsolutePath() + File.separator + "dictionary");
+    // conf.setStatisticsDir(workingDir.getAbsolutePath() + File.separator + "statistics");
 
     GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
     // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
@@ -74,16 +73,15 @@ public class Playground {
 
     // encode graph
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
-    File encodedInput = encoder.encodeOriginalGraphFiles(
-            inputFile.isDirectory() ? inputFile.listFiles(new GraphFileFilter())
-                    : new File[] { inputFile },
-            workingDir, coverCreator.getRequiredInputEncoding(), 4);
+    File encodedInput = encoder.encodeOriginalGraphFiles(inputFile.isDirectory()
+        ? inputFile.listFiles(new GraphFileFilter()) : new File[] {inputFile}, workingDir,
+        coverCreator.getRequiredInputEncoding(), 4);
 
     // create cover
     File[] cover = coverCreator.createGraphCover(encoder, encodedInput, workingDir, 4);
 
     cover = encoder.encodeGraphChunksCompletely(cover, workingDir,
-            coverCreator.getRequiredInputEncoding());
+        coverCreator.getRequiredInputEncoding());
 
     NHopReplicator replicator = new NHopReplicator(null, null);
     cover = replicator.createNHopReplication(cover, workingDir, 0);
@@ -98,7 +96,8 @@ public class Playground {
     Playground.printContentOfChunks(cover, encoder, EncodingFileFormat.EEE);
 
     // store triples
-    conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
+    // TODO can be removed, seems unneeded
+    // conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
     TripleStoreAccessor accessor = new TripleStoreAccessor(conf, null);
     for (File file : cover) {
       if (file != null) {
@@ -118,7 +117,7 @@ public class Playground {
 
   @SuppressWarnings("unused")
   private static void printQET(String[] args, File workingDir, Configuration conf,
-          DictionaryEncoder encoder, GraphStatistics statistics, TripleStoreAccessor accessor) {
+      DictionaryEncoder encoder, GraphStatistics statistics, TripleStoreAccessor accessor) {
     // process query
     String query = Playground.readQueryFromFile(new File(args[1]));
     query = QueryFactory.create(query).serialize();
@@ -126,16 +125,16 @@ public class Playground {
 
     VariableDictionary dictionary = new VariableDictionary();
     SparqlParser parser = new SparqlParser(encoder, statistics, accessor, (short) 0, 0, 0, 4,
-            conf.getReceiverQueueSize(), workingDir, conf.getMaxEmittedMappingsPerRound(),
-            conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
-            conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
+        conf.getReceiverQueueSize(), workingDir, conf.getMaxEmittedMappingsPerRound(),
+        conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
+        conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
     QueryOperatorTask task = parser.parse(query, QueryExecutionTreeType.LEFT_LINEAR, dictionary);
     System.out.println(task.toString());
 
     QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(accessor,
-            conf.getNumberOfSlaves(), conf.getReceiverQueueSize(), workingDir,
-            conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
-            conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
+        conf.getNumberOfSlaves(), conf.getReceiverQueueSize(), workingDir,
+        conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
+        conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
 
     for (int i = 0; i < 4; i++) {
       System.out.println("Slave " + i + ":");
@@ -148,22 +147,22 @@ public class Playground {
   }
 
   private static void printContentOfChunks(File[] encodedFiles, DictionaryEncoder encoder,
-          EncodingFileFormat format) {
+      EncodingFileFormat format) {
     for (File encodedFile : encodedFiles) {
       System.out.println("\nChunk " + encodedFile + "\n");
       if (encodedFile != null) {
         try (EncodedFileInputStream input = new EncodedFileInputStream(format, encodedFile);) {
           for (Statement statement : input) {
             System.out.println(" "
-                    + (statement.isSubjectEncoded() ? encoder.decode(statement.getSubjectAsLong())
-                            : statement.getSubjectAsString())
-                    + " "
-                    + (statement.isPropertyEncoded() ? encoder.decode(statement.getPropertyAsLong())
-                            : statement.getPropertyAsString())
-                    + " "
-                    + (statement.isObjectEncoded() ? encoder.decode(statement.getObjectAsLong())
-                            : statement.getObjectAsString())
-                    + " " + Arrays.toString(statement.getContainment()));
+                + (statement.isSubjectEncoded() ? encoder.decode(statement.getSubjectAsLong())
+                    : statement.getSubjectAsString())
+                + " "
+                + (statement.isPropertyEncoded() ? encoder.decode(statement.getPropertyAsLong())
+                    : statement.getPropertyAsString())
+                + " "
+                + (statement.isObjectEncoded() ? encoder.decode(statement.getObjectAsLong())
+                    : statement.getObjectAsString())
+                + " " + Arrays.toString(statement.getContainment()));
           }
         } catch (IOException e) {
           throw new RuntimeException(e);
