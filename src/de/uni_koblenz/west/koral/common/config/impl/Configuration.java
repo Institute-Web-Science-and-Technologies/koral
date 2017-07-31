@@ -17,8 +17,10 @@
 package de.uni_koblenz.west.koral.common.config.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -60,14 +62,10 @@ public class Configuration implements Configurable {
    * @return {@link String} string
    */
   private String getSubFolder() {
-    // TODO remove system-prints
-    System.out.println("getSubFolder called");
-    System.out.println(flag_checkedCurrentSlave);
-    System.out.println(currentSlave);
     if (currentSlave == 0) {
       return "master";
     }
-    return "slave" + (currentSlave - 1);
+    return "slave" + currentSlave;
   }
 
   @Property(name = "master",
@@ -126,24 +124,36 @@ public class Configuration implements Configurable {
    */
   private int currentSlave = 0;
 
-  /**
-   * Boolean flag to check if already checked for current master / slave.
-   */
-  private boolean flag_checkedCurrentSlave = false;
-
   private void findCurrentSlaveIpPort() throws ConfigurationException {
-    flag_checkedCurrentSlave = true; // set flag so that method isnt called more then one time
+    // check if method has already been called
+    if (currentSlave > 0) {
+      return;
+    }
     for (int i = 0; i < getNumberOfSlaves(); i++) {
       String[] slave = getSlave(i);
       try {
         NetworkInterface ni = NetworkInterface.getByInetAddress(InetAddress.getByName(slave[0]));
         if (ni != null) {
-          // TODO check here for port binding
-          // TODO instead of rebinding ni, check if next slave as same IP and check then for that
-          // port
-          // i++, check same ip, not same = i--, else check port
-          currentSlave = i + 1;
-          return;
+          // checking if port is free
+          // if port is not free, check if next slave would have the same ip
+          // to prevent reinitializing NetworkInterface
+          boolean flagCheckPort = true;
+          while (flagCheckPort) {
+            try {
+              new ServerSocket(Integer.valueOf(slave[1])).close();
+              // true, port is free
+              currentSlave = i + 1;
+              return;
+            } catch (IOException e) {
+              // false, port is not free
+            }
+            String[] nextSlave = getSlave(i + 1);
+            if (slave[0] != nextSlave[0]) {
+              flagCheckPort = false;
+            } else {
+              i++;
+            }
+          }
         }
       } catch (SocketException | UnknownHostException e) {
       }
@@ -157,16 +167,9 @@ public class Configuration implements Configurable {
   }
 
   public String[] getCurrentSlave() throws ConfigurationException {
-    // TODO remove system-prints
-    System.out.println("getCurrentSlave called");
-    System.out.println(flag_checkedCurrentSlave);
-    System.out.println(currentSlave);
-    if (!(flag_checkedCurrentSlave)) {
-      System.out.println("checking for current slave ip port");
+    if (currentSlave == 0) {
       findCurrentSlaveIpPort();
     }
-    System.out.println(flag_checkedCurrentSlave);
-    System.out.println(currentSlave);
     if (currentSlave == 0) { // its a master, not a slave
       throw new ConfigurationException(
           "The current koral system is configured as master, not as slave.");
@@ -256,8 +259,6 @@ public class Configuration implements Configurable {
       description = "Sets the logging level to one of: OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL")
   private Level loglevel = Level.INFO;
 
-  @Property(name = "loggingDirectory",
-      description = "Defines an existing directory in which the log files are written.")
   private String logDirectory = "log";
 
   public Level getLoglevel() {
@@ -268,8 +269,8 @@ public class Configuration implements Configurable {
     this.loglevel = loglevel;
   }
 
-  public String getLogDirectory() {
-    return getDataDir() + logDirectory;
+  public String getLogDirectory(boolean flagIsMaster) {
+    return getDataDirByInstance(flagIsMaster) + File.separatorChar + logDirectory;
   }
 
   @Property(name = "tmpDir",
@@ -280,28 +281,52 @@ public class Configuration implements Configurable {
     return tmpDir;
   }
 
+  public String getTmpDirByInstance(boolean flagIsMaster) {
+    if (!(flagIsMaster)) {
+      if (currentSlave == 0) {
+        try {
+          findCurrentSlaveIpPort();
+        } catch (ConfigurationException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+    return tmpDir + File.separatorChar + getSubFolder();
+  }
+
   public void setTmpDir(String tmpDir) {
-    this.tmpDir = tmpDir + File.separatorChar + getSubFolder();
+    this.tmpDir = tmpDir;
   }
 
   @Property(name = "dataDir",
       description = "Defines the directory where data (e.g. triplestore, dictionary and statistics) is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.")
   private String dataDir = System.getProperty("java.io.tmpdir");
 
+  public void setDataDir(String dataDir) {
+    this.dataDir = dataDir;
+  }
+
   public String getDataDir() {
     return dataDir;
   }
 
-  public void setDataDir(String dataDir) {
-    this.dataDir = dataDir + File.separatorChar + getSubFolder() + File.separatorChar;
+  public String getDataDirByInstance(boolean flagIsMaster) {
+    if (!(flagIsMaster)) {
+      if (currentSlave == 0) {
+        try {
+          findCurrentSlaveIpPort();
+        } catch (ConfigurationException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+    return dataDir + File.separatorChar + getSubFolder();
   }
 
-  @Property(name = "dictionaryDir",
-      description = "Defines a non-existing directory where the dictionary is stored.")
   private String dictionaryDir = "dictionary";
 
-  public String getDictionaryDir() {
-    return getDataDir() + dictionaryDir;
+  public String getDictionaryDir(boolean flagIsMaster) {
+    return getDataDirByInstance(flagIsMaster) + File.separatorChar + dictionaryDir;
   }
 
   @Property(name = "maxDictionaryWriteBatchSize",
@@ -316,12 +341,10 @@ public class Configuration implements Configurable {
     this.maxDictionaryWriteBatchSize = maxDictionaryWriteBatchSize;
   }
 
-  @Property(name = "statisticsDir",
-      description = "Defines a non-existing directory where the statistics are stored.")
   private String statisticsDir = "statistics";
 
-  public String getStatisticsDir() {
-    return getDataDir() + statisticsDir;
+  public String getStatisticsDir(boolean flagIsMaster) {
+    return getDataDirByInstance(flagIsMaster) + File.separatorChar + statisticsDir;
   }
 
   @Property(name = "tripleStoreStorageType",
@@ -339,12 +362,10 @@ public class Configuration implements Configurable {
     this.tripleStoreStorageType = tripleStoreStorageType;
   }
 
-  @Property(name = "tripleStoreDir",
-      description = "Defines a non-existing directory where the triples are stored.")
   private String tripleStoreDir = "tripleStore";
 
-  public String getTripleStoreDir() {
-    return getDataDir() + tripleStoreDir;
+  public String getTripleStoreDir(boolean flagIsMaster) {
+    return getDataDirByInstance(flagIsMaster) + File.separatorChar + tripleStoreDir;
   }
 
   // @Property(name = "enableTransactionsForTripleStore", description = "If

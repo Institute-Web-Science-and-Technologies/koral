@@ -62,9 +62,6 @@ public class Playground {
 
     File inputFile = new File(args[0]);
     Configuration conf = new Configuration();
-    // TODO can be removed, seems unneeded
-    // conf.setDictionaryDir(workingDir.getAbsolutePath() + File.separator + "dictionary");
-    // conf.setStatisticsDir(workingDir.getAbsolutePath() + File.separator + "statistics");
 
     GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
     // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
@@ -96,8 +93,6 @@ public class Playground {
     Playground.printContentOfChunks(cover, encoder, EncodingFileFormat.EEE);
 
     // store triples
-    // TODO can be removed, seems unneeded
-    // conf.setTripleStoreDir(workingDir.getAbsolutePath() + File.separator + "tripleStore");
     TripleStoreAccessor accessor = new TripleStoreAccessor(conf, null);
     for (File file : cover) {
       if (file != null) {

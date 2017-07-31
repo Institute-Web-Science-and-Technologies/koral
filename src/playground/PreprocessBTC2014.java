@@ -75,8 +75,7 @@ public class PreprocessBTC2014 {
   private static void preprocessFiles(File inputDir, File outputDir) {
     Configuration conf = new Configuration();
     conf.setLoglevel(Level.ALL);
-    // TODO is that needed somehow?
-    // conf.setLogDirectory(outputDir.getAbsolutePath());
+    conf.setDataDir(outputDir.getAbsolutePath());
     DatasetGraph graph = DatasetGraphFactory.createGeneral();
     if (!inputDir.exists()) {
       throw new RuntimeException(
@@ -96,7 +95,7 @@ public class PreprocessBTC2014 {
     Logger csvFileLogger = null;
     try {
       csvFileLogger = LoggerFactory.getCSVFileLogger(conf,
-          new String[] {"cleaned", inputFile.getName()}, PreprocessBTC2014.class.getName());
+          new String[] {"cleaned", inputFile.getName()}, PreprocessBTC2014.class.getName(), true);
       try (RDFFileIterator iterator = new RDFFileIterator(inputFile, false, csvFileLogger);
           BufferedOutputStream output = new BufferedOutputStream(
               new GZIPOutputStream(new FileOutputStream(outputDir.getAbsolutePath() + File.separator

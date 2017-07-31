@@ -1,22 +1,25 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package de.uni_koblenz.west.koral.master.dictionary;
+
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Logger;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -34,17 +37,12 @@ import de.uni_koblenz.west.koral.master.dictionary.impl.RocksDBDictionary;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Logger;
-
 /**
  * <p>
- * This class encodes the created graph chunks. Thereby, it informs the
- * {@link GraphStatistics} component about the frequency of seen resources in
- * the chunks and to determine the ownership of each resource. Additionally, it
- * provides the functionality to decode the resources later on again.
+ * This class encodes the created graph chunks. Thereby, it informs the {@link GraphStatistics}
+ * component about the frequency of seen resources in the chunks and to determine the ownership of
+ * each resource. Additionally, it provides the functionality to decode the resources later on
+ * again.
  * </p>
  * 
  * <p>
@@ -70,19 +68,19 @@ public class DictionaryEncoder implements Closeable {
     this.logger = logger;
     measurementCollector = collector;
     if (conf != null) {
-      dictionary = new RocksDBDictionary(conf.getDictionaryDir(),
-              conf.getMaxDictionaryWriteBatchSize());
+      dictionary =
+          new RocksDBDictionary(conf.getDictionaryDir(true), conf.getMaxDictionaryWriteBatchSize());
     } else {
       dictionary = null;
     }
   }
 
   public File encodeOriginalGraphFiles(File[] plainGraphChunks, File workingDir,
-          EncodingFileFormat outputFormat, int numberOfGraphChunks) {
+      EncodingFileFormat outputFormat, int numberOfGraphChunks) {
     clear();
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_INITIAL_ENCODING_ENCODING_START,
-              System.currentTimeMillis());
+          System.currentTimeMillis());
     }
     File result = getSemiEncodedGraphFile(workingDir);
     try (EncodedFileOutputStream out = new EncodedFileOutputStream(result);) {
@@ -96,7 +94,7 @@ public class DictionaryEncoder implements Closeable {
             byte[] subject;
             if (outputFormat.isSubjectEncoded()) {
               subject = NumberConversion
-                      .long2bytes(dictionary.encode(DeSerializer.serializeNode(quad[0]), true));
+                  .long2bytes(dictionary.encode(DeSerializer.serializeNode(quad[0]), true));
             } else {
               subject = DeSerializer.serializeNode(quad[0]).getBytes("UTF-8");
             }
@@ -104,7 +102,7 @@ public class DictionaryEncoder implements Closeable {
             byte[] property;
             if (outputFormat.isPropertyEncoded()) {
               property = NumberConversion
-                      .long2bytes(dictionary.encode(DeSerializer.serializeNode(quad[1]), true));
+                  .long2bytes(dictionary.encode(DeSerializer.serializeNode(quad[1]), true));
             } else {
               property = DeSerializer.serializeNode(quad[1]).getBytes("UTF-8");
             }
@@ -112,7 +110,7 @@ public class DictionaryEncoder implements Closeable {
             byte[] object;
             if (outputFormat.isObjectEncoded()) {
               object = NumberConversion
-                      .long2bytes(dictionary.encode(DeSerializer.serializeNode(quad[2]), true));
+                  .long2bytes(dictionary.encode(DeSerializer.serializeNode(quad[2]), true));
             } else {
               object = DeSerializer.serializeNode(quad[2]).getBytes("UTF-8");
             }
@@ -123,8 +121,8 @@ public class DictionaryEncoder implements Closeable {
             }
             byte[] containment = new byte[bitsetSize];
 
-            Statement statement = Statement.getStatement(outputFormat, subject, property, object,
-                    containment);
+            Statement statement =
+                Statement.getStatement(outputFormat, subject, property, object, containment);
             out.writeStatement(statement);
           }
         } catch (IOException e) {
@@ -137,7 +135,7 @@ public class DictionaryEncoder implements Closeable {
     dictionary.flush();
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_INITIAL_ENCODING_ENCODING_END,
-              System.currentTimeMillis());
+          System.currentTimeMillis());
     }
     return result;
   }
@@ -146,23 +144,23 @@ public class DictionaryEncoder implements Closeable {
     for (int i = 0; i < statement.length; i++) {
       Node node = statement[i];
       if (node.isBlank()) {
-        statement[i] = NodeFactory
-                .createURI(Configuration.BLANK_NODE_URI_PREFIX + node.getBlankNodeId());
+        statement[i] =
+            NodeFactory.createURI(Configuration.BLANK_NODE_URI_PREFIX + node.getBlankNodeId());
       }
     }
   }
 
   public File getSemiEncodedGraphFile(File workingDir) {
-    File chunkFile = new File(
-            workingDir.getAbsolutePath() + File.separatorChar + "inputRdfFile.senc.gz");
+    File chunkFile =
+        new File(workingDir.getAbsolutePath() + File.separatorChar + "inputRdfFile.senc.gz");
     return chunkFile;
   }
 
   public File[] encodeGraphChunksCompletely(File[] semiEncodedGraphChunks, File workingDir,
-          EncodingFileFormat inputFormat) {
+      EncodingFileFormat inputFormat) {
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINAL_ENCODING_ENCODING_START,
-              System.currentTimeMillis());
+          System.currentTimeMillis());
     }
     File[] result = getFullyEncodedGraphChunks(workingDir, semiEncodedGraphChunks.length);
     for (int i = 0; i < semiEncodedGraphChunks.length; i++) {
@@ -177,16 +175,17 @@ public class DictionaryEncoder implements Closeable {
         }
         continue;
       }
-      try (EncodedFileInputStream in = new EncodedFileInputStream(inputFormat,
-              semiEncodedGraphChunks[i]);
-              EncodedFileOutputStream out = new EncodedFileOutputStream(result[i]);) {
+      try (
+          EncodedFileInputStream in =
+              new EncodedFileInputStream(inputFormat, semiEncodedGraphChunks[i]);
+          EncodedFileOutputStream out = new EncodedFileOutputStream(result[i]);) {
         for (Statement statement : in) {
           byte[] subject;
           if (statement.isSubjectEncoded()) {
             subject = statement.getSubject();
           } else {
             subject = NumberConversion
-                    .long2bytes(dictionary.encode(statement.getSubjectAsString(), true));
+                .long2bytes(dictionary.encode(statement.getSubjectAsString(), true));
           }
 
           byte[] property;
@@ -194,21 +193,21 @@ public class DictionaryEncoder implements Closeable {
             property = statement.getProperty();
           } else {
             property = NumberConversion
-                    .long2bytes(dictionary.encode(statement.getPropertyAsString(), true));
+                .long2bytes(dictionary.encode(statement.getPropertyAsString(), true));
           }
 
           byte[] object;
           if (statement.isObjectEncoded()) {
             object = statement.getObject();
           } else {
-            object = NumberConversion
-                    .long2bytes(dictionary.encode(statement.getObjectAsString(), true));
+            object =
+                NumberConversion.long2bytes(dictionary.encode(statement.getObjectAsString(), true));
           }
 
           byte[] containment = statement.getContainment();
 
           Statement outStatement = Statement.getStatement(EncodingFileFormat.EEE, subject, property,
-                  object, containment);
+              object, containment);
           out.writeStatement(outStatement);
         }
       } catch (IOException e) {
@@ -218,7 +217,7 @@ public class DictionaryEncoder implements Closeable {
     dictionary.flush();
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_FINAL_ENCODING_ENCODING_END,
-              System.currentTimeMillis());
+          System.currentTimeMillis());
     }
 
     if (inputFormat != EncodingFileFormat.EEE) {
@@ -236,8 +235,8 @@ public class DictionaryEncoder implements Closeable {
   public File[] getFullyEncodedGraphChunks(File workingDir, int numberOfGraphChunks) {
     File[] chunkFiles = new File[numberOfGraphChunks];
     for (int i = 0; i < chunkFiles.length; i++) {
-      chunkFiles[i] = new File(
-              workingDir.getAbsolutePath() + File.separatorChar + "chunk" + i + ".enc.gz");
+      chunkFiles[i] =
+          new File(workingDir.getAbsolutePath() + File.separatorChar + "chunk" + i + ".enc.gz");
     }
     return chunkFiles;
   }
@@ -257,7 +256,7 @@ public class DictionaryEncoder implements Closeable {
   }
 
   public long encode(Node node, boolean createNewEncodingForUnknownNodes,
-          GraphStatistics statistics) {
+      GraphStatistics statistics) {
     long id = dictionary.encode(DeSerializer.serializeNode(node), createNewEncodingForUnknownNodes);
     if (id == 0) {
       return id;

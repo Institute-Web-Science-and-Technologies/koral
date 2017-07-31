@@ -47,9 +47,10 @@ public class KoralSlave extends KoralSystem {
   private TripleStoreAccessor tripleStore;
 
   public KoralSlave(Configuration conf) throws ConfigurationException {
-    super(conf, conf.getCurrentSlave(), new SlaveNetworkManager(conf, conf.getCurrentSlave()));
+    super(conf, conf.getCurrentSlave(), new SlaveNetworkManager(conf, conf.getCurrentSlave()),
+        false);
     try {
-      tmpDir = new File(conf.getTmpDir());
+      tmpDir = new File(conf.getTmpDirByInstance(false));
       if (!tmpDir.exists()) {
         tmpDir.mkdirs();
       }

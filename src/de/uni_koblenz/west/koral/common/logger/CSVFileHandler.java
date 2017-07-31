@@ -1,24 +1,20 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package de.uni_koblenz.west.koral.common.logger;
-
-import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,6 +24,8 @@ import java.io.OutputStreamWriter;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
+
+import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 
 /**
  * Writes log messages to a local CSV file.
@@ -43,12 +41,14 @@ public class CSVFileHandler extends Handler {
 
   private String delim = "";
 
-  public CSVFileHandler(Configuration conf, String[] currentServer) throws IOException {
-    File logDir = new File(conf.getLogDirectory());
+  public CSVFileHandler(Configuration conf, String[] currentServer, boolean flagIsMaster)
+      throws IOException {
+    File logDir = new File(conf.getLogDirectory(flagIsMaster));
     if (!logDir.exists()) {
       logDir.mkdirs();
     }
-    out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(conf.getLogDirectory()
+    out = new BufferedWriter(
+        new OutputStreamWriter(new FileOutputStream(conf.getLogDirectory(flagIsMaster)
             + File.separatorChar + currentServer[0] + "_" + currentServer[1] + ".log"), "UTF-8"));
     formatter = new CSVFormatter(currentServer);
     out.write(formatter.getHead(this));

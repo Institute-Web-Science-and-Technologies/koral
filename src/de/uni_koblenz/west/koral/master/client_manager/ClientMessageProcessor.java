@@ -1,22 +1,28 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package de.uni_koblenz.west.koral.master.client_manager;
+
+import java.io.Closeable;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
@@ -30,14 +36,6 @@ import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.KoralMaster;
 import de.uni_koblenz.west.koral.master.tasks.ClientConnectionKeepAliveTask;
 import de.uni_koblenz.west.koral.master.tasks.GraphLoaderTask;
-
-import java.io.Closeable;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Processes messages received from a client.
@@ -88,8 +86,8 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
   private final boolean contactSlaves;
 
   public ClientMessageProcessor(Configuration conf, ClientConnectionManager clientConnections,
-          KoralMaster master, boolean contactSlaves, Logger logger,
-          MeasurementCollector measurementCollector) {
+      KoralMaster master, boolean contactSlaves, Logger logger,
+      MeasurementCollector measurementCollector) {
     this.logger = logger;
     this.measurementCollector = measurementCollector;
     this.clientConnections = clientConnections;
@@ -98,10 +96,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     ftpServer = conf.getFTPServer();
     internalFtpIpAddress = conf.getMaster()[0];
     numberOfChunks = conf.getNumberOfSlaves();
-    tmpDir = new File(conf.getTmpDir());
+    tmpDir = new File(conf.getTmpDirByInstance(true));
     if (!tmpDir.exists() || !tmpDir.isDirectory()) {
       throw new IllegalArgumentException(
-              "The temporary directory " + conf.getTmpDir() + " is not a directory.");
+          "The temporary directory " + conf.getTmpDirByInstance(true) + " is not a directory.");
     }
     clientAddress2Id = new HashMap<>();
     clientAddress2GraphLoaderTask = new HashMap<>();
@@ -155,7 +153,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
         if (logger != null) {
           logger.finest("ignoring message with unknown message type: " + message[0]);
           logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                  e);
+              e);
         }
         return true;
       }
@@ -171,10 +169,10 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     int clientID = clientConnections.createConnection(address);
     clientAddress2Id.put(address, clientID);
     clientConnections.send(clientID,
-            new byte[] { MessageType.CLIENT_CONNECTION_CONFIRMATION.getValue() });
+        new byte[] {MessageType.CLIENT_CONNECTION_CONFIRMATION.getValue()});
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.CLIENT_STARTS_CONNECTION,
-              System.currentTimeMillis(), address, new Integer(clientID).toString());
+          System.currentTimeMillis(), address, new Integer(clientID).toString());
     }
   }
 
@@ -203,7 +201,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     if (buffer == null) {
       if (logger != null) {
         logger.finest("Client " + address
-                + " has sent a command request but did not send the actual command.");
+            + " has sent a command request but did not send the actual command.");
       }
       return;
     }
@@ -213,7 +211,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     if (buffer == null) {
       if (logger != null) {
         logger.finest("Client " + address + " has sent the command " + command
-                + " but did not specify the number of arguments");
+            + " but did not specify the number of arguments");
       }
       return;
     }
@@ -225,8 +223,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
       if (buffer == null) {
         if (logger != null) {
           logger.finest("Client " + address + " has sent the command " + command + " that requires "
-                  + numberOfArguments + " arguments. But it has received only " + i
-                  + " arguments.");
+              + numberOfArguments + " arguments. But it has received only " + i + " arguments.");
         }
         return;
       }
@@ -266,12 +263,12 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
           // }
           if (measurementCollector != null) {
             measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_MESSAGE_RECEIPTION,
-                    System.currentTimeMillis());
+                System.currentTimeMillis());
           }
           GraphLoaderTask loaderTask = new GraphLoaderTask(clientID.intValue(), clientConnections,
-                  master.getNetworkManager(), ftpServer[0], internalFtpIpAddress, ftpServer[1],
-                  master.getDictionary(), master.getStatistics(), tmpDir, master, logger,
-                  measurementCollector, contactSlaves);
+              master.getNetworkManager(), ftpServer[0], internalFtpIpAddress, ftpServer[1],
+              master.getDictionary(), master.getStatistics(), tmpDir, master, logger,
+              measurementCollector, contactSlaves);
           clientAddress2GraphLoaderTask.put(address, loaderTask);
           loaderTask.loadGraph(arguments, numberOfChunks);
           break;
@@ -289,14 +286,14 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
           // }
           if (measurementCollector != null) {
             measurementCollector.measureValue(MeasurementType.QUERY_MESSAGE_RECEIPTION,
-                    System.currentTimeMillis());
+                System.currentTimeMillis());
           }
           QueryExecutionCoordinator coordinator = new QueryExecutionCoordinator(
-                  master.getComputerId(), /* queryIdGenerator.getNextId() */nextQueryId++,
-                  master.getNumberOfSlaves(), mappingReceiverQueueSize, tmpDir, clientID.intValue(),
-                  clientConnections, master.getDictionary(), master.getStatistics(),
-                  emittedMappingsPerRound, storageType, useTransactions, writeAsynchronously,
-                  cacheType, logger, measurementCollector);
+              master.getComputerId(), /* queryIdGenerator.getNextId() */nextQueryId++,
+              master.getNumberOfSlaves(), mappingReceiverQueueSize, tmpDir, clientID.intValue(),
+              clientConnections, master.getDictionary(), master.getStatistics(),
+              emittedMappingsPerRound, storageType, useTransactions, writeAsynchronously, cacheType,
+              logger, measurementCollector);
           coordinator.processQueryRequest(arguments);
           clientAddress2queryExecutionCoordinator.put(address, coordinator);
           master.executeTask(coordinator);
@@ -305,25 +302,27 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
           processDropTables(clientID);
           break;
         default:
-          String errorMessage = "unknown command: " + command + " with " + numberOfArguments
-                  + " arguments.";
+          String errorMessage =
+              "unknown command: " + command + " with " + numberOfArguments + " arguments.";
           if (logger != null) {
             logger.finer(errorMessage);
           }
           clientConnections.send(clientID, MessageUtils
-                  .createStringMessage(MessageType.CLIENT_COMMAND_FAILED, errorMessage, logger));
+              .createStringMessage(MessageType.CLIENT_COMMAND_FAILED, errorMessage, logger));
       }
     } catch (RuntimeException e) {
       if (logger != null) {
-        logger.finer("error during execution of " + command + " with " + numberOfArguments
-                + " arguments.");
+        logger.finer(
+            "error during execution of " + command + " with " + numberOfArguments + " arguments.");
         logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                e);
+            e);
       }
-      clientConnections.send(clientID,
-              MessageUtils.createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
+      clientConnections
+          .send(clientID,
+              MessageUtils
+                  .createStringMessage(MessageType.CLIENT_COMMAND_FAILED,
                       "error during execution of " + command + " with " + numberOfArguments
-                              + " arguments:\n" + e.getClass().getName() + ": " + e.getMessage(),
+                          + " arguments:\n" + e.getClass().getName() + ": " + e.getMessage(),
                       logger));
       // remove started graph loader tasks
       if (command.equals("load") || command.equals("query")) {
@@ -338,17 +337,17 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     }
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.CLIENT_DROP_START,
-              System.currentTimeMillis(), new Integer(clientID).toString());
+          System.currentTimeMillis(), new Integer(clientID).toString());
     }
     Thread keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections, clientID);
     keepAliveThread.start();
     master.clear();
     keepAliveThread.interrupt();
     clientConnections.send(clientID, MessageUtils.createStringMessage(
-            MessageType.CLIENT_COMMAND_SUCCEEDED, "Database is dropped, successfully.", logger));
+        MessageType.CLIENT_COMMAND_SUCCEEDED, "Database is dropped, successfully.", logger));
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.CLIENT_DROP_END, System.currentTimeMillis(),
-              new Integer(clientID).toString());
+          new Integer(clientID).toString());
     }
     if (logger != null) {
       logger.finer("Database is dropped.");
@@ -376,7 +375,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     if (task == null) {
       if (logger != null) {
         logger.finest("Client " + address
-                + " has send a file chunk but there is no task that will receive the chunk.");
+            + " has send a file chunk but there is no task that will receive the chunk.");
       }
       return;
     }
@@ -403,7 +402,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     }
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.CLIENT_ABORTS_CONNECTION,
-              System.currentTimeMillis(), parts[0], parts[1]);
+          System.currentTimeMillis(), parts[0], parts[1]);
     }
   }
 
@@ -439,11 +438,11 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
       clientConnections.closeConnection(cID.intValue());
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.CLIENT_CLOSES_CONNECTION,
-                System.currentTimeMillis(), address, new Integer(cID).toString());
+            System.currentTimeMillis(), address, new Integer(cID).toString());
       }
     } else if (logger != null) {
       logger.finest("ignoring attempt from client " + address
-              + " to close the connection. Connection already closed.");
+          + " to close the connection. Connection already closed.");
     }
   }
 
@@ -491,7 +490,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
       clientAddress2Id.remove(address);
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.CLIENT_CONNECTION_TIMEOUT,
-                System.currentTimeMillis(), address, new Integer(clientID).toString());
+            System.currentTimeMillis(), address, new Integer(clientID).toString());
       }
     }
   }

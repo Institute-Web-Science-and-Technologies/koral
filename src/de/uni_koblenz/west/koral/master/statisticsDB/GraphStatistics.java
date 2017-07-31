@@ -1,22 +1,26 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package de.uni_koblenz.west.koral.master.statisticsDB;
+
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.util.BitSet;
+import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
@@ -27,15 +31,9 @@ import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.util.BitSet;
-import java.util.logging.Logger;
-
 /**
- * Stores statistical information about the occurrence of resources in the
- * different graph chunks. It receives its data from {@link DictionaryEncoder}.
+ * Stores statistical information about the occurrence of resources in the different graph chunks.
+ * It receives its data from {@link DictionaryEncoder}.
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
@@ -55,7 +53,7 @@ public class GraphStatistics implements Closeable {
     // TODO enable
     // database = new SQLiteGraphStatisticsDatabase(conf.getStatisticsDir(),
     // numberOfChunks);
-    database = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(), numberOfChunks);
+    database = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
   }
 
   public GraphStatistics(GraphStatisticsDatabase database, short numberOfChunks, Logger logger) {
@@ -78,7 +76,7 @@ public class GraphStatistics implements Closeable {
     try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, chunk);) {
       for (Statement statement : in) {
         count(statement.getSubjectAsLong(), statement.getPropertyAsLong(),
-                statement.getObjectAsLong(), chunkIndex);
+            statement.getObjectAsLong(), chunkIndex);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -107,15 +105,16 @@ public class GraphStatistics implements Closeable {
         result[i] = null;
         continue;
       }
-      try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE,
-              encodedChunks[i]);
-              EncodedFileOutputStream out = new EncodedFileOutputStream(result[i]);) {
+      try (
+          EncodedFileInputStream in =
+              new EncodedFileInputStream(EncodingFileFormat.EEE, encodedChunks[i]);
+          EncodedFileOutputStream out = new EncodedFileOutputStream(result[i]);) {
         for (Statement statement : in) {
           Statement newStatement = Statement.getStatement(EncodingFileFormat.EEE,
-                  NumberConversion.long2bytes(getIDWithOwner(statement.getSubjectAsLong())),
-                  NumberConversion.long2bytes(getIDWithOwner(statement.getPropertyAsLong())),
-                  NumberConversion.long2bytes(getIDWithOwner(statement.getObjectAsLong())),
-                  statement.getContainment());
+              NumberConversion.long2bytes(getIDWithOwner(statement.getSubjectAsLong())),
+              NumberConversion.long2bytes(getIDWithOwner(statement.getPropertyAsLong())),
+              NumberConversion.long2bytes(getIDWithOwner(statement.getObjectAsLong())),
+              statement.getContainment());
           out.writeStatement(newStatement);
         }
       } catch (IOException e) {
@@ -134,8 +133,8 @@ public class GraphStatistics implements Closeable {
   public File[] getAdjustedFiles(File workingDir) {
     File[] chunkFiles = new File[numberOfChunks];
     for (int i = 0; i < chunkFiles.length; i++) {
-      chunkFiles[i] = new File(
-              workingDir.getAbsolutePath() + File.separatorChar + "chunk" + i + ".adj.gz");
+      chunkFiles[i] =
+          new File(workingDir.getAbsolutePath() + File.separatorChar + "chunk" + i + ".adj.gz");
     }
     return chunkFiles;
   }

@@ -55,9 +55,6 @@ public class StatisticsTest {
 
     File inputFile = new File(args[0]);
     Configuration conf = new Configuration();
-    // TODO can be removed, seems unneeded
-    // conf.setDictionaryDir(workingDir.getAbsolutePath() + File.separator + "dictionary");
-    // conf.setStatisticsDir(workingDir.getAbsolutePath() + File.separator + "statistics");
 
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
     File encodedInput = encoder.encodeOriginalGraphFiles(inputFile.isDirectory()
@@ -71,7 +68,7 @@ public class StatisticsTest {
     System.out.println("measuring mapDB:");
     GraphStatisticsDatabase database = new MapDBGraphStatisticsDatabase(
         MapDBStorageOptions.MEMORY_MAPPED_FILE, MapDBDataStructureOptions.HASH_TREE_MAP,
-        conf.getStatisticsDir(), false, true, MapDBCacheOptions.HASH_TABLE, (short) 4);
+        conf.getStatisticsDir(true), false, true, MapDBCacheOptions.HASH_TABLE, (short) 4);
     StatisticsTest.collectStatistics(database, encodedInput, workingDir);
 
     if (!workingDir.exists()) {
@@ -79,7 +76,7 @@ public class StatisticsTest {
     }
 
     System.out.println("\nmeasuring random access file:");
-    database = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(), (short) 4);
+    database = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), (short) 4);
     StatisticsTest.collectStatistics(database, encodedInput2, workingDir);
 
     if (!workingDir.exists()) {
@@ -87,7 +84,7 @@ public class StatisticsTest {
     }
 
     System.out.println("\nmeasuring SQLite:");
-    database = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(), (short) 4);
+    database = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), (short) 4);
     StatisticsTest.collectStatistics(database, encodedInput3, workingDir);
 
     encoder.close();

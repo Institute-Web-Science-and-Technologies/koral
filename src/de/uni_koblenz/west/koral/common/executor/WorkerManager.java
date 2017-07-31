@@ -1,22 +1,28 @@
 /*
  * This file is part of Koral.
  *
- * Koral is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Koral is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * Lesser General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version.
  *
- * Koral is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * Koral is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
  *
- * You should have received a copy of the GNU Leser General Public License
- * along with Koral.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Leser General Public License along with Koral. If not,
+ * see <http://www.gnu.org/licenses/>.
  *
  * Copyright 2016 Daniel Janke
  */
 package de.uni_koblenz.west.koral.common.executor;
+
+import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.File;
+import java.util.NavigableSet;
+import java.util.TreeSet;
+import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.executor.messagePassing.MessageReceiverListener;
@@ -32,20 +38,11 @@ import de.uni_koblenz.west.koral.common.query.execution.QueryOperatorTask;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
-import java.io.ByteArrayInputStream;
-import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.File;
-import java.util.NavigableSet;
-import java.util.TreeSet;
-import java.util.logging.Logger;
-
 /**
- * This class manages the different {@link WorkerThread}s, i.e., starting and
- * stopping the threads as well as starting and stopping the {@link WorkerTask}
- * of a query. When a new query is started it is also responsible for the
- * initial scheduling of the corresponding {@link WorkerTask}s among all
- * {@link WorkerThread}s.
+ * This class manages the different {@link WorkerThread}s, i.e., starting and stopping the threads
+ * as well as starting and stopping the {@link WorkerTask} of a query. When a new query is started
+ * it is also responsible for the initial scheduling of the corresponding {@link WorkerTask}s among
+ * all {@link WorkerThread}s.
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
@@ -81,25 +78,24 @@ public class WorkerManager implements Closeable, AutoCloseable {
   private final MapDBCacheOptions cacheType;
 
   public WorkerManager(Configuration conf, MessageNotifier notifier, MessageSender messageSender,
-          Logger logger, MeasurementCollector measurementCollector) {
-    this(conf, null, notifier, messageSender, logger, measurementCollector);
+      boolean flagIsMaster, Logger logger, MeasurementCollector measurementCollector) {
+    this(conf, null, notifier, messageSender, flagIsMaster, logger, measurementCollector);
   }
 
   public WorkerManager(Configuration conf, TripleStoreAccessor tripleStore,
-          MessageNotifier notifier, MessageSender messageSender, Logger logger,
-          MeasurementCollector measurementCollector) {
+      MessageNotifier notifier, MessageSender messageSender, boolean flagIsMaster, Logger logger,
+      MeasurementCollector measurementCollector) {
     this.logger = logger;
     this.measurementCollector = measurementCollector;
     messageNotifier = notifier;
     messageReceiver = new MessageReceiverListener(logger);
     this.messageSender = new MessageSenderBuffer(conf.getNumberOfSlaves(),
-            conf.getMappingBundleSize(), messageSender, messageReceiver, logger,
-            measurementCollector);
+        conf.getMappingBundleSize(), messageSender, messageReceiver, logger, measurementCollector);
     messageNotifier.registerMessageListener(messageReceiver.getClass(), messageReceiver);
     numberOfSlaves = conf.getNumberOfSlaves();
     this.tripleStore = tripleStore;
     cacheSize = conf.getReceiverQueueSize();
-    cacheDirectory = new File(conf.getTmpDir());
+    cacheDirectory = new File(conf.getTmpDirByInstance(flagIsMaster));
     cacheType = conf.getJoinCacheType();
     storageType = conf.getJoinCacheStorageType();
     useTransactions = conf.useTransactionsForJoinCache();
@@ -112,8 +108,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
     workers = new WorkerThread[availableCPUs];
     for (int i = 0; i < workers.length; i++) {
       workers[i] = new WorkerThread(i, conf.getSizeOfMappingRecycleCache(),
-              conf.getUnbalanceThresholdForWorkerThreads(), messageReceiver, this.messageSender,
-              numberOfSlaves, logger, measurementCollector);
+          conf.getUnbalanceThresholdForWorkerThreads(), messageReceiver, this.messageSender,
+          numberOfSlaves, logger, measurementCollector);
       if (i > 0) {
         workers[i - 1].setNext(workers[i]);
         workers[i].setPrevious(workers[i - 1]);
@@ -135,41 +131,42 @@ public class WorkerManager implements Closeable, AutoCloseable {
   }
 
   public void createQuery(byte[] receivedQUERY_CREATEMessage) {
-    int computerOfQueryExecutionCoordinator = NumberConversion.bytes2short(
-            receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES + 1) & 0x00_00_ff_ff;
-    long coordinatorId = NumberConversion.bytes2long(receivedQUERY_CREATEMessage,
-            Byte.BYTES + Integer.BYTES + 1);
+    int computerOfQueryExecutionCoordinator =
+        NumberConversion.bytes2short(receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES + 1)
+            & 0x00_00_ff_ff;
+    long coordinatorId =
+        NumberConversion.bytes2long(receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES + 1);
     int queryId = (int) ((coordinatorId & 0x00_00_ff_ff_ff_ff_00_00L) >>> Short.SIZE);
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_CREATION_START,
-              System.currentTimeMillis(), Integer.toString(queryId));
+          System.currentTimeMillis(), Integer.toString(queryId));
     }
-    QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(tripleStore,
-            numberOfSlaves, cacheSize, cacheDirectory, storageType, useTransactions,
-            writeAsynchronously, cacheType);
+    QueryExecutionTreeDeserializer deserializer =
+        new QueryExecutionTreeDeserializer(tripleStore, numberOfSlaves, cacheSize, cacheDirectory,
+            storageType, useTransactions, writeAsynchronously, cacheType);
     try (DataInputStream input = new DataInputStream(
-            new ByteArrayInputStream(receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES,
-                    receivedQUERY_CREATEMessage.length - Byte.BYTES - Integer.BYTES));) {
+        new ByteArrayInputStream(receivedQUERY_CREATEMessage, Byte.BYTES + Integer.BYTES,
+            receivedQUERY_CREATEMessage.length - Byte.BYTES - Integer.BYTES));) {
       QueryOperatorTask queryExecutionTree = deserializer.deserialize(input);
       initializeTaskTree(queryExecutionTree);
       messageSender.sendQueryCreated(computerOfQueryExecutionCoordinator, coordinatorId);
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_CREATION_END,
-                System.currentTimeMillis(), Integer.toString(queryId));
+            System.currentTimeMillis(), Integer.toString(queryId));
       }
       if (logger != null) {
         logger.finer("Query " + queryId + " created.");
       }
     } catch (Throwable e) {
       String message = "Error during deserialization of query "
-              + NumberConversion.bytes2int(receivedQUERY_CREATEMessage, Byte.BYTES) + ".";
+          + NumberConversion.bytes2int(receivedQUERY_CREATEMessage, Byte.BYTES) + ".";
       if (logger != null) {
         logger.finer(message);
         logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                e);
+            e);
       }
       messageSender.sendQueryTaskFailed(computerOfQueryExecutionCoordinator, coordinatorId,
-              message + " Cause: " + e.getMessage());
+          message + " Cause: " + e.getMessage());
     }
   }
 
@@ -203,7 +200,7 @@ public class WorkerManager implements Closeable, AutoCloseable {
       } catch (IllegalThreadStateException e) {
         if (logger != null) {
           logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-                  e);
+              e);
         }
         workers[workerWithMinimalWorkload] = new WorkerThread(workers[workerWithMinimalWorkload]);
         workers[workerWithMinimalWorkload].addWorkerTask(task);
@@ -232,8 +229,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
     }
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_EXECUTION_START,
-              System.currentTimeMillis(),
-              Integer.toString(NumberConversion.bytes2int(receivedMessage, 1)));
+          System.currentTimeMillis(),
+          Integer.toString(NumberConversion.bytes2int(receivedMessage, 1)));
     }
     if (logger != null) {
       logger.finer("Query " + NumberConversion.bytes2int(receivedMessage, 1) + " started.");
@@ -246,8 +243,8 @@ public class WorkerManager implements Closeable, AutoCloseable {
     }
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.QUERY_SLAVE_QUERY_EXECUTION_ABORT,
-              System.currentTimeMillis(),
-              Integer.toString(NumberConversion.bytes2int(receivedMessage, 1)));
+          System.currentTimeMillis(),
+          Integer.toString(NumberConversion.bytes2int(receivedMessage, 1)));
     }
     if (logger != null) {
       logger.finer("Query " + NumberConversion.bytes2int(receivedMessage, 1) + " aborted.");
