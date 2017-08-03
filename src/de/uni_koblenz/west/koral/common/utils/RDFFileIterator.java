@@ -244,6 +244,7 @@ public class RDFFileIterator
     }
     skippedLineNumbers = 0;
     String baseIRI = rdfFiles[currentFile].getAbsolutePath();
+    System.out.println(baseIRI);//
     TypedInputStream in = RDFDataMgr.open(baseIRI);
 
     createIterator(baseIRI, in);
