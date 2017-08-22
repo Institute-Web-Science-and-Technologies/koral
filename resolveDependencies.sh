@@ -16,6 +16,7 @@ wget https://archive.apache.org/dist/jena/binaries/apache-jena-3.4.0.tar.gz
 tar -xf apache-jena-3.4.0.tar.gz
 rm apache-jena-3.4.0.tar.gz
 mv apache-jena-3.4.0/lib/jena-arq-3.4.0.jar koral/lib/jena-arq-3.4.0.jar
+
 mv apache-jena-3.4.0/lib-src/jena-arq-3.4.0-sources.jar koral/lib/jena-arq-3.4.0-sources.jar
 mv apache-jena-3.4.0/lib/jena-base-3.4.0.jar koral/lib/jena-base-3.4.0.jar
 mv apache-jena-3.4.0/lib/jena-core-3.4.0.jar koral/lib/jena-core-3.4.0.jar
