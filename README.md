@@ -30,6 +30,24 @@ cd ..
 ```
 The built JAR can be found under `koral/build/koral.jar`.
 
+## Executing Koral Locally
+
+For developing purposes you can execute Koral on a single machine. Therefore the file `koral/koralLocalConfig.xml` specifies a configuration with one master and two slaves. You can add further slaves by adjusting the slave property in this file.
+
+First you need to start the master by executing:
+`java -jar koral/build/koral.jar master -c ./koralLocalConfig.xml`
+Thereafter, you start the two slaves by executing:
+`java -jar koral/build/koral.jar slave -c ./koralLocalConfig.xml`
+`java -jar koral/build/koral.jar slave -c ./koralLocalConfig.xml`
+
+When Koral is running you can load a dataset by executing:
+`java -jar koral/build/koral.jar client -i 127.0.0.1 -m 127.0.0.1:4711 load -c HASH <datasetFile>`
+
+To request a query you can execute:
+`java -jar koral/build/koral.jar client -i 127.0.0.1 -m 127.0.0.1:4711 query -q <queryFile.sparql>`
+
+You can stop Koral by pressing Strg + C.
+
 ## Deploying Koral in a Cluster
 
 Since installing Koral on several computers is time-consuming, some Fabric scripts are provided that help to deploy, start and stop a Koral cluster.
