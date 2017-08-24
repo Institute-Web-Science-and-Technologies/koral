@@ -29,6 +29,12 @@
 	<target name="unjar_dependencies" depends="clean">
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
+				<include name="**/collection-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-collection/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
 				<include name="**/commons-cli-*.jar" />
 				<exclude name="**/*javadoc.jar" />
 			</fileset>
@@ -36,10 +42,35 @@
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
-				<include name="**/jeromq-*.jar" />
-				<exclude name="**/*javadoc.jar" />
+				<include name="**/commons-net-*.jar" />
+				<exclude name="**/*sources.jar" />
 			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+			<globmapper from="META-INF/*" to="META-INF-commons-net/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/ftplet-api-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-ftplet-api/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/ftpserver-core-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-ftpserver-core/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/httpclient-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-httpclient/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/jena-arq-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jena-arq/*" />
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
@@ -57,10 +88,9 @@
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
-				<include name="**/jena-arq-*.jar" />
-				<exclude name="**/*sources.jar" />
+				<include name="**/jena-csv-*.jar" />
 			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-jena-arq/*" />
+			<globmapper from="META-INF/*" to="META-INF-jena-csv/*" />
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
@@ -78,6 +108,45 @@
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
+				<include name="**/jeromq-*.jar" />
+				<exclude name="**/*javadoc.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-jeromq/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/libthrift-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-libthrift/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/mapdb-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-mapdb/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/mina-core-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-mina-core/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/org.osgi.core-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-org.osgi.core/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/rocksdbjni-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-rocksdbjni/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
 				<include name="**/slf4j-api-*.jar" />
 			</fileset>
 			<globmapper from="META-INF/*" to="META-INF-slf4j-api/*" />
@@ -87,6 +156,19 @@
 				<include name="**/slf4j-nop-*.jar" />
 			</fileset>
 			<globmapper from="META-INF/*" to="META-INF-slf4j-nop/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/snappy-java-*.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-snappy-java/*" />
+		</unjar>
+		<unjar dest="${class.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="**/sqlite-jdbc-*.jar" />
+				<exclude name="**/*sources.jar" />
+			</fileset>
+			<globmapper from="META-INF/*" to="META-INF-sqlite-jdbc/*" />
 		</unjar>
 		<unjar dest="${class.dir}">
 			<fileset dir="${lib.dir}">
@@ -102,84 +184,6 @@
 				<globmapper from="META-INF/*" to="META-INF-xml-apis/*" />
 				<globmapper from="license/*" to="license-xml-apis/*" />
 			</mapper>
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/mapdb-*.jar" />
-				<exclude name="**/*sources.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-mapdb/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/ftplet-api-*.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-ftplet-api/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/ftpserver-core-*.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-ftpserver-core/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/mina-core-*.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-mina-core/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/commons-net-*.jar" />
-				<exclude name="**/*sources.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-commons-net/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/guava-*.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-guava/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/leveldb-0.*.jar" />
-				<exclude name="**/*sources.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-leveldb/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/leveldb-api-*.jar" />
-				<exclude name="**/*sources.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-leveldb-api/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/snappy-java-*.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-snappy-java/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/core-*.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-core/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/rocksdbjni-*.jar" />
-				<exclude name="**/*sources.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-rocksdbjni/*" />
-		</unjar>
-		<unjar dest="${class.dir}">
-			<fileset dir="${lib.dir}">
-				<include name="**/sqlite-jdbc-*.jar" />
-				<exclude name="**/*sources.jar" />
-			</fileset>
-			<globmapper from="META-INF/*" to="META-INF-sqlite-jdbc/*" />
 		</unjar>
 	</target>
 
