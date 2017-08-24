@@ -1,0 +1,121 @@
+<?xml version="1.0" ?>
+<config>
+	<property>
+		<name>master</name>
+		<description>The ip and port of the master server, e.g., 192.168.0.1:4710. If no port is specified, the default port 4710 is used.</description>
+		<value>127.0.0.1:4710</value>
+	</property>
+	<property>
+		<name>ftpServer</name>
+		<description>The external ip and the internal and external port of the FTP server started at the master server, e.g., 192.168.0.1:2121. If no port is specified, the default port 2121 is used. The FTP server is used to upload the graph files from the client to the master and the graph chunks from the master to the slaves. The FTP server runs only during the filetransfer.</description>
+		<value>127.0.0.1:2121</value>
+	</property>
+	<property>
+		<name>slaves</name>
+		<description>The comma separated list of ips and ports of the different slaves, e.g., 192.168.0.2:4712,192.168.0.3,192.168.0.4:4777. If no port is specified, the default port 4710 is used.</description>
+		<value>127.0.0.1:4712,127.0.0.1:4713</value>
+	</property>
+	<property>
+		<name>clientConnection</name>
+		<description>The ip and port to which clients can connect, e.g., 192.168.0.1:4711. If no port is specified, the default port 4711 is used.</description>
+		<value>127.0.0.1:4711</value>
+	</property>
+	<property>
+		<name>clientConnectionTimeout</name>
+		<description>The number of milliseconds the master waits for messages from the client before closing the connection. Every 3000 milliseconds the client sends a keep alive message to the master. The default value is 9223372036854775807 milliseconds.</description>
+		<value>10000</value>
+	</property>
+	<property>
+		<name>logLevel</name>
+		<description>Sets the logging level to one of: OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL</description>
+		<value>INFO</value>
+	</property>
+	<property>
+		<name>tmpDir</name>
+		<description>Defines the directory where intermediate data is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.</description>
+		<value>./koralExec/tmp</value>
+	</property>
+	<property>
+		<name>dataDir</name>
+		<description>Defines the directory where data (e.g. triplestore, dictionary and statistics) is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.</description>
+		<value>./koralExec/data</value>
+	</property>
+	<property>
+		<name>maxDictionaryWriteBatchSize</name>
+		<description>The number of dictionary entries that are stored before writing them to the database as an atomic write operation.</description>
+		<value>100000</value>
+	</property>
+	<property>
+		<name>tripleStoreStorageType</name>
+		<description>Defines how the triple store is persisted:
+MEMORY = triples are only stored in memory
+MEMORY_MAPPED_FILE = triples are stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required.
+RANDOM_ACCESS_FILE = triples are is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.</description>
+		<value>MEMORY_MAPPED_FILE</value>
+	</property>
+	<property>
+		<name>enableAsynchronousWritesForTripleStore</name>
+		<description>If set to true, updates are written in a separate thread asynchronously.</description>
+		<value>true</value>
+	</property>
+	<property>
+		<name>tripleStoreCacheType</name>
+		<description>Defines how the instance cache works:
+NONE = no instances are cached
+HASH_TABLE = a cached instance is deleted, if a hash collision occurs
+LEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size
+HARD_REFERENCE = no instance is removed from the cache automatically
+SOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full
+WEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them</description>
+		<value>HASH_TABLE</value>
+	</property>
+	<property>
+		<name>sizeOfMappingRecycleCache</name>
+		<description>In order to prevent a frequent garbage collection, Mapping objects are recycled. This option defines how many Mapping objects should be cached for reuse.</description>
+		<value>100000</value>
+	</property>
+	<property>
+		<name>unbalanceThresholdForWorkerThreads</name>
+		<description>This property defines how much the current workloads of the different WorkerThreads may differ, before the work is rebalanced.</description>
+		<value>0.1</value>
+	</property>
+	<property>
+		<name>mappingBundleSize</name>
+		<description>Before mappings are sent to another computer, they are bundled into one message. This number defines how many mappings are bundeled.</description>
+		<value>100</value>
+	</property>
+	<property>
+		<name>receiverQueueSize</name>
+		<description>Defines how many mappings should be stored in memory for each mapping receiver queue of each query operator</description>
+		<value>1000</value>
+	</property>
+	<property>
+		<name>mappingsPerOperationRound</name>
+		<description>Defines the maximum amount of mappings that are emitted by a query operation before the scheduler executes the next operation.</description>
+		<value>100</value>
+	</property>
+	<property>
+		<name>joinCacheStorageType</name>
+		<description>Defines how the join cache is persisted:
+MEMORY = triples are only stored in memory
+MEMORY_MAPPED_FILE = triples are stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required.
+RANDOM_ACCESS_FILE = triples are is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.</description>
+		<value>MEMORY_MAPPED_FILE</value>
+	</property>
+	<property>
+		<name>enableAsynchronousWritesForJoinCache</name>
+		<description>If set to true, updates are written in a separate thread asynchronously.</description>
+		<value>true</value>
+	</property>
+	<property>
+		<name>joinCacheType</name>
+		<description>Defines how the join cache works:
+NONE = no instances are cached
+HASH_TABLE = a cached instance is deleted, if a hash collision occurs
+LEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size
+HARD_REFERENCE = no instance is removed from the cache automatically
+SOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full
+WEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them</description>
+		<value>HASH_TABLE</value>
+	</property>
+</config>
