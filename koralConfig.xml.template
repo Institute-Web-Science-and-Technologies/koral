@@ -22,7 +22,7 @@
 	</property>
 	<property>
 		<name>clientConnectionTimeout</name>
-		<description>The number of milliseconds the master waits for messages from the client before closing the connection. Every 3000 milliseconds the client sends a keep alive message to the master. The default value is 3600000 milliseconds.</description>
+		<description>The number of milliseconds the master waits for messages from the client before closing the connection. Every 3000 milliseconds the client sends a keep alive message to the master. The default value is 9223372036854775807 milliseconds.</description>
 		<value>10000</value>
 	</property>
 	<property>

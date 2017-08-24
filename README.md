@@ -46,15 +46,8 @@ You should at least configure the following properties:
 You can add, e.g. `:1234`, to each IP address to specify the used port. If you leave it out, the default ports will be used.
 
 Furthermore, you can specify the different directory where Koral stores data. The master and the slaves use the following directories:
-- loggingDirectory: the directory where the log files are written to. Default: `.`
 - tmpDir: the directory where intermediate data is stored. Default: `/tmp`
-
-Only the master uses the following directories:
-- dictionaryDir: the directory where the dictionary is created in. Default: `./dictionary`
-- statisticsDir: the directory where the statistics database is created in. Default: `./statistics`
-
-Only the slaves use the following directory:
-- tripleStoreDir: the directory where the local triple indices are created in. Default: `./tripleStore`
+- dataDir: the directory where the persistent data of the dictionary, the statistics database and the local triple store. Default: `/data`
 
 ### Setting up Fabric
 
