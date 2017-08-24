@@ -76,13 +76,13 @@ public class KoralClient {
     connection = new ClientConnection();
   }
 
-  public boolean startUp(String masterAddress) {
+  public boolean startUp(String clientIP, String masterAddress) {
     if (masterAddress.contains(":")) {
       master = masterAddress.split(Pattern.quote(":"));
     } else {
       master = new String[] { masterAddress, Configuration.DEFAULT_CLIENT_PORT };
     }
-    connection.connect(masterAddress);
+    connection.connect(clientIP, masterAddress);
     return connection.isConnected();
   }
 
@@ -382,8 +382,13 @@ public class KoralClient {
         master += ":" + Configuration.DEFAULT_CLIENT_PORT;
       }
 
+      String clientIP = null;
+      if (line.hasOption("i")) {
+        clientIP = line.getOptionValue("i");
+      }
+
       KoralClient client = new KoralClient();
-      if (!client.startUp(master)) {
+      if (!client.startUp(clientIP, master)) {
         client.shutDown();
         return;
       }
@@ -578,8 +583,8 @@ public class KoralClient {
       delim = ", ";
     }
 
-    Option treeType = Option.builder("t").longOpt("treeType").hasArg().argName("treeType")
-            .desc("The ordering in which the triple patterns of a BGP are joined. Valid options are "
+    Option treeType = Option.builder("t").longOpt("treeType").hasArg().argName("treeType").desc(
+            "The ordering in which the triple patterns of a BGP are joined. Valid options are "
                     + sb.toString() + ". The default value is "
                     + QueryExecutionTreeType.LEFT_LINEAR.name() + ".")
             .required(false).build();
@@ -587,8 +592,8 @@ public class KoralClient {
     Option useBaseOperators = Option.builder("b").longOpt("base").hasArg(false)
             .desc("If set, the baseline query operators are used.").required(false).build();
 
-    Option output = Option.builder("o").longOpt("output").hasArg().argName("outputFile")
-            .desc("The CSV file where the output is stored. If no file is given, the output is written to command line.")
+    Option output = Option.builder("o").longOpt("output").hasArg().argName("outputFile").desc(
+            "The CSV file where the output is stored. If no file is given, the output is written to command line.")
             .required(false).build();
 
     Option queryFile = Option.builder("q").longOpt("querFile").hasArg().argName("SPARQLQueryFile")
@@ -647,9 +652,14 @@ public class KoralClient {
                     + Configuration.DEFAULT_CLIENT_PORT + " is used as default.")
             .required(true).build();
 
+    Option clientAddress = Option.builder("i").longOpt("ip").hasArg().argName("IP:Port")
+            .desc("The IP and optional port on which the client should listen on.").required(false)
+            .build();
+
     Options options = new Options();
     options.addOption(help);
     options.addOption(master);
+    options.addOption(clientAddress);
     return options;
   }
 
@@ -661,7 +671,8 @@ public class KoralClient {
 
   private static void printUsage(Options options) {
     HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("java " + KoralClient.class.getName() + " [-h] [-m <IP:Port>] <command>",
+    formatter.printHelp(
+            "java " + KoralClient.class.getName() + " [-h] [-i <IP:Port>] [-m <IP:Port>] <command>",
             options);
     System.out.println("The following commands are available:");
     KoralClient.printCommandList();

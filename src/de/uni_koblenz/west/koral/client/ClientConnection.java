@@ -36,6 +36,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.regex.Pattern;
 
 /**
  * Establishes a connection with Koral master and provides methods to send
@@ -66,7 +67,7 @@ public class ClientConnection implements Closeable {
     return clientAddress;
   }
 
-  public void connect(String masterAddress) {
+  public void connect(String clientIp, String masterAddress) {
     System.out.println("Connecting to master...");
     outSocket = context.createSocket(ZMQ.PUSH);
     synchronized (outSocketSemaphore) {
@@ -84,14 +85,26 @@ public class ClientConnection implements Closeable {
         }
       }
       try {
-        String hostAddress = getHostAddress();
+        String hostAddress = null;
         int port = -1;
+        if (clientIp == null) {
+          hostAddress = getHostAddress();
+        } else {
+          if (clientIp.contains(":")) {
+            String[] parts = clientIp.split(Pattern.quote(":"));
+            hostAddress = parts[0];
+            port = Integer.parseInt(parts[1]);
+          } else {
+            hostAddress = clientIp;
+          }
+        }
         synchronized (inSocketSemaphore) {
           if (inSocket != null) {
             port = inSocket.bindToRandomPort("tcp://" + hostAddress, 49152, 61000);
           }
         }
         clientAddress = hostAddress + ":" + port;
+        System.out.println("Client bound to " + clientAddress);
 
         // exchange a unique connection with master
         synchronized (outSocketSemaphore) {
