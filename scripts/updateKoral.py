@@ -13,13 +13,14 @@ def performCommonUpdateSteps(branch=-1):
     updateKoral(branch)
 
 def updateKoral(branch=-1):
-    run("rm koral/lib/*.jar")
-    run("sh koral/resolveDependencies.sh")
     with cd("koral"):
         run("git pull")
         if (branch != -1):
           run("git checkout " + branch)
           run("git pull")
+    run("rm koral/lib/*.jar")
+    run("sh koral/resolveDependencies.sh")
+    with cd("koral"):
         run("ant")
     run("cp koral/build/koral.jar koral.jar")
     put("../koralConfig.xml","koralConfig.xml")
