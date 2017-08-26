@@ -16,13 +16,6 @@
  */
 package de.uni_koblenz.west.koral.common.system;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -30,6 +23,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.jena.query.ARQ;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.config.impl.XMLDeserializer;
@@ -42,9 +36,17 @@ import de.uni_koblenz.west.koral.common.messages.MessageNotifier;
 import de.uni_koblenz.west.koral.common.networManager.NetworkManager;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
- * This class abstracts the functionality that is the same for the Koral master and any slave, for
- * instance, the message passing facility or the clean shut down.
+ * This class abstracts the functionality that is the same for the Koral master
+ * and any slave, for instance, the message passing facility or the clean shut
+ * down.
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
@@ -67,7 +69,8 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
   private Map<Class<? extends MessageListener>, MessageListener[][]> listeners;
 
   public KoralSystem(Configuration conf, String[] currentAddress, NetworkManager networkManager,
-      boolean flagIsMaster) {
+          boolean flagIsMaster) {
+    ARQ.init();
     // add shutdown hook that terminates everything
     continueRunning = true;
     Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -93,25 +96,25 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
     if (conf.getLoglevel() != Level.OFF) {
       if (conf.getRomoteLoggerReceiver() != null) {
         logger = LoggerFactory.getJeromqLogger(conf, currentAddress, getClass().getName(),
-            conf.getRomoteLoggerReceiver());
+                conf.getRomoteLoggerReceiver());
       }
       try {
         logger = LoggerFactory.getCSVFileLogger(conf, currentAddress, getClass().getName(),
-            flagIsMaster);
+                flagIsMaster);
       } catch (IOException e) {
         if (logger != null) {
           logger.warning("Logging to a CSV file is not possible. Reason: " + e.getMessage());
           logger.warning("Continuing without logging to a file.");
           logger.throwing(e.getStackTrace()[0].getClassName(), e.getStackTrace()[0].getMethodName(),
-              e);
+                  e);
         }
         e.printStackTrace();
       }
     }
 
     if (conf.getRomoteMeasurementReceiver() != null) {
-      measurementCollector =
-          new MeasurementCollector(conf, currentAddress, conf.getRomoteMeasurementReceiver());
+      measurementCollector = new MeasurementCollector(conf, currentAddress,
+              conf.getRomoteMeasurementReceiver());
     }
 
     this.networkManager = networkManager;
@@ -119,7 +122,7 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
     listeners = new HashMap<>();
 
     workerManager = new WorkerManager(conf, this, getNetworkManager(), flagIsMaster, logger,
-        measurementCollector);
+            measurementCollector);
 
     if (logger != null) {
       logger.info(getClass().getSimpleName() + " started");
@@ -150,7 +153,7 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
     } catch (Throwable t) {
       if (logger != null) {
         logger.throwing(t.getStackTrace()[0].getClassName(), t.getStackTrace()[0].getMethodName(),
-            t);
+                t);
       }
       try {
         Thread.sleep(1000);
@@ -163,7 +166,7 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
       } catch (Throwable t) {
         if (logger != null) {
           logger.throwing(t.getStackTrace()[0].getClassName(), t.getStackTrace()[0].getMethodName(),
-              t);
+                  t);
         }
         throw t;
       }
@@ -174,7 +177,7 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
 
   @Override
   public void registerMessageListener(Class<? extends MessageListener> listenerType,
-      MessageListener listener) {
+          MessageListener listener) {
     MessageListener[][] messageListeners = listeners.get(listenerType);
     if (messageListeners == null) {
       messageListeners = new MessageListener[networkManager.getNumberOfSlaves()][];
@@ -196,24 +199,25 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
    * 
    * @param listener
    * @param messageListeners
-   * @param slaveIndex first slave has index 0!
+   * @param slaveIndex
+   *          first slave has index 0!
    */
   private void putListener(MessageListener listener, MessageListener[][] messageListeners,
-      int slaveIndex) {
+          int slaveIndex) {
     if (messageListeners[slaveIndex] == null) {
       messageListeners[slaveIndex] = new MessageListener[1];
     }
     // find first free index
     int insertIndex = 0;
     while ((insertIndex < messageListeners[slaveIndex].length)
-        && (messageListeners[slaveIndex][insertIndex] != null)) {
+            && (messageListeners[slaveIndex][insertIndex] != null)) {
       insertIndex++;
     }
     if (insertIndex == messageListeners[slaveIndex].length) {
       // extend array
       MessageListener[] newArray = new MessageListener[messageListeners[slaveIndex].length + 1];
       System.arraycopy(messageListeners[slaveIndex], 0, newArray, 0,
-          messageListeners[slaveIndex].length);
+              messageListeners[slaveIndex].length);
       messageListeners[slaveIndex] = newArray;
     }
     messageListeners[slaveIndex][insertIndex] = listener;
@@ -221,12 +225,12 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
 
   @Override
   public void notifyMessageListener(Class<? extends MessageListener> listenerType, int slaveID,
-      byte[][] message) {
+          byte[][] message) {
     MessageListener[][] messageListeners = listeners.get(listenerType);
     if (messageListeners == null) {
       if (logger != null) {
         logger.finer("No message listners of type " + listenerType.getName()
-            + " registered. Discarding message.");
+                + " registered. Discarding message.");
       }
       return;
     }
@@ -234,7 +238,7 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
     if (messageListeners[slaveID] == null) {
       if (logger != null) {
         logger.finer("No message listners of type " + listenerType.getName()
-            + " registered for slave. Discarding message.");
+                + " registered for slave. Discarding message.");
       }
       return;
     }
@@ -247,12 +251,12 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
 
   @Override
   public void notifyMessageListener(Class<? extends MessageListener> listenerType, int slaveID,
-      byte[] message) {
+          byte[] message) {
     MessageListener[][] messageListeners = listeners.get(listenerType);
     if (messageListeners == null) {
       if (logger != null) {
         logger.finer("No message listners of type " + listenerType.getName()
-            + " registered. Discarding message.");
+                + " registered. Discarding message.");
       }
       return;
     }
@@ -260,7 +264,7 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
     if (messageListeners[slaveID] == null) {
       if (logger != null) {
         logger.finer("No message listners of type " + listenerType.getName()
-            + " registered for slave. Discarding message.");
+                + " registered for slave. Discarding message.");
       }
       return;
     }
@@ -273,7 +277,7 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
 
   @Override
   public void unregisterMessageListener(Class<? extends MessageListener> listenerType,
-      MessageListener listener) {
+          MessageListener listener) {
     MessageListener[][] messageListeners = listeners.get(listenerType);
     if (messageListeners == null) {
       return;
@@ -305,10 +309,11 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
    * 
    * @param listener
    * @param messageListeners
-   * @param slaveIndex first slave has index 0!
+   * @param slaveIndex
+   *          first slave has index 0!
    */
   private void removeListener(MessageListener listener, MessageListener[][] messageListeners,
-      int slaveIndex) {
+          int slaveIndex) {
     boolean containsElement = false;
     for (int i = 0; i < messageListeners[slaveIndex].length; i++) {
       if (messageListeners[slaveIndex][i] == listener) {
@@ -352,20 +357,19 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
     help.setRequired(false);
 
     Option config = Option.builder("c").longOpt("config").hasArg().argName("configFile")
-        .desc("the configuration file to use. default is ./koralConfig.xml").required(false)
-        .build();
+            .desc("the configuration file to use. default is ./koralConfig.xml").required(false)
+            .build();
 
     Option remoteLogger = Option.builder("r").longOpt("remoteLogger").hasArg()
-        .argName("receiverIP:Port")
-        .desc("remote receiver to which logging messages are sent. If no port is specified, port "
-            + JeromqStreamHandler.DEFAULT_PORT + " is used as default.")
-        .required(false).build();
+            .argName("receiverIP:Port")
+            .desc("remote receiver to which logging messages are sent. If no port is specified, port "
+                    + JeromqStreamHandler.DEFAULT_PORT + " is used as default.")
+            .required(false).build();
 
-    Option measurementReceiver =
-        Option.builder("m").longOpt("measurementReceiver").hasArg()
+    Option measurementReceiver = Option.builder("m").longOpt("measurementReceiver").hasArg()
             .argName("measurementReceiverIP:Port")
             .desc("remote receiver to which measurement are sent. If no port is specified, port "
-                + MeasurementCollector.DEFAULT_PORT + " is used as default.")
+                    + MeasurementCollector.DEFAULT_PORT + " is used as default.")
             .required(false).build();
 
     Options options = new Options();
@@ -377,13 +381,13 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
   }
 
   protected static CommandLine parseCommandLineArgs(Options options, String[] args)
-      throws ParseException {
+          throws ParseException {
     CommandLineParser parser = new DefaultParser();
     return parser.parse(options, args);
   }
 
   protected static Configuration initializeConfiguration(Options options, CommandLine line,
-      String className, String additionalArgs) {
+          String className, String additionalArgs) {
     if (line.hasOption("h")) {
       KoralSystem.printUsage(className, options, additionalArgs);
       return null;
@@ -409,8 +413,8 @@ public abstract class KoralSystem extends Thread implements MessageNotifier {
   protected static void printUsage(String className, Options options, String additionalArgs) {
     HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp("java " + className
-        + " [-h] [-c <configFile>] [-r <receiverIP:Port>] [-m <measurementReceiverIP:Port>]"
-        + additionalArgs, options);
+            + " [-h] [-c <configFile>] [-r <receiverIP:Port>] [-m <measurementReceiverIP:Port>]"
+            + additionalArgs, options);
   }
 
 }

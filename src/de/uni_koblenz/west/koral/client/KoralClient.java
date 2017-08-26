@@ -26,6 +26,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.jena.graph.Node;
+import org.apache.jena.query.ARQ;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.util.FileUtils;
 
@@ -73,6 +74,7 @@ public class KoralClient {
   private String[] master;
 
   public KoralClient() {
+    ARQ.init();
     connection = new ClientConnection();
   }
 
