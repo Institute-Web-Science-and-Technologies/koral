@@ -86,8 +86,17 @@ public abstract class EdgeWeightMinimalEdgeCutCoverBase extends GraphCoverCreato
   protected void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
           int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
           File workingDir) {
-    // TODO measure metrics
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_EDGE_WEIGHT_ADJUSTMENT_START,
+              System.currentTimeMillis());
+    }
     File adjustedGraphFile = adjusteEdgeWeights(input, workingDir);
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_EDGE_WEIGHT_ADJUSTMENT_END,
+              System.currentTimeMillis());
+    }
 
     try (EncodedFileInputStream adjustedInput = new EncodedFileInputStream(
             getRequiredInputEncoding(), adjustedGraphFile);) {

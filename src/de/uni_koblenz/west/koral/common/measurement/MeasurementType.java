@@ -20,7 +20,7 @@ package de.uni_koblenz.west.koral.common.measurement;
 
 /**
  * Types of measured values
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -103,6 +103,18 @@ public enum MeasurementType {
    * timestamp
    */
   LOAD_GRAPH_COVER_CREATION_HIERARCHY_LEVEL_IDENTIFICATION_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_EDGE_WEIGHT_ADJUSTMENT_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_EDGE_WEIGHT_ADJUSTMENT_END,
 
   /**
    * measured on master<br>
