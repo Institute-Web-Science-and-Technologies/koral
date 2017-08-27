@@ -24,7 +24,7 @@ import java.util.Iterator;
 
 /**
  * Iterator over an input file
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -38,7 +38,7 @@ public class EncodedFileInputIterator implements Iterator<Statement> {
 
   public EncodedFileInputIterator(EncodedFileInputStream input) {
     this.input = input;
-    next = new byte[4][];
+    next = new byte[5][];
     getNext();
   }
 
@@ -49,7 +49,8 @@ public class EncodedFileInputIterator implements Iterator<Statement> {
       next[0] = statement.getSubject();
       next[1] = statement.getProperty();
       next[2] = statement.getObject();
-      next[3] = statement.getContainment();
+      next[3] = statement.getEdgeWeight();
+      next[4] = statement.getContainment();
     } catch (EOFException e) {
       // the input is read completely
       next = null;
@@ -68,9 +69,10 @@ public class EncodedFileInputIterator implements Iterator<Statement> {
     byte[] subject = next[0];
     byte[] property = next[1];
     byte[] object = next[2];
-    byte[] containment = next[3];
+    byte[] edgeWeight = next[3];
+    byte[] containment = next[4];
     getNext();
-    return Statement.getStatement(format, subject, property, object, containment);
+    return Statement.getStatement(format, subject, property, object, edgeWeight, containment);
   }
 
 }

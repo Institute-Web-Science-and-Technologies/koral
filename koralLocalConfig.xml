@@ -28,17 +28,17 @@
 	<property>
 		<name>logLevel</name>
 		<description>Sets the logging level to one of: OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL</description>
-		<value>INFO</value>
+		<value>ALL</value>
 	</property>
 	<property>
 		<name>tmpDir</name>
 		<description>Defines the directory where intermediate data is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.</description>
-		<value>./koralExec/tmp</value>
+		<value>/tmp/koralExec/tmp</value>
 	</property>
 	<property>
 		<name>dataDir</name>
 		<description>Defines the directory where data (e.g. triplestore, dictionary and statistics) is stored. Default directory (i.e., if not set) is the temporary directory of the operating system.</description>
-		<value>./koralExec/data</value>
+		<value>/tmp/koralExec/data</value>
 	</property>
 	<property>
 		<name>maxDictionaryWriteBatchSize</name>

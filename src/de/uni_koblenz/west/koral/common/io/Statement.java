@@ -26,7 +26,7 @@ import java.util.Arrays;
 /**
  * A singleton class that provides method to get triple elements as String or
  * long
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -41,6 +41,8 @@ public class Statement {
   private byte[] property;
 
   private byte[] object;
+
+  private byte[] edgeWeight;
 
   private byte[] containment;
 
@@ -117,6 +119,22 @@ public class Statement {
     return NumberConversion.bytes2long(object);
   }
 
+  public boolean hasEdgeWeight() {
+    return format.hasEdgeWeight();
+  }
+
+  public byte[] getEdgeWeight() {
+    return edgeWeight;
+  }
+
+  public long getEdgeWeightAsLong() {
+    if (!format.hasEdgeWeight()) {
+      throw new RuntimeException(
+              "The encoding format " + getFormat() + " does not have edge weights.");
+    }
+    return NumberConversion.bytes2long(edgeWeight);
+  }
+
   public byte[] getContainment() {
     return containment;
   }
@@ -133,7 +151,8 @@ public class Statement {
   public String toString() {
     return "Statement(" + (isSubjectEncoded() ? getSubjectAsLong() : getSubjectAsString()) + ", "
             + (isPropertyEncoded() ? getPropertyAsLong() : getPropertyAsString()) + ", "
-            + (isObjectEncoded() ? getObjectAsLong() : getObjectAsString()) + ", "
+            + (isObjectEncoded() ? getObjectAsLong() : getObjectAsString())
+            + (format.hasEdgeWeight() ? getEdgeWeightAsLong() : "") + ", "
             + Arrays.toString(getContainment()) + ")";
   }
 
@@ -148,5 +167,12 @@ public class Statement {
     Statement.singleton.object = object;
     Statement.singleton.containment = containment;
     return Statement.singleton;
+  }
+
+  public static Statement getStatement(EncodingFileFormat format, byte[] subject, byte[] property,
+          byte[] object, byte[] edgeWeight, byte[] containment) {
+    Statement stmt = getStatement(format, subject, property, object, containment);
+    stmt.edgeWeight = edgeWeight;
+    return stmt;
   }
 }

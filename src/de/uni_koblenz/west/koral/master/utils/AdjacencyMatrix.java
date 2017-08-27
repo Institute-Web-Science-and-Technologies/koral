@@ -29,6 +29,8 @@ import java.io.File;
  */
 public abstract class AdjacencyMatrix implements Closeable {
 
+  private final boolean removeDuplicates;
+
   protected final File workingDir;
 
   private long numberOfVertices;
@@ -37,9 +39,14 @@ public abstract class AdjacencyMatrix implements Closeable {
 
   private boolean areDuplicatesRemoved;
 
-  public AdjacencyMatrix(File workingDir) {
+  public AdjacencyMatrix(File workingDir, boolean removeDuplicates) {
+    this.removeDuplicates = removeDuplicates;
     this.workingDir = workingDir;
     areDuplicatesRemoved = true;
+  }
+
+  protected boolean isRemoveDuplicatesSet() {
+    return removeDuplicates;
   }
 
   public long getNumberOfVertices() {
@@ -47,7 +54,7 @@ public abstract class AdjacencyMatrix implements Closeable {
   }
 
   public long getNumberOfEdges() {
-    if (!areDuplicatesRemoved) {
+    if (!areDuplicatesRemoved && removeDuplicates) {
       removeDuplicates();
     }
     return numberOfEdges;
@@ -61,20 +68,50 @@ public abstract class AdjacencyMatrix implements Closeable {
     if (vertex2 > numberOfVertices) {
       numberOfVertices = vertex2;
     }
+    if (!removeDuplicates) {
+      numberOfEdges++;
+    }
     addAdjacentVertex(vertex1, vertex2);
     addAdjacentVertex(vertex2, vertex1);
-  }
-
-  public LongIterator getAdjacencyList(long vertex) {
-    if (!areDuplicatesRemoved) {
-      removeDuplicates();
-    }
-    return getInternalAdjacencyList(vertex).iterator();
   }
 
   private void addAdjacentVertex(long vertex, long adjacency) {
     AdjacencyList adjacencyList = getInternalAdjacencyList(vertex);
     adjacencyList.append(adjacency);
+  }
+
+  public void addEdge(long vertex1, long vertex2, long edgeWeight) {
+    areDuplicatesRemoved = false;
+    if (vertex1 > numberOfVertices) {
+      numberOfVertices = vertex1;
+    }
+    if (vertex2 > numberOfVertices) {
+      numberOfVertices = vertex2;
+    }
+    if (!removeDuplicates) {
+      numberOfEdges++;
+    }
+    addAdjacentVertex(vertex1, vertex2, edgeWeight);
+    addAdjacentVertex(vertex2, vertex1, edgeWeight);
+  }
+
+  private void addAdjacentVertex(long vertex, long adjacency, long edgeWeight) {
+    AdjacencyList adjacencyList = getInternalAdjacencyList(vertex);
+    adjacencyList.append(adjacency, edgeWeight);
+  }
+
+  public LongIterator getAdjacencyList(long vertex) {
+    if (!areDuplicatesRemoved && removeDuplicates) {
+      removeDuplicates();
+    }
+    return getInternalAdjacencyList(vertex).iterator();
+  }
+
+  public LongArrayIterator getWeightedAdjacencyList(long vertex) {
+    if (!areDuplicatesRemoved && removeDuplicates) {
+      removeDuplicates();
+    }
+    return getInternalAdjacencyList(vertex).iteratorForArray();
   }
 
   protected abstract AdjacencyList getInternalAdjacencyList(long vertex);

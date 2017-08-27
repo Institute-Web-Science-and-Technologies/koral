@@ -29,7 +29,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Writes data into a file respecting the {@link EncodingFileFormat}. Long
  * values are v-byte encoded.
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -51,6 +51,9 @@ public class EncodedFileOutputStream implements AutoCloseable {
     write(statement.isSubjectEncoded(), statement.getSubject());
     write(statement.isPropertyEncoded(), statement.getProperty());
     write(statement.isObjectEncoded(), statement.getObject());
+    if (statement.hasEdgeWeight()) {
+      write(true, statement.getEdgeWeight());
+    }
     out.writeShort(statement.getContainment().length);
     out.write(statement.getContainment());
   }

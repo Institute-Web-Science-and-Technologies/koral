@@ -19,19 +19,18 @@
 package de.uni_koblenz.west.koral.master.utils;
 
 /**
- * Represents an adjacency list.
+ * An iterator over long values.
  *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public interface AdjacencyList {
+public interface LongArrayIterator extends AutoCloseable {
 
-  public void append(long adjacency);
+  public boolean hasNext();
 
-  public void append(long adjacency, long edgeWeight);
+  public long[] next();
 
-  public LongArrayIterator iteratorForArray();
-
-  public LongIterator iterator();
+  @Override
+  public void close();
 
 }

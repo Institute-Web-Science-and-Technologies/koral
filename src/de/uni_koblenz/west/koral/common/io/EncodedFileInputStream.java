@@ -33,7 +33,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * Reads data from a file respecting the {@link EncodingFileFormat}. The v-byte
  * encoded long values in the input file are decoded.
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -47,7 +47,7 @@ public class EncodedFileInputStream implements AutoCloseable, Iterable<Statement
 
   /**
    * The input must be closed!
-   * 
+   *
    * @param input
    * @throws FileNotFoundException
    * @throws IOException
@@ -77,11 +77,17 @@ public class EncodedFileInputStream implements AutoCloseable, Iterable<Statement
     byte[] subject = inputFormat.isSubjectEncoded() ? readEncodedLong() : readString();
     byte[] property = inputFormat.isPropertyEncoded() ? readEncodedLong() : readString();
     byte[] object = inputFormat.isObjectEncoded() ? readEncodedLong() : readString();
+    byte[] edgeWeight = inputFormat.hasEdgeWeight() ? readEncodedLong() : null;
 
     int length = input.readShort() & 0xff_ff;
     byte[] containment = new byte[length];
     input.readFully(containment);
-    return Statement.getStatement(inputFormat, subject, property, object, containment);
+    if (inputFormat.hasEdgeWeight()) {
+      return Statement.getStatement(inputFormat, subject, property, object, edgeWeight,
+              containment);
+    } else {
+      return Statement.getStatement(inputFormat, subject, property, object, containment);
+    }
   }
 
   private byte[] readString() throws IOException {

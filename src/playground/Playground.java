@@ -16,12 +16,6 @@
  */
 package playground;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
-
 import org.apache.jena.query.QueryFactory;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
@@ -38,19 +32,26 @@ import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.NHopReplicator;
-import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.EdgeCentralityGraphCover1;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.slave.triple_store.TripleStoreAccessor;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Arrays;
+
 /**
  * A class to test source code. Not used within Koral.
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
 public class Playground {
 
   public static void main(String[] args) {
+    args = new String[] { "/home/janke/Downloads/koral/exampleGraph.n3" };
     if (args.length == 0) {
       System.out.println("Missing input file");
       return;
@@ -63,22 +64,24 @@ public class Playground {
     File inputFile = new File(args[0]);
     Configuration conf = new Configuration();
 
-    GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
+    // GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
     // GraphCoverCreator coverCreator = new HierarchicalCoverCreator(null,
     // null);
     // GraphCoverCreator coverCreator = new MinimalEdgeCutCover(null, null);
+    GraphCoverCreator coverCreator = new EdgeCentralityGraphCover1(null, null);
 
     // encode graph
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
-    File encodedInput = encoder.encodeOriginalGraphFiles(inputFile.isDirectory()
-        ? inputFile.listFiles(new GraphFileFilter()) : new File[] {inputFile}, workingDir,
-        coverCreator.getRequiredInputEncoding(), 4);
+    File encodedInput = encoder.encodeOriginalGraphFiles(
+            inputFile.isDirectory() ? inputFile.listFiles(new GraphFileFilter())
+                    : new File[] { inputFile },
+            workingDir, coverCreator, 4);
 
     // create cover
     File[] cover = coverCreator.createGraphCover(encoder, encodedInput, workingDir, 4);
 
     cover = encoder.encodeGraphChunksCompletely(cover, workingDir,
-        coverCreator.getRequiredInputEncoding());
+            coverCreator.getRequiredInputEncoding());
 
     NHopReplicator replicator = new NHopReplicator(null, null);
     cover = replicator.createNHopReplication(cover, workingDir, 0);
@@ -93,26 +96,26 @@ public class Playground {
     Playground.printContentOfChunks(cover, encoder, EncodingFileFormat.EEE);
 
     // store triples
-    TripleStoreAccessor accessor = new TripleStoreAccessor(conf, null);
-    for (File file : cover) {
-      if (file != null) {
-        accessor.storeTriples(file);
-      }
-    }
+    // TripleStoreAccessor accessor = new TripleStoreAccessor(conf, null);
+    // for (File file : cover) {
+    // if (file != null) {
+    // accessor.storeTriples(file);
+    // }
+    // }
 
     // Playground.printQET(args, workingDir, conf, encoder, statistics,
     // accessor);
 
     encoder.close();
     statistics.close();
-    accessor.close();
+    // accessor.close();
 
-    Playground.delete(workingDir);
+    // Playground.delete(workingDir);
   }
 
   @SuppressWarnings("unused")
   private static void printQET(String[] args, File workingDir, Configuration conf,
-      DictionaryEncoder encoder, GraphStatistics statistics, TripleStoreAccessor accessor) {
+          DictionaryEncoder encoder, GraphStatistics statistics, TripleStoreAccessor accessor) {
     // process query
     String query = Playground.readQueryFromFile(new File(args[1]));
     query = QueryFactory.create(query).serialize();
@@ -120,16 +123,16 @@ public class Playground {
 
     VariableDictionary dictionary = new VariableDictionary();
     SparqlParser parser = new SparqlParser(encoder, statistics, accessor, (short) 0, 0, 0, 4,
-        conf.getReceiverQueueSize(), workingDir, conf.getMaxEmittedMappingsPerRound(),
-        conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
-        conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
+            conf.getReceiverQueueSize(), workingDir, conf.getMaxEmittedMappingsPerRound(),
+            conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
+            conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
     QueryOperatorTask task = parser.parse(query, QueryExecutionTreeType.LEFT_LINEAR, dictionary);
     System.out.println(task.toString());
 
     QueryExecutionTreeDeserializer deserializer = new QueryExecutionTreeDeserializer(accessor,
-        conf.getNumberOfSlaves(), conf.getReceiverQueueSize(), workingDir,
-        conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
-        conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
+            conf.getNumberOfSlaves(), conf.getReceiverQueueSize(), workingDir,
+            conf.getJoinCacheStorageType(), conf.useTransactionsForJoinCache(),
+            conf.isJoinCacheAsynchronouslyWritten(), conf.getJoinCacheType());
 
     for (int i = 0; i < 4; i++) {
       System.out.println("Slave " + i + ":");
@@ -142,22 +145,22 @@ public class Playground {
   }
 
   private static void printContentOfChunks(File[] encodedFiles, DictionaryEncoder encoder,
-      EncodingFileFormat format) {
+          EncodingFileFormat format) {
     for (File encodedFile : encodedFiles) {
       System.out.println("\nChunk " + encodedFile + "\n");
       if (encodedFile != null) {
         try (EncodedFileInputStream input = new EncodedFileInputStream(format, encodedFile);) {
           for (Statement statement : input) {
             System.out.println(" "
-                + (statement.isSubjectEncoded() ? encoder.decode(statement.getSubjectAsLong())
-                    : statement.getSubjectAsString())
-                + " "
-                + (statement.isPropertyEncoded() ? encoder.decode(statement.getPropertyAsLong())
-                    : statement.getPropertyAsString())
-                + " "
-                + (statement.isObjectEncoded() ? encoder.decode(statement.getObjectAsLong())
-                    : statement.getObjectAsString())
-                + " " + Arrays.toString(statement.getContainment()));
+                    + (statement.isSubjectEncoded() ? encoder.decode(statement.getSubjectAsLong())
+                            : statement.getSubjectAsString())
+                    + " "
+                    + (statement.isPropertyEncoded() ? encoder.decode(statement.getPropertyAsLong())
+                            : statement.getPropertyAsString())
+                    + " "
+                    + (statement.isObjectEncoded() ? encoder.decode(statement.getObjectAsLong())
+                            : statement.getObjectAsString())
+                    + " " + Arrays.toString(statement.getContainment()));
           }
         } catch (IOException e) {
           throw new RuntimeException(e);

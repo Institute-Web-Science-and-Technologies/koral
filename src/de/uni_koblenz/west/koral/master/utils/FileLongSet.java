@@ -28,7 +28,7 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * Stores a sequence of long values on disk
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -84,9 +84,21 @@ public class FileLongSet implements Closeable, AdjacencyList {
   }
 
   @Override
+  public void append(long value1, long value2) {
+    append(value1);
+    append(value2);
+  }
+
+  @Override
   public LongIterator iterator() {
     close();
     return new FileLongSetLongIterator(getFile());
+  }
+
+  @Override
+  public LongArrayIterator iteratorForArray() {
+    close();
+    return new FileLongSetLongArrayIterator(getFile());
   }
 
   @Override

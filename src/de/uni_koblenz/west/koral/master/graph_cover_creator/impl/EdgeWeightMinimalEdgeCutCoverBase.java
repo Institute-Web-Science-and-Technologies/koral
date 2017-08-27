@@ -32,9 +32,10 @@ import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.dictionary.LongDictionary;
 import de.uni_koblenz.west.koral.master.dictionary.impl.RocksDBDictionary;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreatorWithEdgeWeight;
 import de.uni_koblenz.west.koral.master.utils.AdjacencyMatrix;
 import de.uni_koblenz.west.koral.master.utils.DeSerializer;
-import de.uni_koblenz.west.koral.master.utils.LongIterator;
+import de.uni_koblenz.west.koral.master.utils.LongArrayIterator;
 import de.uni_koblenz.west.koral.master.utils.SingleFileAdjacencyMatrix;
 
 import java.io.BufferedWriter;
@@ -55,65 +56,95 @@ import java.util.logging.Logger;
 
 /**
  * Creates a minimal edge-cut cover with the help of
- * <a href="http://glaros.dtc.umn.edu/gkhome/metis/metis/overview">METIS</a>
+ * <a href="http://glaros.dtc.umn.edu/gkhome/metis/metis/overview">METIS</a>.
+ * Subclasses need to implement one method to adjust the initial edge weights
+ * and one to compute the final edge weights. The resulting graph cover files
+ * will not contain the edge weights any more.
  *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
+public abstract class EdgeWeightMinimalEdgeCutCoverBase extends GraphCoverCreatorBase
+        implements GraphCoverCreatorWithEdgeWeight {
 
   private Process process;
 
-  public MinimalEdgeCutCover(Logger logger, MeasurementCollector measurementCollector) {
+  private EncodingFileFormat format;
+
+  public EdgeWeightMinimalEdgeCutCoverBase(Logger logger,
+          MeasurementCollector measurementCollector) {
     super(logger, measurementCollector);
+    format = EncodingFileFormat.EEEW;
   }
 
   @Override
   public EncodingFileFormat getRequiredInputEncoding() {
-    return EncodingFileFormat.EEE;
+    return format;
   }
 
   @Override
   protected void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
           int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
           File workingDir) {
-    File dictionaryFolder = new File(
-            workingDir.getAbsolutePath() + File.separator + "minEdgeCutDictionary");
-    if (!dictionaryFolder.exists()) {
-      dictionaryFolder.mkdirs();
-    }
-    LongDictionary localDictionary = new RocksDBDictionary(dictionaryFolder.getAbsolutePath(),
-            RocksDBDictionary.DEFAULT_MAX_BATCH_SIZE, 50);
+    // TODO measure metrics
+    File adjustedGraphFile = adjusteEdgeWeights(input, workingDir);
 
-    File encodedRDFGraph = null;
-    File metisOutputGraph = null;
-    File ignoredTriples = new File(
-            workingDir.getAbsolutePath() + File.separator + "ignoredTriples.gz");
-    encodedRDFGraph = new File(
-            workingDir.getAbsolutePath() + File.separator + "encodedRDFGraph.gz");
-    File metisInputGraph = new File(workingDir.getAbsolutePath() + File.separator + "metisInput");
+    try (EncodedFileInputStream adjustedInput = new EncodedFileInputStream(
+            getRequiredInputEncoding(), adjustedGraphFile);) {
+      File dictionaryFolder = new File(
+              workingDir.getAbsolutePath() + File.separator + "minEdgeCutDictionary");
+      if (!dictionaryFolder.exists()) {
+        dictionaryFolder.mkdirs();
+      }
+      LongDictionary localDictionary = new RocksDBDictionary(dictionaryFolder.getAbsolutePath(),
+              RocksDBDictionary.DEFAULT_MAX_BATCH_SIZE, 50);
 
-    createMetisInputFile(dictionary, input, localDictionary, encodedRDFGraph, metisInputGraph,
-            ignoredTriples, workingDir);
-    metisOutputGraph = runMetis(metisInputGraph, numberOfGraphChunks);
+      File encodedRDFGraph = null;
+      File metisOutputGraph = null;
+      File ignoredTriples = new File(
+              workingDir.getAbsolutePath() + File.separator + "ignoredTriples.gz");
+      encodedRDFGraph = new File(
+              workingDir.getAbsolutePath() + File.separator + "encodedRDFGraph.gz");
+      File metisInputGraph = new File(workingDir.getAbsolutePath() + File.separator + "metisInput");
+      createMetisInputFile(dictionary, adjustedInput, localDictionary, encodedRDFGraph,
+              metisInputGraph, ignoredTriples, workingDir);
+      metisOutputGraph = runMetis(metisInputGraph, numberOfGraphChunks);
 
-    createGraphCover(encodedRDFGraph, localDictionary, metisOutputGraph, ignoredTriples, outputs,
-            writtenFiles, numberOfGraphChunks, workingDir);
+      // edge weights are removed
+      format = EncodingFileFormat.EEE;
 
-    // tidy up
-    metisInputGraph.delete();
-    if (encodedRDFGraph != null) {
-      encodedRDFGraph.delete();
+      createGraphCover(encodedRDFGraph, localDictionary, metisOutputGraph, ignoredTriples, outputs,
+              writtenFiles, numberOfGraphChunks, workingDir);
+
+      // tidy up
+      adjustedGraphFile.delete();
+      metisInputGraph.delete();
+      if (encodedRDFGraph != null) {
+        encodedRDFGraph.delete();
+      }
+      if (metisOutputGraph != null) {
+        metisOutputGraph.delete();
+      }
+      if (ignoredTriples.exists()) {
+        ignoredTriples.delete();
+      }
+      localDictionary.close();
+      deleteFolder(dictionaryFolder);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
-    if (metisOutputGraph != null) {
-      metisOutputGraph.delete();
-    }
-    if (ignoredTriples.exists()) {
-      ignoredTriples.delete();
-    }
-    localDictionary.close();
-    deleteFolder(dictionaryFolder);
   }
+
+  /**
+   * Adjusts the weights of the edges.
+   *
+   * @param input
+   *          {@link EncodedFileInputStream} of the dictionary encoded graph
+   * @param workingDir
+   *          {@link File} directory where required data can be stored
+   * @return {@link File} containing the encoded graph with the edge weights
+   */
+  protected abstract File adjusteEdgeWeights(EncodedFileInputStream input, File workingDir);
 
   private void createMetisInputFile(DictionaryEncoder dictionary, EncodedFileInputStream input,
           LongDictionary localDictionary, File encodedRDFGraph, File metisInputGraph,
@@ -138,7 +169,7 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
     long numberOfUsedTriples = 0;
     long numberOfIgnoredTriples = 0;
 
-    AdjacencyMatrix adjacencyMatrix = new SingleFileAdjacencyMatrix(metisInputTempFolder, true);
+    AdjacencyMatrix adjacencyMatrix = new SingleFileAdjacencyMatrix(metisInputTempFolder, false);
     // create adjacency lists
     try {
       try (EncodedFileOutputStream encodedGraphOutput = new EncodedFileOutputStream(
@@ -152,7 +183,9 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
             // it is a rdf:type triple
             // store it as ignored triple
             numberOfIgnoredTriples++;
-            ignoredTriplesOutput.writeStatement(statement);
+            ignoredTriplesOutput.writeStatement(Statement.getStatement(EncodingFileFormat.EEE,
+                    statement.getSubject(), statement.getProperty(), statement.getObject(),
+                    statement.getContainment()));
             continue;
           }
           numberOfUsedTriples++;
@@ -164,13 +197,14 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
           if (encodedObject > numberOfVertices) {
             numberOfVertices = encodedObject;
           }
+          long edgeWeight = statement.getEdgeWeightAsLong();
           // write encoded triple to graph file
-          Statement encodedStatement = Statement.getStatement(getRequiredInputEncoding(),
+          Statement encodedStatement = Statement.getStatement(EncodingFileFormat.EEE,
                   NumberConversion.long2bytes(encodedSubject), statement.getProperty(),
                   NumberConversion.long2bytes(encodedObject), statement.getContainment());
           encodedGraphOutput.writeStatement(encodedStatement);
 
-          adjacencyMatrix.addEdge(encodedSubject, encodedObject);
+          adjacencyMatrix.addEdge(encodedSubject, encodedObject, edgeWeight);
         }
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -192,14 +226,14 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       // write adjacency lists to file
       try (BufferedWriter metisInputGraphWriter = new BufferedWriter(
               new OutputStreamWriter(new FileOutputStream(metisInputGraph), "UTF-8"));) {
-        metisInputGraphWriter.write(numberOfVertices + " " + numberOfEdges);
+        metisInputGraphWriter.write(numberOfVertices + " " + numberOfEdges + " 001");
         for (long vertex = 1; vertex <= numberOfVertices; vertex++) {
           metisInputGraphWriter.write("\n");
           String delim = "";
-          LongIterator iterator = adjacencyMatrix.getAdjacencyList(vertex);
+          LongArrayIterator iterator = adjacencyMatrix.getWeightedAdjacencyList(vertex);
           while (iterator.hasNext()) {
-            long neighbour = iterator.next();
-            metisInputGraphWriter.write(delim + neighbour);
+            long[] neighbour = iterator.next();
+            metisInputGraphWriter.write(delim + neighbour[0] + " " + neighbour[1]);
             delim = " ";
           }
           iterator.close();
@@ -290,15 +324,15 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
       }
 
       // assign partitioned triples
-      try (EncodedFileInputStream graphInput = new EncodedFileInputStream(
-              getRequiredInputEncoding(), encodedRDFGraph);) {
+      try (EncodedFileInputStream graphInput = new EncodedFileInputStream(EncodingFileFormat.EEE,
+              encodedRDFGraph);) {
         long lastVertex = -1;
         int lastChunkIndex = -1;
 
         for (Statement statement : graphInput) {
           long subject = dictionary.decodeLong(statement.getSubjectAsLong());
           long object = dictionary.decodeLong(statement.getObjectAsLong());
-          Statement newStatement = Statement.getStatement(getRequiredInputEncoding(),
+          Statement newStatement = Statement.getStatement(EncodingFileFormat.EEE,
                   NumberConversion.long2bytes(subject), statement.getProperty(),
                   NumberConversion.long2bytes(object), statement.getContainment());
 
@@ -330,8 +364,8 @@ public class MinimalEdgeCutCover extends GraphCoverCreatorBase {
 
       if (ignoredTriples.exists()) {
         // assign ignored triples
-        try (EncodedFileInputStream graphInput = new EncodedFileInputStream(
-                getRequiredInputEncoding(), ignoredTriples);) {
+        try (EncodedFileInputStream graphInput = new EncodedFileInputStream(EncodingFileFormat.EEE,
+                ignoredTriples);) {
           long lastVertex = -1;
           int lastChunkIndex = -1;
 

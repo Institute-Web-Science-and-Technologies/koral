@@ -34,7 +34,7 @@ import java.util.Set;
 
 /**
  * Stores one file for each adjacency list.
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -44,8 +44,8 @@ public class MultiFileAdjacencyMatrix extends AdjacencyMatrix {
 
   private final Map<Long, FileLongSet> vertex2adjacentList;
 
-  public MultiFileAdjacencyMatrix(File workingDir) {
-    super(workingDir);
+  public MultiFileAdjacencyMatrix(File workingDir, boolean removeDuplicates) {
+    super(workingDir, removeDuplicates);
     lruCache = new LinkedList<>();
     vertex2adjacentList = new HashMap<>();
   }

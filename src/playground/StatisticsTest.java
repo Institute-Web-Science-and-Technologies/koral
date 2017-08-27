@@ -16,28 +16,29 @@
  */
 package playground;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.util.Date;
-
 import org.apache.jena.ext.com.google.common.io.Files;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
-import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBDataStructureOptions;
 import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.CoverStrategyType;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.GraphCoverCreatorFactory;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.MapDBGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.util.Date;
+
 /**
  * Compares different statistics database implementations
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -57,9 +58,11 @@ public class StatisticsTest {
     Configuration conf = new Configuration();
 
     DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);
-    File encodedInput = encoder.encodeOriginalGraphFiles(inputFile.isDirectory()
-        ? inputFile.listFiles(new GraphFileFilter()) : new File[] {inputFile}, workingDir,
-        EncodingFileFormat.EEE, 4);
+    File encodedInput = encoder.encodeOriginalGraphFiles(
+            inputFile.isDirectory() ? inputFile.listFiles(new GraphFileFilter())
+                    : new File[] { inputFile },
+            workingDir,
+            GraphCoverCreatorFactory.getGraphCoverCreator(CoverStrategyType.HASH, null, null), 4);
     File encodedInput2 = new File(encodedInput.getAbsolutePath() + ".copy1");
     File encodedInput3 = new File(encodedInput.getAbsolutePath() + ".copy2");
     Files.copy(encodedInput, encodedInput2);
@@ -67,8 +70,8 @@ public class StatisticsTest {
 
     System.out.println("measuring mapDB:");
     GraphStatisticsDatabase database = new MapDBGraphStatisticsDatabase(
-        MapDBStorageOptions.MEMORY_MAPPED_FILE, MapDBDataStructureOptions.HASH_TREE_MAP,
-        conf.getStatisticsDir(true), false, true, MapDBCacheOptions.HASH_TABLE, (short) 4);
+            MapDBStorageOptions.MEMORY_MAPPED_FILE, MapDBDataStructureOptions.HASH_TREE_MAP,
+            conf.getStatisticsDir(true), false, true, MapDBCacheOptions.HASH_TABLE, (short) 4);
     StatisticsTest.collectStatistics(database, encodedInput, workingDir);
 
     if (!workingDir.exists()) {
@@ -93,31 +96,31 @@ public class StatisticsTest {
   }
 
   private static void collectStatistics(GraphStatisticsDatabase database, File encodedInput,
-      File workingDir) {
+          File workingDir) {
     DateFormat format = DateFormat.getDateTimeInstance();
 
     System.out.println("\tcollecting statistics");
     long start = System.currentTimeMillis();
     System.out.println("\t\tstart: " + format.format(new Date(start)));
     GraphStatistics statistics = new GraphStatistics(database, (short) 4, null);
-    statistics.collectStatistics(new File[] {encodedInput});
+    statistics.collectStatistics(new File[] { encodedInput });
     long end = System.currentTimeMillis();
     System.out.println("\t\tend: " + format.format(new Date(end)));
     long duration = end - start;
     System.out.println("\t\trequired time: " + duration + " msec = "
-        + String.format("%d:%02d:%02d.%03d", duration / 3_600_000, (duration / 60_000) % 60,
-            ((duration / 1000) % 60), duration % 1000));
+            + String.format("%d:%02d:%02d.%03d", duration / 3_600_000, (duration / 60_000) % 60,
+                    ((duration / 1000) % 60), duration % 1000));
 
     System.out.println("\tadjusting ownership");
     start = System.currentTimeMillis();
     System.out.println("\t\tstart: " + format.format(new Date(start)));
-    statistics.adjustOwnership(new File[] {encodedInput}, workingDir);
+    statistics.adjustOwnership(new File[] { encodedInput }, workingDir);
     end = System.currentTimeMillis();
     System.out.println("\t\tend: " + format.format(new Date(end)));
     duration = end - start;
     System.out.println("\t\trequired time: " + duration + " msec = "
-        + String.format("%d:%02d:%02d.%03d", duration / 3_600_000, (duration / 60_000) % 60,
-            ((duration / 1000) % 60), duration % 1000));
+            + String.format("%d:%02d:%02d.%03d", duration / 3_600_000, (duration / 60_000) % 60,
+                    ((duration / 1000) % 60), duration % 1000));
 
     statistics.close();
   }

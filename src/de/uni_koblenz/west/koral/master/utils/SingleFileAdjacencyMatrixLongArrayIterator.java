@@ -31,7 +31,7 @@ import java.util.NoSuchElementException;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
+public class SingleFileAdjacencyMatrixLongArrayIterator implements LongArrayIterator {
 
   private final RandomAccessFile adjacencyMatrix;
 
@@ -39,7 +39,7 @@ public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
 
   private final long size;
 
-  public SingleFileAdjacencyMatrixLongIterator(File adjacencyMatrixFile,
+  public SingleFileAdjacencyMatrixLongArrayIterator(File adjacencyMatrixFile,
           long offsetOfAdjacencyListHead, long sizeOfAdjacencyList) {
     size = sizeOfAdjacencyList;
     nextOffset = offsetOfAdjacencyListHead;
@@ -60,13 +60,13 @@ public class SingleFileAdjacencyMatrixLongIterator implements LongIterator {
   }
 
   @Override
-  public long next() {
+  public long[] next() {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
     try {
       adjacencyMatrix.seek(nextOffset);
-      long adjacency = adjacencyMatrix.readLong();
+      long[] adjacency = new long[] { adjacencyMatrix.readLong(), adjacencyMatrix.readLong() };
       nextOffset = adjacencyMatrix.readLong();
       return adjacency;
     } catch (IOException e) {

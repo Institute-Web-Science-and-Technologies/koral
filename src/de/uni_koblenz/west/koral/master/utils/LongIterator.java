@@ -20,7 +20,7 @@ package de.uni_koblenz.west.koral.master.utils;
 
 /**
  * An iterator over long values.
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */

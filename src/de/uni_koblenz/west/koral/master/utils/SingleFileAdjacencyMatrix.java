@@ -40,7 +40,7 @@ import java.util.Set;
  * Stores all adjacency lists in one file. Each entry in the list is a tuple
  * consisting of (i) the id of the adjacent vertex (ii) the offset of the
  * previous entry in the list
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -60,14 +60,16 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
 
   private DataOutputStream adjacencyMatrix;
 
-  public SingleFileAdjacencyMatrix(File workingDir) {
+  public SingleFileAdjacencyMatrix(File workingDir, boolean removeDuplicates) {
     this(workingDir,
             new File(workingDir.getAbsolutePath() + File.separator + "vertex2lastElementOffset"),
-            new File(workingDir.getAbsolutePath() + File.separator + "adjacencyMatrix"));
+            new File(workingDir.getAbsolutePath() + File.separator + "adjacencyMatrix"),
+            removeDuplicates);
   }
 
-  private SingleFileAdjacencyMatrix(File workingDir, File rocksDBFolder, File adjacencyMatrixFile) {
-    super(workingDir);
+  private SingleFileAdjacencyMatrix(File workingDir, File rocksDBFolder, File adjacencyMatrixFile,
+          boolean removeDuplicates) {
+    super(workingDir, removeDuplicates);
     Options options = new Options();
     options.setCreateIfMissing(true);
     options.setMaxOpenFiles(50);
@@ -125,7 +127,8 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
     SingleFileAdjacencyMatrix newMatrix = new SingleFileAdjacencyMatrix(workingDir,
             new File(
                     workingDir.getAbsolutePath() + File.separator + "vertex2lastElementOffset_new"),
-            new File(workingDir.getAbsolutePath() + File.separator + "adjacencyMatrix_new"));
+            new File(workingDir.getAbsolutePath() + File.separator + "adjacencyMatrix_new"),
+            isRemoveDuplicatesSet());
 
     DBMaker<?> dbmaker = MapDBStorageOptions.MEMORY_MAPPED_FILE
             .getDBMaker(workingDir.getAbsolutePath() + File.separator + "adjacencySets")
@@ -201,6 +204,42 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
   }
 
   @Override
+  public void append(long adjacency, long edgeWeight) {
+    try {
+      if (adjacencyMatrix == null) {
+        adjacencyMatrix = new DataOutputStream(
+                new BufferedOutputStream(new FileOutputStream(adjacencyMatrixFile, true)));
+      }
+
+      long previous = SingleFileAdjacencyMatrix.TAIL_OFFSET_OF_LIST;
+      long length = 0;
+      byte[] vertexArray = NumberConversion.long2bytes(currentVertex);
+      byte[] offsetLengthArray = vertex2lastElementOffset.get(vertexArray);
+      if (offsetLengthArray != null) {
+        previous = NumberConversion.bytes2long(offsetLengthArray, 0);
+        length = NumberConversion.bytes2long(offsetLengthArray, Long.BYTES);
+      } else {
+        offsetLengthArray = new byte[Long.BYTES * 2];
+      }
+      long offset = fileSize;
+
+      adjacencyMatrix.writeLong(adjacency);
+      fileSize += Long.BYTES;
+      adjacencyMatrix.writeLong(edgeWeight);
+      fileSize += Long.BYTES;
+      adjacencyMatrix.writeLong(previous);
+      fileSize += Long.BYTES;
+      length++;
+
+      NumberConversion.long2bytes(offset, offsetLengthArray, 0);
+      NumberConversion.long2bytes(length, offsetLengthArray, Long.BYTES);
+      vertex2lastElementOffset.put(vertexArray, offsetLengthArray);
+    } catch (IOException | RocksDBException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public LongIterator iterator() {
     try {
       if (adjacencyMatrix != null) {
@@ -215,6 +254,28 @@ public class SingleFileAdjacencyMatrix extends AdjacencyMatrix implements Adjace
                 NumberConversion.bytes2long(offsetLengthArray, Long.BYTES));
       } else {
         return new SingleFileAdjacencyMatrixLongIterator(adjacencyMatrixFile,
+                SingleFileAdjacencyMatrix.TAIL_OFFSET_OF_LIST, 0);
+      }
+    } catch (IOException | RocksDBException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public LongArrayIterator iteratorForArray() {
+    try {
+      if (adjacencyMatrix != null) {
+        adjacencyMatrix.close();
+        adjacencyMatrix = null;
+      }
+      byte[] vertexArray = NumberConversion.long2bytes(currentVertex);
+      byte[] offsetLengthArray = vertex2lastElementOffset.get(vertexArray);
+      if (offsetLengthArray != null) {
+        return new SingleFileAdjacencyMatrixLongArrayIterator(adjacencyMatrixFile,
+                NumberConversion.bytes2long(offsetLengthArray, 0),
+                NumberConversion.bytes2long(offsetLengthArray, Long.BYTES));
+      } else {
+        return new SingleFileAdjacencyMatrixLongArrayIterator(adjacencyMatrixFile,
                 SingleFileAdjacencyMatrix.TAIL_OFFSET_OF_LIST, 0);
       }
     } catch (IOException | RocksDBException e) {
