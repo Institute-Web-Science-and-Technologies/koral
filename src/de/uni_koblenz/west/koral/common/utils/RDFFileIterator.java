@@ -21,6 +21,7 @@ import org.apache.jena.atlas.web.TypedInputStream;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.lang.csv.CSV2RDF;
+import org.apache.jena.query.ARQ;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
@@ -98,6 +99,7 @@ public class RDFFileIterator
   private SortedMap<Integer, Long> lineNumber2Offset;
 
   public RDFFileIterator(File file, boolean deleteFiles, Logger logger) {
+    ARQ.init();
     this.logger = logger;
     deleteReadFiles = deleteFiles;
     GraphFileFilter filter = new GraphFileFilter();
