@@ -12,8 +12,13 @@
 # python
 *.pyc
 
+# intellij files
+/.idea/
+*.iml
+
 # backup files
 *~
 *.bak
 /koralConfig.xml
 /build/
+/target/
