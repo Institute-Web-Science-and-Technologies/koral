@@ -7,7 +7,7 @@ def updateMaster(branch=-1):
 
 @roles('slaves')
 def updateSlave(branch=-1):
-    performCommonUpdateSteps()
+    performCommonUpdateSteps(branch)
 
 def performCommonUpdateSteps(branch=-1):
     updateKoral(branch)
