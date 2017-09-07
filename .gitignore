@@ -19,6 +19,7 @@
 # eclipse files
 .project
 .classpath
+/.settings/
 
 # backup files
 *~
