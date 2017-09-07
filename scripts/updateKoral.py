@@ -18,15 +18,12 @@ def updateKoral(branch=-1):
         if (branch != -1):
           run("git checkout " + branch)
           run("git pull")
-    run("rm koral/lib/*.jar")
-    run("sh koral/resolveDependencies.sh")
-    with cd("koral"):
-        run("ant")
-    run("cp koral/build/koral.jar koral.jar")
-    put("../koralConfig.xml","koralConfig.xml")
+        run("mvn clean package")
+        put("koralConfig.xml","koralConfig.xml")
 
 @roles('master','slaves')
 def updateConfig(configFile=-1):
    if (configFile == -1):
-      configFile = "../koralConfig.xml"
-   put(configFile,"koralConfig.xml")
+      configFile = "koralConfig.xml"
+   with cd("koral"):
+      put(configFile,"koralConfig.xml")

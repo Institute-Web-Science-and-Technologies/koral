@@ -1,10 +1,22 @@
 # Koral
 
-A fast-forward distributed RDF store aiming to be independent of the underlying data placement strategy. It is tested with Ubuntu 14.04 and Orace Java JDK 1.8.
+A fast-forward distributed RDF store aiming to be independent of the
+underlying data placement strategy. It is tested with Ubuntu 14.04 and
+Orace Java JDK 1.8.
+
 
 ## Building Koral Locally
 
-In order to build Koral locally, you have to install the following programs: Oracle JDK 1.8, git, ant, unzip, maven and metis. In order to install Oracle JDK 1.8 you can execute:
+In order to build Koral locally, you have to install the following
+programs:
+
+ * Oracle JDK 1.8
+ * git
+ * unzip
+ * maven
+ * metis
+
+In order to install Oracle JDK 1.8 you can execute:
 ```
 sudo add-apt-repository -y ppa:webupd8team/java
 sudo apt-get update
@@ -14,37 +26,39 @@ sudo apt-get -y install oracle-java8-set-default
 
 The other packages can be installed by:
 ```
-sudo apt-get -y install git ant unzip maven metis
+sudo apt-get -y install git unzip maven metis
 ```
 
-Now, you can clone the Koral git repository
+Now, you can clone the Koral git repository, change into it
 ```
 git clone https://github.com/Institute-Web-Science-and-Technologies/koral.git
+cd koral
 ```
 and build Koral
 ```
-/bin/bash koral/resolveDependencies.sh
-cd koral
-ant
-cd ..
+mvn package
 ```
-The built JAR can be found under `koral/build/koral.jar`.
+The built JAR can be found in the ```target``` directory.
+
 
 ## Executing Koral Locally
 
-For developing purposes you can execute Koral on a single machine. Therefore the file `koral/koralLocalConfig.xml` specifies a configuration with one master and two slaves. You can add further slaves by adjusting the slave property in this file.
+For developing purposes you can execute Koral on a single machine.
+Therefore the file `koral/koralLocalConfig.xml` specifies
+a configuration with one master and two slaves.
+You can add further slaves by adjusting the slave property in this file.
 
 First you need to start the master by executing:
-`java -jar koral/build/koral.jar master -c ./koralLocalConfig.xml`
+`java -jar target/koral.jar master -c ./koralLocalConfig.xml`
 Thereafter, you start the two slaves by executing:
-`java -jar koral/build/koral.jar slave -c ./koralLocalConfig.xml`
-`java -jar koral/build/koral.jar slave -c ./koralLocalConfig.xml`
+`java -jar target/koral.jar slave -c ./koralLocalConfig.xml`
+`java -jar target/koral.jar slave -c ./koralLocalConfig.xml`
 
 When Koral is running you can load a dataset by executing:
-`java -jar koral/build/koral.jar client -i 127.0.0.1 -m 127.0.0.1:4711 load -c HASH <datasetFile>`
+`java -jar target/koral.jar client -i 127.0.0.1 -m 127.0.0.1:4711 load -c HASH <datasetFile>`
 
 To request a query you can execute:
-`java -jar koral/build/koral.jar client -i 127.0.0.1 -m 127.0.0.1:4711 query -q <queryFile.sparql>`
+`java -jar target/koral.jar client -i 127.0.0.1 -m 127.0.0.1:4711 query -q <queryFile.sparql>`
 
 You can stop Koral by pressing Strg + C.
 
@@ -76,7 +90,7 @@ sudo apt-get install fabric
 
 The scripts connect to the different remote machines via SSH. Before you can use the scripts, you need to configure the addresses of the master and the slaves and how you can authorize on them. First, you should create a copy of `koral\scripts\environment.py.template` by executing
 ```
-cp koral\scripts\environment.py.template koral\scripts\environment.py
+cp scripts/environment.py.template scripts/environment.py
 ```
 
 Now, you can enter the IP addresses of the master and the slaves at the definition of `env.roledefs`. You should define the user name which will be used to access the remote machines. Define it with the property `env.user`. Basically, the user on the remote machines should have password-less sudo access to prevent typing the sudo password several times.
@@ -87,9 +101,7 @@ When configuring the SSH authentication, you have two option: (i) password-based
 
 You can check whether everything is set up correctly by executing:
 ```
-cd koral/scripts
-fab -f koral.py test
-cd ../..
+fab -f scripts/koral.py test
 ```
 It should connect to the master and the slaves and print a success message on the screen.
 
@@ -99,32 +111,24 @@ If the remote machines have to be set up first, e.g. updating the operating syst
 
 When you have set up Fabric you can execute the following command to install Koral on the complete cluster:
 ```
-cd koral/scripts
-fab -f koral.py install
-cd ../..
+fab -f scripts/koral.py install
 ```
 
 ### Managing Koral Cluster
 
 When you want to update the configuration file of the Koral cluster, execute the following command:
 ```
-cd koral/scripts
-fab -f koral.py updateConfig:"/path/to/koralConfig.xml"
-cd ../..
+fab -f scripts/koral.py updateConfig:"/path/to/koralConfig.xml"
 ```
 
 If you want to start the cluster (remember to update the configuration if necessary in beforehand), you can execute:
 ```
-cd koral/scripts
-fab -f koral.py start
-cd ../..
+fab -f scripts/koral.py start
 ```
 
 You can stop the cluster, by executing:
 ```
-cd koral/scripts
-fab -f koral.py stop
-cd ../..
+fab -f scripts/koral.py stop
 ```
 
 #### Collecting Log Messages
@@ -133,21 +137,17 @@ If you want to execute a Koral cluster and you want to see all log messages duri
 
 You start the local log message receiver by executing:
 ```
-java -jar koral/build/koral.jar logReceiver
+java -jar target/koral.jar logReceiver
 ```
 Optionally, you can pass the local IP to bind to via the argument `-i yourIP` and the used port via the argument `-p yourPort`. The `-p` is missing the default port 4712 is used.
 
 You can instruct Koral to send the local messages to your log receiver by starting it with the following command:
 ```
-cd koral/scripts
-fab -f koral.py start:remoteLogger=yourIP
-cd ../..
+fab -f scripts/koral.py start:remoteLogger=yourIP
 ```
 or if you are using a different port
 ```
-cd koral/scripts
-fab -f koral.py start:remoteLogger=yourIP:yourPort
-cd ../..
+fab -f scripts/koral.py start:remoteLogger=yourIP:yourPort
 ```
 
 #### Activating Runtime Measurements
@@ -156,21 +156,17 @@ You can also instruct Koral to measure runtime metrics. The measured metrics are
 
 You can start the measurement receiver by executing:
 ```
-java -jar koral/build/koral.jar measurementReceiver -o /output/file/for/measurements.csv.gz
+java -jar target/koral.jar measurementReceiver -o /output/file/for/measurements.csv.gz
 ```
 Optionally, you can pass the local IP to bind to via the argument `-i yourIP` and the used port via the argument `-p yourPort`. The `-p` is missing the default port 4713 is used.
 
 You can instruct Koral to collect and send measurements by starting it with the following command:
 ```
-cd koral/scripts
-fab -f koral.py start:remoteMeasurementCollector=yourIP
-cd ../..
+fab -f scripts/koral.py start:remoteMeasurementCollector=yourIP
 ```
 or if you are using a different port
 ```
-cd koral/scripts
-fab -f koral.py start:remoteMeasurementCollector=yourIP:yourPort
-cd ../..
+fab -f scripts/koral.py start:remoteMeasurementCollector=yourIP:yourPort
 ```
 
 ## Interacting with Koral
@@ -181,7 +177,7 @@ You can send the following commands to Koral with its client.
 
 You can load a dataset by executing
 ```
-java -jar koral/build/koral.jar client -m IPofMaster load -c HASH -n 0 /path/to/graphFile.rdf
+java -jar target/koral.jar client -m IPofMaster load -c HASH -n 0 /path/to/graphFile.rdf
 ```
 
 - With the argument `-m` you specify the IP of the master and optionally its port.
@@ -192,7 +188,7 @@ java -jar koral/build/koral.jar client -m IPofMaster load -c HASH -n 0 /path/to/
 ### Execute a query
 
 ```
-java -jar koral/build/koral.jar client -m IPofMaster query -t BUSHY -o /path/to/resultFile.csv /path/to/queryFile.sparql
+java -jar target/koral.jar client -m IPofMaster query -t BUSHY -o /path/to/resultFile.csv /path/to/queryFile.sparql
 ```
 
 - With the argument `-m` you specify the IP of the master and optionally its port.
@@ -203,7 +199,7 @@ java -jar koral/build/koral.jar client -m IPofMaster query -t BUSHY -o /path/to/
 ### Drop the database
 
 ```
-java -jar koral/build/koral.jar client -m IPofMaster drop
+java -jar target/koral.jar client -m IPofMaster drop
 ```
 
 - With the argument `-m` you specify the IP of the master and optionally its port.
