@@ -16,6 +16,10 @@
 /.idea/
 *.iml
 
+# eclipse files
+.project
+.classpath
+
 # backup files
 *~
 *.bak
