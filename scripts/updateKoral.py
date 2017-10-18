@@ -19,11 +19,10 @@ def updateKoral(branch=-1):
           run("git checkout " + branch)
           run("git pull")
         run("mvn clean package")
-        put("koralConfig.xml","koralConfig.xml")
+    put("koralConfig.xml","koralConfig.xml")
 
 @roles('master','slaves')
 def updateConfig(configFile=-1):
    if (configFile == -1):
       configFile = "koralConfig.xml"
-   with cd("koral"):
-      put(configFile,"koralConfig.xml")
+   put(configFile,"koralConfig.xml")
