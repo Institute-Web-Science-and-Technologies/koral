@@ -152,6 +152,11 @@ public class MapDBDictionary implements Dictionary {
   }
 
   @Override
+  public long size() {
+	  return nextID;
+  }
+  
+  @Override
   public void flush() {
   }
 

@@ -198,6 +198,11 @@ public class RocksDBDictionary implements Dictionary, LongDictionary {
   }
 
   @Override
+  public long size() {
+	  return nextID;
+  }
+  
+  @Override
   public void flush() {
     internalFlush();
     try {

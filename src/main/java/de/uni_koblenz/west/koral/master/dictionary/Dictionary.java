@@ -51,6 +51,8 @@ public interface Dictionary extends Closeable {
   public void flush();
 
   public boolean isEmpty();
+  
+  public long size();
 
   public void clear();
 

@@ -267,6 +267,10 @@ public class DictionaryEncoder implements Closeable {
   public boolean isEmpty() {
     return dictionary.isEmpty();
   }
+  
+  public long size() {
+	  return dictionary.size();
+  }
 
   public void clear() {
     dictionary.clear();
