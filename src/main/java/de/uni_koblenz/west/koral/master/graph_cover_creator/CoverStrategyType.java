@@ -26,6 +26,6 @@ package de.uni_koblenz.west.koral.master.graph_cover_creator;
  */
 public enum CoverStrategyType {
 
-  HASH, HIERARCHICAL, MIN_EDGE_CUT, VERTICAL;
+  HASH, HIERARCHICAL, MIN_EDGE_CUT, VERTICAL, EDGE_COLORING;
 
 }
