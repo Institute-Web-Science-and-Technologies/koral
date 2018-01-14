@@ -42,6 +42,8 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
   private final Logger logger;
 
   private final TripleStore tripleStore;
+  
+  private long size;
 
   public TripleStoreAccessor(Configuration conf, Logger logger) {
     this.logger = logger;
@@ -68,6 +70,7 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
         }
       }
       tripleStore.flush();
+      size = alreadyLoadedTriples;
       if (logger != null) {
         logger.finer("finished loading of " + alreadyLoadedTriples + " triples from file "
             + file.getAbsolutePath());
@@ -81,6 +84,10 @@ public class TripleStoreAccessor implements Closeable, AutoCloseable {
     return tripleStore.lookup(cache, triplePattern);
   }
 
+  public long size() {
+	  return size;
+  }
+  
   public void clear() {
     tripleStore.clear();
   }
