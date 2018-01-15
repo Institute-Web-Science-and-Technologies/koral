@@ -8,11 +8,11 @@ import java.util.Comparator;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class LongArrayComparator implements Comparator<long[]> {
+public class ReverseLongArrayComparator implements Comparator<long[]> {
 
   private final boolean ascendingOrder;
 
-  public LongArrayComparator(boolean ascendingOrder) {
+  public ReverseLongArrayComparator(boolean ascendingOrder) {
     this.ascendingOrder = ascendingOrder;
   }
 

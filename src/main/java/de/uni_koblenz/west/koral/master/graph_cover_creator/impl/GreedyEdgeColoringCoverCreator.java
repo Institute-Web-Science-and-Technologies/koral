@@ -9,10 +9,9 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
-import de.uni_koblenz.west.koral.master.utils.LongArrayComparator;
-import de.uni_koblenz.west.koral.master.utils.LongIterator;
-import de.uni_koblenz.west.koral.master.utils.RocksDBDegreeCounter;
+import de.uni_koblenz.west.koral.master.utils.ReverseLongArrayComparator;
 import de.uni_koblenz.west.koral.master.utils.RocksDBLongIterator;
+import de.uni_koblenz.west.koral.master.utils.VertexIncidencentEdgesListFileCreator;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +35,9 @@ import java.util.logging.Logger;
  */
 public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
+  // TODO adjust
+  private static final int NUMBER_OF_CACHED_VERTICES = 10;// 1_000_000;
+
   public GreedyEdgeColoringCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
     super(logger, measurementCollector);
   }
@@ -49,30 +51,93 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
   protected void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
           int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
           File workingDir) {
+    // TODO remove
+    long start = System.currentTimeMillis();
     File internalWorkingDir = new File(workingDir + File.separator + "edgeColoringCoverCreator");
     if (!internalWorkingDir.exists()) {
       internalWorkingDir.mkdirs();
     }
 
-    String degreeCounterFolder = internalWorkingDir.getAbsolutePath() + File.separator
-            + "degreeCounter";
-    File sortedVertexFile = null;
-    try (RocksDBDegreeCounter degreeCounter = new RocksDBDegreeCounter(degreeCounterFolder, 100);) {
-      for (Statement stmt : input) {
-        degreeCounter.countFor(stmt.getSubject());
-        degreeCounter.countFor(stmt.getObject());
-      }
-      sortedVertexFile = sortKeys(degreeCounter.iterator(), true, internalWorkingDir, 1_000_000,
-              100);
-    }
+    List<File> initialChunks = createInitialChunks(input, internalWorkingDir,
+            GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES);
+    // TODO reset input to create final graph chunks
+
+    // sort the vertices by degree in ascending order
+    // String degreeCounterFolder = internalWorkingDir.getAbsolutePath() +
+    // File.separator
+    // + "degreeCounter";
+    // File sortedVertexFile = null;
+    // try (RocksDBDegreeCounter degreeCounter = new
+    // RocksDBDegreeCounter(degreeCounterFolder, 100);) {
+    // for (Statement stmt : input) {
+    // degreeCounter.countFor(stmt.getSubject());
+    // degreeCounter.countFor(stmt.getObject());
+    // }
+    // sortedVertexFile = sortKeys(degreeCounter.iterator(), true,
+    // internalWorkingDir, 1_000_000,
+    // 100);
+    // }
+
+    // - vertex -> adjacent edges
+    // - edge -> color
+    // - join colors
+    // - number of edges per color
+
+    // - sort triple file by subject ids, thereby for each triple create
+    // -- subject edgeId, object -edgeId
+    // -- replace the predicate by edgIds (first triple has id 1, etc. inverse
+    // -- count total number of edge #edges
+    // edges have first two bytes = 0x0001)
+    // - sort vertices by degree in ascending order (vertex, degree,
+    // edgesIds+)* (number of edge ids can be too large for memory)
+
+    // - recode edges by 1 for the first triple
+    // - sortedVertexFile contains tuples (vertex,degree)
+    // - use degree information to store |edge,edge,edge,edge|=degree in a
+    // separate file
 
     // TODO Auto-generated method stub
-    deleteFolder(internalWorkingDir);
+    // deleteFolder(internalWorkingDir);
+    // TODO remove
+    long requiredTime = System.currentTimeMillis() - start;
+    System.out.println("required time: " + requiredTime);
+  }
+
+  private List<File> createInitialChunks(EncodedFileInputStream input, File internalWorkingDir,
+          int numberOfCachedVertices) {
+    List<File> chunks = new ArrayList<>();
+    VertexIncidencentEdgesListFileCreator chunk = null;
+    try {
+      chunk = new VertexIncidencentEdgesListFileCreator(
+              File.createTempFile("InitialDegreeChunk", "", internalWorkingDir));
+      long nextEdgeId = 1;
+      for (Statement stmt : input) {
+        chunk.add(stmt.getSubjectAsLong(), nextEdgeId, true);
+        chunk.add(stmt.getObjectAsLong(), nextEdgeId, false);
+        if (chunk.getSize() >= numberOfCachedVertices) {
+          chunk.flush();
+          chunk.close();
+          chunks.add(chunk.getFile());
+          chunk = new VertexIncidencentEdgesListFileCreator(
+                  File.createTempFile("InitialDegreeChunk", "", internalWorkingDir));
+        }
+        nextEdgeId++;
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      if (chunk != null) {
+        chunk.flush();
+        chunk.close();
+        chunks.add(chunk.getFile());
+      }
+    }
+    return chunks;
   }
 
   private File sortKeys(RocksDBLongIterator iterator, boolean ascendigOrder, File workingDir,
           int numberOfCachedElements, int numberOfMergedFiles) {
-    Comparator<long[]> comparator = new LongArrayComparator(ascendigOrder);
+    Comparator<long[]> comparator = new ReverseLongArrayComparator(ascendigOrder);
     try {
       List<File> sortFiles = new ArrayList<>();
       // create initial chunks
@@ -137,19 +202,23 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         }
         sortFiles = mergedChunks;
       }
-      File outputFile = File.createTempFile("sortedVertices", "", workingDir);
-      try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile);
-              EncodedLongFileInputStream input = new EncodedLongFileInputStream(
-                      sortFiles.get(0));) {
-        LongIterator iter = input.iterator();
-        while (iter.hasNext()) {
-          output.writeLong(iter.next());
-          // skip frequency
-          iter.next();
-        }
-        iter.close();
-      }
-      return outputFile;
+      return sortFiles.get(0);
+      // // remove the frequencies of the file
+      // File outputFile = File.createTempFile("sortedVertices", "",
+      // workingDir);
+      // try (EncodedLongFileOutputStream output = new
+      // EncodedLongFileOutputStream(outputFile);
+      // EncodedLongFileInputStream input = new EncodedLongFileInputStream(
+      // sortFiles.get(0));) {
+      // LongIterator iter = input.iterator();
+      // while (iter.hasNext()) {
+      // output.writeLong(iter.next());
+      // // skip frequency
+      // iter.next();
+      // }
+      // iter.close();
+      // }
+      // return outputFile;
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {
