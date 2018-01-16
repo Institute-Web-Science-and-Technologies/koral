@@ -39,8 +39,6 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
    */
   private List<long[][]> incidentEdges;
 
-  // TODO not all edges can be stored in memory
-
   public VertexIncidencentEdgesListFileCreator(File storageFile) {
     this.storageFile = storageFile;
     vertexId2Index = new HashMap<>();
@@ -98,7 +96,7 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
       return;
     }
     vertexId2Index = null;
-    Collections.sort(vertexDegrees, VertexIncidentEdgesComparator.getComparator(true));
+    Collections.sort(vertexDegrees, VertexIncidentEdgesVertexIdComparator.getComparator(true));
     // TODO remove
     System.out.println(toString());
     try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(storageFile);) {
@@ -124,8 +122,6 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
     }
     vertexDegrees = null;
     incidentEdges = null;
-    // TODO Auto-generated method stub
-
   }
 
   @Override

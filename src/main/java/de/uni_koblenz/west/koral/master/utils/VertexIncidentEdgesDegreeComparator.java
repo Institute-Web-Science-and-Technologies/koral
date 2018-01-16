@@ -8,13 +8,13 @@ import java.util.Comparator;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class VertexIncidentEdgesComparator implements Comparator<long[]> {
+public class VertexIncidentEdgesDegreeComparator implements Comparator<long[]> {
 
-  private static final VertexIncidentEdgesComparator[] comparators = new VertexIncidentEdgesComparator[2];
+  private static final VertexIncidentEdgesDegreeComparator[] comparators = new VertexIncidentEdgesDegreeComparator[2];
 
   private final boolean ascendingOrder;
 
-  private VertexIncidentEdgesComparator(boolean ascendingOrder) {
+  private VertexIncidentEdgesDegreeComparator(boolean ascendingOrder) {
     this.ascendingOrder = ascendingOrder;
   }
 
@@ -41,12 +41,12 @@ public class VertexIncidentEdgesComparator implements Comparator<long[]> {
     }
   }
 
-  public static VertexIncidentEdgesComparator getComparator(boolean ascendingOrder) {
-    if (VertexIncidentEdgesComparator.comparators[ascendingOrder ? 0 : 1] == null) {
-      VertexIncidentEdgesComparator.comparators[ascendingOrder ? 0
-              : 1] = new VertexIncidentEdgesComparator(ascendingOrder);
+  public static VertexIncidentEdgesDegreeComparator getComparator(boolean ascendingOrder) {
+    if (VertexIncidentEdgesDegreeComparator.comparators[ascendingOrder ? 0 : 1] == null) {
+      VertexIncidentEdgesDegreeComparator.comparators[ascendingOrder ? 0
+              : 1] = new VertexIncidentEdgesDegreeComparator(ascendingOrder);
     }
-    return VertexIncidentEdgesComparator.comparators[ascendingOrder ? 0 : 1];
+    return VertexIncidentEdgesDegreeComparator.comparators[ascendingOrder ? 0 : 1];
   }
 
 }

@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
   // TODO adjust
-  private static final int NUMBER_OF_CACHED_VERTICES = 10;// 1_000_000;
+  private static final int NUMBER_OF_CACHED_VERTICES = 0x20;// 0x10_00_00;
 
   public GreedyEdgeColoringCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
     super(logger, measurementCollector);
@@ -60,6 +60,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
     List<File> initialChunks = createInitialChunks(input, internalWorkingDir,
             GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES);
+    // File vertexIncidentEdgesFile = sortAndMerge(initialChunks);
     // TODO reset input to create final graph chunks
 
     // sort the vertices by degree in ascending order
