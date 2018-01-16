@@ -52,6 +52,10 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
     return vertexId2Index == null ? 0 : vertexId2Index.size();
   }
 
+  public boolean contains(long vertexId) {
+    return vertexId2Index.containsKey(vertexId);
+  }
+
   public void add(long vertexId, long edgeId, boolean isOutgoingEdge) {
     Integer index = vertexId2Index.get(vertexId);
     long[] vertexDegree = null;

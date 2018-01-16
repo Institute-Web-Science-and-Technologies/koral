@@ -97,7 +97,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     // separate file
 
     // TODO Auto-generated method stub
-    // deleteFolder(internalWorkingDir);
+    deleteFolder(internalWorkingDir);
     // TODO remove
     long requiredTime = System.currentTimeMillis() - start;
     System.out.println("required time: " + requiredTime);
@@ -112,15 +112,16 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
               File.createTempFile("InitialDegreeChunk", "", internalWorkingDir));
       long nextEdgeId = 1;
       for (Statement stmt : input) {
-        chunk.add(stmt.getSubjectAsLong(), nextEdgeId, true);
-        chunk.add(stmt.getObjectAsLong(), nextEdgeId, false);
-        if (chunk.getSize() >= numberOfCachedVertices) {
+        if ((chunk.getSize() >= numberOfCachedVertices) && (!chunk.contains(stmt.getSubjectAsLong())
+                || !chunk.contains(stmt.getObjectAsLong()))) {
           chunk.flush();
           chunk.close();
           chunks.add(chunk.getFile());
           chunk = new VertexIncidencentEdgesListFileCreator(
                   File.createTempFile("InitialDegreeChunk", "", internalWorkingDir));
         }
+        chunk.add(stmt.getSubjectAsLong(), nextEdgeId, true);
+        chunk.add(stmt.getObjectAsLong(), nextEdgeId, false);
         nextEdgeId++;
       }
     } catch (IOException e) {
