@@ -97,8 +97,6 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
     }
     vertexId2Index = null;
     Collections.sort(vertexDegrees, VertexIncidentEdgesVertexIdComparator.getComparator(true));
-    // TODO remove
-    System.out.println(toString());
     try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(storageFile);) {
       for (long[] vertexDegree : vertexDegrees) {
         output.writeLong(vertexDegree[0]);
