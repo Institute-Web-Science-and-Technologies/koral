@@ -11,6 +11,7 @@ import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 import de.uni_koblenz.west.koral.master.utils.VertexIncidencentEdgesListFileCreator;
+import de.uni_koblenz.west.koral.master.utils.VertexIncidentEdgesDegreeComparator;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
@@ -36,6 +38,8 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
   // TODO adjust
   private static final int NUMBER_OF_CACHED_VERTICES = 0x20;// 0x10_00_00;
+
+  private static final int NUMBER_OF_CACHED_EDGES = 0x200;// 0x04_00_00_00;
 
   private static final int MAX_NUMBER_OF_OPEN_FILES = 100;
 
@@ -65,49 +69,318 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     File vertexIncidentEdgesFile = sortAndMerge(initialChunks, internalWorkingDir,
             GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
 
-    print(vertexIncidentEdgesFile);
+    // sort by degree
+    File[] verticesByDegreeLevels = splitIntoDegreeLevels(vertexIncidentEdgesFile,
+            internalWorkingDir, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
+            GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+    File sortedVertexList = null;
+    for (int level = 0; level < verticesByDegreeLevels.length; level++) {
+      sortedVertexList = sort(level, verticesByDegreeLevels[level], sortedVertexList,
+              internalWorkingDir, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
+              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
+              GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+    }
+
+    print(sortedVertexList);
 
     // TODO reset input to create final graph chunks
-
-    // sort the vertices by degree in ascending order
-    // String degreeCounterFolder = internalWorkingDir.getAbsolutePath() +
-    // File.separator
-    // + "degreeCounter";
-    // File sortedVertexFile = null;
-    // try (RocksDBDegreeCounter degreeCounter = new
-    // RocksDBDegreeCounter(degreeCounterFolder, 100);) {
-    // for (Statement stmt : input) {
-    // degreeCounter.countFor(stmt.getSubject());
-    // degreeCounter.countFor(stmt.getObject());
-    // }
-    // sortedVertexFile = sortKeys(degreeCounter.iterator(), true,
-    // internalWorkingDir, 1_000_000,
-    // 100);
-    // }
 
     // - vertex -> adjacent edges
     // - edge -> color
     // - join colors
     // - number of edges per color
 
-    // - sort triple file by subject ids, thereby for each triple create
-    // -- subject edgeId, object -edgeId
-    // -- replace the predicate by edgIds (first triple has id 1, etc. inverse
-    // -- count total number of edge #edges
-    // edges have first two bytes = 0x0001)
-    // - sort vertices by degree in ascending order (vertex, degree,
-    // edgesIds+)* (number of edge ids can be too large for memory)
-
-    // - recode edges by 1 for the first triple
-    // - sortedVertexFile contains tuples (vertex,degree)
-    // - use degree information to store |edge,edge,edge,edge|=degree in a
-    // separate file
-
     // TODO Auto-generated method stub
     deleteFolder(internalWorkingDir);
     // TODO remove
     long requiredTime = System.currentTimeMillis() - start;
     System.out.println("required time: " + requiredTime);
+  }
+
+  private File sort(int level, File vertexFile, File outputFile, File workingDir,
+          int numberOfCachedVertices, int numberOfCachedEdges, int maxNumberOfOpenFiles) {
+    long maxDegree = getUpperLimitOfLevel(level, numberOfCachedVertices, maxNumberOfOpenFiles);
+    if (maxDegree == 1) {
+      return vertexFile;
+    } else if (maxDegree == 2) {
+      // append vertices with degree 2
+      appendFile(vertexFile, outputFile);
+      vertexFile.delete();
+      return outputFile;
+    } else {
+      int numberOfCachedVerticesPerLevel = (int) (numberOfCachedEdges / maxDegree);
+      // TODO remove
+      System.out.println(numberOfCachedVerticesPerLevel);
+      File sortedFile = null;
+      if (numberOfCachedVerticesPerLevel == 0) {
+        // TODO Auto-generated method stub
+        sortedFile = vertexFile;
+      } else {
+        // perform merge sort
+        List<File> initialChunks = createInitialChunks(vertexFile, workingDir,
+                numberOfCachedVerticesPerLevel);
+        sortedFile = mergeFullList(initialChunks, workingDir, maxNumberOfOpenFiles);
+      }
+      appendFile(sortedFile, outputFile);
+      vertexFile.delete();
+      return outputFile;
+    }
+  }
+
+  private File mergeFullList(List<File> chunks, File workingDir, int maxNumberOfOpenFiles) {
+    try {
+      if (chunks.isEmpty()) {
+        return File.createTempFile("mergeSortChunk", "", workingDir);
+      }
+      while (chunks.size() > 1) {
+        List<File> mergedChunks = new ArrayList<>();
+        for (int iterationStart = 0; (chunks.size() > 1)
+                && (iterationStart < chunks.size()); iterationStart += maxNumberOfOpenFiles - 1) {
+          int numberOfProcessedFiles = Math.min(maxNumberOfOpenFiles - 1,
+                  chunks.size() - iterationStart);
+          EncodedLongFileInputStream[] inputs = new EncodedLongFileInputStream[numberOfProcessedFiles];
+          File outputFile = File.createTempFile("mergeSortChunk", "", workingDir);
+          try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile);) {
+            EncodedLongFileInputIterator[] iterators = new EncodedLongFileInputIterator[numberOfProcessedFiles];
+            long[][] nextElements = new long[numberOfProcessedFiles][3];
+            // initialize
+            for (int i = 0; i < numberOfProcessedFiles; i++) {
+              inputs[i] = new EncodedLongFileInputStream(chunks.get(iterationStart + i));
+              iterators[i] = new EncodedLongFileInputIterator(inputs[i]);
+              if (iterators[i].hasNext()) {
+                nextElements[i] = new long[] { iterators[i].next(), iterators[i].next(),
+                        iterators[i].next() };
+              } else {
+                nextElements[i] = null;
+                iterators[i].close();
+                iterators[i] = null;
+              }
+            }
+            // merge
+            for (int nextIndex = getIndexOfSmallestElement(nextElements,
+                    VertexIncidentEdgesDegreeComparator.getComparator(
+                            true)); nextIndex != -1; nextIndex = getIndexOfSmallestElement(
+                                    nextElements,
+                                    VertexIncidentEdgesDegreeComparator.getComparator(true))) {
+              output.writeLong(nextElements[nextIndex][0]);
+              output.writeLong(nextElements[nextIndex][1]);
+              output.writeLong(nextElements[nextIndex][2]);
+              for (int i = 0; i < nextElements[nextIndex][1]; i++) {
+                output.writeLong(iterators[nextIndex].next());
+              }
+              for (int i = 0; i < nextElements[nextIndex][2]; i++) {
+                output.writeLong(iterators[nextIndex].next());
+              }
+              if (iterators[nextIndex].hasNext()) {
+                nextElements[nextIndex] = new long[] { iterators[nextIndex].next(),
+                        iterators[nextIndex].next(), iterators[nextIndex].next() };
+              } else {
+                nextElements[nextIndex] = null;
+                iterators[nextIndex].close();
+                iterators[nextIndex] = null;
+              }
+            }
+            mergedChunks.add(outputFile);
+          } finally {
+            for (int i = 0; i < numberOfProcessedFiles; i++) {
+              inputs[i].close();
+              chunks.get(iterationStart + i).delete();
+            }
+          }
+        }
+        chunks = mergedChunks;
+      }
+      return chunks.get(0);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * @param elements
+   * @param comparator
+   * @return -1 if no smallest element exists
+   */
+  private int getIndexOfSmallestElement(long[][] elements, Comparator<long[]> comparator) {
+    int smallest = -1;
+    long[] smallestElement = null;
+    for (int i = 0; i < elements.length; i++) {
+      if (elements[i] == null) {
+        continue;
+      }
+      if ((smallestElement == null) || (comparator.compare(smallestElement, elements[i]) > 0)) {
+        smallest = i;
+        smallestElement = elements[i];
+      }
+    }
+    return smallest;
+  }
+
+  private List<File> createInitialChunks(File vertexFile, File workingDir,
+          int numberOfCachedVerticesPerLevel) {
+    List<File> result = new ArrayList<>();
+    LongIterator iterator = null;
+    try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(vertexFile);) {
+      iterator = input.iterator();
+      long[][] vertexHeaders = new long[numberOfCachedVerticesPerLevel][4];
+      long[][] outEdges = new long[numberOfCachedVerticesPerLevel][];
+      long[][] inEdges = new long[numberOfCachedVerticesPerLevel][];
+      while (iterator.hasNext()) {
+        // load data in memory
+        int nextIndex = 0;
+        while ((nextIndex < vertexHeaders.length) && iterator.hasNext()) {
+          vertexHeaders[nextIndex][0] = iterator.next();
+          vertexHeaders[nextIndex][1] = iterator.next();
+          vertexHeaders[nextIndex][2] = iterator.next();
+          vertexHeaders[nextIndex][3] = nextIndex;
+          outEdges[nextIndex] = readEdges(outEdges[nextIndex], iterator,
+                  (int) vertexHeaders[nextIndex][1]);
+          inEdges[nextIndex] = readEdges(inEdges[nextIndex], iterator,
+                  (int) vertexHeaders[nextIndex][2]);
+          nextIndex++;
+        }
+        Arrays.sort(vertexHeaders, 0, nextIndex,
+                VertexIncidentEdgesDegreeComparator.getComparator(true));
+        File outputFile = File.createTempFile("initialMergeSortChunk", "", workingDir);
+        result.add(outputFile);
+        try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile,
+                true);) {
+          for (int i = 0; i < nextIndex; i++) {
+            output.writeLong(vertexHeaders[i][0]);
+            output.writeLong(vertexHeaders[i][1]);
+            output.writeLong(vertexHeaders[i][2]);
+            int edgeIndex = (int) vertexHeaders[i][3];
+            for (int j = 0; j < vertexHeaders[i][1]; j++) {
+              output.writeLong(outEdges[edgeIndex][j]);
+            }
+            for (int j = 0; j < vertexHeaders[i][2]; j++) {
+              output.writeLong(inEdges[edgeIndex][j]);
+            }
+          }
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      if (iterator != null) {
+        iterator.close();
+      }
+    }
+    return result;
+  }
+
+  private long[] readEdges(long[] result, LongIterator iterator, int numberOfEdges) {
+    if ((result == null) || (numberOfEdges >= result.length)) {
+      result = new long[numberOfEdges];
+    }
+    for (int i = 0; i < result.length; i++) {
+      result[i] = i < numberOfEdges ? iterator.next() : 0;
+    }
+    return result;
+  }
+
+  private void appendFile(File vertexFile, File outputFile) {
+    LongIterator iterator = null;
+    try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(vertexFile);
+            EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile,
+                    true);) {
+      iterator = input.iterator();
+      while (iterator.hasNext()) {
+        output.writeLong(iterator.next());
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      if (iterator != null) {
+        iterator.close();
+      }
+    }
+  }
+
+  private File[] splitIntoDegreeLevels(File vertexIncidentEdgesFile, File workingDir,
+          int numberOfCachedVertices, int maxNumberOfOpenFiles) {
+    int numberOfLevels = Integer.SIZE - Integer.numberOfLeadingZeros(numberOfCachedVertices);
+    if (numberOfLevels > (maxNumberOfOpenFiles - 1)) {
+      numberOfLevels = maxNumberOfOpenFiles - 1;
+    }
+    File[] levels = new File[numberOfLevels];
+    EncodedLongFileOutputStream[] outputs = new EncodedLongFileOutputStream[numberOfLevels];
+    try {
+      for (int i = 0; i < levels.length; i++) {
+        String prefix = i == 0 ? "sortedVertexList-"
+                : "verticesWithDegrees-"
+                        + getLowerLimitOfLevel(i, numberOfCachedVertices, maxNumberOfOpenFiles)
+                        + "to"
+                        + getUpperLimitOfLevel(i, numberOfCachedVertices, maxNumberOfOpenFiles)
+                        + "-";
+        levels[i] = File.createTempFile(prefix, "", workingDir);
+        outputs[i] = new EncodedLongFileOutputStream(levels[i]);
+      }
+      LongIterator iterator = null;
+      try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(
+              vertexIncidentEdgesFile);) {
+        iterator = input.iterator();
+        while (iterator.hasNext()) {
+          long vertexId = iterator.next();
+          long outDegree = iterator.next();
+          long inDegree = iterator.next();
+          int level = getInsertionLevel(outDegree + inDegree, numberOfCachedVertices,
+                  maxNumberOfOpenFiles);
+          outputs[level].writeLong(vertexId);
+          outputs[level].writeLong(outDegree);
+          outputs[level].writeLong(inDegree);
+          for (int i = 0; i < outDegree; i++) {
+            outputs[level].writeLong(iterator.next());
+          }
+          for (int i = 0; i < inDegree; i++) {
+            outputs[level].writeLong(iterator.next());
+          }
+        }
+      } finally {
+        if (iterator != null) {
+          iterator.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      for (EncodedLongFileOutputStream output : outputs) {
+        if (output != null) {
+          try {
+            output.close();
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+      }
+    }
+    return levels;
+  }
+
+  private int getInsertionLevel(long degree, int numberOfCachedVertices, int maxNumberOfOpenFiles) {
+    int level = 0;
+    while (degree > getUpperLimitOfLevel(level, numberOfCachedVertices, maxNumberOfOpenFiles)) {
+      level++;
+    }
+    return level;
+  }
+
+  private long getLowerLimitOfLevel(int level, int numberOfCachedVertices,
+          int maxNumberOfOpenFiles) {
+    return getUpperLimitOfLevel(level - 1, numberOfCachedVertices, maxNumberOfOpenFiles) + 1;
+  }
+
+  private long getUpperLimitOfLevel(int level, int numberOfCachedVertices,
+          int maxNumberOfOpenFiles) {
+    int numberOfLevels = Integer.SIZE - Integer.numberOfLeadingZeros(numberOfCachedVertices);
+    if (numberOfLevels > (maxNumberOfOpenFiles - 1)) {
+      numberOfLevels = maxNumberOfOpenFiles - 1;
+    }
+    if (level == (numberOfLevels - 1)) {
+      return Long.MAX_VALUE;
+    } else {
+      return numberOfCachedVertices >>> (numberOfLevels - level - 1);
+    }
   }
 
   private List<File> createInitialChunks(EncodedFileInputStream input, File workingDir,
@@ -178,7 +451,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
                                     nextElements)) {
               // write vertexId
               output.writeLong(nextElements[indicesOfSmallestElement.nextSetBit(0)]);
-              // collect out an in degrees
+              // collect out and in degrees
               long[] outDegrees = new long[indicesOfSmallestElement.cardinality()];
               long newOutDegree = 0;
               long[] inDegrees = new long[indicesOfSmallestElement.cardinality()];
@@ -250,39 +523,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       }
     }
     return smallestIndices;
-  }
-
-  /**
-   * @param elements
-   * @param comparator
-   * @return -1 if no smallest element exists
-   */
-  private int getIndexOfSmallestElement(long[][] elements, Comparator<long[]> comparator) {
-    int smallest = -1;
-    long[] smallestElement = null;
-    for (int i = 0; i < elements.length; i++) {
-      if (elements[i] == null) {
-        continue;
-      }
-      if ((smallestElement == null) || (comparator.compare(smallestElement, elements[i]) > 0)) {
-        smallest = i;
-        smallestElement = elements[i];
-      }
-    }
-    return smallest;
-  }
-
-  private File writeSortCacheFile(long[][] cache, int length, File workingDir) throws IOException {
-    File outputFile = File.createTempFile("sortChunk", "", workingDir);
-    try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile);) {
-      for (int i = 0; i < length; i++) {
-        long[] entry = cache[i];
-        for (long value : entry) {
-          output.writeLong(value);
-        }
-      }
-    }
-    return outputFile;
   }
 
   private void deleteFolder(File folder) {
