@@ -23,7 +23,7 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
 
   private static final int INITIAL_ARRAY_SIZE = 1;
 
-  private final File storageFile;
+  private File storageFile;
 
   private Map<Long, Integer> vertexId2Index;
 
@@ -31,13 +31,13 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
    * stores for vertex i:
    * vertexDegrees[i]={vertexId,outdegree,indegree,incidentEdgesIndex}
    */
-  private List<long[]> vertexDegrees;
+  private final List<long[]> vertexDegrees;
 
   /**
    * stores for vertex i: incidentEdges[vertexDegrees[i][3]][0] = list of
    * outgoing edges, incidentEdges[vertexDegrees[i][3]][1] list of ingoing edges
    */
-  private List<long[][]> incidentEdges;
+  private final List<long[][]> incidentEdges;
 
   public VertexIncidencentEdgesListFileCreator(File storageFile) {
     this.storageFile = storageFile;
@@ -61,10 +61,19 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
     if (index == null) {
       index = Integer.valueOf(vertexId2Index.size());
       vertexId2Index.put(vertexId, index);
-      vertexDegree = new long[] { vertexId, 0, 0, index };
-      vertexDegrees.add(vertexDegree);
-      incidentEdge = new long[2][VertexIncidencentEdgesListFileCreator.INITIAL_ARRAY_SIZE];
-      incidentEdges.add(incidentEdge);
+      if (vertexDegrees.size() <= index) {
+        vertexDegree = new long[] { vertexId, 0, 0, index };
+        vertexDegrees.add(vertexDegree);
+        incidentEdge = new long[2][VertexIncidencentEdgesListFileCreator.INITIAL_ARRAY_SIZE];
+        incidentEdges.add(incidentEdge);
+      } else {
+        vertexDegree = vertexDegrees.get(index);
+        vertexDegree[0] = vertexId;
+        vertexDegree[1] = 0;
+        vertexDegree[2] = 0;
+        vertexDegree[3] = index;
+        incidentEdge = incidentEdges.get(index);
+      }
     } else {
       vertexDegree = vertexDegrees.get(index);
       incidentEdge = incidentEdges.get((int) vertexDegree[3]);
@@ -95,10 +104,17 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
       // this file was already flushed
       return;
     }
-    vertexId2Index = null;
+    for (int i = vertexId2Index.size(); i < vertexDegrees.size(); i++) {
+      long[] vertexDegree = vertexDegrees.get(i);
+      vertexDegree[1] = 0;
+      vertexDegree[2] = 0;
+    }
     Collections.sort(vertexDegrees, VertexIncidentEdgesVertexIdComparator.getComparator(true));
     try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(storageFile);) {
       for (long[] vertexDegree : vertexDegrees) {
+        if ((vertexDegree[1] == 0) && (vertexDegree[2] == 0)) {
+          continue;
+        }
         output.writeLong(vertexDegree[0]);
         output.writeLong(vertexDegree[1]);
         output.writeLong(vertexDegree[2]);
@@ -118,8 +134,26 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    vertexDegrees = null;
-    incidentEdges = null;
+    vertexId2Index = null;
+    // vertexDegrees = null;
+    // incidentEdges = null;
+  }
+
+  public void clear(File storageFile) {
+    this.storageFile = storageFile;
+    vertexId2Index = new HashMap<>();
+    for (int v = 0; v < vertexDegrees.size(); v++) {
+      long[] vertex = vertexDegrees.get(v);
+      for (int i = 0; i < vertex.length; i++) {
+        vertex[i] = 0;
+      }
+      long[][] incidentEdge = incidentEdges.get(v);
+      for (int i = 0; i < incidentEdge.length; i++) {
+        for (int j = 0; j < incidentEdge[i].length; j++) {
+          incidentEdge[i][j] = 0;
+        }
+      }
+    }
   }
 
   @Override
@@ -127,6 +161,9 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
     StringBuilder sb = new StringBuilder(storageFile.getAbsolutePath()).append("\n");
     String bigDelim = "";
     for (long[] vertex : vertexDegrees) {
+      if ((vertex[1] == 0) && (vertex[2] == 0)) {
+        continue;
+      }
       sb.append(bigDelim).append("vertex:").append(vertex[0]).append("\n");
       sb.append("\toutdegree:").append(vertex[1]).append(" {");
       String delim = "";

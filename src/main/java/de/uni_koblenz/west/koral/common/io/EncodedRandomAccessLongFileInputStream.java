@@ -18,8 +18,6 @@
  */
 package de.uni_koblenz.west.koral.common.io;
 
-import de.uni_koblenz.west.koral.master.utils.LongIterator;
-
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -27,7 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.zip.GZIPInputStream;
+import java.nio.channels.FileChannel;
 
 /**
  * Reads long values from a file. The v-byte encoded long values in the input
@@ -36,38 +34,34 @@ import java.util.zip.GZIPInputStream;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class EncodedLongFileInputStream implements AutoCloseable {
+public class EncodedRandomAccessLongFileInputStream implements AutoCloseable {
 
-  private final DataInputStream input;
+  private DataInputStream input;
 
-  private final File inputFile;
+  private final FileInputStream fileInput;
 
-  /**
-   * The input must be closed!
-   * 
-   * @param input
-   * @throws FileNotFoundException
-   * @throws IOException
-   */
-  public EncodedLongFileInputStream(EncodedLongFileInputStream input)
+  public EncodedRandomAccessLongFileInputStream(File inputFile)
           throws FileNotFoundException, IOException {
-    this(input.inputFile);
-  }
-
-  public EncodedLongFileInputStream(File inputFile) throws FileNotFoundException, IOException {
     super();
-    this.inputFile = inputFile;
+    fileInput = new FileInputStream(inputFile);
     if (inputFile.length() > 0) {
-      input = new DataInputStream(
-              new BufferedInputStream(new GZIPInputStream(new FileInputStream(inputFile))));
+      input = new DataInputStream(new BufferedInputStream(fileInput));
     } else {
       input = null;
     }
   }
 
+  public void setPosition(long position) throws IOException {
+    FileChannel channel = fileInput.getChannel();
+    if (channel.position() != position) {
+      channel.position(position);
+      input = new DataInputStream(new BufferedInputStream(fileInput));
+    }
+  }
+
   public long readLong() throws EOFException, IOException {
     if (input == null) {
-      throw new EOFException();
+      input = new DataInputStream(new BufferedInputStream(fileInput));
     }
     long result = 0;
     byte currentBlock;
@@ -78,10 +72,6 @@ public class EncodedLongFileInputStream implements AutoCloseable {
       result = result | value;
     } while (currentBlock >= 0);
     return result;
-  }
-
-  public LongIterator iterator() {
-    return new EncodedLongFileInputIterator(this);
   }
 
   @Override
