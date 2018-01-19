@@ -135,8 +135,6 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
       throw new RuntimeException(e);
     }
     vertexId2Index = null;
-    // vertexDegrees = null;
-    // incidentEdges = null;
   }
 
   public void clear(File storageFile) {

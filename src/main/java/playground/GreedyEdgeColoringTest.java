@@ -39,6 +39,7 @@ public class GreedyEdgeColoringTest {
               inputFile.isDirectory() ? inputFile.listFiles(new GraphFileFilter())
                       : new File[] { inputFile },
               workingDir, coverCreator.getRequiredInputEncoding(), numberOfChunks);
+      // File encodedInput = encoder.getSemiEncodedGraphFile(workingDir);
 
       File[] graphCover = coverCreator.createGraphCover(encoder, encodedInput, workingDir,
               numberOfChunks);

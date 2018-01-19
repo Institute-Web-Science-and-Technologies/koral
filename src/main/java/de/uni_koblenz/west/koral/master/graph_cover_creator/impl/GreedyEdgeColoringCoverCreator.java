@@ -81,17 +81,10 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     long transformStart = System.currentTimeMillis();
     List<File> initialChunks = createInitialChunks(input, internalWorkingDir,
             GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES);
-    // TODO remove
-    System.out.println(
-            "initialisation transformation time: " + (System.currentTimeMillis() - transformStart));
-    transformStart = System.currentTimeMillis();
     File vertexIncidentEdgesFile = sortAndMerge(initialChunks, internalWorkingDir,
             GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
     // TODO remove
-    System.out
-            .println("sort transformation time: " + (System.currentTimeMillis() - transformStart));
-    // TODO remove
-    System.out.println("transformation time: " + (System.currentTimeMillis() - start));
+    System.out.println("transformation time: " + (System.currentTimeMillis() - transformStart));
     long sortStart = System.currentTimeMillis();
 
     // sort by degree
@@ -107,15 +100,11 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
               internalWorkingDir, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
               GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
               GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
-      // TODO remove
-      System.out.println(
-              "level " + level + " sorting time: " + (System.currentTimeMillis() - sortStart));
-      sortStart = System.currentTimeMillis();
     }
     // TODO remove
     System.out.println("sort time: " + (System.currentTimeMillis() - sortStart));
 
-    // print(sortedVertexList);
+    print(sortedVertexList);
 
     // TODO reset input to create final graph chunks
 
