@@ -11,11 +11,18 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.koral.master.utils.ColoringManager;
+import de.uni_koblenz.west.koral.master.utils.EdgeArrayIterator;
+import de.uni_koblenz.west.koral.master.utils.EdgeFileIterator;
+import de.uni_koblenz.west.koral.master.utils.EdgeIterator;
+import de.uni_koblenz.west.koral.master.utils.LongArraySingleFieldComparator;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 import de.uni_koblenz.west.koral.master.utils.VertexIncidencentEdgesListFileCreator;
 import de.uni_koblenz.west.koral.master.utils.VertexIncidentEdgesDegreeComparator;
 
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -26,7 +33,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -45,6 +55,8 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
   private static final int NUMBER_OF_CACHED_EDGES = 0x04_00_00_00;
 
   private static final int MAX_NUMBER_OF_OPEN_FILES = 100;
+
+  private long numberOfEdges = 0;
 
   public GreedyEdgeColoringCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
     super(logger, measurementCollector);
@@ -104,20 +116,302 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     // TODO remove
     System.out.println("sort time: " + (System.currentTimeMillis() - sortStart));
 
-    print(sortedVertexList);
+    File edges2chunks = null;
+    try (ColoringManager colorManager = new ColoringManager(internalWorkingDir,
+            GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);) {
+      // create edge coloring
+      createEdgeColoring(sortedVertexList, colorManager, internalWorkingDir, numberOfEdges,
+              numberOfGraphChunks, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
+              GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+      // assign edges to graph chunks
+      edges2chunks = createAssignmentOfEdgesToChunks(colorManager, internalWorkingDir,
+              numberOfEdges, numberOfGraphChunks,
+              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
+              GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);
+    }
+
+    // sort edges2chunks by edgeIds in ascending order
+    // output is a list of partitionIds: e1->4;e2->2 is stored as [4,2]
+
+    // iterate partitionIds and input in parallel to translate edgeId back into
+    // triple
 
     // TODO reset input to create final graph chunks
-
-    // - vertex -> adjacent edges
-    // - edge -> color
-    // - join colors
-    // - number of edges per color
 
     // TODO Auto-generated method stub
     deleteFolder(internalWorkingDir);
     // TODO remove
     long requiredTime = System.currentTimeMillis() - start;
     System.out.println("required time: " + requiredTime);
+  }
+
+  private File createAssignmentOfEdgesToChunks(ColoringManager colorManager, File workingDir,
+          long numberOfEdges, int numberOfGraphChunks, int numberOfCachedEdges,
+          int maxNumberOfOpenFiles) {
+    try {
+      Iterator<long[]> iteratorOverColors = colorManager.getIteratorOverAllColors();
+      File colorsSortedBySizeDesc = sortColors(iteratorOverColors, workingDir, numberOfCachedEdges,
+              maxNumberOfOpenFiles);
+      long[] chunkSizes = new long[numberOfGraphChunks];
+      File colors2chunks = File.createTempFile("colors2chunks", "", workingDir);
+      // sort colors by size in descending order
+
+      // perform greedy algorithm to assign colors to chunk
+
+      // when assigning color to a chunk, write edgeID,chunkID to the output
+      // file
+      // TODO Auto-generated method stub
+      return null;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private File sortColors(Iterator<long[]> iteratorOverColors, File workingDir,
+          int numberOfCachedEdges, int maxNumberOfOpenFiles) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  private void createEdgeColoring(File sortedVertexList, ColoringManager colorManager,
+          File workingDir, long numberOfEdges, int numberOfGraphChunks, int numberOfCachedEdges,
+          int maxNumberOfOpenFiles) {
+    long maxNumberOfEdgesPerColour = numberOfEdges / numberOfGraphChunks;
+    long maxInMemoryEdgeNumber = numberOfCachedEdges / 3;
+    if (maxInMemoryEdgeNumber > (65536 / 3)) {
+      maxInMemoryEdgeNumber = 65536 / 3;
+    }
+    /*
+     * edges[i][0]=edgeId, edges[i][1]=colorId, edges[i][2]=sizeOfColor
+     */
+    long[][] edges = new long[1][3];
+    try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(sortedVertexList);
+            LongIterator iterator = input.iterator();) {
+      while (iterator.hasNext()) {
+        @SuppressWarnings("unused")
+        long vertexId = iterator.next();
+        long outDegree = iterator.next();
+        long inDegree = iterator.next();
+        long degree = outDegree + inDegree;
+        if (degree <= maxInMemoryEdgeNumber) {
+          if ((edges == null) || (degree > edges.length)) {
+            edges = new long[(int) degree][3];
+          }
+          for (int i = 0; i < degree; i++) {
+            edges[i][0] = iterator.next();
+          }
+          colorManager.fillColorInformation(edges);
+          try (EdgeIterator iter = new EdgeArrayIterator(edges);) {
+            colourEdges(iter, colorManager, maxNumberOfEdgesPerColour);
+          }
+        } else {
+          edges = null;
+          File edgeColors = getEdgeColors(iterator, outDegree, inDegree, colorManager, workingDir,
+                  (int) maxInMemoryEdgeNumber, (maxNumberOfOpenFiles / 2) - 1);
+          try (EdgeIterator iter = new EdgeFileIterator(edgeColors);) {
+            colourEdges(iter, colorManager, maxNumberOfEdgesPerColour);
+          }
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void colourEdges(EdgeIterator edges, ColoringManager colorManager,
+          long maxNumberOfEdgesPerColour) {
+    /*
+     * color[0] = colorId; color[1] = frequency
+     */
+    List<long[]> colorCache = new LinkedList<>();
+    // TODO check number of cached colors
+    long[] edge = edges.next();
+    // iterate over all colored edges
+    while ((edge[1] != 0) && edges.hasNext()) {
+      if (edge[2] == maxNumberOfEdgesPerColour) {
+        // the edge is full, thus it cannot be used for anything
+      } else if (colorCache.isEmpty()) {
+        // this is the first color
+        colorCache.add(new long[] { edge[1], edge[2] });
+      } else {
+        long[] last = colorCache.get(colorCache.size() - 1);
+        if (last[0] == edge[1]) {
+          // this color existed already, thus there is nothing to do
+        } else {
+          // find join candidate with which this color can be joined
+          long[] joinedColor = null;
+          for (long[] color : colorCache) {
+            if ((color[1] + edge[2]) <= maxNumberOfEdgesPerColour) {
+              // recolor current edge
+              colorManager.recolor(edge[1], edge[2], color[0], color[1]);
+              color[1] += edge[2];
+              joinedColor = color;
+              break;
+            }
+          }
+          if (joinedColor == null) {
+            // this color could not be joined
+            colorCache.add(new long[] { edge[1], edge[2] });
+          } else if (joinedColor[1] == maxNumberOfEdgesPerColour) {
+            // the joined color is full and can be removed
+            colorCache.remove(joinedColor);
+          }
+        }
+      }
+      // read next edge
+      edge = edges.next();
+    }
+    // sort colors by frequency
+    Collections.sort(colorCache, new LongArraySingleFieldComparator(false, 1));
+    // iterate over all uncolored edges
+    while (edges.hasNext()) {
+      long[] color = null;
+      if (colorCache.isEmpty()) {
+        // create a new color
+        color = colorManager.createNewColor();
+        colorCache.add(color);
+      } else {
+        // use largest color to color the new edge
+        color = colorCache.get(0);
+      }
+      colorManager.colorEdge(edge[0], color[0]);
+      color[1]++;
+      if (color[1] >= maxNumberOfEdgesPerColour) {
+        // the color is full and cannot be used any more
+        colorCache.remove(color);
+      }
+      // read next edge
+      edge = edges.next();
+    }
+  }
+
+  private File getEdgeColors(LongIterator iterator, long outDegree, long inDegree,
+          ColoringManager colorManager, File workingDir, int maxInMemoryEdgeNumber,
+          int maxNumberOfOpenFiles) throws IOException {
+    Comparator<long[]> comparator = new LongArraySingleFieldComparator(false, 2);
+    List<File> edgeColorChunks = new ArrayList<>();
+    // create initial merge sort chunks
+    long[][] cachedEdges = new long[maxInMemoryEdgeNumber][3];
+    int nextIndex = 0;
+    long numberOfEdgesToRead = outDegree + inDegree;
+    for (long i = numberOfEdgesToRead; i > 0; i--) {
+      if (nextIndex == cachedEdges.length) {
+        writeEdgeColorChunk(colorManager, workingDir, comparator, edgeColorChunks, cachedEdges,
+                nextIndex);
+        nextIndex = 0;
+      }
+      cachedEdges[nextIndex][0] = iterator.next();
+      nextIndex++;
+    }
+    if (nextIndex > 0) {
+      writeEdgeColorChunk(colorManager, workingDir, comparator, edgeColorChunks, cachedEdges,
+              nextIndex);
+    }
+    cachedEdges = null;
+    // perform merge sort
+    while (edgeColorChunks.size() > 1) {
+      List<File> nextChunks = new ArrayList<>();
+      for (int iterationStart = 0; (edgeColorChunks.size() > 1)
+              && (iterationStart < edgeColorChunks.size()); iterationStart += maxNumberOfOpenFiles
+                      - 1) {
+        int numberOfProcessedFiles = Math.min(maxNumberOfOpenFiles - 1,
+                edgeColorChunks.size() - iterationStart);
+        EncodedRandomAccessLongFileInputStream[] inputs = new EncodedRandomAccessLongFileInputStream[numberOfProcessedFiles];
+        File outputFile = File.createTempFile("mergeSortChunk", "", workingDir);
+        nextChunks.add(outputFile);
+        try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile);) {
+          long[][] edges = new long[numberOfProcessedFiles][];
+          // initialize
+          for (int i = 0; i < inputs.length; i++) {
+            inputs[i] = new EncodedRandomAccessLongFileInputStream(
+                    edgeColorChunks.get(iterationStart + i));
+            edges[i] = new long[] { inputs[i].readLong(), inputs[i].readLong(),
+                    inputs[i].readLong() };
+          }
+          // merge
+          for (BitSet indicesOfSmallestElement = getIndicesOfSmallestElement(edges,
+                  comparator); !indicesOfSmallestElement
+                          .isEmpty(); indicesOfSmallestElement = getIndicesOfSmallestElement(edges,
+                                  comparator)) {
+            int smallesElementIndex = indicesOfSmallestElement.nextSetBit(0);
+            long[] edge = edges[smallesElementIndex];
+            if (edge[1] == 0) {
+              // these are uncolored edges
+              for (int i = smallesElementIndex; i >= 0; i = indicesOfSmallestElement
+                      .nextSetBit(i + 1)) {
+                output.writeLong(edges[i][0]);
+                output.writeLong(edges[i][1]);
+                output.writeLong(edges[i][2]);
+                try {
+                  edges[i][0] = inputs[i].readLong();
+                  edges[i][1] = inputs[i].readLong();
+                  edges[i][2] = inputs[i].readLong();
+                } catch (EOFException e) {
+                  edges[i] = null;
+                }
+              }
+            } else {
+              output.writeLong(edge[0]);
+              output.writeLong(edge[1]);
+              output.writeLong(edge[2]);
+              try {
+                edges[smallesElementIndex][0] = inputs[smallesElementIndex].readLong();
+                edges[smallesElementIndex][1] = inputs[smallesElementIndex].readLong();
+                edges[smallesElementIndex][2] = inputs[smallesElementIndex].readLong();
+              } catch (EOFException e) {
+                edges[smallesElementIndex] = null;
+              }
+            }
+          }
+        } finally {
+          for (int i = 0; i < numberOfProcessedFiles; i++) {
+            inputs[i].close();
+            edgeColorChunks.get(iterationStart + i).delete();
+          }
+        }
+      }
+      edgeColorChunks = nextChunks;
+    }
+    return edgeColorChunks.get(0);
+  }
+
+  private BitSet getIndicesOfSmallestElement(long[][] elements, Comparator<long[]> comparator) {
+    long[] smallestElement = null;
+    BitSet smallestIndices = new BitSet(elements.length);
+    for (int i = 0; i < elements.length; i++) {
+      if (elements[i] == null) {
+        continue;
+      }
+      if ((smallestElement == null) || ((comparator.compare(elements[i], smallestElement)) < 0)) {
+        smallestElement = elements[i];
+        smallestIndices.clear();
+        smallestIndices.set(i);
+      } else if (elements[i][2] == smallestElement[2]) {
+        smallestIndices.set(i);
+      }
+    }
+    return smallestIndices;
+  }
+
+  private void writeEdgeColorChunk(ColoringManager colorManager, File workingDir,
+          Comparator<long[]> comparator, List<File> edgeColorChunks, long[][] cachedEdges,
+          int nextIndex) throws IOException, FileNotFoundException {
+    colorManager.fillColorInformation(cachedEdges, nextIndex);
+    Arrays.sort(cachedEdges, 0, nextIndex, comparator);
+    File output = File.createTempFile("edgeColorInitialChunk", "", workingDir);
+    try (EncodedRandomAccessLongFileOutputStream out = new EncodedRandomAccessLongFileOutputStream(
+            output);) {
+      long previousColor = 0;
+      for (int j = 0; j < nextIndex; j++) {
+        if ((cachedEdges[j][1] == 0) || (cachedEdges[j][1] != previousColor)) {
+          out.writeLong(cachedEdges[j][0]);
+          out.writeLong(cachedEdges[j][1]);
+          out.writeLong(cachedEdges[j][2]);
+          previousColor = cachedEdges[j][1];
+        }
+      }
+    }
+    edgeColorChunks.add(output);
   }
 
   private File sort(int level, File vertexFile, File outputFile, File workingDir,
@@ -532,6 +826,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         chunk.add(stmt.getObjectAsLong(), nextEdgeId, false);
         nextEdgeId++;
       }
+      numberOfEdges = nextEdgeId;
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {

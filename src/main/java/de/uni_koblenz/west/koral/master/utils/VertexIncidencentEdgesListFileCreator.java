@@ -109,7 +109,7 @@ public class VertexIncidencentEdgesListFileCreator implements AutoCloseable {
       vertexDegree[1] = 0;
       vertexDegree[2] = 0;
     }
-    Collections.sort(vertexDegrees, VertexIncidentEdgesVertexIdComparator.getComparator(true));
+    Collections.sort(vertexDegrees, LongArraySingleFieldComparator.getVertexIdComparator(true));
     try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(storageFile);) {
       for (long[] vertexDegree : vertexDegrees) {
         if ((vertexDegree[1] == 0) && (vertexDegree[2] == 0)) {
