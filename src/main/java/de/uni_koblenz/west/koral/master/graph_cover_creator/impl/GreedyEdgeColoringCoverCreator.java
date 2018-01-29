@@ -15,7 +15,7 @@ import de.uni_koblenz.west.koral.master.utils.ColoringManager;
 import de.uni_koblenz.west.koral.master.utils.EdgeArrayIterator;
 import de.uni_koblenz.west.koral.master.utils.EdgeFileIterator;
 import de.uni_koblenz.west.koral.master.utils.EdgeIterator;
-import de.uni_koblenz.west.koral.master.utils.LongArraySingleFieldComparator;
+import de.uni_koblenz.west.koral.master.utils.FixedSizeLongArrayComparator;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 import de.uni_koblenz.west.koral.master.utils.VertexIncidencentEdgesListFileCreator;
 import de.uni_koblenz.west.koral.master.utils.VertexIncidentEdgesDegreeComparator;
@@ -262,7 +262,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       edge = edges.next();
     }
     // sort colors by frequency
-    Collections.sort(colorCache, new LongArraySingleFieldComparator(false, 1));
+    Collections.sort(colorCache, new FixedSizeLongArrayComparator(false, 1));
     // iterate over all uncolored edges
     while (edges.hasNext()) {
       long[] color = null;
@@ -288,7 +288,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
   private File getEdgeColors(LongIterator iterator, long outDegree, long inDegree,
           ColoringManager colorManager, File workingDir, int maxInMemoryEdgeNumber,
           int maxNumberOfOpenFiles) throws IOException {
-    Comparator<long[]> comparator = new LongArraySingleFieldComparator(false, 2);
+    Comparator<long[]> comparator = new FixedSizeLongArrayComparator(false, 2);
     List<File> edgeColorChunks = new ArrayList<>();
     // create initial merge sort chunks
     long[][] cachedEdges = new long[maxInMemoryEdgeNumber][3];
