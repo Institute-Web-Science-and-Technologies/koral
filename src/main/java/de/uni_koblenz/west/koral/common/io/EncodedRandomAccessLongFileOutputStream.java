@@ -33,7 +33,7 @@ import java.io.IOException;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class EncodedRandomAccessLongFileOutputStream implements AutoCloseable {
+public class EncodedRandomAccessLongFileOutputStream implements AutoCloseable, LongOutputWriter {
 
   private final DataOutputStream out;
 
@@ -50,6 +50,7 @@ public class EncodedRandomAccessLongFileOutputStream implements AutoCloseable {
     return position;
   }
 
+  @Override
   public void writeLong(long value) throws IOException {
     write(NumberConversion.long2bytes(value));
   }

@@ -8,6 +8,7 @@ import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedRandomAccessLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedRandomAccessLongFileOutputStream;
 import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
+import de.uni_koblenz.west.koral.common.io.LongOutputWriter;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
@@ -16,8 +17,10 @@ import de.uni_koblenz.west.koral.master.utils.EdgeArrayIterator;
 import de.uni_koblenz.west.koral.master.utils.EdgeFileIterator;
 import de.uni_koblenz.west.koral.master.utils.EdgeIterator;
 import de.uni_koblenz.west.koral.master.utils.FixedSizeLongArrayComparator;
+import de.uni_koblenz.west.koral.master.utils.InitialChunkProducer;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
-import de.uni_koblenz.west.koral.master.utils.VertexIncidencentEdgesListFileCreator;
+import de.uni_koblenz.west.koral.master.utils.Merger;
+import de.uni_koblenz.west.koral.master.utils.NWayMergeSort;
 import de.uni_koblenz.west.koral.master.utils.VertexIncidentEdgesDegreeComparator;
 
 import java.io.EOFException;
@@ -35,9 +38,11 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -91,44 +96,54 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     // transform into vertex,outDegree,inDegree,outEdgeList,inEdgeList format
     // TODO remove
     long transformStart = System.currentTimeMillis();
-    List<File> initialChunks = createInitialChunks(input, internalWorkingDir,
-            GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES);
-    File vertexIncidentEdgesFile = sortAndMerge(initialChunks, internalWorkingDir,
+    File vertexIncidentEdgesFile = createVertexIncidentEdgesFile(input, internalWorkingDir,
+            GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
             GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
     // TODO remove
     System.out.println("transformation time: " + (System.currentTimeMillis() - transformStart));
-    long sortStart = System.currentTimeMillis();
 
-    // sort by degree
-    File[] verticesByDegreeLevels = splitIntoDegreeLevels(vertexIncidentEdgesFile,
-            internalWorkingDir, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
-            GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
-    // TODO remove
-    System.out.println("spliting by degree time: " + (System.currentTimeMillis() - sortStart));
-    sortStart = System.currentTimeMillis();
-    File sortedVertexList = null;
-    for (int level = 0; level < verticesByDegreeLevels.length; level++) {
-      sortedVertexList = sort(level, verticesByDegreeLevels[level], sortedVertexList,
-              internalWorkingDir, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
-              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
-              GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
-    }
-    // TODO remove
-    System.out.println("sort time: " + (System.currentTimeMillis() - sortStart));
-
-    File edges2chunks = null;
-    try (ColoringManager colorManager = new ColoringManager(internalWorkingDir,
-            GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);) {
-      // create edge coloring
-      createEdgeColoring(sortedVertexList, colorManager, internalWorkingDir, numberOfEdges,
-              numberOfGraphChunks, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
-              GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
-      // assign edges to graph chunks
-      edges2chunks = createAssignmentOfEdgesToChunks(colorManager, internalWorkingDir,
-              numberOfEdges, numberOfGraphChunks,
-              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
-              GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);
-    }
+    // long sortStart = System.currentTimeMillis();
+    //
+    // // sort by degree
+    // File[] verticesByDegreeLevels =
+    // splitIntoDegreeLevels(vertexIncidentEdgesFile,
+    // internalWorkingDir,
+    // GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
+    // GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+    // // TODO remove
+    // System.out.println("spliting by degree time: " +
+    // (System.currentTimeMillis() - sortStart));
+    // sortStart = System.currentTimeMillis();
+    // File sortedVertexList = null;
+    // for (int level = 0; level < verticesByDegreeLevels.length; level++) {
+    // sortedVertexList = sort(level, verticesByDegreeLevels[level],
+    // sortedVertexList,
+    // internalWorkingDir,
+    // GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
+    // GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
+    // GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+    // }
+    // // TODO remove
+    // System.out.println("sort time: " + (System.currentTimeMillis() -
+    // sortStart));
+    //
+    // File edges2chunks = null;
+    // try (ColoringManager colorManager = new
+    // ColoringManager(internalWorkingDir,
+    // GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);) {
+    // // create edge coloring
+    // createEdgeColoring(sortedVertexList, colorManager, internalWorkingDir,
+    // numberOfEdges,
+    // numberOfGraphChunks,
+    // GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
+    // GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+    // // assign edges to graph chunks
+    // edges2chunks = createAssignmentOfEdgesToChunks(colorManager,
+    // internalWorkingDir,
+    // numberOfEdges, numberOfGraphChunks,
+    // GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
+    // GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);
+    // }
 
     // sort edges2chunks by edgeIds in ascending order
     // output is a list of partitionIds: e1->4;e2->2 is stored as [4,2]
@@ -137,6 +152,8 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     // triple
 
     // TODO reset input to create final graph chunks
+
+    print(vertexIncidentEdgesFile);
 
     // TODO Auto-generated method stub
     deleteFolder(internalWorkingDir);
@@ -806,146 +823,252 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     }
   }
 
-  private List<File> createInitialChunks(EncodedFileInputStream input, File workingDir,
-          int numberOfCachedVertices) {
-    List<File> chunks = new ArrayList<>();
-    VertexIncidencentEdgesListFileCreator chunk = null;
+  private File createVertexIncidentEdgesFile(EncodedFileInputStream input, File workingDir,
+          int numberOfCachedVertices, int maxNumberOfOpenFiles) {
+    InitialChunkProducer producer = null;
     try {
-      chunk = new VertexIncidencentEdgesListFileCreator(
-              File.createTempFile("initialVertexIdChunk", "", workingDir));
-      long nextEdgeId = 1;
-      for (Statement stmt : input) {
-        if ((chunk.getSize() >= numberOfCachedVertices) && (!chunk.contains(stmt.getSubjectAsLong())
-                || !chunk.contains(stmt.getObjectAsLong()))) {
-          chunk.flush();
-          chunk.close();
-          chunks.add(chunk.getFile());
-          chunk.clear(File.createTempFile("initialVertexIdChunk", "", workingDir));
-        }
-        chunk.add(stmt.getSubjectAsLong(), nextEdgeId, true);
-        chunk.add(stmt.getObjectAsLong(), nextEdgeId, false);
-        nextEdgeId++;
-      }
-      numberOfEdges = nextEdgeId;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    } finally {
-      if (chunk != null) {
-        chunk.flush();
-        chunk.close();
-        chunks.add(chunk.getFile());
-      }
-    }
-    return chunks;
-  }
+      producer = new InitialChunkProducer() {
 
-  private File sortAndMerge(List<File> chunks, File workingDir, int maxNumberOfOpenFiles) {
-    try {
-      if (chunks.isEmpty()) {
-        return File.createTempFile("sortedVertexIdChunk", "", workingDir);
-      }
-      while (chunks.size() > 1) {
-        List<File> mergedChunks = new ArrayList<>();
-        for (int iterationStart = 0; (chunks.size() > 1)
-                && (iterationStart < chunks.size()); iterationStart += maxNumberOfOpenFiles - 1) {
-          int numberOfProcessedFiles = Math.min(maxNumberOfOpenFiles - 1,
-                  chunks.size() - iterationStart);
-          EncodedLongFileInputStream[] inputs = new EncodedLongFileInputStream[numberOfProcessedFiles];
-          File outputFile = File.createTempFile("sortedVertexIdChunk", "", workingDir);
-          try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile);) {
-            EncodedLongFileInputIterator[] iterators = new EncodedLongFileInputIterator[numberOfProcessedFiles];
-            long[] nextElements = new long[numberOfProcessedFiles];
-            // initialize
-            for (int i = 0; i < numberOfProcessedFiles; i++) {
-              inputs[i] = new EncodedLongFileInputStream(chunks.get(iterationStart + i));
-              iterators[i] = new EncodedLongFileInputIterator(inputs[i]);
-              if (iterators[i].hasNext()) {
-                nextElements[i] = iterators[i].next();
+        private static final int INITIAL_ARRAY_SIZE = 1;
+
+        private Map<Long, Integer> vertexId2Index = new HashMap<>();
+
+        /**
+         * stores for vertex i:
+         * vertexDegrees[i]={vertexId,outdegree,indegree,incidentEdgesIndex}
+         */
+        private List<long[]> vertexDegrees = new ArrayList<>();
+
+        /**
+         * stores for vertex i: incidentEdges[vertexDegrees[i][3]][0] = list of
+         * outgoing edges, incidentEdges[vertexDegrees[i][3]][1] list of ingoing
+         * edges
+         */
+        private List<long[][]> incidentEdges = new ArrayList<>();
+
+        private long nextEdgeId = 1;
+
+        private final Iterator<Statement> iterator = input.iterator();
+
+        @Override
+        public void loadNextChunk() {
+          clear();
+          while (iterator.hasNext()) {
+            if (vertexId2Index.size() >= numberOfCachedVertices) {
+              return;
+            }
+            Statement stmt = iterator.next();
+            add(stmt.getSubjectAsLong(), nextEdgeId, true);
+            add(stmt.getObjectAsLong(), nextEdgeId, false);
+            nextEdgeId++;
+          }
+        }
+
+        private void add(long vertexId, long edgeId, boolean isOutgoingEdge) {
+          Integer index = vertexId2Index.get(vertexId);
+          long[] vertexDegree = null;
+          long[][] incidentEdge = null;
+          if (index == null) {
+            index = Integer.valueOf(vertexId2Index.size());
+            vertexId2Index.put(vertexId, index);
+            if (vertexDegrees.size() <= index) {
+              vertexDegree = new long[] { vertexId, 0, 0, index };
+              vertexDegrees.add(vertexDegree);
+              incidentEdge = new long[2][INITIAL_ARRAY_SIZE];
+              incidentEdges.add(incidentEdge);
+            } else {
+              vertexDegree = vertexDegrees.get(index);
+              vertexDegree[0] = vertexId;
+              vertexDegree[1] = 0;
+              vertexDegree[2] = 0;
+              vertexDegree[3] = index;
+              incidentEdge = incidentEdges.get(index);
+            }
+          } else {
+            vertexDegree = vertexDegrees.get(index);
+            incidentEdge = incidentEdges.get((int) vertexDegree[3]);
+          }
+          incidentEdge[isOutgoingEdge ? 0 : 1] = addEdge(edgeId,
+                  incidentEdge[isOutgoingEdge ? 0 : 1], (int) vertexDegree[isOutgoingEdge ? 1 : 2]);
+          vertexDegree[isOutgoingEdge ? 1 : 2]++;
+        }
+
+        private long[] addEdge(long edgeId, long[] edgeList, int insertionIndex) {
+          if (insertionIndex >= edgeList.length) {
+            int newSize = edgeList.length;
+            while (newSize <= insertionIndex) {
+              if (newSize < 100) {
+                newSize *= 2;
               } else {
-                nextElements[i] = 0;
-                iterators[i].close();
-                iterators[i] = null;
+                newSize += 100;
               }
             }
-            // merge
-            for (BitSet indicesOfSmallestElement = getIndicesOfSmallestElement(
-                    nextElements); !indicesOfSmallestElement
-                            .isEmpty(); indicesOfSmallestElement = getIndicesOfSmallestElement(
-                                    nextElements)) {
-              // write vertexId
-              output.writeLong(nextElements[indicesOfSmallestElement.nextSetBit(0)]);
-              // collect out and in degrees
-              long[] outDegrees = new long[indicesOfSmallestElement.cardinality()];
-              long newOutDegree = 0;
-              long[] inDegrees = new long[indicesOfSmallestElement.cardinality()];
-              long newInDegree = 0;
-              for (int i = indicesOfSmallestElement.nextSetBit(
-                      0), k = 0; i >= 0; i = indicesOfSmallestElement.nextSetBit(i + 1), k++) {
-                outDegrees[k] = iterators[i].next();
-                newOutDegree += outDegrees[k];
-                inDegrees[k] = iterators[i].next();
-                newInDegree += inDegrees[k];
-              }
-              output.writeLong(newOutDegree);
-              output.writeLong(newInDegree);
-              // merge out-going edge lists
-              for (int i = indicesOfSmallestElement.nextSetBit(
-                      0), k = 0; i >= 0; i = indicesOfSmallestElement.nextSetBit(i + 1), k++) {
-                for (int j = 0; j < outDegrees[k]; j++) {
-                  output.writeLong(iterators[i].next());
-                }
-              }
-              // merge in-going edge lists
-              for (int i = indicesOfSmallestElement.nextSetBit(
-                      0), k = 0; i >= 0; i = indicesOfSmallestElement.nextSetBit(i + 1), k++) {
-                for (int j = 0; j < inDegrees[k]; j++) {
-                  output.writeLong(iterators[i].next());
-                }
-              }
-              // update next elements
-              for (int i = indicesOfSmallestElement
-                      .nextSetBit(0); i >= 0; i = indicesOfSmallestElement.nextSetBit(i + 1)) {
-                if (iterators[i].hasNext()) {
-                  nextElements[i] = iterators[i].next();
-                } else {
-                  nextElements[i] = 0;
-                  iterators[i].close();
-                  iterators[i] = null;
-                }
-              }
+            edgeList = Arrays.copyOf(edgeList, newSize);
+          }
+          edgeList[insertionIndex] = edgeId;
+          return edgeList;
+        }
+
+        private void clear() {
+          vertexId2Index = new HashMap<>();
+          for (int v = 0; v < vertexDegrees.size(); v++) {
+            long[] vertex = vertexDegrees.get(v);
+            for (int i = 0; i < vertex.length; i++) {
+              vertex[i] = 0;
             }
-            mergedChunks.add(outputFile);
-          } finally {
-            for (int i = 0; i < numberOfProcessedFiles; i++) {
-              inputs[i].close();
-              chunks.get(iterationStart + i).delete();
+            long[][] incidentEdge = incidentEdges.get(v);
+            for (int i = 0; i < incidentEdge.length; i++) {
+              for (int j = 0; j < incidentEdge[i].length; j++) {
+                incidentEdge[i][j] = 0;
+              }
             }
           }
         }
-        chunks = mergedChunks;
+
+        @Override
+        public boolean hasNextChunk() {
+          return !vertexId2Index.isEmpty();
+        }
+
+        @Override
+        public void sort(Comparator<long[]> comparator) {
+          // empty final entries
+          for (int i = vertexId2Index.size(); i < vertexDegrees.size(); i++) {
+            long[] vertexDegree = vertexDegrees.get(i);
+            vertexDegree[1] = 0;
+            vertexDegree[2] = 0;
+          }
+          Collections.sort(vertexDegrees, comparator);
+        }
+
+        @Override
+        public void writeChunk(LongOutputWriter output) throws IOException {
+          for (long[] vertexDegree : vertexDegrees) {
+            if ((vertexDegree[1] == 0) && (vertexDegree[2] == 0)) {
+              continue;
+            }
+            output.writeLong(vertexDegree[0]);
+            output.writeLong(vertexDegree[1]);
+            output.writeLong(vertexDegree[2]);
+            for (long outEdge : incidentEdges.get((int) vertexDegree[3])[0]) {
+              if (outEdge == 0) {
+                break;
+              }
+              output.writeLong(outEdge);
+            }
+            for (long inEdge : incidentEdges.get((int) vertexDegree[3])[1]) {
+              if (inEdge == 0) {
+                break;
+              }
+              output.writeLong(inEdge);
+            }
+          }
+        }
+
+        // TODO remove
+        // @Override
+        // public String toString() {
+        // StringBuilder sb = new
+        // StringBuilder("======================").append("\n");
+        // String bigDelim = "";
+        // for (long[] vertex : vertexDegrees) {
+        // if ((vertex[1] == 0) && (vertex[2] == 0)) {
+        // continue;
+        // }
+        // sb.append(bigDelim).append("vertex:").append(vertex[0]).append("\n");
+        // sb.append("\toutdegree:").append(vertex[1]).append(" {");
+        // String delim = "";
+        // for (long edge : incidentEdges.get((int) vertex[3])[0]) {
+        // if (edge == 0) {
+        // break;
+        // }
+        // sb.append(delim).append(edge);
+        // delim = ", ";
+        // }
+        // sb.append("}\n");
+        // sb.append("\tindegree:").append(vertex[2]).append(" {");
+        // delim = "";
+        // for (long edge : incidentEdges.get((int) vertex[3])[1]) {
+        // if (edge == 0) {
+        // break;
+        // }
+        // sb.append(delim).append(edge);
+        // delim = ", ";
+        // }
+        // sb.append("}");
+        // bigDelim = "\n";
+        // }
+        // return sb.toString();
+        // }
+
+        @Override
+        public void close() {
+          numberOfEdges = nextEdgeId;
+          vertexId2Index = null;
+          vertexDegrees = null;
+          incidentEdges = null;
+        }
+      };
+
+      Merger merger = new Merger() {
+
+        @Override
+        public long[] readNextElement(LongIterator iterator) {
+          return new long[] { iterator.next() };
+        }
+
+        @Override
+        public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
+                LongIterator[] iterators, LongOutputWriter out) throws IOException {
+          // write vertexId
+          out.writeLong(elements[indicesOfSmallestElement.nextSetBit(0)][0]);
+          // collect out and in degrees
+          long[] outDegrees = new long[indicesOfSmallestElement.cardinality()];
+          long newOutDegree = 0;
+          long[] inDegrees = new long[indicesOfSmallestElement.cardinality()];
+          long newInDegree = 0;
+          for (int i = indicesOfSmallestElement.nextSetBit(
+                  0), k = 0; i >= 0; i = indicesOfSmallestElement.nextSetBit(i + 1), k++) {
+            outDegrees[k] = iterators[i].next();
+            newOutDegree += outDegrees[k];
+            inDegrees[k] = iterators[i].next();
+            newInDegree += inDegrees[k];
+          }
+          out.writeLong(newOutDegree);
+          out.writeLong(newInDegree);
+          // merge out-going edge lists
+          for (int i = indicesOfSmallestElement.nextSetBit(
+                  0), k = 0; i >= 0; i = indicesOfSmallestElement.nextSetBit(i + 1), k++) {
+            for (int j = 0; j < outDegrees[k]; j++) {
+              out.writeLong(iterators[i].next());
+            }
+          }
+          // merge in-going edge lists
+          for (int i = indicesOfSmallestElement.nextSetBit(
+                  0), k = 0; i >= 0; i = indicesOfSmallestElement.nextSetBit(i + 1), k++) {
+            for (int j = 0; j < inDegrees[k]; j++) {
+              out.writeLong(iterators[i].next());
+            }
+          }
+        }
+      };
+
+      Comparator<long[]> comparator = new FixedSizeLongArrayComparator(true, 0);
+
+      File vertexEdgeListFile = File.createTempFile("vertexEdgeListFile", "", workingDir);
+      try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(
+              vertexEdgeListFile);) {
+        NWayMergeSort mergeSort = new NWayMergeSort();
+        mergeSort.sort(producer, merger, comparator, workingDir, maxNumberOfOpenFiles, output);
       }
-      return chunks.get(0);
+      return vertexEdgeListFile;
     } catch (IOException e) {
       throw new RuntimeException(e);
-    }
-  }
-
-  private BitSet getIndicesOfSmallestElement(long[] elements) {
-    long smallestElement = 0;
-    BitSet smallestIndices = new BitSet(elements.length);
-    for (int i = 0; i < elements.length; i++) {
-      if (elements[i] == 0) {
-        continue;
-      }
-      if ((smallestElement == 0) || (elements[i] < smallestElement)) {
-        smallestElement = elements[i];
-        smallestIndices.clear();
-        smallestIndices.set(i);
-      } else if (elements[i] == smallestElement) {
-        smallestIndices.set(i);
+    } finally {
+      if (producer != null) {
+        producer.close();
       }
     }
-    return smallestIndices;
   }
 
   private void deleteFolder(File folder) {

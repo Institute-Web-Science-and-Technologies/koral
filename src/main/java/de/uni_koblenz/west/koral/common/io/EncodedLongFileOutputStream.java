@@ -34,7 +34,7 @@ import java.util.zip.GZIPOutputStream;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class EncodedLongFileOutputStream implements AutoCloseable {
+public class EncodedLongFileOutputStream implements AutoCloseable, LongOutputWriter {
 
   private final DataOutputStream out;
 
@@ -48,6 +48,7 @@ public class EncodedLongFileOutputStream implements AutoCloseable {
             new GZIPOutputStream(new FileOutputStream(outputFile, append))));
   }
 
+  @Override
   public void writeLong(long value) throws IOException {
     write(NumberConversion.long2bytes(value));
   }
