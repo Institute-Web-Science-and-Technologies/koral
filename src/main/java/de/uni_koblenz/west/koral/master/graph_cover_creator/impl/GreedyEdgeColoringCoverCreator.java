@@ -21,7 +21,7 @@ import de.uni_koblenz.west.koral.master.utils.InitialChunkProducer;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 import de.uni_koblenz.west.koral.master.utils.Merger;
 import de.uni_koblenz.west.koral.master.utils.NWayMergeSort;
-import de.uni_koblenz.west.koral.master.utils.VertexIncidentEdgesDegreeComparator;
+import de.uni_koblenz.west.koral.master.utils.VertexDegreeComparator;
 
 import java.io.EOFException;
 import java.io.File;
@@ -101,32 +101,25 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
             GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
     // TODO remove
     System.out.println("transformation time: " + (System.currentTimeMillis() - transformStart));
+    long sortStart = System.currentTimeMillis();
 
-    // long sortStart = System.currentTimeMillis();
-    //
-    // // sort by degree
-    // File[] verticesByDegreeLevels =
-    // splitIntoDegreeLevels(vertexIncidentEdgesFile,
-    // internalWorkingDir,
-    // GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
-    // GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
-    // // TODO remove
-    // System.out.println("spliting by degree time: " +
-    // (System.currentTimeMillis() - sortStart));
-    // sortStart = System.currentTimeMillis();
-    // File sortedVertexList = null;
-    // for (int level = 0; level < verticesByDegreeLevels.length; level++) {
-    // sortedVertexList = sort(level, verticesByDegreeLevels[level],
-    // sortedVertexList,
-    // internalWorkingDir,
-    // GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
-    // GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
-    // GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
-    // }
-    // // TODO remove
-    // System.out.println("sort time: " + (System.currentTimeMillis() -
-    // sortStart));
-    //
+    // sort by degree
+    File[] verticesByDegreeLevels = splitIntoDegreeLevels(vertexIncidentEdgesFile,
+            internalWorkingDir, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
+            GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+    // TODO remove
+    System.out.println("spliting by degree time: " + (System.currentTimeMillis() - sortStart));
+    sortStart = System.currentTimeMillis();
+    File sortedVertexList = null;
+    for (int level = 0; level < verticesByDegreeLevels.length; level++) {
+      sortedVertexList = sortByDegree(level, verticesByDegreeLevels[level], sortedVertexList,
+              internalWorkingDir, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
+              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
+              GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+    }
+    // TODO remove
+    System.out.println("sort time: " + (System.currentTimeMillis() - sortStart));
+
     // File edges2chunks = null;
     // try (ColoringManager colorManager = new
     // ColoringManager(internalWorkingDir,
@@ -153,7 +146,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
     // TODO reset input to create final graph chunks
 
-    print(vertexIncidentEdgesFile);
+    print(sortedVertexList);
 
     // TODO Auto-generated method stub
     deleteFolder(internalWorkingDir);
@@ -431,7 +424,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     edgeColorChunks.add(output);
   }
 
-  private File sort(int level, File vertexFile, File outputFile, File workingDir,
+  private File sortByDegree(int level, File vertexFile, File outputFile, File workingDir,
           int numberOfCachedVertices, int numberOfCachedEdges, int maxNumberOfOpenFiles) {
     long maxDegree = getUpperLimitOfLevel(level, numberOfCachedVertices, maxNumberOfOpenFiles);
     if (maxDegree == 1) {
@@ -452,6 +445,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           numberOfCachedVerticesPerLevel = 65536;
         }
         if (numberOfCachedVerticesPerLevel == 0) {
+          // edge lists cannot be stored in main memory
           File edgeListFile = null;
           try {
             edgeListFile = File.createTempFile("edgeListFile-", "", workingDir);
@@ -466,11 +460,8 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           edgeListFile.delete();
         } else {
           // perform merge sort
-          List<File> initialChunks = createInitialChunks(vertexFile, workingDir,
+          sortByDegreeEdgesInMemory(vertexFile, outputFile, workingDir, maxNumberOfOpenFiles,
                   numberOfCachedVerticesPerLevel);
-          File sortedFile = merge(initialChunks, workingDir, maxNumberOfOpenFiles, true);
-          appendFile(sortedFile, outputFile);
-          sortedFile.delete();
           vertexFile.delete();
         }
         return outputFile;
@@ -503,8 +494,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           }
           nextIndex++;
         }
-        Arrays.sort(vertexHeaders, 0, nextIndex,
-                VertexIncidentEdgesDegreeComparator.getComparator(true));
+        Arrays.sort(vertexHeaders, 0, nextIndex, VertexDegreeComparator.getComparator(true));
         File outputFile = File.createTempFile("initialMergeSortChunk", "", workingDir);
         result.add(outputFile);
         try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile,
@@ -559,10 +549,9 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
             }
             // merge
             for (int nextIndex = getIndexOfSmallestElement(nextElements,
-                    VertexIncidentEdgesDegreeComparator.getComparator(
+                    VertexDegreeComparator.getComparator(
                             true)); nextIndex != -1; nextIndex = getIndexOfSmallestElement(
-                                    nextElements,
-                                    VertexIncidentEdgesDegreeComparator.getComparator(true))) {
+                                    nextElements, VertexDegreeComparator.getComparator(true))) {
               output.writeLong(nextElements[nextIndex][0]);
               output.writeLong(nextElements[nextIndex][1]);
               output.writeLong(nextElements[nextIndex][2]);
@@ -623,18 +612,29 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     return smallest;
   }
 
-  private List<File> createInitialChunks(File vertexFile, File workingDir,
-          int numberOfCachedVerticesPerLevel) {
-    List<File> result = new ArrayList<>();
-    LongIterator iterator = null;
-    try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(vertexFile);) {
-      iterator = input.iterator();
-      long[][] vertexHeaders = new long[numberOfCachedVerticesPerLevel][4];
-      long[][] outEdges = new long[numberOfCachedVerticesPerLevel][];
-      long[][] inEdges = new long[numberOfCachedVerticesPerLevel][];
-      while (iterator.hasNext()) {
-        // load data in memory
-        int nextIndex = 0;
+  private void sortByDegreeEdgesInMemory(File vertexFile, File outputFile, File workingDir,
+          int maxNumberOfOpenFiles, int numberOfCachedVerticesPerLevel) {
+    InitialChunkProducer producer = new InitialChunkProducer() {
+
+      private EncodedLongFileInputStream inputFile = null;
+
+      private LongIterator iterator = null;
+
+      private long[][] vertexHeaders = new long[numberOfCachedVerticesPerLevel][4];
+
+      private long[][] outEdges = new long[numberOfCachedVerticesPerLevel][];
+
+      private long[][] inEdges = new long[numberOfCachedVerticesPerLevel][];
+
+      private int nextIndex;
+
+      @Override
+      public void loadNextChunk() throws IOException {
+        if (inputFile == null) {
+          inputFile = new EncodedLongFileInputStream(vertexFile);
+          iterator = inputFile.iterator();
+        }
+        nextIndex = 0;
         while ((nextIndex < vertexHeaders.length) && iterator.hasNext()) {
           vertexHeaders[nextIndex][0] = iterator.next();
           vertexHeaders[nextIndex][1] = iterator.next();
@@ -646,45 +646,173 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
                   (int) vertexHeaders[nextIndex][2]);
           nextIndex++;
         }
-        Arrays.sort(vertexHeaders, 0, nextIndex,
-                VertexIncidentEdgesDegreeComparator.getComparator(true));
-        File outputFile = File.createTempFile("initialMergeSortChunk", "", workingDir);
-        result.add(outputFile);
-        try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile,
-                true);) {
-          for (int i = 0; i < nextIndex; i++) {
-            output.writeLong(vertexHeaders[i][0]);
-            output.writeLong(vertexHeaders[i][1]);
-            output.writeLong(vertexHeaders[i][2]);
-            int edgeIndex = (int) vertexHeaders[i][3];
-            for (int j = 0; j < vertexHeaders[i][1]; j++) {
-              output.writeLong(outEdges[edgeIndex][j]);
-            }
-            for (int j = 0; j < vertexHeaders[i][2]; j++) {
-              output.writeLong(inEdges[edgeIndex][j]);
-            }
+      }
+
+      private long[] readEdges(long[] result, LongIterator iterator, int numberOfEdges) {
+        if ((result == null) || (numberOfEdges >= result.length)) {
+          result = new long[numberOfEdges];
+        }
+        for (int i = 0; i < result.length; i++) {
+          result[i] = i < numberOfEdges ? iterator.next() : 0;
+        }
+        return result;
+      }
+
+      @Override
+      public boolean hasNextChunk() {
+        return nextIndex > 0;
+      }
+
+      @Override
+      public void sort(Comparator<long[]> comparator) {
+        Arrays.sort(vertexHeaders, 0, nextIndex, comparator);
+      }
+
+      @Override
+      public void writeChunk(LongOutputWriter output) throws IOException {
+        for (int i = 0; i < nextIndex; i++) {
+          output.writeLong(vertexHeaders[i][0]);
+          output.writeLong(vertexHeaders[i][1]);
+          output.writeLong(vertexHeaders[i][2]);
+          int edgeIndex = (int) vertexHeaders[i][3];
+          for (int j = 0; j < vertexHeaders[i][1]; j++) {
+            output.writeLong(outEdges[edgeIndex][j]);
+          }
+          for (int j = 0; j < vertexHeaders[i][2]; j++) {
+            output.writeLong(inEdges[edgeIndex][j]);
           }
         }
       }
+
+      @Override
+      public void close() {
+        vertexHeaders = null;
+        outEdges = null;
+        inEdges = null;
+        if (iterator != null) {
+          iterator.close();
+        }
+        if (inputFile != null) {
+          try {
+            inputFile.close();
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
+    };
+
+    Merger merger = new Merger() {
+
+      @Override
+      public long[] readNextElement(LongIterator iterator) {
+        return new long[] { iterator.next(), iterator.next(), iterator.next() };
+      }
+
+      @Override
+      public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
+              LongIterator[] iterators, LongOutputWriter out) throws IOException {
+        for (int index = indicesOfSmallestElement.nextSetBit(
+                0); index >= 0; index = indicesOfSmallestElement.nextSetBit(index + 1)) {
+          out.writeLong(elements[index][0]);
+          out.writeLong(elements[index][1]);
+          out.writeLong(elements[index][2]);
+          // copy edge lists
+          for (int i = 0; i < elements[index][1]; i++) {
+            out.writeLong(iterators[index].next());
+          }
+          for (int i = 0; i < elements[index][2]; i++) {
+            out.writeLong(iterators[index].next());
+          }
+        }
+      }
+    };
+
+    Comparator<long[]> comparator = VertexDegreeComparator.getComparator(true);
+
+    try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile, true);) {
+      NWayMergeSort mergesort = new NWayMergeSort();
+      mergesort.sort(producer, merger, comparator, workingDir, maxNumberOfOpenFiles, output);
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {
-      if (iterator != null) {
-        iterator.close();
-      }
+      producer.close();
     }
-    return result;
+
+    // List<File> initialChunks = createInitialChunks(vertexFile, workingDir,
+    // numberOfCachedVerticesPerLevel);
+    // File sortedFile = merge(initialChunks, workingDir, maxNumberOfOpenFiles,
+    // true);
+    // appendFile(sortedFile, outputFile);
+    // sortedFile.delete();
   }
 
-  private long[] readEdges(long[] result, LongIterator iterator, int numberOfEdges) {
-    if ((result == null) || (numberOfEdges >= result.length)) {
-      result = new long[numberOfEdges];
-    }
-    for (int i = 0; i < result.length; i++) {
-      result[i] = i < numberOfEdges ? iterator.next() : 0;
-    }
-    return result;
-  }
+  // private List<File> createInitialChunks(File vertexFile, File workingDir,
+  // int numberOfCachedVerticesPerLevel) {
+  // List<File> result = new ArrayList<>();
+  // LongIterator iterator = null;
+  // try (EncodedLongFileInputStream input = new
+  // EncodedLongFileInputStream(vertexFile);) {
+  // iterator = input.iterator();
+  // long[][] vertexHeaders = new long[numberOfCachedVerticesPerLevel][4];
+  // long[][] outEdges = new long[numberOfCachedVerticesPerLevel][];
+  // long[][] inEdges = new long[numberOfCachedVerticesPerLevel][];
+  // while (iterator.hasNext()) {
+  // // load data in memory
+  // int nextIndex = 0;
+  // while ((nextIndex < vertexHeaders.length) && iterator.hasNext()) {
+  // vertexHeaders[nextIndex][0] = iterator.next();
+  // vertexHeaders[nextIndex][1] = iterator.next();
+  // vertexHeaders[nextIndex][2] = iterator.next();
+  // vertexHeaders[nextIndex][3] = nextIndex;
+  // outEdges[nextIndex] = readEdges(outEdges[nextIndex], iterator,
+  // (int) vertexHeaders[nextIndex][1]);
+  // inEdges[nextIndex] = readEdges(inEdges[nextIndex], iterator,
+  // (int) vertexHeaders[nextIndex][2]);
+  // nextIndex++;
+  // }
+  // Arrays.sort(vertexHeaders, 0, nextIndex,
+  // VertexDegreeComparator.getComparator(true));
+  // File outputFile = File.createTempFile("initialMergeSortChunk", "",
+  // workingDir);
+  // result.add(outputFile);
+  // try (EncodedLongFileOutputStream output = new
+  // EncodedLongFileOutputStream(outputFile,
+  // true);) {
+  // for (int i = 0; i < nextIndex; i++) {
+  // output.writeLong(vertexHeaders[i][0]);
+  // output.writeLong(vertexHeaders[i][1]);
+  // output.writeLong(vertexHeaders[i][2]);
+  // int edgeIndex = (int) vertexHeaders[i][3];
+  // for (int j = 0; j < vertexHeaders[i][1]; j++) {
+  // output.writeLong(outEdges[edgeIndex][j]);
+  // }
+  // for (int j = 0; j < vertexHeaders[i][2]; j++) {
+  // output.writeLong(inEdges[edgeIndex][j]);
+  // }
+  // }
+  // }
+  // }
+  // } catch (IOException e) {
+  // throw new RuntimeException(e);
+  // } finally {
+  // if (iterator != null) {
+  // iterator.close();
+  // }
+  // }
+  // return result;
+  // }
+
+  // private long[] readEdges(long[] result, LongIterator iterator, int
+  // numberOfEdges) {
+  // if ((result == null) || (numberOfEdges >= result.length)) {
+  // result = new long[numberOfEdges];
+  // }
+  // for (int i = 0; i < result.length; i++) {
+  // result[i] = i < numberOfEdges ? iterator.next() : 0;
+  // }
+  // return result;
+  // }
 
   private void appendFile(File vertexFile, File outputFile) {
     LongIterator iterator = null;

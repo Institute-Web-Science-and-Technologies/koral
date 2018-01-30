@@ -16,7 +16,7 @@ public interface InitialChunkProducer extends AutoCloseable {
   /**
    * This method must be called first.
    */
-  public void loadNextChunk();
+  public void loadNextChunk() throws IOException;
 
   /**
    * {@link #loadNextChunk()} must be called first.

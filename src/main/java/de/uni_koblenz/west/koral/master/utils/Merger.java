@@ -13,7 +13,7 @@ import java.util.BitSet;
  */
 public interface Merger {
 
-  public long[] readNextElement(LongIterator iterator);
+  public long[] readNextElement(LongIterator iterator) throws IOException;
 
   public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
           LongIterator[] iterators, LongOutputWriter out) throws IOException;

@@ -3,18 +3,18 @@ package de.uni_koblenz.west.koral.master.utils;
 import java.util.Comparator;
 
 /**
- * Compars two arrays of {@link VertexIncidencentEdgesListFileCreator}.
+ * Compares two arrays and adds out degree and in degree.
  * 
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public class VertexIncidentEdgesDegreeComparator implements Comparator<long[]> {
+public class VertexDegreeComparator implements Comparator<long[]> {
 
-  private static final VertexIncidentEdgesDegreeComparator[] comparators = new VertexIncidentEdgesDegreeComparator[2];
+  private static final VertexDegreeComparator[] comparators = new VertexDegreeComparator[2];
 
   private final boolean ascendingOrder;
 
-  private VertexIncidentEdgesDegreeComparator(boolean ascendingOrder) {
+  private VertexDegreeComparator(boolean ascendingOrder) {
     this.ascendingOrder = ascendingOrder;
   }
 
@@ -41,12 +41,12 @@ public class VertexIncidentEdgesDegreeComparator implements Comparator<long[]> {
     }
   }
 
-  public static VertexIncidentEdgesDegreeComparator getComparator(boolean ascendingOrder) {
-    if (VertexIncidentEdgesDegreeComparator.comparators[ascendingOrder ? 0 : 1] == null) {
-      VertexIncidentEdgesDegreeComparator.comparators[ascendingOrder ? 0
-              : 1] = new VertexIncidentEdgesDegreeComparator(ascendingOrder);
+  public static VertexDegreeComparator getComparator(boolean ascendingOrder) {
+    if (VertexDegreeComparator.comparators[ascendingOrder ? 0 : 1] == null) {
+      VertexDegreeComparator.comparators[ascendingOrder ? 0
+              : 1] = new VertexDegreeComparator(ascendingOrder);
     }
-    return VertexIncidentEdgesDegreeComparator.comparators[ascendingOrder ? 0 : 1];
+    return VertexDegreeComparator.comparators[ascendingOrder ? 0 : 1];
   }
 
 }
