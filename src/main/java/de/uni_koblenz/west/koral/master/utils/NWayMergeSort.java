@@ -66,6 +66,7 @@ public class NWayMergeSort {
               out = output;
             } else {
               File chunk = File.createTempFile("mergeChunk-", "", workingDir);
+              mergedChunks.add(chunk);
               out = new EncodedLongFileOutputStream(chunk);
             }
             // perform merge step
@@ -88,6 +89,11 @@ public class NWayMergeSort {
             }
 
           } finally {
+            try {
+              merger.close();
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
             if (out != null) {
               out.close();
             }

@@ -11,7 +11,7 @@ import java.util.BitSet;
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
-public interface Merger {
+public interface Merger extends AutoCloseable {
 
   public long[] readNextElement(LongIterator iterator) throws IOException;
 
