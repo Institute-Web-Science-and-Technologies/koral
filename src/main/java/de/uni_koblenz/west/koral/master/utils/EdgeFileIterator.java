@@ -1,6 +1,6 @@
 package de.uni_koblenz.west.koral.master.utils;
 
-import de.uni_koblenz.west.koral.common.io.EncodedRandomAccessLongFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 
 import java.io.EOFException;
 import java.io.File;
@@ -15,11 +15,11 @@ import java.io.IOException;
  */
 public class EdgeFileIterator extends EdgeIterator {
 
-  private EncodedRandomAccessLongFileInputStream input;
+  private EncodedLongFileInputStream input;
 
   public EdgeFileIterator(File edgeColors) {
     try {
-      input = new EncodedRandomAccessLongFileInputStream(edgeColors);
+      input = new EncodedLongFileInputStream(edgeColors);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
