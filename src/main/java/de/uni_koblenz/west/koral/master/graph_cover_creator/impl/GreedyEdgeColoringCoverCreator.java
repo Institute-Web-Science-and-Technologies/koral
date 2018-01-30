@@ -128,11 +128,23 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       edges2chunks = createAssignmentOfEdgesToChunks(colorManager, internalWorkingDir,
               numberOfEdges, numberOfGraphChunks,
               GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
+              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
               GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);
     }
 
     // sort edges2chunks by edgeIds in ascending order
     // output is a list of partitionIds: e1->4;e2->2 is stored as [4,2]
+    File edgeAssignment = null;
+    try (EncodedLongFileInputStream edges2ChunksInput = new EncodedLongFileInputStream(
+            edges2chunks);) {
+      edgeAssignment = sortBinaryValues(edges2ChunksInput,
+              new FixedSizeLongArrayComparator(true, 0), internalWorkingDir,
+              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
+              GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES, true);
+      edges2chunks.delete();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 
     // iterate partitionIds and input in parallel to translate edgeId back into
     // triple
@@ -150,86 +162,200 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
   private File createAssignmentOfEdgesToChunks(ColoringManager colorManager, File workingDir,
           long numberOfEdges, int numberOfGraphChunks, int numberOfCachedEdges,
-          int maxNumberOfOpenFiles) {
+          int numberOfCachedVertices, int maxNumberOfOpenFiles) {
     try {
-      Iterator<long[]> iteratorOverColors = colorManager.getIteratorOverAllColors();
-      File colorsSortedBySizeDesc = sortColors(iteratorOverColors, workingDir, numberOfCachedEdges,
-              maxNumberOfOpenFiles);
-      long[] chunkSizes = new long[numberOfGraphChunks];
-      File colors2chunks = File.createTempFile("colors2chunks", "", workingDir);
       // sort colors by size in descending order
+      Iterator<long[]> iteratorOverColors = colorManager.getIteratorOverAllColors();
+      File colorsSortedBySizeDesc = sortBinaryValues(iteratorOverColors,
+              new FixedSizeLongArrayComparator(false, 1, 0), workingDir, numberOfCachedVertices,
+              maxNumberOfOpenFiles, false);
 
       // perform greedy algorithm to assign colors to chunk
+      long[] chunkSizes = new long[numberOfGraphChunks];
+      File color2chunks = File.createTempFile("colors2chunks", "", workingDir);
+      try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(
+              colorsSortedBySizeDesc);
+              LongIterator iterator = input.iterator();
+              EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(color2chunks);) {
+        while (iterator.hasNext()) {
+          long colorId = iterator.next();
+          long colorSize = iterator.next();
+          // find chunk with minimal size
+          int indexOfMinChunk = 0;
+          for (int i = 1; i < chunkSizes.length; i++) {
+            if (chunkSizes[i] < chunkSizes[indexOfMinChunk]) {
+              indexOfMinChunk = i;
+            }
+          }
+          // add color to chunk
+          chunkSizes[indexOfMinChunk] += colorSize;
+          output.writeLong(colorId);
+          output.writeLong(indexOfMinChunk);
+        }
+      }
+      colorsSortedBySizeDesc.delete();
 
-      // when assigning color to a chunk, write edgeID,chunkID to the output
-      // file
-      // TODO Auto-generated method stub
-      return null;
+      // sort color2chunks by colorIds
+      File color2chunksSortedByColorAsc = null;
+      try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(color2chunks);) {
+        color2chunksSortedByColorAsc = sortBinaryValues(input,
+                new FixedSizeLongArrayComparator(true, 0), workingDir, numberOfCachedVertices,
+                maxNumberOfOpenFiles, false);
+      }
+      color2chunks.delete();
+
+      // get assignment of edges to colors sorted by colors in ascending order
+      Iterator<long[]> iteratorOverColoredEdges = colorManager.getIteratorOverColoredEdges();
+      File edges2ColorsSortedByColorAsc = sortBinaryValues(iteratorOverColoredEdges,
+              new FixedSizeLongArrayComparator(true, 1, 0), workingDir, numberOfCachedVertices,
+              maxNumberOfOpenFiles, false);
+
+      // join edges2color colors2chunks -> edges2chunks
+      File edges2chunks = File.createTempFile("edges2chunks-", "", workingDir);
+      try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(edges2chunks);
+              EncodedLongFileInputStream colors2chunksInput = new EncodedLongFileInputStream(
+                      color2chunksSortedByColorAsc);
+              LongIterator colors2chunksIterator = colors2chunksInput.iterator();
+              EncodedLongFileInputStream edges2colorsInput = new EncodedLongFileInputStream(
+                      edges2ColorsSortedByColorAsc);
+              LongIterator edges2colorsIterator = edges2colorsInput.iterator();) {
+        long colorId = 0;
+        long chunkId = -1;
+        long edgeId = 0;
+        long edgeColor = 0;
+        while (colors2chunksIterator.hasNext()) {
+          colorId = colors2chunksIterator.next();
+          chunkId = colors2chunksIterator.next();
+          if (edgeId == 0) {
+            edgeId = edges2colorsIterator.next();
+            edgeColor = edges2colorsIterator.next();
+          }
+          if (edgeColor != colorId) {
+            throw new RuntimeException("edge e" + edgeId + " has color c" + edgeColor
+                    + " but should have color c" + colorId + ".");
+          }
+          do {
+            output.writeLong(edgeId);
+            output.writeLong(chunkId);
+            edgeId = edges2colorsIterator.next();
+            edgeColor = edges2colorsIterator.next();
+          } while (edges2colorsIterator.hasNext() && (edgeColor == colorId));
+        }
+        if (edges2colorsIterator.hasNext()) {
+          throw new RuntimeException("There exist edges with unknown colors.");
+        }
+      }
+      color2chunksSortedByColorAsc.delete();
+      edges2ColorsSortedByColorAsc.delete();
+      return edges2chunks;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private File sortColors(Iterator<long[]> iteratorOverColors, File workingDir,
-          int numberOfCachedEdges, int maxNumberOfOpenFiles) {
-    try (InitialChunkProducer producer = new InitialChunkProducer() {
+  private File sortBinaryValues(EncodedLongFileInputStream input, Comparator<long[]> comparator,
+          File workingDir, int numberOfCachedVertices, int maxNumberOfOpenFiles,
+          boolean outputOnlySecondValue) {
+    Iterator<long[]> iterator = new Iterator<long[]>() {
+
+      private final LongIterator iter = input.iterator();
 
       @Override
-      public void writeChunk(LongOutputWriter output) throws IOException {
-        // TODO Auto-generated method stub
-
+      public boolean hasNext() {
+        return iter.hasNext();
       }
 
       @Override
-      public void sort(Comparator<long[]> comparator) {
-        // TODO Auto-generated method stub
-
+      public long[] next() {
+        return new long[] { iter.next(), iter.next() };
       }
+    };
+    return sortBinaryValues(iterator, comparator, workingDir, numberOfCachedVertices,
+            maxNumberOfOpenFiles, outputOnlySecondValue);
+  }
 
-      @Override
-      public void loadNextChunk() throws IOException {
-        // TODO Auto-generated method stub
+  private File sortBinaryValues(Iterator<long[]> iterator, Comparator<long[]> comparator,
+          File workingDir, int numberOfCachedVertices, int maxNumberOfOpenFiles,
+          boolean outputOnlySecondValue) {
+    try {
+      File sortedValuesFile = File.createTempFile("sortedValues-", "", workingDir);
+      try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(sortedValuesFile);
+              InitialChunkProducer producer = new InitialChunkProducer() {
 
+                private long[][] values;
+
+                private int nextIndex;
+
+                @Override
+                public void loadNextChunk() throws IOException {
+                  if (values == null) {
+                    values = new long[numberOfCachedVertices][];
+                  }
+                  nextIndex = 0;
+                  while (iterator.hasNext() && (nextIndex < values.length)) {
+                    values[nextIndex] = iterator.next();
+                    nextIndex++;
+                  }
+                }
+
+                @Override
+                public boolean hasNextChunk() {
+                  return nextIndex > 0;
+                }
+
+                @Override
+                public void sort(Comparator<long[]> comparator) {
+                  Arrays.sort(values, 0, nextIndex, comparator);
+                }
+
+                @Override
+                public void writeChunk(LongOutputWriter output) throws IOException {
+                  for (int i = 0; i < nextIndex; i++) {
+                    long[] color = values[i];
+                    for (long value : color) {
+                      output.writeLong(value);
+                    }
+                  }
+                }
+
+                @Override
+                public void close() {
+                  values = null;
+                }
+              };) {
+        Merger merger = new Merger() {
+
+          @Override
+          public long[] readNextElement(LongIterator iterator) throws IOException {
+            return new long[] { iterator.next(), iterator.next() };
+          }
+
+          @Override
+          public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
+                  LongIterator[] iterators, LongOutputWriter out) throws IOException {
+            for (int index = indicesOfSmallestElement.nextSetBit(
+                    0); index >= 0; index = indicesOfSmallestElement.nextSetBit(index + 1)) {
+              if (outputOnlySecondValue && (out == output)) {
+                out.writeLong(elements[index][1]);
+              } else {
+                for (long value : elements[index]) {
+                  out.writeLong(value);
+                }
+              }
+            }
+          }
+
+          @Override
+          public void close() throws Exception {
+          }
+        };
+        NWayMergeSort sort = new NWayMergeSort();
+        sort.sort(producer, merger, comparator, workingDir, maxNumberOfOpenFiles - 2, output);
       }
-
-      @Override
-      public boolean hasNextChunk() {
-        // TODO Auto-generated method stub
-        return false;
-      }
-
-      @Override
-      public void close() {
-        // TODO Auto-generated method stub
-
-      }
-    };) {
-      Merger merger = new Merger() {
-
-        @Override
-        public void close() throws Exception {
-          // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public long[] readNextElement(LongIterator iterator) throws IOException {
-          // TODO Auto-generated method stub
-          return null;
-        }
-
-        @Override
-        public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
-                LongIterator[] iterators, LongOutputWriter out) throws IOException {
-          // TODO Auto-generated method stub
-
-        }
-      };
-      // TODO adjust
-      Comparator<long[]> comparator = new FixedSizeLongArrayComparator(false, 2);
+      return sortedValuesFile;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
-    // TODO Auto-generated method stub
-    return null;
   }
 
   private void createEdgeColoring(File sortedVertexList, ColoringManager colorManager,

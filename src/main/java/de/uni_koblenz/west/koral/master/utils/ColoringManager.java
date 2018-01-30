@@ -63,16 +63,20 @@ public class ColoringManager implements AutoCloseable {
     return 0;
   }
 
+  /**
+   * 
+   * @return Iterator over all colors. Each color consists of: color[0]=colorId;
+   *         color[1]=frequency of color
+   */
   public Iterator<long[]> getIteratorOverAllColors() {
     // TODO Auto-generated method stub
     return null;
   }
 
   /**
-   * @param color
-   * @return Iterator over long[]{colorId, size, offset}
+   * @return Iterator over long[]{edgeId, colorId}
    */
-  public LongIterator getIteratorOverEdgesOfColor(long color) {
+  public Iterator<long[]> getIteratorOverColoredEdges() {
     // TODO Auto-generated method stub
     return null;
   }
