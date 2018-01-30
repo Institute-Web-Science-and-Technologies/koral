@@ -1,6 +1,5 @@
 package de.uni_koblenz.west.koral.master.utils;
 
-import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputIterator;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
 import de.uni_koblenz.west.koral.common.io.LongOutputWriter;
@@ -46,14 +45,14 @@ public class NWayMergeSort {
           int numberOfProcessedFiles = Math.min(maxNumberOfOpenFiles - 1,
                   chunks.size() - iterationStart);
           EncodedLongFileInputStream[] inputs = new EncodedLongFileInputStream[numberOfProcessedFiles];
-          EncodedLongFileInputIterator[] iterators = new EncodedLongFileInputIterator[numberOfProcessedFiles];
+          LongIterator[] iterators = new LongIterator[numberOfProcessedFiles];
           LongOutputWriter out = null;
           try {
             long[][] nextElements = new long[numberOfProcessedFiles][];
             // initialize merge step
             for (int i = 0; i < numberOfProcessedFiles; i++) {
               inputs[i] = new EncodedLongFileInputStream(chunks.get(iterationStart + i));
-              iterators[i] = new EncodedLongFileInputIterator(inputs[i]);
+              iterators[i] = inputs[i].iterator();
               if (iterators[i].hasNext()) {
                 nextElements[i] = merger.readNextElement(iterators[i]);
               } else {
@@ -97,7 +96,7 @@ public class NWayMergeSort {
             if (out != null) {
               out.close();
             }
-            for (EncodedLongFileInputIterator iter : iterators) {
+            for (LongIterator iter : iterators) {
               if (iter != null) {
                 iter.close();
               }
@@ -108,8 +107,8 @@ public class NWayMergeSort {
               }
             }
           }
-          for (File chunk : chunks) {
-            chunk.delete();
+          for (int i = 0; i < numberOfProcessedFiles; i++) {
+            chunks.get(iterationStart + i).delete();
           }
         }
         chunks = mergedChunks;
