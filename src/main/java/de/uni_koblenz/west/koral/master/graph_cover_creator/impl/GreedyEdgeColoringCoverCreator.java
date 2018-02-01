@@ -115,25 +115,37 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
               GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
     }
     // TODO remove
-    System.out.println("sort time: " + (System.currentTimeMillis() - sortStart));
+    System.out.println("sort by degree time: " + (System.currentTimeMillis() - sortStart));
 
     File edges2chunks = null;
     try (ColoringManager colorManager = new ColoringManager(internalWorkingDir,
             GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);) {
       // create edge coloring
+      // TODO remove
+      long coloringStart = System.currentTimeMillis();
       createEdgeColoring(sortedVertexList, colorManager, internalWorkingDir, numberOfEdges,
               numberOfGraphChunks, GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
               GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+      // TODO remove
+      System.out.println(
+              "creation of edge coloring: " + (System.currentTimeMillis() - coloringStart));
       // assign edges to graph chunks
+      // TODO remove
+      long edgeAssignmentStart = System.currentTimeMillis();
       edges2chunks = createAssignmentOfEdgesToChunks(colorManager, internalWorkingDir,
               numberOfEdges, numberOfGraphChunks,
               GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_EDGES,
               GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES,
               GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);
+      // TODO remove
+      System.out.println(
+              "assigning edges to chunks: " + (System.currentTimeMillis() - edgeAssignmentStart));
     }
 
     // sort edges2chunks by edgeIds in ascending order
     // output is a list of partitionIds: e1->4;e2->2 is stored as [4,2]
+    // TODO remove
+    long createAssignmentFileStart = System.currentTimeMillis();
     File edgeAssignment = null;
     try (EncodedLongFileInputStream edges2ChunksInput = new EncodedLongFileInputStream(
             edges2chunks);) {
@@ -145,15 +157,37 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    // TODO remove
+    System.out.println("create sequence of chunk ids: "
+            + (System.currentTimeMillis() - createAssignmentFileStart));
 
     // iterate partitionIds and input in parallel to translate edgeId back into
     // triple
+    // TODO remove
+    long writeChunksStart = System.currentTimeMillis();
+    try (EncodedFileInputStream newInput = new EncodedFileInputStream(input);
+            EncodedLongFileInputStream chunkInput = new EncodedLongFileInputStream(
+                    edgeAssignment);) {
+      Iterator<Statement> tripleIterator = newInput.iterator();
+      LongIterator chunkIterator = chunkInput.iterator();
+      while (tripleIterator.hasNext() && chunkIterator.hasNext()) {
+        Statement stmt = tripleIterator.next();
+        long chunkIndex = chunkIterator.next();
+        writeStatementToChunk((int) chunkIndex, numberOfGraphChunks, stmt, outputs, writtenFiles);
+      }
+      if (tripleIterator.hasNext()) {
+        throw new RuntimeException("There exist triples that were not assigned to a chunk.");
+      }
+      if (chunkIterator.hasNext()) {
+        throw new RuntimeException("There exist more chunk assignments than triples.");
+      }
+      // TODO Auto-generated method stub
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    // TODO remove
+    System.out.println("writing chunks: " + (System.currentTimeMillis() - writeChunksStart));
 
-    // TODO reset input to create final graph chunks
-
-    print(sortedVertexList);
-
-    // TODO Auto-generated method stub
     deleteFolder(internalWorkingDir);
     // TODO remove
     long requiredTime = System.currentTimeMillis() - start;
@@ -164,13 +198,20 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           long numberOfEdges, int numberOfGraphChunks, int numberOfCachedEdges,
           int numberOfCachedVertices, int maxNumberOfOpenFiles) {
     try {
+      // TODO remove
+      long sortColorsStart = System.currentTimeMillis();
       // sort colors by size in descending order
       Iterator<long[]> iteratorOverColors = colorManager.getIteratorOverAllColors();
       File colorsSortedBySizeDesc = sortBinaryValues(iteratorOverColors,
               new FixedSizeLongArrayComparator(false, 1, 0), workingDir, numberOfCachedVertices,
               maxNumberOfOpenFiles, false);
+      // TODO remove
+      System.out.println(
+              "\tsorting colors by size: " + (System.currentTimeMillis() - sortColorsStart));
 
       // perform greedy algorithm to assign colors to chunk
+      // TODO remove
+      long assigningColors2ChunksStart = System.currentTimeMillis();
       long[] chunkSizes = new long[numberOfGraphChunks];
       File color2chunks = File.createTempFile("colors2chunks", "", workingDir);
       try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(
@@ -194,7 +235,12 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         }
       }
       colorsSortedBySizeDesc.delete();
+      // TODO remove
+      System.out.println("\tassigning colors to chunks: "
+              + (System.currentTimeMillis() - assigningColors2ChunksStart));
 
+      // TODO remove
+      long sortingChunkAssignmentByColorStart = System.currentTimeMillis();
       // sort color2chunks by colorIds
       File color2chunksSortedByColorAsc = null;
       try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(color2chunks);) {
@@ -203,13 +249,23 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
                 maxNumberOfOpenFiles, false);
       }
       color2chunks.delete();
+      // TODO remove
+      System.out.println("\tsorting color2chunks by colorId: "
+              + (System.currentTimeMillis() - sortingChunkAssignmentByColorStart));
 
+      // TODO remove
+      long sortEdge2colorStart = System.currentTimeMillis();
       // get assignment of edges to colors sorted by colors in ascending order
       Iterator<long[]> iteratorOverColoredEdges = colorManager.getIteratorOverColoredEdges();
       File edges2ColorsSortedByColorAsc = sortBinaryValues(iteratorOverColoredEdges,
               new FixedSizeLongArrayComparator(true, 1, 0), workingDir, numberOfCachedVertices,
               maxNumberOfOpenFiles, false);
+      // TODO remove
+      System.out.println("\tsorting edge2color by colorId: "
+              + (System.currentTimeMillis() - sortEdge2colorStart));
 
+      // TODO remove
+      long joinStart = System.currentTimeMillis();
       // join edges2color colors2chunks -> edges2chunks
       File edges2chunks = File.createTempFile("edges2chunks-", "", workingDir);
       try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(edges2chunks);
@@ -247,6 +303,9 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       }
       color2chunksSortedByColorAsc.delete();
       edges2ColorsSortedByColorAsc.delete();
+      // TODO remove
+      System.out.println("\tjoining edge2color and color2chunkId: "
+              + (System.currentTimeMillis() - joinStart));
       return edges2chunks;
     } catch (IOException e) {
       throw new RuntimeException(e);
