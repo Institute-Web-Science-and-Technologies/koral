@@ -28,138 +28,165 @@ import java.util.Arrays;
  */
 public class ReusableIDGenerator {
 
-  private static final long MAX_NUMBER_OF_IDS = (2l * Integer.MAX_VALUE) + 1;
+  private static final long MAX_NUMBER_OF_IDS = Long.MAX_VALUE - 1;
+
   /**
-   * even indices represent free ids<br>
-   * odd indices represent used ids
+   * positive values represent used ids<br>
+   * negative values represent free ids
    */
   private long[] ids;
 
-  public int getNextId() {
-    if ((ids == null) || (ids.length == 0)) {
-      ids = new long[] { 0, 0 };
+  public long getNextId() {
+    if (ids == null) {
+      ids = new long[10];
+      ids[0] = 1;
+      return 0;
     }
-    int firstFreeID = 0;
-    if (ids[0] > 0) {
-      // there are free ids starting with 0
-      // use id 0
-      if (ids[0] > 1) {
-        // [f,u,...] has to be changed to [0,1,z-1,u,...]
-        long[] newIds = new long[ids.length + 2];
-        System.arraycopy(ids, 0, newIds, 2, ids.length);
-        ids = newIds;
-        ids[0] = 0;
-        ids[1] = 1;
-        ids[2]--;
-      } else {
-        // [1,u,...] has to be changed to [0,u+1,...]
-        ids[0] = 0;
+    long firstFreeID = ids[0] > 0 ? ids[0] : 0;
+    if (firstFreeID > ReusableIDGenerator.MAX_NUMBER_OF_IDS) {
+      throw new RuntimeException("There are no free ids available any more.");
+    }
+    if (ids[0] == 0) {
+      // ids is empty
+      ids[0]++;
+    } else if (ids[0] > 0) {
+      // first block is used block
+      // increase number of used ids
+      ids[0]++;
+      if ((ids.length >= 2) && (ids[1] < 0)) {
+        // the second block is a free block
+        // reduce number of free ids
         ids[1]++;
-      }
-    } else if (ids.length == 2) {
-      if (ids[1] == ReusableIDGenerator.MAX_NUMBER_OF_IDS) {
-        throw new RuntimeException("There are no more free ids in the int range.");
-      } else {
-        // overflow during cast ensures that after Integer.MAX_VALUE,
-        // Integer.MIN_VALUE is returned!
-        firstFreeID = (int) ids[1];
-        // [0,u] has to be changed to [0,u+1]
-        ids[1]++;
-      }
-    } else if (ids[2] > 0) {
-      // overflow during cast ensures that after Integer.MAX_VALUE,
-      // Integer.MIN_VALUE is returned!
-      firstFreeID = (int) ids[1];
-      if (ids[2] > 1) {
-        // [0,u,f,...] has to be changed to [0,u+1,f-1,...]
-        ids[1]++;
-        ids[2]--;
-      } else {
-        // [0,u1,1,u2,...] has to be changed to [0,u1+1+u2,...]
-        long[] newIds = new long[ids.length - 2];
-        newIds[1] = ids[1] + 1 + ids[3];
-        if (newIds.length > 2) {
-          System.arraycopy(ids, 4, newIds, 2, ids.length - 4);
+        if ((ids.length >= 3) && (ids[1] == 0) && (ids[2] > 0)) {
+          // join [+x,0,+y,-z,...] to [+x+y,-z,...]
+          ids[0] += ids[2];
+          if (ids.length > 3) {
+            System.arraycopy(ids, 3, ids, 1, ids.length - 3);
+          }
+          ids[ids.length - 1] = 0;
+          ids[ids.length - 2] = 0;
         }
-        ids = newIds;
+      }
+    } else if (ids[0] < 0) {
+      // first block is free block => ids.length>=2
+      // reduce number of free ids
+      ids[0]++;
+      if (ids[0] < 0) {
+        // [-x,+y,...] -> [+1,-x,+y,...]
+        shiftArrayToRight(0, 1);
+        ids[0] = 1;
+      } else if ((ids[0] == 0) && (ids.length >= 2) && (ids[1] > 0)) {
+        // [0,+x,...] -> [+x+1,...]
+        System.arraycopy(ids, 1, ids, 0, ids.length - 1);
+        ids[ids.length - 1] = 0;
+        ids[0]++;
       }
     }
     return firstFreeID;
   }
 
-  public void release(int queryId) {
-    if ((ids == null) || (ids.length == 0)) {
-      return;
+  private void shiftArrayToRight(int firstIndexToShift, int numberShifts) {
+    long[] src = ids;
+    int numberOfUsedBlocks = getNumberOfUsedBlocks();
+    if (((numberOfUsedBlocks + numberShifts) - 1) >= ids.length) {
+      // extend array
+      ids = new long[ids.length + 10 + numberShifts];
     }
-    long longQueryId = queryId & 0x00_00_00_00_ff_ff_ff_ffl;
-    // find index to whom's block the queryId belong
-    long firstIdOfBlock = 0;
-    int indexOfBlock;
-    for (indexOfBlock = 0; (indexOfBlock < ids.length)
-            && (((firstIdOfBlock + ids[indexOfBlock]) - 1) < longQueryId); indexOfBlock++) {
-      firstIdOfBlock += ids[indexOfBlock];
+    System.arraycopy(src, firstIndexToShift, ids, firstIndexToShift + numberShifts,
+            numberOfUsedBlocks - firstIndexToShift);
+    for (int i = firstIndexToShift; i < (firstIndexToShift + numberShifts); i++) {
+      ids[i] = 0;
     }
-    if (indexOfBlock > ids.length) {
-      // queryId is larger than the largest queryId stored in the id array
-      return;
-    } else if ((indexOfBlock % 2) == 0) {
-      // queryId resides in an free block
-      return;
-    } else {
-      // queryId is marked as used, yet
-      assert ids[indexOfBlock] > 0;
-      if (ids[indexOfBlock] == 1) {
-        // the query id is the last in a used block
-        long[] newIds = new long[ids.length - 2];
-        if (indexOfBlock == (ids.length - 1)) {
-          // [...,f1,u,f2,1] has to be changed to [...,f1,u]
-          System.arraycopy(ids, 0, newIds, 0, newIds.length);
-        } else {
-          // [...,f1,1,f2,u,...] has to be changed to
-          // [...,f1+1+f2,u,...]
-          for (int oldI = 0, newI = 0; oldI < ids.length; oldI++, newI++) {
-            if (oldI == indexOfBlock) {
-              newIds[newI - 1] += 1 + ids[oldI + 1];
-              newI--;
-              oldI++;
-            } else {
-              newIds[newI] = ids[oldI];
-            }
-          }
-        }
-        ids = newIds;
-      } else if (longQueryId == firstIdOfBlock) {
-        // the query id is the first of a used block>1
-        // [...,f,u,...] has to be changed to [...,f+1,u-1,...]
-        ids[indexOfBlock - 1]++;
-        ids[indexOfBlock]--;
-      } else if (longQueryId == ((firstIdOfBlock + ids[indexOfBlock]) - 1)) {
-        // the query id is the last of a used block>1
-        // [...,f,u] has to be changed to [...,f,u-1]
-        ids[indexOfBlock]--;
-        if (indexOfBlock < (ids.length - 1)) {
-          // [...,f1,u,f2,...] has to be changed to
-          // [...,f1,u-1,f2+1,...]
-          ids[indexOfBlock + 1]++;
-        }
-      } else {
-        // the query id is in the middle of a used block
-        // [...,f1,u,f2,...] has to be changed to
-        // [...,f1,un1,1,un2,f2,...]
-        // with u=un1+1+un2
-        long[] newIds = new long[ids.length + 2];
-        for (int oldI = 0, newI = 0; oldI < ids.length; oldI++, newI++) {
-          if (oldI == indexOfBlock) {
-            newIds[newI] = longQueryId - firstIdOfBlock;
-            newIds[newI + 1] = 1;
-            newIds[newI + 2] = (firstIdOfBlock + ids[oldI]) - 1 - longQueryId;
-            newI += 2;
-          } else {
-            newIds[newI] = ids[oldI];
-          }
-        }
-        ids = newIds;
+  }
+
+  private int getNumberOfUsedBlocks() {
+    int numberOfUsedBlocks;
+    for (numberOfUsedBlocks = 1; numberOfUsedBlocks < ids.length; numberOfUsedBlocks++) {
+      if (ids[numberOfUsedBlocks] == 0) {
+        break;
       }
+    }
+    return numberOfUsedBlocks;
+  }
+
+  public void release(long idToFree) {
+    if (ids.length == 0) {
+      return;
+    }
+    if (ids[0] == 0) {
+      // no ids are used
+      return;
+    }
+    // find block to delete from
+    int deletionBlockIndex;
+    long maxPreviousId = -1;
+    for (deletionBlockIndex = 0; (deletionBlockIndex < ids.length)
+            && (ids[deletionBlockIndex] != 0); deletionBlockIndex++) {
+      long maxCurrentId = ids[deletionBlockIndex] < 0 ? maxPreviousId - ids[deletionBlockIndex]
+              : maxPreviousId + ids[deletionBlockIndex];
+      if (idToFree <= maxCurrentId) {
+        break;
+      } else {
+        maxPreviousId = maxCurrentId;
+      }
+    }
+    if ((deletionBlockIndex > ids.length) || (ids[deletionBlockIndex] == 0)) {
+      // the id is out of range of the given ids
+      return;
+    }
+    if (ids[deletionBlockIndex] < 0) {
+      // the id was not used
+      return;
+    }
+    if (ids[deletionBlockIndex] == 1) {
+      // the only used id in this block is freed
+      if ((deletionBlockIndex == (ids.length - 1)) || (ids[deletionBlockIndex + 1] == 0)) {
+        // this is the last used block
+        ids[deletionBlockIndex] = 0;
+        if (deletionBlockIndex > 0) {
+          ids[deletionBlockIndex - 1] = 0;
+        }
+      } else if (deletionBlockIndex == 0) {
+        // [1,-x,...] -> [-x-1,...]
+        System.arraycopy(ids, 1, ids, 0, ids.length - 1);
+        ids[0]--;
+      } else {
+        // [..,+w,-x,1,-y,+z,...] -> [...,+w,-x-y-1,+z,...]
+        int lastUsedBlockIndex = getNumberOfUsedBlocks() - 1;
+        ids[deletionBlockIndex - 1] += ids[deletionBlockIndex + 1] - 1;
+        System.arraycopy(ids, deletionBlockIndex + 2, ids, deletionBlockIndex,
+                ids.length - deletionBlockIndex - 2);
+        ids[lastUsedBlockIndex] = 0;
+        ids[lastUsedBlockIndex - 1] = 0;
+      }
+    } else if ((maxPreviousId + 1) == idToFree) {
+      // the first id of a used block is freed
+      if (deletionBlockIndex == 0) {
+        // [+x,...]->[-1,+x-1,...]
+        shiftArrayToRight(0, 1);
+        ids[0] = -1;
+        ids[1]--;
+      } else {
+        // [..,-x,+y,...] -> [...,-x-1,+y-1,...]
+        ids[deletionBlockIndex]--;
+        ids[deletionBlockIndex - 1]--;
+      }
+    } else if ((maxPreviousId + ids[deletionBlockIndex]) == idToFree) {
+      // the last id of a used block is freed
+      // [...,+x,-y,...] -> [...,+x-1,-y-1,...]
+      ids[deletionBlockIndex]--;
+      if (ids[deletionBlockIndex + 1] != 0) {
+        ids[deletionBlockIndex + 1]--;
+      }
+    } else {
+      // the freed id is in the middle of the used block
+      // [...,+x,...]->[...,+x1,-1,+x2,...]
+      long x1 = idToFree - maxPreviousId - 1;
+      long x2 = (maxPreviousId + ids[deletionBlockIndex]) - idToFree;
+      shiftArrayToRight(deletionBlockIndex, 2);
+      ids[deletionBlockIndex] = x1;
+      ids[deletionBlockIndex + 1] = -1;
+      ids[deletionBlockIndex + 2] = x2;
     }
   }
 
