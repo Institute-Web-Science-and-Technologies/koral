@@ -129,6 +129,8 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       // TODO remove
       System.out.println(
               "creation of edge coloring: " + (System.currentTimeMillis() - coloringStart));
+      // TODO remove
+      createGraphChunkPerColor(colorManager, input, workingDir);
       // assign edges to graph chunks
       // TODO remove
       long edgeAssignmentStart = System.currentTimeMillis();
@@ -1295,6 +1297,46 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           delim = ", ";
         }
         System.out.println("}");
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void createGraphChunkPerColor(ColoringManager colorManager, EncodedFileInputStream input,
+          File workingDir) {
+    try (EncodedFileInputStream newInput = new EncodedFileInputStream(input);) {
+      File colorDir = new File(workingDir.getCanonicalPath() + File.separator + "coloring");
+      if (colorDir.exists()) {
+        deleteFolder(colorDir);
+      }
+      colorDir.mkdirs();
+
+      File sortedColors = sortBinaryValues(colorManager.getIteratorOverColoredEdges(),
+              new FixedSizeLongArrayComparator(true, 0), workingDir,
+              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES, 100, true);
+
+      Map<Long, EncodedFileOutputStream> outputs = new HashMap<>();
+      try (EncodedLongFileInputStream sortedColorsInput = new EncodedLongFileInputStream(
+              sortedColors);) {
+        for (Statement stmt : newInput) {
+          long color = sortedColorsInput.readLong();
+          EncodedFileOutputStream output = outputs.get(color);
+          if (output == null) {
+            output = new EncodedFileOutputStream(new File(colorDir.getCanonicalFile()
+                    + File.separator + "chunkColor" + color + ".enc.gz"));
+            outputs.put(color, output);
+          }
+          output.writeStatement(stmt);
+        }
+      }
+      sortedColors.delete();
+      for (EncodedFileOutputStream output : outputs.values()) {
+        try {
+          output.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
