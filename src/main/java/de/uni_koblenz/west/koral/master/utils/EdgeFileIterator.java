@@ -32,9 +32,7 @@ public class EdgeFileIterator extends EdgeIterator {
       // the input is closed
       return null;
     }
-    if (next == null) {
-      next = new long[3];
-    }
+    next = new long[3];
     try {
       next[0] = input.readLong();
       next[1] = input.readLong();

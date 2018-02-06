@@ -136,14 +136,14 @@ public class ColoringManager implements AutoCloseable {
     offset2color.put(offset, colorId);
   }
 
-  private void setColorInformation(long newColorId, long size, long newOffset) {
-    long[] colorInfo = colors.get(newColorId);
+  private void setColorInformation(long colorId, long size, long offset) {
+    long[] colorInfo = colors.get(colorId);
     if (colorInfo == null) {
-      colorInfo = new long[] { size, newOffset };
+      colorInfo = new long[] { size, offset };
     } else {
       colorInfo[0] = size;
     }
-    colors.put(newColorId, colorInfo);
+    colors.put(colorId, colorInfo);
   }
 
   private void setEdgeColor(long edge, long offset) {
@@ -163,14 +163,15 @@ public class ColoringManager implements AutoCloseable {
   }
 
   public void colorEdge(long edge, long colorId) {
-    long offset = getOffsetFromColor(colorId);
-    setEdgeColor(edge, offset);
+    long[] color = getColorInformation(colorId);
+    setEdgeColor(edge, color[1]);
+    setColorInformation(colorId, color[0] + 1, color[1]);
   }
 
   public void recolor(long oldColor, long oldColorSize, long newColor, long newColorSize) {
     long oldColorOffset = getOffsetFromColor(oldColor);
     long newColorOffset = getOffsetFromColor(newColor);
-    setOffsetInformation(oldColorOffset, newColorOffset | 0x7f_ff_ff_ff_ff_ff_ff_ffL);
+    setOffsetInformation(oldColorOffset, newColorOffset | 0x80_00_00_00_00_00_00_00L);
     setColorInformation(newColor, oldColorSize + newColorSize, 0);
     deleteColor(oldColor);
   }
@@ -231,6 +232,30 @@ public class ColoringManager implements AutoCloseable {
 
   @Override
   public void close() {
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("ColorManager:\n");
+    String delim = "\tedges: {";
+    Iterator<long[]> iterator = getIteratorOverColoredEdges();
+    while (iterator.hasNext()) {
+      long[] edgeColor = iterator.next();
+      sb.append(delim).append("(e").append(edgeColor[0]).append(",c").append(edgeColor[1])
+              .append(")");
+      delim = ", ";
+    }
+    sb.append("}");
+    sb.append("\n");
+    delim = "\tcolors: {";
+    iterator = getIteratorOverAllColors();
+    while (iterator.hasNext()) {
+      long[] color = iterator.next();
+      sb.append(delim).append("(c").append(color[0]).append(",#").append(color[1]).append(")");
+      delim = ", ";
+    }
+    sb.append("}");
+    return sb.toString();
   }
 
 }

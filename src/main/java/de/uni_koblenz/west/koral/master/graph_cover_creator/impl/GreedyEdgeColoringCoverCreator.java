@@ -293,9 +293,13 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           do {
             output.writeLong(edgeId);
             output.writeLong(chunkId);
-            edgeId = edges2colorsIterator.next();
-            edgeColor = edges2colorsIterator.next();
-          } while (edges2colorsIterator.hasNext() && (edgeColor == colorId));
+            if (edges2colorsIterator.hasNext()) {
+              edgeId = edges2colorsIterator.next();
+              edgeColor = edges2colorsIterator.next();
+            } else {
+              edgeColor = 0;
+            }
+          } while (edgeColor == colorId);
         }
         if (edges2colorsIterator.hasNext()) {
           throw new RuntimeException("There exist edges with unknown colors.");
@@ -491,7 +495,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
       @Override
       public boolean hasNextChunk() {
-        return (remainingNumberOfEdgesToRead > 0) && (nextIndex > 0);
+        return nextIndex > 0;
       }
 
       @Override
@@ -551,7 +555,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         }
       };
 
-      Comparator<long[]> comparator = new FixedSizeLongArrayComparator(false, 2);
+      Comparator<long[]> comparator = new FixedSizeLongArrayComparator(false, 2, 1);
 
       File edgeColorsFile = File.createTempFile("edgeColors-", "", workingDir);
       try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(edgeColorsFile);) {
@@ -569,9 +573,14 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
      */
     List<long[]> colorCache = new LinkedList<>();
     // TODO check number of cached colors
-    long[] edge = edges.next();
+    long[] edge = null;
     // iterate over all colored edges
-    while ((edge[1] != 0) && edges.hasNext()) {
+    while (((edge == null) || (edge[1] != 0)) && edges.hasNext()) {
+      // read next edge
+      edge = edges.next();
+      if (edge[1] == 0) {
+        break;
+      }
       if (edge[2] == maxNumberOfEdgesPerColour) {
         // the edge is full, thus it cannot be used for anything
       } else if (colorCache.isEmpty()) {
@@ -602,13 +611,11 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           }
         }
       }
-      // read next edge
-      edge = edges.next();
     }
     // sort colors by frequency
     Collections.sort(colorCache, new FixedSizeLongArrayComparator(false, 1));
     // iterate over all uncolored edges
-    while (edges.hasNext()) {
+    if ((edge != null) && (edge[1] == 0)) {
       long[] color = null;
       if (colorCache.isEmpty()) {
         // create a new color
@@ -624,8 +631,25 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         // the color is full and cannot be used any more
         colorCache.remove(color);
       }
-      // read next edge
-      edge = edges.next();
+      while (edges.hasNext()) {
+        // read next edge
+        edge = edges.next();
+        color = null;
+        if (colorCache.isEmpty()) {
+          // create a new color
+          color = colorManager.createNewColor();
+          colorCache.add(color);
+        } else {
+          // use largest color to color the new edge
+          color = colorCache.get(0);
+        }
+        colorManager.colorEdge(edge[0], color[0]);
+        color[1]++;
+        if (color[1] >= maxNumberOfEdgesPerColour) {
+          // the color is full and cannot be used any more
+          colorCache.remove(color);
+        }
+      }
     }
   }
 
@@ -1220,6 +1244,21 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
   public void close() {
     // TODO Auto-generated method stub
     super.close();
+  }
+
+  private void printBinary(File input, int numberOfNumbers) {
+    try (EncodedLongFileInputStream in = new EncodedLongFileInputStream(input);) {
+      LongIterator iterator = in.iterator();
+      while (iterator.hasNext()) {
+        System.out.print("[");
+        for (int i = 0; i < numberOfNumbers; i++) {
+          System.out.print((i == 0 ? "" : ", ") + iterator.next());
+        }
+        System.out.println("]");
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private void printSimple(File vertexIncidentEdgesFile) {
