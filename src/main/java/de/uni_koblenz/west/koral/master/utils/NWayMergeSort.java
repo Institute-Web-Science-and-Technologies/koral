@@ -23,8 +23,8 @@ public class NWayMergeSort {
   public void sort(InitialChunkProducer producer, Merger merger, Comparator<long[]> comparator,
           File workingDir, int maxNumberOfOpenFiles, LongOutputWriter output) {
     maxNumberOfOpenFiles -= 1;
-    if (maxNumberOfOpenFiles < 2) {
-      maxNumberOfOpenFiles = 2;
+    if (maxNumberOfOpenFiles < 3) {
+      maxNumberOfOpenFiles = 3;
     }
     try {
       List<File> chunks = new ArrayList<>();
