@@ -23,6 +23,9 @@ public class NWayMergeSort {
   public void sort(InitialChunkProducer producer, Merger merger, Comparator<long[]> comparator,
           File workingDir, int maxNumberOfOpenFiles, LongOutputWriter output) {
     maxNumberOfOpenFiles -= 1;
+    if (maxNumberOfOpenFiles < 2) {
+      maxNumberOfOpenFiles = 2;
+    }
     try {
       List<File> chunks = new ArrayList<>();
       // create initial chunks
@@ -61,7 +64,7 @@ public class NWayMergeSort {
                 iterators[i] = null;
               }
             }
-            if (chunks.size() <= (maxNumberOfOpenFiles - 1)) {
+            if ((chunks.size() == 1) || (chunks.size() <= (maxNumberOfOpenFiles - 1))) {
               out = output;
             } else {
               File chunk = File.createTempFile("mergeChunk-", "", workingDir);
