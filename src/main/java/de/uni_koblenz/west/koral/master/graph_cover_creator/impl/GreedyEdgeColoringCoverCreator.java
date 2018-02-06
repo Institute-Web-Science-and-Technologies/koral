@@ -443,6 +443,8 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         long outDegree = iterator.next();
         long inDegree = iterator.next();
         long degree = outDegree + inDegree;
+        // TODO remove
+        // System.out.println("v" + vertexId + " degree:" + degree);
         if (degree <= maxInMemoryEdgeNumber) {
           if ((edges == null) || (degree > edges.length)) {
             edges = new long[(int) degree][3];
@@ -451,6 +453,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
             edges[i][0] = iterator.next();
           }
           colorManager.fillColorInformation(edges);
+          Arrays.sort(edges, new FixedSizeLongArrayComparator(false, 2, 1, 0));
           try (EdgeIterator iter = new EdgeArrayIterator(edges);) {
             colourEdges(iter, colorManager, maxNumberOfEdgesPerColour);
           }
@@ -567,6 +570,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       return edgeColorsFile;
     }
   }
+  // FIXME self-loops: process out-edges and in-edges after one another
 
   private void colourEdges(EdgeIterator edges, ColoringManager colorManager,
           long maxNumberOfEdgesPerColour) {

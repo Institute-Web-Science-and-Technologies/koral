@@ -163,17 +163,25 @@ public class ColoringManager implements AutoCloseable {
   }
 
   public void colorEdge(long edge, long colorId) {
+    // TODO remove
+    // System.out.println(">>>>color e" + edge + "->c" + colorId);
     long[] color = getColorInformation(colorId);
     setEdgeColor(edge, color[1]);
     setColorInformation(colorId, color[0] + 1, color[1]);
+    // TODO remove
+    // System.out.println(this);
   }
 
   public void recolor(long oldColor, long oldColorSize, long newColor, long newColorSize) {
+    // TODO remove
+    // System.out.println(">>>>recolor c" + oldColor + "->c" + newColor);
     long oldColorOffset = getOffsetFromColor(oldColor);
     long newColorOffset = getOffsetFromColor(newColor);
     setOffsetInformation(oldColorOffset, newColorOffset | 0x80_00_00_00_00_00_00_00L);
     setColorInformation(newColor, oldColorSize + newColorSize, 0);
     deleteColor(oldColor);
+    // TODO remove
+    // System.out.println(this);
   }
 
   public long getNumberOfColors() {
