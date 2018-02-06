@@ -23,6 +23,7 @@ public class EdgeFileIterator extends EdgeIterator {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    next = getNext();
   }
 
   @Override

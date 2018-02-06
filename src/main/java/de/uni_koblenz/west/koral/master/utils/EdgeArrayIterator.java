@@ -16,6 +16,7 @@ public class EdgeArrayIterator extends EdgeIterator {
   public EdgeArrayIterator(long[][] edges) {
     this.edges = edges;
     nextIndex = 0;
+    next = getNext();
   }
 
   @Override
