@@ -54,7 +54,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
   private static final int NUMBER_OF_CACHED_VERTICES = 2;// 0x10_00_00;
 
   // TODO determine by available memory
-  private static final int NUMBER_OF_CACHED_EDGES = 10;// 0x04_00_00_00;
+  private static final int NUMBER_OF_CACHED_EDGES = 6;// 0x04_00_00_00;
 
   private static final int MAX_NUMBER_OF_OPEN_FILES = 10;// 100;
 
@@ -130,7 +130,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       System.out.println(
               "creation of edge coloring: " + (System.currentTimeMillis() - coloringStart));
       // TODO remove
-      createGraphChunkPerColor(colorManager, input, workingDir);
+      // createGraphChunkPerColor(colorManager, input, workingDir);
       // assign edges to graph chunks
       // TODO remove
       long edgeAssignmentStart = System.currentTimeMillis();
@@ -391,6 +391,10 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         Merger merger = new Merger() {
 
           @Override
+          public void startNextMergeLevel() {
+          }
+
+          @Override
           public long[] readNextElement(LongIterator iterator) throws IOException {
             return new long[] { iterator.next(), iterator.next() };
           }
@@ -529,6 +533,13 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
       Merger merger = new Merger() {
 
+        private long[] previousEdge;
+
+        @Override
+        public void startNextMergeLevel() {
+          previousEdge = null;
+        }
+
         @Override
         public long[] readNextElement(LongIterator iterator) throws IOException {
           return new long[] { iterator.next(), iterator.next(), iterator.next() };
@@ -537,21 +548,27 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         @Override
         public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
                 LongIterator[] iterators, LongOutputWriter out) throws IOException {
-          int smallesElementIndex = indicesOfSmallestElement.nextSetBit(0);
-          long[] edge = elements[smallesElementIndex];
-          if (edge[1] == 0) {
-            // these are uncolored edges
-            for (int i = smallesElementIndex; i >= 0; i = indicesOfSmallestElement
-                    .nextSetBit(i + 1)) {
-              out.writeLong(elements[i][0]);
-              out.writeLong(elements[i][1]);
-              out.writeLong(elements[i][2]);
+          for (int i = indicesOfSmallestElement.nextSetBit(0); i >= 0; i = indicesOfSmallestElement
+                  .nextSetBit(i + 1)) {
+            long[] edge = elements[i];
+            if (edge[1] == 0) {
+              // this is an uncolored edge
+              if ((previousEdge == null) || (previousEdge[0] != edge[0])) {
+                // if it is not a self-loop write it
+                out.writeLong(edge[0]);
+                out.writeLong(edge[1]);
+                out.writeLong(edge[2]);
+              }
+            } else {
+              // this is a colored edge
+              if ((previousEdge == null) || (previousEdge[1] != edge[1])) {
+                // if it is a new color, write it
+                out.writeLong(edge[0]);
+                out.writeLong(edge[1]);
+                out.writeLong(edge[2]);
+              }
             }
-          } else {
-            // only write the first element of all edges with the same color
-            out.writeLong(edge[0]);
-            out.writeLong(edge[1]);
-            out.writeLong(edge[2]);
+            previousEdge = edge;
           }
         }
 
@@ -560,7 +577,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         }
       };
 
-      Comparator<long[]> comparator = new FixedSizeLongArrayComparator(false, 2, 1);
+      Comparator<long[]> comparator = new FixedSizeLongArrayComparator(false, 2, 1, 0);
 
       File edgeColorsFile = File.createTempFile("edgeColors-", "", workingDir);
       try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(edgeColorsFile);) {
@@ -570,7 +587,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       return edgeColorsFile;
     }
   }
-  // FIXME self-loops: process out-edges and in-edges after one another
 
   private void colourEdges(EdgeIterator edges, ColoringManager colorManager,
           long maxNumberOfEdgesPerColour) {
@@ -621,6 +637,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     // sort colors by frequency
     Collections.sort(colorCache, new FixedSizeLongArrayComparator(false, 1));
     // iterate over all uncolored edges
+    long[] previousEdge = null;
     if ((edge != null) && (edge[1] == 0)) {
       long[] color = null;
       if (colorCache.isEmpty()) {
@@ -639,7 +656,12 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       }
       while (edges.hasNext()) {
         // read next edge
+        previousEdge = edge;
         edge = edges.next();
+        if (previousEdge[0] == edge[0]) {
+          // this is a self-loop
+          continue;
+        }
         color = null;
         if (colorCache.isEmpty()) {
           // create a new color
@@ -815,6 +837,10 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       Merger merger = new Merger() {
 
         private EncodedRandomAccessLongFileInputStream edgeListInput;
+
+        @Override
+        public void startNextMergeLevel() {
+        }
 
         @Override
         public long[] readNextElement(LongIterator iterator) {
@@ -1143,6 +1169,10 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       };
 
       Merger merger = new Merger() {
+
+        @Override
+        public void startNextMergeLevel() {
+        }
 
         @Override
         public long[] readNextElement(LongIterator iterator) {

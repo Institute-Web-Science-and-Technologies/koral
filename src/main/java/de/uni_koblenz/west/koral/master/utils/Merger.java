@@ -13,6 +13,8 @@ import java.util.BitSet;
  */
 public interface Merger extends AutoCloseable {
 
+  public void startNextMergeLevel();
+
   public long[] readNextElement(LongIterator iterator) throws IOException;
 
   public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,

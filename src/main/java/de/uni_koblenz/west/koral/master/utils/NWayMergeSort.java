@@ -45,6 +45,7 @@ public class NWayMergeSort {
         List<File> mergedChunks = new ArrayList<>();
         for (int iterationStart = 0; iterationStart < chunks
                 .size(); iterationStart += maxNumberOfOpenFiles - 1) {
+          merger.startNextMergeLevel();
           int numberOfProcessedFiles = Math.min(maxNumberOfOpenFiles - 1,
                   chunks.size() - iterationStart);
           EncodedLongFileInputStream[] inputs = new EncodedLongFileInputStream[numberOfProcessedFiles];

@@ -43,7 +43,7 @@ public class GraphCoverVisualizer {
           "powderblue", "purple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon",
           "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue",
           "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle",
-          "tomato", "turquoise", "violet", "wheat", "whitesmoke", "yellow", "yellowgreen" };
+          "tomato", "turquoise", "violet", "wheat", "yellow", "whitesmoke", "yellowgreen" };
 
   public static void main(String[] args) {
     if (args.length < 3) {
@@ -107,6 +107,8 @@ public class GraphCoverVisualizer {
   private void drawGraphEdges(EncodedFileInputStream input, Writer output, long chunkNumber,
           Set<String> usedColors, boolean duplicateObjects) throws IOException {
     String color = getColor(chunkNumber, usedColors);
+    // TODO remove
+    System.out.println("c" + chunkNumber + "->" + color);
     for (Statement stmt : input) {
       long subject = stmt.getSubjectAsLong();
       long object = stmt.getObjectAsLong();
