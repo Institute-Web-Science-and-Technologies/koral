@@ -65,7 +65,7 @@ public class ColoringManager implements AutoCloseable {
     }
   }
 
-  private void fillEdgeColor(long edge, long[] colorArray, int startIndex) {
+  public void fillEdgeColor(long edge, long[] colorArray, int startIndex) {
     Long color = edge2color.get(edge);
     if (color == null) {
       colorArray[startIndex] = 0;
@@ -129,9 +129,6 @@ public class ColoringManager implements AutoCloseable {
     colors.put(newColor, size << 1);
   }
 
-  // TODO remove
-  public long edges;
-
   public void colorEdge(long edge, long colorId) {
     if (colorId == 0) {
       throw new RuntimeException("Attempt to set color of edge e" + edge + " to c" + colorId + ".");
@@ -143,7 +140,6 @@ public class ColoringManager implements AutoCloseable {
       throw new RuntimeException("Edge e" + edge + " should be colored in c" + colorId
               + " but has already color c" + e[0][1] + ".");
     }
-    edges++;
     // System.out.println(">>>>color e" + edge + "->c" + colorId);
     long[] color = getColor(colorId);
     if (color[0] != colorId) {
@@ -253,9 +249,6 @@ public class ColoringManager implements AutoCloseable {
    * @return Iterator over long[]{edgeId, colorId}
    */
   public Iterator<long[]> getIteratorOverColoredEdges() {
-    // TODO remove
-    System.out.println(">>>>edges called: " + edges);
-    System.out.println(">>>>edges known in color manager: " + edge2color.size());
     return new Iterator<long[]>() {
 
       private final Iterator<Entry<Long, Long>> iterator = edge2color.entrySet().iterator();

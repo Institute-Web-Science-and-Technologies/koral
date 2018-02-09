@@ -121,10 +121,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     }
     // TODO remove
     System.out.println("sort by degree time: " + (System.currentTimeMillis() - sortStart));
-    // TODO remove
-    System.out.println(">>>>total number of edges: " + numberOfEdges);
-    // TODO remove
-    // fillEdgeInformation(sortedVertexList);
 
     File edges2chunks = null;
     try (ColoringManager colorManager = new ColoringManager(internalWorkingDir,
@@ -139,7 +135,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       System.out.println(
               "creation of edge coloring: " + (System.currentTimeMillis() - coloringStart));
       // TODO remove
-       createGraphChunkPerColor(colorManager, input, workingDir);
+      // createGraphChunkPerColor(colorManager, input, workingDir);
       // assign edges to graph chunks
       // TODO remove
       long edgeAssignmentStart = System.currentTimeMillis();
@@ -436,9 +432,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     }
   }
 
-  // TODO remove
-  private long processedEdges;
-
   private void createEdgeColoring(File sortedVertexList, ColoringManager colorManager,
           File workingDir, long numberOfEdges, int numberOfGraphChunks, int numberOfCachedEdges,
           int maxNumberOfOpenFiles) {
@@ -459,9 +452,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         long outDegree = iterator.next();
         long inDegree = iterator.next();
         long degree = outDegree + inDegree;
-        processedEdges = 0;
-        // TODO remove
-        // System.out.println("v" + vertexId + " degree:" + degree);
         if (degree <= maxInMemoryEdgeNumber) {
           if ((edges == null) || (degree > edges.length)) {
             edges = new long[(int) degree][3];
@@ -474,11 +464,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           try (EdgeIterator iter = new EdgeArrayIterator(edges);) {
             colourEdges(iter, colorManager, maxNumberOfEdgesPerColour);
           }
-          // TODO remove
-          if (edges.length != processedEdges) {
-            System.out.println(
-                    "in memory: original=" + edges.length + " processed:" + processedEdges);
-          }
         } else {
           edges = null;
           File edgeColors = getEdgeColors(iterator, outDegree, inDegree, colorManager, workingDir,
@@ -486,22 +471,12 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           try (EdgeIterator iter = new EdgeFileIterator(edgeColors);) {
             colourEdges(iter, colorManager, maxNumberOfEdgesPerColour);
           }
-          // TODO remove
-          long orignal = countEntries(edgeColors, 3);
-          if (orignal != processedEdges) {
-            System.out.println("in memory: original=" + orignal + " processed:" + processedEdges);
-          }
           edgeColors.delete();
         }
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    // TODO remove
-    System.out.println(">>>>number of uncolored edges: " + numberOfUncoloredEdges);
-    // System.out.println(">>>>remaining edges: " + edge2vertex.size());
-    // print(edge2vertex, new File(workingDir.getAbsolutePath() + File.separator
-    // + "edge2vertex.txt"));
   }
 
   private File getEdgeColors(LongIterator iterator, long outDegree, long inDegree,
@@ -621,10 +596,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     }
   }
 
-  // TODO remove
-  private long numberOfUncoloredEdges = 0;
-  private final Map<Long, long[]> edge2vertex = new HashMap<>();
-
   private void colourEdges(EdgeIterator edges, ColoringManager colorManager,
           long maxNumberOfEdgesPerColour) {
     /*
@@ -632,17 +603,19 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
      */
     List<long[]> colorCache = new LinkedList<>();
     Map<Long, long[]> recoloring = new HashMap<>();
-    // TODO check number of cached colors
     long[] edge = null;
     // iterate over all colored edges
     while (((edge == null) || (edge[1] != 0)) && edges.hasNext()) {
       // read next edge
       edge = edges.next();
-      processedEdges++;
       if (edge[1] == 0) {
         break;
       }
-      updateColor(recoloring, edge);
+      if (edges instanceof EdgeArrayIterator) {
+        updateColor(recoloring, edge);
+      } else {
+        colorManager.fillEdgeColor(edge[0], edge, 1);
+      }
       if (edge[2] == maxNumberOfEdgesPerColour) {
         // the edge is full, thus it cannot be used for anything
       } else if (colorCache.isEmpty()) {
@@ -661,7 +634,9 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
               colorManager.recolor(edge[1], edge[2], color[0], color[1]);
               color[1] += edge[2];
               joinedColor = color;
-              addRecoloringEntry(recoloring, joinedColor, edge[1]);
+              if (edges instanceof EdgeArrayIterator) {
+                addRecoloringEntry(recoloring, joinedColor, edge[1]);
+              }
               break;
             }
           }
@@ -690,8 +665,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     // iterate over all uncolored edges
     long[] previousEdge = null;
     if ((edge != null) && (edge[1] == 0)) {
-      numberOfUncoloredEdges++;
-      edge2vertex.remove(edge[0]);
       long[] color = null;
       if (colorCache.isEmpty()) {
         // create a new color
@@ -711,13 +684,10 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         // read next edge
         previousEdge = edge;
         edge = edges.next();
-        processedEdges++;
         if (previousEdge[0] == edge[0]) {
           // this is a self-loop
           continue;
         }
-        numberOfUncoloredEdges++;
-        edge2vertex.remove(edge[0]);
         color = null;
         if (colorCache.isEmpty()) {
           // create a new color
@@ -736,8 +706,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       }
     }
   }
-
-  // FIXME remove recoloring
 
   private void updateColor(Map<Long, long[]> recoloring, long[] edge) {
     long[] newColor = getColorInformation(recoloring, edge[1]);
@@ -1385,25 +1353,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       throw new RuntimeException(e);
     }
     return countedValues;
-  }
-
-  private void fillEdgeInformation(File input) {
-    try (EncodedLongFileInputStream in = new EncodedLongFileInputStream(input);) {
-      LongIterator iterator = in.iterator();
-      while (iterator.hasNext()) {
-        long vertex = iterator.next();
-        long outDegree = iterator.next();
-        long inDegree = iterator.next();
-        for (int i = 0; i < outDegree; i++) {
-          edge2vertex.put(iterator.next(), new long[] { vertex, outDegree + inDegree });
-        }
-        for (int i = 0; i < inDegree; i++) {
-          iterator.next();
-        }
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private void print(Map<Long, long[]> edge2vertex, File file) {
