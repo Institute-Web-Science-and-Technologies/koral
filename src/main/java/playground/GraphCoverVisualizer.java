@@ -137,6 +137,8 @@ public class GraphCoverVisualizer {
   private void executeDot(File outputFile, String format) throws IOException {
     ProcessBuilder pb = new ProcessBuilder("neato", "-T", format, "-O",
             outputFile.getAbsolutePath());
+    // ProcessBuilder pb = new ProcessBuilder("dot", "-T", format, "-O",
+    // outputFile.getAbsolutePath());
     Process process = pb.start();
     try {
       process.waitFor();
