@@ -1,14 +1,13 @@
 package de.uni_koblenz.west.koral.master.utils;
 
-import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
-
 import java.io.File;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * Keeps track of the coloring of the edges.
@@ -18,42 +17,30 @@ import java.util.NoSuchElementException;
  */
 public class ColoringManager implements AutoCloseable {
 
-  private File edge2offsetFolder;
+  private File edge2colorFolder;
 
-  private final Map<Long, Long> edge2offset;
-
-  private File offset2colorFolder;
-
-  /**
-   * offset values must have first bit set to 1 in the value position
-   */
-  private final Map<Long, Long> offset2color;
-
-  private long nextOffset;
+  private final Map<Long, Long> edge2color;
 
   private File colorsFolder;
 
   /**
-   * colorIds must have the first bit = 0
-   * 
-   * value[0] = colorSize, value[1]=offset
+   * value % 2 == 1, color was recolored<br>
+   * value % 2 == 0, size of color<br>
+   * the actual colorId is retrieved by value&gt;&gt;&gt;1
    */
-  private final Map<Long, long[]> colors;
+  private final Map<Long, Long> colors;
 
-  private final ReusableIDGenerator colorIdGenerator;
+  private long nextColor;
 
   private long numberOfColors;
 
-  // FIXME reimplement without offset index
-  // reuse color id
-  // repaint will set the color array to oldColor->[newColor]
+  private final long[] internalEdgeInfo;
 
   public ColoringManager(File internalWorkingDir, int numberOfOpenFiles) {
-    edge2offset = new HashMap<>();
-    offset2color = new HashMap<>();
-    nextOffset = 1;
+    edge2color = new HashMap<>();
     colors = new HashMap<>();
-    colorIdGenerator = new ReusableIDGenerator();
+    nextColor = 1;
+    internalEdgeInfo = new long[2];
     numberOfColors = 0;
   }
 
@@ -74,67 +61,53 @@ public class ColoringManager implements AutoCloseable {
    */
   public void fillColorInformation(long[][] edges, int lastExclusiveIndex) {
     for (int i = 0; i < lastExclusiveIndex; i++) {
-      edges[i][1] = getEdgeColor(edges[i][0]);
-      edges[i][2] = getColorInformation(edges[i][1])[0];
-      // TODO remove
-      if (edges[i][0] == 12) {
-        // FIXME
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" + Arrays.toString(edges[i]));
-        System.out.println("edge e" + edges[i][0]);
-        System.out.println("offset " + getOffsetFromEdge(edges[i][0]));
-        System.out.println("colorID " + getColorId(getOffsetFromEdge(edges[i][0])));
-        System.out.println("color information "
-                + Arrays.toString(getColorInformation(getColorId(getOffsetFromEdge(edges[i][0])))));
-        System.out.println("edge2offset " + edge2offset.get(edges[i][0]));
-        System.out.println("offset2color " + offset2color.get(getOffsetFromEdge(edges[i][0])));
-        System.out.println("colors "
-                + Arrays.toString(colors.get(getColorId(getOffsetFromEdge(edges[i][0])))));
+      fillEdgeColor(edges[i][0], edges[i], 1);
+    }
+  }
+
+  private void fillEdgeColor(long edge, long[] colorArray, int startIndex) {
+    Long color = edge2color.get(edge);
+    if (color == null) {
+      colorArray[startIndex] = 0;
+      colorArray[startIndex + 1] = 0;
+    } else {
+      long[] colorInfo = getColor(color);
+      if (colorInfo == null) {
+        throw new RuntimeException("The color c" + color + " is unknown.");
+      }
+      colorArray[startIndex] = colorInfo[0];
+      colorArray[startIndex + 1] = colorInfo[1];
+    }
+  }
+
+  private long[] getColor(Long colorId) {
+    Long size = colors.get(colorId);
+    if (size == null) {
+      return null;
+    }
+    Long previousColor = null;
+    Set<Long> recoloredColors = new HashSet<>();
+    while ((size.longValue() & 0x01L) == 1) {
+      // the color was recolored
+      previousColor = colorId;
+      colorId = size.longValue() >>> 1;
+      size = colors.get(colorId);
+      if (size == null) {
+        throw new RuntimeException("The recolored color c" + colorId + " is unknown.");
+      }
+      if ((size.longValue() & 0x01L) == 1) {
+        recoloredColors.add(previousColor);
       }
     }
-  }
-
-  private long getEdgeColor(long edge) {
-    long offset = getOffsetFromEdge(edge);
-    long colorId = getColorId(offset);
-    return colorId;
-  }
-
-  private long getOffsetFromEdge(long edge) {
-    Long offset = edge2offset.get(edge);
-    if (offset == null) {
-      return 0;
-    } else {
-      return offset;
+    // shorten the search path for recolored edges,
+    // i.e., c1->c2->c3->c4 is shortened to c1->c4; c2->c4; c3->c4
+    for (Long recoloredColor : recoloredColors) {
+      recolorColor(recoloredColor, colorId);
     }
-  }
-
-  private long getOffsetFromColor(long colorId) {
-    long[] colorInfo = colors.get(colorId);
-    if (colorInfo == null) {
-      return 0;
-    } else {
-      return colorInfo[1];
-    }
-  }
-
-  private long getColorId(long offset) {
-    Long colorId = offset2color.get(offset);
-    while ((colorId != null) && (colorId < 0)) {
-      // the value of this map is negative if it is another offset. If it is a
-      // color, then it is positive
-      // the key of the map is always positive
-      colorId = offset2color.get(colorId & 0x7f_ff_ff_ff_ff_ff_ff_ffL);
-    }
-    return colorId == null ? 0 : colorId;
-  }
-
-  private long[] getColorInformation(long color) {
-    long[] colorInfos = colors.get(color);
-    if (colorInfos == null) {
-      return new long[2];
-    } else {
-      return Arrays.copyOf(colorInfos, colorInfos.length);
-    }
+    long[] color = internalEdgeInfo;
+    internalEdgeInfo[0] = colorId;
+    internalEdgeInfo[1] = size >>> 1;
+    return color;
   }
 
   /**
@@ -143,79 +116,89 @@ public class ColoringManager implements AutoCloseable {
    * @return color[0]=colorId; color[1]=frequency of color
    */
   public long[] createNewColor() {
-    long newColorId = colorIdGenerator.getNextId() + 1;
-    long newOffset = nextOffset++;
-    setOffsetInformation(newOffset, newColorId);
-    setColorInformation(newColorId, 0, newOffset);
+    long newColorId = nextColor++;
+    setColor(newColorId, 0);
     numberOfColors++;
     return new long[] { newColorId, 0 };
   }
 
-  private void setOffsetInformation(long offset, long colorId) {
-    if (offset == 0) {
-      throw new RuntimeException("Try to set offset 0 to color c" + colorId + "!");
+  private void setColor(long newColor, long size) {
+    if (newColor == 0) {
+      throw new RuntimeException("Attempt to create color c0.");
     }
-    offset2color.put(offset, colorId);
+    colors.put(newColor, size << 1);
   }
 
-  private void setColorInformation(long colorId, long size, long offset) {
-    if (colorId <= 0) {
-      throw new RuntimeException("Try to set information for color c" + offset + ".");
-    }
-    long[] colorInfo = colors.get(colorId);
-    if (colorInfo == null) {
-      colorInfo = new long[] { size, offset };
-    } else {
-      colorInfo[0] = size;
-    }
-    colors.put(colorId, colorInfo);
-  }
-
-  private void setEdgeColor(long edge, long offset) {
-    // TODO remove
-    Long oldOffset = edge2offset.get(edge);
-    if (oldOffset != null) {
-      throw new RuntimeException("edge " + edge + " has already the offset " + oldOffset
-              + " instead of the new offset " + offset + ".");
-    }
-    edge2offset.put(edge, offset);
-  }
-
-  private void deleteColor(long oldColor) {
-    colors.remove(oldColor);
-    colorIdGenerator.release(oldColor - 1);
-    numberOfColors--;
-  }
-
+  // TODO remove
   public long edges;
 
   public void colorEdge(long edge, long colorId) {
-    edges++;
+    if (colorId == 0) {
+      throw new RuntimeException("Attempt to set color of edge e" + edge + " to c" + colorId + ".");
+    }
     // TODO remove
+    long[][] e = new long[][] { { edge, 0, 0 } };
+    fillColorInformation(e);
+    if ((e[0][1] != colorId) && (e[0][1] != 0)) {
+      throw new RuntimeException("Edge e" + edge + " should be colored in c" + colorId
+              + " but has already color c" + e[0][1] + ".");
+    }
+    edges++;
     // System.out.println(">>>>color e" + edge + "->c" + colorId);
-    long[] color = getColorInformation(colorId);
-    setEdgeColor(edge, color[1]);
-    setColorInformation(colorId, color[0] + 1, color[1]);
+    long[] color = getColor(colorId);
+    if (color[0] != colorId) {
+      throw new RuntimeException("Attempt to color edge e" + edge + " in the color c" + colorId
+              + " which was already recolored to c" + color[0]);
+    }
+    setEdgeColor(edge, color[0]);
+    setColor(color[0], color[1] + 1);
     // TODO remove
     // System.out.println(this);
+  }
+
+  private void setEdgeColor(long edge, long color) {
+    if (color == 0) {
+      throw new RuntimeException("Attempt to set color of edge e" + edge + " to c" + color + ".");
+    }
+    edge2color.put(edge, color);
   }
 
   public void recolor(long oldColor, long oldColorSize, long newColor, long newColorSize) {
     // TODO remove
     // System.out.println(">>>>recolor c" + oldColor + "->c" + newColor);
-    long oldColorOffset = getOffsetFromColor(oldColor);
-    if (oldColorOffset == 0) {
-      throw new RuntimeException("Old color c" + oldColor + " is unknown.");
+    if (oldColor == 0) {
+      throw new RuntimeException("Attempt to recolor color c" + oldColor + ".");
     }
-    long newColorOffset = getOffsetFromColor(newColor);
-    if (newColorOffset == 0) {
-      throw new RuntimeException("New color c" + newColor + " is unknown.");
+    if (newColor == 0) {
+      throw new RuntimeException("Attempt to recolor color c" + oldColor + " to color c0.");
     }
-    setOffsetInformation(oldColorOffset, newColorOffset | 0x80_00_00_00_00_00_00_00L);
-    setColorInformation(newColor, oldColorSize + newColorSize, 0);
-    // deleteColor(oldColor);
     // TODO remove
+    long ocSize = getColor(oldColor)[1];
+    if (ocSize != oldColorSize) {
+      throw new RuntimeException("Color c" + oldColor + " should have a size of " + oldColorSize
+              + " but actually has a size of " + ocSize);
+    }
+    ocSize = getColor(newColor)[1];
+    if (ocSize != newColorSize) {
+      throw new RuntimeException("Color c" + newColor + " should have a size of " + newColorSize
+              + " but actually has a size of " + ocSize);
+    }
+    recolorColor(oldColor, newColor);
+    setColor(newColor, oldColorSize + newColorSize);
+    numberOfColors--;
+    // TODO remove
+    // System.out.println(colors);
     // System.out.println(this);
+  }
+
+  private void recolorColor(long oldColor, long newColor) {
+    if (oldColor == 0) {
+      throw new RuntimeException("Attempt to recolor color c" + oldColor + ".");
+    }
+    if (newColor == 0) {
+      throw new RuntimeException("Attempt to recolor color c" + oldColor + " to color c0.");
+    }
+    colors.put(oldColor, (newColor << 1) | 0x01L);
   }
 
   public long getNumberOfColors() {
@@ -230,11 +213,13 @@ public class ColoringManager implements AutoCloseable {
   public Iterator<long[]> getIteratorOverAllColors() {
     return new Iterator<long[]>() {
 
-      private final Iterator<Entry<Long, long[]>> iterator = colors.entrySet().iterator();
+      private final Iterator<Entry<Long, Long>> iterator = colors.entrySet().iterator();
+
+      private long[] next = getNext();
 
       @Override
       public boolean hasNext() {
-        return iterator.hasNext();
+        return next != null;
       }
 
       @Override
@@ -242,8 +227,24 @@ public class ColoringManager implements AutoCloseable {
         if (!hasNext()) {
           throw new NoSuchElementException();
         }
-        Entry<Long, long[]> element = iterator.next();
-        return new long[] { element.getKey(), element.getValue()[0] };
+        long[] n = next;
+        next = getNext();
+        return n;
+      }
+
+      private long[] getNext() {
+        long color = 0;
+        long size = 1;
+        while (iterator.hasNext()) {
+          Entry<Long, Long> entry = iterator.next();
+          color = entry.getKey();
+          size = entry.getValue();
+          if ((size & 0x01L) == 0) {
+            size = size >>> 1;
+            return new long[] { color, size };
+          }
+        }
+        return null;
       }
     };
   }
@@ -254,10 +255,10 @@ public class ColoringManager implements AutoCloseable {
   public Iterator<long[]> getIteratorOverColoredEdges() {
     // TODO remove
     System.out.println(">>>>edges called: " + edges);
-    System.out.println(">>>>edges known in color manager: " + edge2offset.size());
+    System.out.println(">>>>edges known in color manager: " + edge2color.size());
     return new Iterator<long[]>() {
 
-      private final Iterator<Entry<Long, Long>> iterator = edge2offset.entrySet().iterator();
+      private final Iterator<Entry<Long, Long>> iterator = edge2color.entrySet().iterator();
 
       @Override
       public boolean hasNext() {
@@ -270,7 +271,8 @@ public class ColoringManager implements AutoCloseable {
           throw new NoSuchElementException();
         }
         Entry<Long, Long> element = iterator.next();
-        return new long[] { element.getKey(), getColorId(element.getValue()) };
+        long[] color = getColor(element.getValue());
+        return new long[] { element.getKey(), color[0] };
       }
     };
   }
@@ -282,7 +284,8 @@ public class ColoringManager implements AutoCloseable {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("ColorManager:\n");
-    String delim = "\tedges: {";
+    sb.append("\tedges: {");
+    String delim = "";
     Iterator<long[]> iterator = getIteratorOverColoredEdges();
     while (iterator.hasNext()) {
       long[] edgeColor = iterator.next();
