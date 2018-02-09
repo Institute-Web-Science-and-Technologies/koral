@@ -134,6 +134,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       // TODO remove
       System.out.println(
               "creation of edge coloring: " + (System.currentTimeMillis() - coloringStart));
+      sortedVertexList.delete();
       // TODO remove
       // createGraphChunkPerColor(colorManager, input, workingDir);
       // assign edges to graph chunks
@@ -194,6 +195,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     }
     // TODO remove
     System.out.println("writing chunks: " + (System.currentTimeMillis() - writeChunksStart));
+    edgeAssignment.delete();
 
     deleteFolder(internalWorkingDir);
     // TODO remove
