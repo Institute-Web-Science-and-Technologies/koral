@@ -1,11 +1,22 @@
 package de.uni_koblenz.west.koral.master.utils;
 
+import org.rocksdb.Options;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksIterator;
+
+import de.uni_koblenz.west.koral.common.utils.NumberConversion;
+
 import java.io.File;
-import java.util.HashMap;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -17,18 +28,18 @@ import java.util.Set;
  */
 public class ColoringManager implements AutoCloseable {
 
-  private File edge2colorFolder;
+  private final File edge2colorFolder;
 
-  private final Map<Long, Long> edge2color;
+  private final RocksDB edge2color;
 
-  private File colorsFolder;
+  private final File colorsFolder;
 
   /**
    * value % 2 == 1, color was recolored<br>
    * value % 2 == 0, size of color<br>
    * the actual colorId is retrieved by value&gt;&gt;&gt;1
    */
-  private final Map<Long, Long> colors;
+  private final RocksDB colors;
 
   private long nextColor;
 
@@ -37,11 +48,31 @@ public class ColoringManager implements AutoCloseable {
   private final long[] internalEdgeInfo;
 
   public ColoringManager(File internalWorkingDir, int numberOfOpenFiles) {
-    edge2color = new HashMap<>();
-    colors = new HashMap<>();
+    edge2colorFolder = new File(internalWorkingDir + File.separator + "edge2colorMap");
+    if (!edge2colorFolder.exists()) {
+      edge2colorFolder.mkdirs();
+    }
+    edge2color = createRocksDBMap(edge2colorFolder, numberOfOpenFiles / 2);
+    colorsFolder = new File(internalWorkingDir + File.separator + "colorsMap");
+    if (!colorsFolder.exists()) {
+      colorsFolder.mkdirs();
+    }
+    colors = createRocksDBMap(colorsFolder, numberOfOpenFiles / 2);
     nextColor = 1;
     internalEdgeInfo = new long[2];
     numberOfColors = 0;
+  }
+
+  private RocksDB createRocksDBMap(File mapFolder, int numberOfOpenFiles) {
+    Options options = new Options();
+    options.setCreateIfMissing(true);
+    options.setMaxOpenFiles(numberOfOpenFiles);
+    options.setWriteBufferSize(64 * 1024 * 1024);
+    try {
+      return RocksDB.open(options, mapFolder.getAbsolutePath());
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -66,48 +97,59 @@ public class ColoringManager implements AutoCloseable {
   }
 
   public void fillEdgeColor(long edge, long[] colorArray, int startIndex) {
-    Long color = edge2color.get(edge);
-    if (color == null) {
-      colorArray[startIndex] = 0;
-      colorArray[startIndex + 1] = 0;
-    } else {
-      long[] colorInfo = getColor(color);
-      if (colorInfo == null) {
-        throw new RuntimeException("The color c" + color + " is unknown.");
+    try {
+      // TODO use multi get
+      byte[] color = edge2color.get(NumberConversion.long2bytes(edge));
+      if (color == null) {
+        colorArray[startIndex] = 0;
+        colorArray[startIndex + 1] = 0;
+      } else {
+        long[] colorInfo = getColor(color);
+        if (colorInfo == null) {
+          throw new RuntimeException("The color c" + color + " is unknown.");
+        }
+        colorArray[startIndex] = colorInfo[0];
+        colorArray[startIndex + 1] = colorInfo[1];
       }
-      colorArray[startIndex] = colorInfo[0];
-      colorArray[startIndex + 1] = colorInfo[1];
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
     }
   }
 
-  private long[] getColor(Long colorId) {
-    Long size = colors.get(colorId);
-    if (size == null) {
-      return null;
-    }
-    Long previousColor = null;
-    Set<Long> recoloredColors = new HashSet<>();
-    while ((size.longValue() & 0x01L) == 1) {
-      // the color was recolored
-      previousColor = colorId;
-      colorId = size.longValue() >>> 1;
-      size = colors.get(colorId);
-      if (size == null) {
-        throw new RuntimeException("The recolored color c" + colorId + " is unknown.");
+  private long[] getColor(byte[] colorId) {
+    try {
+      byte[] sizeByte = colors.get(colorId);
+      if (sizeByte == null) {
+        return null;
       }
-      if ((size.longValue() & 0x01L) == 1) {
-        recoloredColors.add(previousColor);
+      byte[] previousColor = null;
+      Set<Long> recoloredColors = new HashSet<>();
+      long size = NumberConversion.bytes2long(sizeByte);
+      while ((size & 0x01L) == 1) {
+        // the color was recolored
+        previousColor = colorId;
+        colorId = NumberConversion.long2bytes(size >>> 1);
+        sizeByte = colors.get(colorId);
+        if (sizeByte == null) {
+          throw new RuntimeException("The recolored color c" + colorId + " is unknown.");
+        }
+        size = NumberConversion.bytes2long(sizeByte);
+        if ((size & 0x01L) == 1) {
+          recoloredColors.add(NumberConversion.bytes2long(previousColor));
+        }
       }
+      // shorten the search path for recolored edges,
+      // i.e., c1->c2->c3->c4 is shortened to c1->c4; c2->c4; c3->c4
+      for (Long recoloredColor : recoloredColors) {
+        recolorColor(recoloredColor, NumberConversion.bytes2long(colorId));
+      }
+      long[] color = internalEdgeInfo;
+      internalEdgeInfo[0] = NumberConversion.bytes2long(colorId);
+      internalEdgeInfo[1] = size >>> 1;
+      return color;
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
     }
-    // shorten the search path for recolored edges,
-    // i.e., c1->c2->c3->c4 is shortened to c1->c4; c2->c4; c3->c4
-    for (Long recoloredColor : recoloredColors) {
-      recolorColor(recoloredColor, colorId);
-    }
-    long[] color = internalEdgeInfo;
-    internalEdgeInfo[0] = colorId;
-    internalEdgeInfo[1] = size >>> 1;
-    return color;
   }
 
   /**
@@ -126,7 +168,11 @@ public class ColoringManager implements AutoCloseable {
     if (newColor == 0) {
       throw new RuntimeException("Attempt to create color c0.");
     }
-    colors.put(newColor, size << 1);
+    try {
+      colors.put(NumberConversion.long2bytes(newColor), NumberConversion.long2bytes(size << 1));
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void colorEdge(long edge, long colorId) {
@@ -141,7 +187,7 @@ public class ColoringManager implements AutoCloseable {
               + " but has already color c" + e[0][1] + ".");
     }
     // System.out.println(">>>>color e" + edge + "->c" + colorId);
-    long[] color = getColor(colorId);
+    long[] color = getColor(NumberConversion.long2bytes(colorId));
     if (color[0] != colorId) {
       throw new RuntimeException("Attempt to color edge e" + edge + " in the color c" + colorId
               + " which was already recolored to c" + color[0]);
@@ -156,7 +202,11 @@ public class ColoringManager implements AutoCloseable {
     if (color == 0) {
       throw new RuntimeException("Attempt to set color of edge e" + edge + " to c" + color + ".");
     }
-    edge2color.put(edge, color);
+    try {
+      edge2color.put(NumberConversion.long2bytes(edge), NumberConversion.long2bytes(color));
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void recolor(long oldColor, long oldColorSize, long newColor, long newColorSize) {
@@ -169,12 +219,12 @@ public class ColoringManager implements AutoCloseable {
       throw new RuntimeException("Attempt to recolor color c" + oldColor + " to color c0.");
     }
     // TODO remove
-    long ocSize = getColor(oldColor)[1];
+    long ocSize = getColor(NumberConversion.long2bytes(oldColor))[1];
     if (ocSize != oldColorSize) {
       throw new RuntimeException("Color c" + oldColor + " should have a size of " + oldColorSize
               + " but actually has a size of " + ocSize);
     }
-    ocSize = getColor(newColor)[1];
+    ocSize = getColor(NumberConversion.long2bytes(newColor))[1];
     if (ocSize != newColorSize) {
       throw new RuntimeException("Color c" + newColor + " should have a size of " + newColorSize
               + " but actually has a size of " + ocSize);
@@ -187,14 +237,19 @@ public class ColoringManager implements AutoCloseable {
     // System.out.println(this);
   }
 
-  private void recolorColor(long oldColor, long newColor) {
-    if (oldColor == 0) {
-      throw new RuntimeException("Attempt to recolor color c" + oldColor + ".");
+  private void recolorColor(long recoloredColor, long colorId) {
+    if (recoloredColor == 0) {
+      throw new RuntimeException("Attempt to recolor color c" + recoloredColor + ".");
     }
-    if (newColor == 0) {
-      throw new RuntimeException("Attempt to recolor color c" + oldColor + " to color c0.");
+    if (colorId == 0) {
+      throw new RuntimeException("Attempt to recolor color c" + recoloredColor + " to color c0.");
     }
-    colors.put(oldColor, (newColor << 1) | 0x01L);
+    try {
+      colors.put(NumberConversion.long2bytes(recoloredColor),
+              NumberConversion.long2bytes((colorId << 1) | 0x01L));
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public long getNumberOfColors() {
@@ -209,7 +264,11 @@ public class ColoringManager implements AutoCloseable {
   public Iterator<long[]> getIteratorOverAllColors() {
     return new Iterator<long[]>() {
 
-      private final Iterator<Entry<Long, Long>> iterator = colors.entrySet().iterator();
+      private final RocksIterator iterator;
+      {
+        iterator = colors.newIterator();
+        iterator.seekToFirst();
+      }
 
       private long[] next = getNext();
 
@@ -231,15 +290,16 @@ public class ColoringManager implements AutoCloseable {
       private long[] getNext() {
         long color = 0;
         long size = 1;
-        while (iterator.hasNext()) {
-          Entry<Long, Long> entry = iterator.next();
-          color = entry.getKey();
-          size = entry.getValue();
+        while (iterator.isValid()) {
+          color = NumberConversion.bytes2long(iterator.key());
+          size = NumberConversion.bytes2long(iterator.value());
+          iterator.next();
           if ((size & 0x01L) == 0) {
             size = size >>> 1;
             return new long[] { color, size };
           }
         }
+        iterator.close();
         return null;
       }
     };
@@ -251,11 +311,17 @@ public class ColoringManager implements AutoCloseable {
   public Iterator<long[]> getIteratorOverColoredEdges() {
     return new Iterator<long[]>() {
 
-      private final Iterator<Entry<Long, Long>> iterator = edge2color.entrySet().iterator();
+      private final RocksIterator iterator;
+      {
+        iterator = edge2color.newIterator();
+        iterator.seekToFirst();
+      }
+
+      private long[] next = getNext();
 
       @Override
       public boolean hasNext() {
-        return iterator.hasNext();
+        return next != null;
       }
 
       @Override
@@ -263,15 +329,72 @@ public class ColoringManager implements AutoCloseable {
         if (!hasNext()) {
           throw new NoSuchElementException();
         }
-        Entry<Long, Long> element = iterator.next();
-        long[] color = getColor(element.getValue());
-        return new long[] { element.getKey(), color[0] };
+        long[] n = next;
+        next = getNext();
+        return n;
+      }
+
+      private long[] getNext() {
+        long edge = 0;
+        byte[] colorId = null;
+        if (iterator.isValid()) {
+          edge = NumberConversion.bytes2long(iterator.key());
+          colorId = iterator.value();
+          iterator.next();
+          return new long[] { edge, getColor(colorId)[0] };
+        } else {
+          iterator.close();
+          return null;
+        }
       }
     };
   }
 
   @Override
   public void close() {
+    edge2color.close();
+    colors.close();
+    deleteFolder(edge2colorFolder);
+    deleteFolder(colorsFolder);
+  }
+
+  private void deleteFolder(File folder) {
+    if (!folder.exists()) {
+      return;
+    }
+    if (folder.isDirectory()) {
+      Path path = FileSystems.getDefault().getPath(folder.getAbsolutePath());
+      try {
+        Files.walkFileTree(path, new FileVisitor<Path>() {
+          @Override
+          public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                  throws IOException {
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                  throws IOException {
+            // here you have the files to process
+            file.toFile().delete();
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+            return FileVisitResult.TERMINATE;
+          }
+
+          @Override
+          public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            return FileVisitResult.CONTINUE;
+          }
+        });
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    folder.delete();
   }
 
   @Override
