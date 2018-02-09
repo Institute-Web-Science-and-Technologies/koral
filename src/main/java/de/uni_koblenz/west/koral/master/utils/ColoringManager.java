@@ -3,6 +3,7 @@ package de.uni_koblenz.west.koral.master.utils;
 import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -43,6 +44,10 @@ public class ColoringManager implements AutoCloseable {
 
   private long numberOfColors;
 
+  // FIXME reimplement without offset index
+  // reuse color id
+  // repaint will set the color array to oldColor->[newColor]
+
   public ColoringManager(File internalWorkingDir, int numberOfOpenFiles) {
     edge2offset = new HashMap<>();
     offset2color = new HashMap<>();
@@ -71,6 +76,20 @@ public class ColoringManager implements AutoCloseable {
     for (int i = 0; i < lastExclusiveIndex; i++) {
       edges[i][1] = getEdgeColor(edges[i][0]);
       edges[i][2] = getColorInformation(edges[i][1])[0];
+      // TODO remove
+      if (edges[i][0] == 12) {
+        // FIXME
+        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" + Arrays.toString(edges[i]));
+        System.out.println("edge e" + edges[i][0]);
+        System.out.println("offset " + getOffsetFromEdge(edges[i][0]));
+        System.out.println("colorID " + getColorId(getOffsetFromEdge(edges[i][0])));
+        System.out.println("color information "
+                + Arrays.toString(getColorInformation(getColorId(getOffsetFromEdge(edges[i][0])))));
+        System.out.println("edge2offset " + edge2offset.get(edges[i][0]));
+        System.out.println("offset2color " + offset2color.get(getOffsetFromEdge(edges[i][0])));
+        System.out.println("colors "
+                + Arrays.toString(colors.get(getColorId(getOffsetFromEdge(edges[i][0])))));
+      }
     }
   }
 
@@ -114,7 +133,7 @@ public class ColoringManager implements AutoCloseable {
     if (colorInfos == null) {
       return new long[2];
     } else {
-      return colorInfos;
+      return Arrays.copyOf(colorInfos, colorInfos.length);
     }
   }
 
@@ -133,10 +152,16 @@ public class ColoringManager implements AutoCloseable {
   }
 
   private void setOffsetInformation(long offset, long colorId) {
+    if (offset == 0) {
+      throw new RuntimeException("Try to set offset 0 to color c" + colorId + "!");
+    }
     offset2color.put(offset, colorId);
   }
 
   private void setColorInformation(long colorId, long size, long offset) {
+    if (colorId <= 0) {
+      throw new RuntimeException("Try to set information for color c" + offset + ".");
+    }
     long[] colorInfo = colors.get(colorId);
     if (colorInfo == null) {
       colorInfo = new long[] { size, offset };
@@ -162,7 +187,10 @@ public class ColoringManager implements AutoCloseable {
     numberOfColors--;
   }
 
+  public long edges;
+
   public void colorEdge(long edge, long colorId) {
+    edges++;
     // TODO remove
     // System.out.println(">>>>color e" + edge + "->c" + colorId);
     long[] color = getColorInformation(colorId);
@@ -176,10 +204,16 @@ public class ColoringManager implements AutoCloseable {
     // TODO remove
     // System.out.println(">>>>recolor c" + oldColor + "->c" + newColor);
     long oldColorOffset = getOffsetFromColor(oldColor);
+    if (oldColorOffset == 0) {
+      throw new RuntimeException("Old color c" + oldColor + " is unknown.");
+    }
     long newColorOffset = getOffsetFromColor(newColor);
+    if (newColorOffset == 0) {
+      throw new RuntimeException("New color c" + newColor + " is unknown.");
+    }
     setOffsetInformation(oldColorOffset, newColorOffset | 0x80_00_00_00_00_00_00_00L);
     setColorInformation(newColor, oldColorSize + newColorSize, 0);
-    deleteColor(oldColor);
+    // deleteColor(oldColor);
     // TODO remove
     // System.out.println(this);
   }
@@ -218,6 +252,9 @@ public class ColoringManager implements AutoCloseable {
    * @return Iterator over long[]{edgeId, colorId}
    */
   public Iterator<long[]> getIteratorOverColoredEdges() {
+    // TODO remove
+    System.out.println(">>>>edges called: " + edges);
+    System.out.println(">>>>edges known in color manager: " + edge2offset.size());
     return new Iterator<long[]>() {
 
       private final Iterator<Entry<Long, Long>> iterator = edge2offset.entrySet().iterator();
