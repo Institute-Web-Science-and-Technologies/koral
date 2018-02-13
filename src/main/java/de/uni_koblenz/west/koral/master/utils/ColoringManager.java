@@ -146,7 +146,6 @@ public class ColoringManager implements AutoCloseable {
       throw new RuntimeException("Edge e" + edge + " should be colored in c" + colorId
               + " but has already color c" + e[0][1] + ".");
     }
-    // System.out.println(">>>>color e" + edge + "->c" + colorId);
     long[] color = getColor(colorId);
     if (color[0] != colorId) {
       throw new RuntimeException("Attempt to color edge e" + edge + " in the color c" + colorId
@@ -154,8 +153,6 @@ public class ColoringManager implements AutoCloseable {
     }
     setEdgeColor(edge, color[0]);
     setColor(color[0], color[1] + 1);
-    // TODO remove
-    // System.out.println(this);
   }
 
   private void setEdgeColor(long edge, long color) {
@@ -166,8 +163,6 @@ public class ColoringManager implements AutoCloseable {
   }
 
   public void recolor(long oldColor, long oldColorSize, long newColor, long newColorSize) {
-    // TODO remove
-    // System.out.println(">>>>recolor c" + oldColor + "->c" + newColor);
     if (oldColor == 0) {
       throw new RuntimeException("Attempt to recolor color c" + oldColor + ".");
     }
@@ -188,9 +183,6 @@ public class ColoringManager implements AutoCloseable {
     recolorColor(oldColor, newColor);
     setColor(newColor, oldColorSize + newColorSize);
     numberOfColors--;
-    // TODO remove
-    // System.out.println(colors);
-    // System.out.println(this);
   }
 
   private void recolorColor(long recoloredColor, long colorId) {

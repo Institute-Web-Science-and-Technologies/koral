@@ -10,6 +10,7 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.LongOutputWriter;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.utils.ColoringManager;
 import de.uni_koblenz.west.koral.master.utils.EdgeArrayIterator;
@@ -55,10 +56,8 @@ import java.util.logging.Logger;
  */
 public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
-  // TODO adjust
   private static final int NUMBER_OF_CACHED_VERTICES = 0x10_00_00;
 
-  // TODO determine by available memory
   private static final int NUMBER_OF_CACHED_EDGES = 0x04_00_00_00;
 
   private static final int MAX_NUMBER_OF_OPEN_FILES = 100;
@@ -67,16 +66,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
   public GreedyEdgeColoringCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
     super(logger, measurementCollector);
-    // if (Runtime.getRuntime().maxMemory() == Long.MAX_VALUE) {
-    // NUMBER_OF_CACHED_EDGES = 0x04_00_00_00;
-    // } else {
-    // long allocatedMemory = Runtime.getRuntime().totalMemory() -
-    // Runtime.getRuntime().freeMemory();
-    // long presumableFreeMemory = Runtime.getRuntime().maxMemory() -
-    // allocatedMemory;
-    // NUMBER_OF_CACHED_EDGES = (int) (presumableFreeMemory / 8 / 2);
-    // }
-    // System.out.println("ram " + NUMBER_OF_CACHED_EDGES);
   }
 
   @Override
@@ -93,6 +82,12 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     File internalWorkingDir = new File(workingDir + File.separator + "edgeColoringCoverCreator");
     if (!internalWorkingDir.exists()) {
       internalWorkingDir.mkdirs();
+    }
+
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_COLORING_VERTEX_DEGREE_TRANSFORMATION_START,
+              System.currentTimeMillis());
     }
 
     // transform into vertex,outDegree,inDegree,outEdgeList,inEdgeList format
@@ -122,6 +117,15 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     // TODO remove
     System.out.println("sort by degree time: " + (System.currentTimeMillis() - sortStart));
 
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_COLORING_VERTEX_DEGREE_TRANSFORMATION_END,
+              System.currentTimeMillis());
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_COLORING_COLORING_CREATION_START,
+              System.currentTimeMillis());
+    }
+
     File edges2chunks = null;
     try (ColoringManager colorManager = new ColoringManager(internalWorkingDir,
             GreedyEdgeColoringCoverCreator.MAX_NUMBER_OF_OPEN_FILES / 2);) {
@@ -135,6 +139,19 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       System.out.println(
               "creation of edge coloring: " + (System.currentTimeMillis() - coloringStart));
       sortedVertexList.delete();
+
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_COVER_CREATION_COLORING_COLORING_CREATION_END,
+                System.currentTimeMillis());
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_COVER_CREATION_COLORING_NUMBER_OF_COLORS,
+                colorManager.getNumberOfColors());
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_COVER_CREATION_COLORING_EDGE_ASSIGNMENT_TRANSFORMATION_START,
+                System.currentTimeMillis());
+      }
+
       // TODO remove
       // createGraphChunkPerColor(colorManager, input, workingDir);
       // assign edges to graph chunks
@@ -169,6 +186,14 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     System.out.println("create sequence of chunk ids: "
             + (System.currentTimeMillis() - createAssignmentFileStart));
 
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_COLORING_EDGE_ASSIGNMENT_TRANSFORMATION_END,
+              System.currentTimeMillis());
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
+              System.currentTimeMillis());
+    }
+
     // iterate partitionIds and input in parallel to translate edgeId back into
     // triple
     // TODO remove
@@ -189,7 +214,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       if (chunkIterator.hasNext()) {
         throw new RuntimeException("There exist more chunk assignments than triples.");
       }
-      // TODO Auto-generated method stub
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -198,6 +222,11 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     edgeAssignment.delete();
 
     deleteFolder(internalWorkingDir);
+
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_COVER_CREATION_FILE_WRITE_END,
+              System.currentTimeMillis());
+    }
     // TODO remove
     long requiredTime = System.currentTimeMillis() - start;
     System.out.println("required time: " + requiredTime);
@@ -1337,7 +1366,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
   @Override
   public void close() {
-    // TODO Auto-generated method stub
     super.close();
   }
 

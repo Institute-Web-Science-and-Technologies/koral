@@ -144,6 +144,48 @@ public enum MeasurementType {
    * measured on master<br>
    * timestamp
    */
+  LOAD_GRAPH_COVER_CREATION_COLORING_VERTEX_DEGREE_TRANSFORMATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_COLORING_VERTEX_DEGREE_TRANSFORMATION_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_COLORING_COLORING_CREATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_COLORING_COLORING_CREATION_END,
+
+  /**
+   * measured on master<br>
+   * numberOfColors
+   */
+  LOAD_GRAPH_COVER_CREATION_COLORING_NUMBER_OF_COLORS,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_COLORING_EDGE_ASSIGNMENT_TRANSFORMATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_COLORING_EDGE_ASSIGNMENT_TRANSFORMATION_END,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
   LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
 
   /**
