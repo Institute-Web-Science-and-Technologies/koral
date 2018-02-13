@@ -463,6 +463,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     }
   }
 
+  // FIXME no vertexID
   private void createEdgeColoring(File sortedVertexList, ColoringManager colorManager,
           File workingDir, long numberOfEdges, int numberOfGraphChunks, int numberOfCachedEdges,
           int maxNumberOfOpenFiles) {
@@ -478,8 +479,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(sortedVertexList);
             LongIterator iterator = input.iterator();) {
       while (iterator.hasNext()) {
-        @SuppressWarnings("unused")
-        long vertexId = iterator.next();
         long outDegree = iterator.next();
         long inDegree = iterator.next();
         long degree = outDegree + inDegree;
@@ -811,7 +810,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
         private long[][] vertexHeaders = new long[numberOfCachedVerticesPerLevel > 0
                 ? numberOfCachedVerticesPerLevel
-                : numberOfCachedVertices][4];
+                : numberOfCachedVertices][3];
 
         private long[][] outEdges = new long[numberOfCachedVerticesPerLevel][];
 
@@ -835,20 +834,19 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           while ((nextIndex < vertexHeaders.length) && iterator.hasNext()) {
             vertexHeaders[nextIndex][0] = iterator.next();
             vertexHeaders[nextIndex][1] = iterator.next();
-            vertexHeaders[nextIndex][2] = iterator.next();
             if (output == null) {
-              vertexHeaders[nextIndex][3] = nextIndex;
+              vertexHeaders[nextIndex][2] = nextIndex;
               outEdges[nextIndex] = readEdges(outEdges[nextIndex], iterator,
-                      (int) vertexHeaders[nextIndex][1]);
+                      (int) vertexHeaders[nextIndex][0]);
               inEdges[nextIndex] = readEdges(inEdges[nextIndex], iterator,
-                      (int) vertexHeaders[nextIndex][2]);
+                      (int) vertexHeaders[nextIndex][1]);
             } else {
               // store edges in a separate file
-              vertexHeaders[nextIndex][3] = output.getPosition();
-              for (int i = 0; i < vertexHeaders[nextIndex][1]; i++) {
+              vertexHeaders[nextIndex][2] = output.getPosition();
+              for (int i = 0; i < vertexHeaders[nextIndex][0]; i++) {
                 output.writeLong(iterator.next());
               }
-              for (int i = 0; i < vertexHeaders[nextIndex][2]; i++) {
+              for (int i = 0; i < vertexHeaders[nextIndex][1]; i++) {
                 output.writeLong(iterator.next());
               }
             }
@@ -881,18 +879,17 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           for (int i = 0; i < nextIndex; i++) {
             output.writeLong(vertexHeaders[i][0]);
             output.writeLong(vertexHeaders[i][1]);
-            output.writeLong(vertexHeaders[i][2]);
             if (this.output == null) {
-              int edgeIndex = (int) vertexHeaders[i][3];
-              for (int j = 0; j < vertexHeaders[i][1]; j++) {
+              int edgeIndex = (int) vertexHeaders[i][2];
+              for (int j = 0; j < vertexHeaders[i][0]; j++) {
                 output.writeLong(outEdges[edgeIndex][j]);
               }
-              for (int j = 0; j < vertexHeaders[i][2]; j++) {
+              for (int j = 0; j < vertexHeaders[i][1]; j++) {
                 output.writeLong(inEdges[edgeIndex][j]);
               }
             } else {
               // the edges are stored in a file
-              output.writeLong(vertexHeaders[i][3]);
+              output.writeLong(vertexHeaders[i][2]);
             }
           }
         }
@@ -933,11 +930,10 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         @Override
         public long[] readNextElement(LongIterator iterator) {
           if (numberOfCachedVerticesPerLevel > 0) {
-            return new long[] { iterator.next(), iterator.next(), iterator.next() };
+            return new long[] { iterator.next(), iterator.next() };
           } else {
             // read the additional edge offset of the edge file
-            return new long[] { iterator.next(), iterator.next(), iterator.next(),
-                    iterator.next() };
+            return new long[] { iterator.next(), iterator.next(), iterator.next() };
           }
         }
 
@@ -948,30 +944,29 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
                   0); index >= 0; index = indicesOfSmallestElement.nextSetBit(index + 1)) {
             out.writeLong(elements[index][0]);
             out.writeLong(elements[index][1]);
-            out.writeLong(elements[index][2]);
             if (numberOfCachedVerticesPerLevel > 0) {
               // copy edge lists
-              for (int i = 0; i < elements[index][1]; i++) {
+              for (int i = 0; i < elements[index][0]; i++) {
                 out.writeLong(iterators[index].next());
               }
-              for (int i = 0; i < elements[index][2]; i++) {
+              for (int i = 0; i < elements[index][1]; i++) {
                 out.writeLong(iterators[index].next());
               }
             } else {
               if (output != out) {
                 // this is in intermediate merge step
-                out.writeLong(elements[index][3]);
+                out.writeLong(elements[index][2]);
               } else {
                 // this is the final output
                 // also add the edges from the separate edge list
                 if (edgeListInput == null) {
                   edgeListInput = new EncodedRandomAccessLongFileInputStream(edgeListFile);
                 }
-                edgeListInput.setPosition(elements[index][3]);
-                for (int i = 0; i < elements[index][1]; i++) {
+                edgeListInput.setPosition(elements[index][2]);
+                for (int i = 0; i < elements[index][0]; i++) {
                   out.writeLong(edgeListInput.readLong());
                 }
-                for (int i = 0; i < elements[index][2]; i++) {
+                for (int i = 0; i < elements[index][1]; i++) {
                   out.writeLong(edgeListInput.readLong());
                 }
               }
@@ -1043,12 +1038,12 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
               vertexIncidentEdgesFile);) {
         iterator = input.iterator();
         while (iterator.hasNext()) {
+          @SuppressWarnings("unused")
           long vertexId = iterator.next();
           long outDegree = iterator.next();
           long inDegree = iterator.next();
           int level = getInsertionLevel(outDegree + inDegree, numberOfCachedVertices,
                   maxNumberOfOpenFiles);
-          outputs[level].writeLong(vertexId);
           outputs[level].writeLong(outDegree);
           outputs[level].writeLong(inDegree);
           for (int i = 0; i < outDegree; i++) {

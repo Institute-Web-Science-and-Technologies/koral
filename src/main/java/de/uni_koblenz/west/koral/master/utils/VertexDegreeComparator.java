@@ -24,27 +24,21 @@ public class VertexDegreeComparator implements Comparator<long[]> {
   }
 
   private int internalCompare(long[] o1, long[] o2) {
-    long degreeComparison = (o1[1] + o1[2]) - (o2[1] + o2[2]);
+    long degreeComparison = (o1[0] + o1[1]) - (o2[0] + o2[1]);
     if (degreeComparison < 0) {
       return -1;
     }
     if (degreeComparison > 0) {
       return 1;
     } else {
-      if (o1[0] < o2[0]) {
-        return -1;
-      } else if (o1[0] > o2[0]) {
-        return 1;
-      } else {
-        return 0;
-      }
+      return 0;
     }
   }
 
   public static VertexDegreeComparator getComparator(boolean ascendingOrder) {
     if (VertexDegreeComparator.comparators[ascendingOrder ? 0 : 1] == null) {
-      VertexDegreeComparator.comparators[ascendingOrder ? 0
-              : 1] = new VertexDegreeComparator(ascendingOrder);
+      VertexDegreeComparator.comparators[ascendingOrder ? 0 : 1] = new VertexDegreeComparator(
+              ascendingOrder);
     }
     return VertexDegreeComparator.comparators[ascendingOrder ? 0 : 1];
   }
