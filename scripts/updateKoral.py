@@ -19,7 +19,8 @@ def updateKoral(branch=-1):
           run("git checkout " + branch)
           run("git pull")
         run("mvn clean package")
-    put("koralConfig.xml","koralConfig.xml")
+    run("cp koral/target/koral.jar koral.jar")
+    #put("koralConfig.xml","koralConfig.xml")
 
 @roles('master','slaves')
 def updateConfig(configFile=-1):
