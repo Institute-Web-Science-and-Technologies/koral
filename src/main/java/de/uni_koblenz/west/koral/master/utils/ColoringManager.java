@@ -139,13 +139,13 @@ public class ColoringManager implements AutoCloseable {
     if (colorId == 0) {
       throw new RuntimeException("Attempt to set color of edge e" + edge + " to c" + colorId + ".");
     }
-    // TODO remove
-    long[][] e = new long[][] { { edge, 0, 0 } };
-    fillColorInformation(e);
-    if ((e[0][1] != colorId) && (e[0][1] != 0)) {
-      throw new RuntimeException("Edge e" + edge + " should be colored in c" + colorId
-              + " but has already color c" + e[0][1] + ".");
-    }
+    // long[][] e = new long[][] { { edge, 0, 0 } };
+    // fillColorInformation(e);
+    // if ((e[0][1] != colorId) && (e[0][1] != 0)) {
+    // throw new RuntimeException("Edge e" + edge + " should be colored in c" +
+    // colorId
+    // + " but has already color c" + e[0][1] + ".");
+    // }
     long[] color = getColor(colorId);
     if (color[0] != colorId) {
       throw new RuntimeException("Attempt to color edge e" + edge + " in the color c" + colorId
@@ -169,17 +169,18 @@ public class ColoringManager implements AutoCloseable {
     if (newColor == 0) {
       throw new RuntimeException("Attempt to recolor color c" + oldColor + " to color c0.");
     }
-    // TODO remove
-    long ocSize = getColor(oldColor)[1];
-    if (ocSize != oldColorSize) {
-      throw new RuntimeException("Color c" + oldColor + " should have a size of " + oldColorSize
-              + " but actually has a size of " + ocSize);
-    }
-    ocSize = getColor(newColor)[1];
-    if (ocSize != newColorSize) {
-      throw new RuntimeException("Color c" + newColor + " should have a size of " + newColorSize
-              + " but actually has a size of " + ocSize);
-    }
+    // long ocSize = getColor(oldColor)[1];
+    // if (ocSize != oldColorSize) {
+    // throw new RuntimeException("Color c" + oldColor + " should have a size of
+    // " + oldColorSize
+    // + " but actually has a size of " + ocSize);
+    // }
+    // ocSize = getColor(newColor)[1];
+    // if (ocSize != newColorSize) {
+    // throw new RuntimeException("Color c" + newColor + " should have a size of
+    // " + newColorSize
+    // + " but actually has a size of " + ocSize);
+    // }
     recolorColor(oldColor, newColor);
     setColor(newColor, oldColorSize + newColorSize);
     numberOfColors--;
