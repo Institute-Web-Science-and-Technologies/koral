@@ -151,7 +151,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
                 MeasurementType.LOAD_GRAPH_COVER_CREATION_COLORING_EDGE_ASSIGNMENT_TRANSFORMATION_START,
                 System.currentTimeMillis());
       }
-
       // TODO remove
       // createGraphChunkPerColor(colorManager, input, workingDir);
       // assign edges to graph chunks
@@ -463,11 +462,11 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     }
   }
 
-  // FIXME no vertexID
   private void createEdgeColoring(File sortedVertexList, ColoringManager colorManager,
           File workingDir, long numberOfEdges, int numberOfGraphChunks, int numberOfCachedEdges,
           int maxNumberOfOpenFiles) {
-    long maxNumberOfEdgesPerColour = numberOfEdges / numberOfGraphChunks;
+    // FIXME change size
+    long maxNumberOfEdgesPerColour = ((numberOfEdges / numberOfGraphChunks) * 3) / 10;
     long maxInMemoryEdgeNumber = numberOfCachedEdges / 3;
     if (maxInMemoryEdgeNumber > (65536 / 3)) {
       maxInMemoryEdgeNumber = 65536 / 3;
