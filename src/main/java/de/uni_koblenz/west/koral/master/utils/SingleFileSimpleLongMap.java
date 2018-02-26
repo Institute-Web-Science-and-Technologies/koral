@@ -95,8 +95,10 @@ public class SingleFileSimpleLongMap extends CachedSimpleLongMap {
 
         private void getNext() {
           try {
-            next = map.readLong();
-            index++;
+            do {
+              next = map.readLong();
+              index++;
+            } while (!isZeroAllowed && (next == 0));
           } catch (IOException e) {
             index = -1;
           }
