@@ -21,20 +21,20 @@ import java.util.Set;
  */
 public class GraphCoverVisualizer {
 
-  private static final String[] COLORS = { "black", "blue", "lime", "aliceblue", "antiquewhite",
-          "aqua", "aquamarine", "azure", "beige", "bisque", "blanchedalmond", "blueviolet", "brown",
-          "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue",
-          "cornsilk", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray",
-          "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange",
-          "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray",
-          "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray",
-          "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia",
-          "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow",
-          "honeydew", "hotpink", "indianred", "indigo", "ivory", "khaki", "lavender",
-          "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan",
-          "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink",
+  private static final String[] COLORS = { "gray", "blue", "greenyellow", "aliceblue",
+          "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black",
+          "blanchedalmond", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse",
+          "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "cyan", "darkblue",
+          "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki",
+          "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon",
+          "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise",
+          "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick",
+          "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod",
+          "grey", "green", "honeydew", "hotpink", "indianred", "indigo", "ivory", "khaki",
+          "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral",
+          "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink",
           "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey",
-          "lightsteelblue", "lightyellow", "limegreen", "linen", "magenta", "maroon",
+          "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon",
           "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen",
           "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred",
           "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace",
@@ -135,10 +135,9 @@ public class GraphCoverVisualizer {
   }
 
   private void executeDot(File outputFile, String format) throws IOException {
-    ProcessBuilder pb = new ProcessBuilder("neato", "-T", format, "-O",
-            outputFile.getAbsolutePath());
-    // ProcessBuilder pb = new ProcessBuilder("dot", "-T", format, "-O",
+    // ProcessBuilder pb = new ProcessBuilder("neato", "-T", format, "-O",
     // outputFile.getAbsolutePath());
+    ProcessBuilder pb = new ProcessBuilder("dot", "-T", format, "-O", outputFile.getAbsolutePath());
     Process process = pb.start();
     try {
       process.waitFor();

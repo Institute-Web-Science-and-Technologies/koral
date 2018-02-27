@@ -62,6 +62,8 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
   private static final int MAX_NUMBER_OF_OPEN_FILES = 100;
 
+  private static final double COLOR_SIZE_FACTOR = 0.3;
+
   private long numberOfEdges = 0;
 
   public GreedyEdgeColoringCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
@@ -465,8 +467,8 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
   private void createEdgeColoring(File sortedVertexList, ColoringManager colorManager,
           File workingDir, long numberOfEdges, int numberOfGraphChunks, int numberOfCachedEdges,
           int maxNumberOfOpenFiles) {
-    // FIXME change size
-    long maxNumberOfEdgesPerColour = ((numberOfEdges / numberOfGraphChunks) * 3) / 10;
+    long maxNumberOfEdgesPerColour = (long) ((numberOfEdges / numberOfGraphChunks)
+            * GreedyEdgeColoringCoverCreator.COLOR_SIZE_FACTOR);
     long maxInMemoryEdgeNumber = numberOfCachedEdges / 3;
     if (maxInMemoryEdgeNumber > (65536 / 3)) {
       maxInMemoryEdgeNumber = 65536 / 3;
@@ -477,6 +479,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     long[][] edges = new long[1][3];
     try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(sortedVertexList);
             LongIterator iterator = input.iterator();) {
+      long[] outDegreeColor = new long[2];
       while (iterator.hasNext()) {
         long outDegree = iterator.next();
         long inDegree = iterator.next();
@@ -489,18 +492,43 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
             edges[i][0] = iterator.next();
           }
           colorManager.fillColorInformation(edges);
+          for (int i = 0; i < degree; i++) {
+            edges[i][0] <<= 1;
+            if (i < outDegree) {
+              edges[i][0] |= 0x01L;
+            }
+          }
           Arrays.sort(edges, new FixedSizeLongArrayComparator(false, 2, 1, 0));
+          for (long[] edge : edges) {
+            if ((edge[1] != 0) && ((edge[2] + outDegree) <= maxNumberOfEdgesPerColour)) {
+              outDegreeColor[0] = edge[1];
+              outDegreeColor[1] = edge[2];
+              break;
+            }
+          }
+          if ((outDegreeColor[0] == 0) && (outDegree > 0)) {
+            outDegreeColor = colorManager.createNewColor();
+          }
+          outDegreeColor[1] += outDegree;
           try (EdgeIterator iter = new EdgeArrayIterator(edges);) {
-            colourEdges(iter, colorManager, maxNumberOfEdgesPerColour);
+            colourEdges(iter, outDegreeColor, colorManager, maxNumberOfEdgesPerColour);
           }
         } else {
           edges = null;
-          File edgeColors = getEdgeColors(iterator, outDegree, inDegree, colorManager, workingDir,
-                  (int) maxInMemoryEdgeNumber, (maxNumberOfOpenFiles / 2) - 1);
+          File edgeColors = getEdgeColors(iterator, outDegree, inDegree, outDegreeColor,
+                  colorManager, workingDir, (int) maxInMemoryEdgeNumber,
+                  (maxNumberOfOpenFiles / 2) - 1, maxNumberOfEdgesPerColour);
+          if ((outDegreeColor[0] == 0) && (outDegree > 0)) {
+            outDegreeColor = colorManager.createNewColor();
+          }
+          outDegreeColor[1] += outDegree;
           try (EdgeIterator iter = new EdgeFileIterator(edgeColors);) {
-            colourEdges(iter, colorManager, maxNumberOfEdgesPerColour);
+            colourEdges(iter, outDegreeColor, colorManager, maxNumberOfEdgesPerColour);
           }
           edgeColors.delete();
+        }
+        for (int i = 0; i < outDegreeColor.length; i++) {
+          outDegreeColor[i] = 0;
         }
       }
     } catch (IOException e) {
@@ -509,8 +537,9 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
   }
 
   private File getEdgeColors(LongIterator iterator, long outDegree, long inDegree,
-          ColoringManager colorManager, File workingDir, int maxInMemoryEdgeNumber,
-          int maxNumberOfOpenFiles) throws IOException {
+          long[] outDegreeColor, ColoringManager colorManager, File workingDir,
+          int maxInMemoryEdgeNumber, int maxNumberOfOpenFiles, long maxNumberOfEdgesPerColour)
+          throws IOException {
     try (InitialChunkProducer producer = new InitialChunkProducer() {
 
       private long remainingNumberOfEdgesToRead;
@@ -526,12 +555,29 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           remainingNumberOfEdgesToRead = outDegree + inDegree;
         }
         nextIndex = 0;
+        int numberOfOutDegreeEdges = 0;
         while ((remainingNumberOfEdgesToRead > 0) && (nextIndex < cachedEdges.length)) {
           cachedEdges[nextIndex][0] = iterator.next();
+          if (remainingNumberOfEdgesToRead > inDegree) {
+            numberOfOutDegreeEdges++;
+          }
           nextIndex++;
           remainingNumberOfEdgesToRead--;
         }
         colorManager.fillColorInformation(cachedEdges, nextIndex);
+        for (long[] edge : cachedEdges) {
+          if ((edge[1] != 0) && ((edge[2] + outDegree) <= maxNumberOfEdgesPerColour)) {
+            if ((outDegreeColor[0] == 0) || (edge[2] > outDegreeColor[1])) {
+              outDegreeColor[0] = edge[1];
+              outDegreeColor[1] = edge[2];
+            }
+          }
+          edge[0] <<= 1;
+          if (numberOfOutDegreeEdges > 0) {
+            edge[0] |= 0x01L;
+          }
+          numberOfOutDegreeEdges--;
+        }
       }
 
       @Override
@@ -625,7 +671,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     }
   }
 
-  private void colourEdges(EdgeIterator edges, ColoringManager colorManager,
+  private void colourEdges(EdgeIterator edges, long[] outDegreeColor, ColoringManager colorManager,
           long maxNumberOfEdgesPerColour) {
     /*
      * color[0] = colorId; color[1] = frequency
@@ -633,17 +679,29 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
     List<long[]> colorCache = new LinkedList<>();
     Map<Long, long[]> recoloring = new HashMap<>();
     long[] edge = null;
+    boolean isOutEdge = true;
     // iterate over all colored edges
     while (((edge == null) || (edge[1] != 0)) && edges.hasNext()) {
       // read next edge
       edge = edges.next();
+      isOutEdge = (edge[0] & 0x01L) == 1;
+      edge[0] >>>= 1;
       if (edge[1] == 0) {
         break;
+      }
+      if (isOutEdge) {
+        if (edge[1] != outDegreeColor[0]) {
+          colorManager.changeColor(edge[0], edge[1], outDegreeColor[0]);
+        }
+        continue;
       }
       if (edges instanceof EdgeArrayIterator) {
         updateColor(recoloring, edge);
       } else {
         colorManager.fillEdgeColor(edge[0], edge, 1);
+      }
+      if (edge[1] == outDegreeColor[0]) {
+        edge[2] = outDegreeColor[1];
       }
       if (edge[2] == maxNumberOfEdgesPerColour) {
         // the edge is full, thus it cannot be used for anything
@@ -663,6 +721,12 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
               colorManager.recolor(edge[1], edge[2], color[0], color[1]);
               color[1] += edge[2];
               joinedColor = color;
+              if (joinedColor[0] == outDegreeColor[0]) {
+                outDegreeColor[1] = joinedColor[1];
+              } else if (edge[1] == outDegreeColor[0]) {
+                outDegreeColor[0] = joinedColor[0];
+                outDegreeColor[1] = joinedColor[1];
+              }
               if (edges instanceof EdgeArrayIterator) {
                 addRecoloringEntry(recoloring, joinedColor, edge[1]);
               }
@@ -689,35 +753,25 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
       }
     }
     recoloring = null;
+    boolean isOutColorCached = false;
+    for (long[] color : colorCache) {
+      if (color[0] == outDegreeColor[0]) {
+        isOutColorCached = true;
+        break;
+      }
+    }
+    if (!isOutColorCached && (outDegreeColor[0] != 0)) {
+      colorCache.add(outDegreeColor);
+    }
     // sort colors by frequency
     Collections.sort(colorCache, new FixedSizeLongArrayComparator(false, 1));
     // iterate over all uncolored edges
     long[] previousEdge = null;
     if ((edge != null) && (edge[1] == 0)) {
       long[] color = null;
-      if (colorCache.isEmpty()) {
-        // create a new color
-        color = colorManager.createNewColor();
-        colorCache.add(color);
+      if (isOutEdge) {
+        colorManager.colorEdge(edge[0], outDegreeColor[0]);
       } else {
-        // use largest color to color the new edge
-        color = colorCache.get(0);
-      }
-      colorManager.colorEdge(edge[0], color[0]);
-      color[1]++;
-      if (color[1] >= maxNumberOfEdgesPerColour) {
-        // the color is full and cannot be used any more
-        colorCache.remove(color);
-      }
-      while (edges.hasNext()) {
-        // read next edge
-        previousEdge = edge;
-        edge = edges.next();
-        if (previousEdge[0] == edge[0]) {
-          // this is a self-loop
-          continue;
-        }
-        color = null;
         if (colorCache.isEmpty()) {
           // create a new color
           color = colorManager.createNewColor();
@@ -728,9 +782,45 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         }
         colorManager.colorEdge(edge[0], color[0]);
         color[1]++;
+        if (outDegreeColor[0] == color[0]) {
+          outDegreeColor[1]++;
+        }
         if (color[1] >= maxNumberOfEdgesPerColour) {
           // the color is full and cannot be used any more
           colorCache.remove(color);
+        }
+      }
+      while (edges.hasNext()) {
+        // read next edge
+        previousEdge = edge;
+        edge = edges.next();
+        isOutEdge = (edge[0] & 0x01L) == 1;
+        edge[0] >>>= 1;
+        if (previousEdge[0] == edge[0]) {
+          // this is a self-loop
+          continue;
+        }
+        color = null;
+        if (isOutEdge) {
+          colorManager.colorEdge(edge[0], outDegreeColor[0]);
+        } else {
+          if (colorCache.isEmpty()) {
+            // create a new color
+            color = colorManager.createNewColor();
+            colorCache.add(color);
+          } else {
+            // use largest color to color the new edge
+            color = colorCache.get(0);
+          }
+          colorManager.colorEdge(edge[0], color[0]);
+          color[1]++;
+          if (outDegreeColor[0] == color[0]) {
+            outDegreeColor[1]++;
+          }
+          if (color[1] >= maxNumberOfEdgesPerColour) {
+            // the color is full and cannot be used any more
+            colorCache.remove(color);
+          }
         }
       }
     }

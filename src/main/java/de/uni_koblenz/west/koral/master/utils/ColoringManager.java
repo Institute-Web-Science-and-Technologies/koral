@@ -155,6 +155,26 @@ public class ColoringManager implements AutoCloseable {
     setColor(color[0], color[1] + 1);
   }
 
+  public void changeColor(long edge, long oldColorId, long newColorId) {
+    if (oldColorId == 0) {
+      throw new RuntimeException(
+              "Attempt to change color of edge e" + edge + " from c" + oldColorId + ".");
+    }
+    if (newColorId == 0) {
+      throw new RuntimeException(
+              "Attempt to change color of edge e" + edge + " to c" + newColorId + ".");
+    }
+    long[] oldColor = getColor(oldColorId);
+    oldColor[1]--;
+    setColor(oldColor[0], oldColor[1]);
+    if (oldColor[1] == 0) {
+      numberOfColors--;
+    }
+    long[] newColor = getColor(newColorId);
+    setEdgeColor(edge, newColor[0]);
+    setColor(newColor[0], newColor[1] + 1);
+  }
+
   private void setEdgeColor(long edge, long color) {
     if (color == 0) {
       throw new RuntimeException("Attempt to set color of edge e" + edge + " to c" + color + ".");
@@ -163,26 +183,32 @@ public class ColoringManager implements AutoCloseable {
   }
 
   public void recolor(long oldColor, long oldColorSize, long newColor, long newColorSize) {
+    if (oldColor == newColor) {
+      throw new RuntimeException(
+              "Attempt to recolor color c" + oldColor + " to color c" + newColor + ".");
+    }
     if (oldColor == 0) {
       throw new RuntimeException("Attempt to recolor color c" + oldColor + ".");
     }
     if (newColor == 0) {
       throw new RuntimeException("Attempt to recolor color c" + oldColor + " to color c0.");
     }
-    // long ocSize = getColor(oldColor)[1];
-    // if (ocSize != oldColorSize) {
-    // throw new RuntimeException("Color c" + oldColor + " should have a size of
-    // " + oldColorSize
-    // + " but actually has a size of " + ocSize);
-    // }
-    // ocSize = getColor(newColor)[1];
-    // if (ocSize != newColorSize) {
-    // throw new RuntimeException("Color c" + newColor + " should have a size of
-    // " + newColorSize
-    // + " but actually has a size of " + ocSize);
-    // }
-    recolorColor(oldColor, newColor);
-    setColor(newColor, oldColorSize + newColorSize);
+    long newSize = 0;
+    long[] oldColorInfo = getColor(oldColor);
+    if (oldColorInfo[0] != oldColor) {
+      throw new RuntimeException(
+              "Old color c" + oldColor + " was already recolored to " + oldColorInfo[0]);
+    }
+    newSize = oldColorInfo[1];
+    long[] newColorInfo = getColor(newColor);
+    if (newColorInfo[0] != newColor) {
+      throw new RuntimeException(
+              "New color c" + newColor + " was already recolored to " + newColorInfo[0]);
+    }
+    newSize += newColorInfo[1];
+    long newColor2 = newColorInfo[0];
+    recolorColor(oldColor, newColor2);
+    setColor(newColor2, newSize);
     numberOfColors--;
   }
 
@@ -232,7 +258,7 @@ public class ColoringManager implements AutoCloseable {
         long[] next = null;
         while (iterator.hasNext()) {
           next = iterator.next();
-          if ((next[1] & 0x01L) == 0) {
+          if ((next[1] != 0) && ((next[1] & 0x01L) == 0)) {
             return new long[] { next[0], next[1] >>> 1 };
           }
         }
