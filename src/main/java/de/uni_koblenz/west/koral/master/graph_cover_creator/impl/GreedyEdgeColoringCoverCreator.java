@@ -62,7 +62,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
 
   private static final int MAX_NUMBER_OF_OPEN_FILES = 100;
 
-  private static final double COLOR_SIZE_FACTOR = 0.3;
+  private static final double COLOR_SIZE_FACTOR = 0.05;
 
   private long numberOfEdges = 0;
 
