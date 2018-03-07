@@ -86,11 +86,8 @@ public class GraphStatistics implements Closeable {
 
   public void count(long subject, long property, long object, int chunk) {
     database.incrementSubjectCount(subject, chunk);
-    database.incrementRessourceOccurrences(subject, chunk);
     database.incrementPropertyCount(property, chunk);
-    database.incrementRessourceOccurrences(property, chunk);
     database.incrementObjectCount(object, chunk);
-    database.incrementRessourceOccurrences(object, chunk);
     database.incrementNumberOfTriplesPerChunk(chunk);
   }
 

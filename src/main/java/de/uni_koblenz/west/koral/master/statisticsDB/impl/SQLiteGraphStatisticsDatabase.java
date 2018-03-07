@@ -152,7 +152,6 @@ public class SQLiteGraphStatisticsDatabase implements GraphStatisticsDatabase {
     increment(object, updateStatistics[(3 * chunk) + 2], insertStatistics[(3 * chunk) + 2]);
   }
 
-  @Override
   public void incrementRessourceOccurrences(long resource, int chunk) {
     startTransaction();
     increment(resource, updateStatistics[updateStatistics.length - 1],
