@@ -53,7 +53,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			this.position = position;
 		}
 
-		int position() {
+		public int position() {
 			return position;
 		}
 	}
@@ -110,11 +110,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	}
 
-	@Override
-	public void incrementRessourceOccurrences(long resource, int chunk) {
-		throw new UnsupportedOperationException("Deprecated");
-	}
-
 	private void incrementOccurences(long resource, ResourceType resourceType, int chunk) {
 
 	}
@@ -168,6 +163,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				// Values are in extra file
 				// Extract data bytes as offset
 				long extraOffset = NumberConversion.bytes2long(row, ROW_METADATA_LENGTH);
+				// TODO: extra file may be null/needs to be opened
 				RandomAccessFile extra = statisticsExtra.get(row[0]);
 				extra.seek(extraOffset);
 				extra.readFully(dataBytes);
