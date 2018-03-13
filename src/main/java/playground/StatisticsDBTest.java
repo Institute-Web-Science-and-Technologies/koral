@@ -3,6 +3,7 @@ package playground;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 
@@ -34,7 +35,7 @@ public class StatisticsDBTest {
 				FileUtils.cleanDirectory(workingDir);
 			}
 			if (masterDir.exists()) {
-				FileUtils.cleanDirectory(masterDir);
+//				FileUtils.cleanDirectory(masterDir);
 			}
 			if (slaveDir.exists()) {
 				FileUtils.cleanDirectory(slaveDir);
@@ -45,7 +46,7 @@ public class StatisticsDBTest {
 		}
 		workingDir.mkdir();
 
-		short numberOfChunks = 4;
+		short numberOfChunks = 40;
 
 		File inputFile = new File(args[0]);
 		Configuration conf = new Configuration();
@@ -53,23 +54,35 @@ public class StatisticsDBTest {
 		GraphCoverCreator coverCreator = new HashCoverCreator(null, null);
 
 		try (DictionaryEncoder encoder = new DictionaryEncoder(conf, null, null);) {
+			System.out.println("Encoding...");
 			File encodedInput = encoder.encodeOriginalGraphFiles(
 					inputFile.isDirectory() ? inputFile.listFiles(new GraphFileFilter()) : new File[] { inputFile },
 					workingDir, coverCreator.getRequiredInputEncoding(), numberOfChunks);
 
+			System.out.println("Creating Graph Cover...");
 			File[] graphCover = coverCreator.createGraphCover(encoder, encodedInput, workingDir, numberOfChunks);
 			coverCreator.close();
 
+			System.out.println("Encode graph chunks...");
 			File[] encodedFiles = encoder.encodeGraphChunksCompletely(graphCover, workingDir,
 					coverCreator.getRequiredInputEncoding());
 
+			System.out.println("Collecting Statistics...");
 			GraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true),
 					numberOfChunks);
 			try (GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);) {
+				long start = System.currentTimeMillis();
 				statistics.collectStatistics(encodedFiles);
-				System.out.println(statisticsDB);
+				long time = System.currentTimeMillis() - start;
+				String timeFormatted = String.format("%d min, %d sec, %d ms", TimeUnit.MILLISECONDS.toMinutes(time),
+						TimeUnit.MILLISECONDS.toSeconds(time)
+								- TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(time)),
+						time - TimeUnit.SECONDS.toMillis(TimeUnit.MILLISECONDS.toSeconds(time)));
+//				System.out.println(statisticsDB);
+				System.out.println("Collecting Statistics took " + timeFormatted);
 			}
 		}
+		System.out.println("Finished.");
 
 	}
 
