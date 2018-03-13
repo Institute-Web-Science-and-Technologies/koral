@@ -37,32 +37,98 @@ public class FileManager {
 		}
 	}
 
+	/**
+	 * Writes a row into the index file.
+	 *
+	 * @param rowId
+	 *            Which row will be (over-)written
+	 * @param row
+	 *            The bytes of the row, its full length will be written
+	 * @throws IOException
+	 */
 	void writeIndexRow(long rowId, byte[] row) throws IOException {
 		writeRow(index, rowId, row);
 	}
 
+	/**
+	 * Retrieves a row from the index file.
+	 *
+	 * @param rowId
+	 *            Which row to read
+	 * @param rowLength
+	 *            How long a row in the index file is in bytes
+	 * @return The read bytes, with a length of rowLength
+	 * @throws IOException
+	 */
 	byte[] readIndexRow(long rowId, int rowLength) throws IOException {
 		return readRow(index, rowId, rowLength);
 	}
 
+	/**
+	 * Writes a *new* row into an extra file. The optimal offset/row id will be computed and returned afterwards.
+	 *
+	 * @param fileId
+	 *            Which file will be updated
+	 * @param row
+	 *            The row data, its full length will be written
+	 * @return The row id where the row was written into
+	 * @throws IOException
+	 */
 	long writeExternalRow(long fileId, byte[] row) throws IOException {
 		long rowId = fileSpaceIndex.getFreeRow(fileId);
-		RandomAccessFile extraFile = getExtraFile(fileId, true);
-		writeRow(extraFile, rowId, row);
+		writeExternalRow(fileId, rowId, row);
 		return rowId;
 	}
 
+	/**
+	 * Writes a row into an extra file, with an already specified row id. For inserting a new entry, use
+	 * {@link #writeExternalRow(long, byte[])}.
+	 *
+	 * @param fileId
+	 *            Which file to update
+	 * @param rowId
+	 *            Which row to write
+	 * @param row
+	 *            The row data, its full length will be written
+	 * @throws IOException
+	 */
+	void writeExternalRow(long fileId, long rowId, byte[] row) throws IOException {
+		RandomAccessFile extraFile = getExtraFile(fileId, true);
+		writeRow(extraFile, rowId, row);
+	}
+
+	/**
+	 * Retrieves a row of an extra file.
+	 *
+	 * @param fileId
+	 *            Which extra file to read from
+	 * @param rowId
+	 *            Which row to read
+	 * @param rowLength
+	 *            How long the row is in bytes
+	 * @return The read bytes with a length of rowLength
+	 * @throws IOException
+	 */
 	byte[] readExternalRow(long fileId, long rowId, int rowLength) throws IOException {
 		RandomAccessFile extraFile = getExtraFile(fileId, false);
 		return readRow(extraFile, rowId, rowLength);
 	}
 
+	/**
+	 * Removes a row from an extra file. Internally, it will only be marked as deleted and might be overwritten later
+	 * with a new row.
+	 *
+	 * @param fileId
+	 *            In which file the row is located
+	 * @param rowId
+	 *            Which row to remove
+	 */
 	void deleteExternalRow(long fileId, long rowId) {
 		fileSpaceIndex.release(fileId, fileId);
 	}
 
 	/**
-	 * Retrieves a row from <code>file</code>.
+	 * Retrieves a row from <code>file</code>. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param file
 	 *            The RandomAccessFile that will be read
@@ -156,6 +222,9 @@ public class FileManager {
 		return extra;
 	}
 
+	/**
+	 * @return The length of the index/main file, measured in bytes.
+	 */
 	long getIndexFileLength() {
 		try {
 			return index.length();

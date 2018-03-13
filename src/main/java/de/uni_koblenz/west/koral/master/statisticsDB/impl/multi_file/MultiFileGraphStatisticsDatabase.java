@@ -112,9 +112,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private void incrementOccurences(long resourceId, ResourceType resourceType, int chunk) {
 		try {
 			boolean rowFound = loadRow(resourceId);
-			if (resourceId == 192) {
-				System.out.println();
-			}
 			if (!rowFound) {
 				byte[] row = rowManager.create(resourceType, chunk);
 				fileManager.writeIndexRow(resourceId, row);
@@ -125,21 +122,30 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			rowManager.incrementOccurence(resourceType, chunk);
 			if (!rowManager.isDataExternal()) {
 				if (rowManager.isTooLongForMain()) {
-					fileManager.writeExternalRow(rowManager.getFileId(), rowManager.getDataBytes());
-					rowManager.updateRowExtraOffset(extraFileRowId);
+					long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(),
+							rowManager.getDataBytes());
+					Logger.log("I->E: " + Arrays.toString(rowManager.getDataBytes()));
+					rowManager.updateRowExtraOffset(newExtraFileRowId);
 				} else {
 					rowManager.mergeDataBytesIntoRow();
 				}
 			} else {
 				long fileIdWrite = rowManager.getFileId();
+				long newExtraFileRowID = extraFileRowId;
 				if (fileIdWrite != fileIdRead) {
+					// Move entry into different extra file
 					fileManager.deleteExternalRow(fileIdRead, extraFileRowId);
+					newExtraFileRowID = fileManager.writeExternalRow(fileIdWrite, rowManager.getDataBytes());
+				} else {
+					// Overwrite old extra file entry
+					fileManager.writeExternalRow(fileIdWrite, newExtraFileRowID, rowManager.getDataBytes());
 				}
-				long newExtraFileRowID = fileManager.writeExternalRow(fileIdWrite, rowManager.getDataBytes());
+				Logger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
+						+ Arrays.toString(rowManager.getDataBytes()));
 				// Write new offset into index row
 				rowManager.updateRowExtraOffset(newExtraFileRowID);
 			}
-
+			Logger.log("New Row: " + Arrays.toString(rowManager.getRow()));
 			fileManager.writeIndexRow(resourceId, rowManager.getRow());
 
 		} catch (IOException e) {
@@ -158,7 +164,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	private boolean loadRow(long id) {
-		System.out.println("Loading Row for ID " + id);
+		Logger.log("----- ID " + id);
 		try {
 			byte[] row = fileManager.readIndexRow(id, mainfileRowLength);
 			if ((row == null)
@@ -166,12 +172,13 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				return false;
 			}
 			boolean dataExternal = rowManager.load(row);
-			System.out.println("row for " + id + ": " + Arrays.toString(rowManager.getRow()));
+			Logger.log("row " + id + ": " + Arrays.toString(rowManager.getRow()));
 			if (dataExternal) {
-				System.out.println("externalFileRowId: " + rowManager.getExternalFileRowId());
+				Logger.log("externalFileRowId: " + rowManager.getExternalFileRowId());
 				byte[] dataBytes = fileManager.readExternalRow(rowManager.getFileId(),
 						rowManager.getExternalFileRowId(), rowManager.getDataLength());
 				rowManager.loadExternalRow(dataBytes);
+				Logger.log("E Row: " + Arrays.toString(dataBytes));
 			}
 		} catch (IOException e) {
 			close();

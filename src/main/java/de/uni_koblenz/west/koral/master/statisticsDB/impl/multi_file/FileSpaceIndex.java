@@ -9,15 +9,11 @@ import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 
 public class FileSpaceIndex {
 
-	private final String storagePath;
-
 	private final TreeMap<Long, ReusableIDGenerator> indexes;
 
 	private final File storage;
 
 	public FileSpaceIndex(String storagePath) {
-		this.storagePath = storagePath;
-
 		indexes = new TreeMap<>();
 		storage = new File(storagePath + "fileSpaceIndexes");
 	}

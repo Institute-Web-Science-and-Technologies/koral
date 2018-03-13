@@ -8,7 +8,8 @@ public class StatisticsRowManager {
 
 	/**
 	 * How many bytes are used for the data in the main/index file. This space is used for either file offset or
-	 * occurences values.
+	 * occurences values. Note that some code has to be adapted if this value is set to something >8, because then
+	 * converting more than 8 bytes to a long might overflow.
 	 */
 	private static final int ROW_DATA_LENGTH = 8;
 
@@ -26,10 +27,14 @@ public class StatisticsRowManager {
 	 */
 	private final int positionCountBitLength;
 
+	/**
+	 * How many bits are used for each position bitmap. Therefore this is the actual length of the bitmap.
+	 */
 	private final int positionBitmapBitLength;
 
 	/**
-	 * How many bytes are used for each position bitmap.
+	 * How many bytes are used for each position bitmap. This length is equal to {@link #positionBitmapBitLength} but
+	 * rounded up to bytes.
 	 */
 	private final int positionBitmapLength;
 
@@ -43,38 +48,73 @@ public class StatisticsRowManager {
 	 */
 	private final int mainfileRowLength;
 
+	/**
+	 * How many chunks where created, as specified in the constructor.
+	 */
 	private final int numberOfChunks;
 
+	/**
+	 * Contains the raw row bytes of the index/main file. In the update process, the data bytes are extracted (if they
+	 * are located in the index row) and only merged in the ending. The metadata bits, though, are always updated on
+	 * changes applied to {@link #metadataBits}.
+	 */
 	private byte[] row;
 
+	/**
+	 * True if it was recognized that the data bytes must be located in an extra file, based on calculations with the
+	 * metadata bits.
+	 */
 	private boolean dataExternal;
 
+	/**
+	 * The extracted metadata bits containing left-aligned position count, a fill gap of zeroes and the right-aligned
+	 * value of the bytes-per-value column. It is ensured that this value always represents the current state of the
+	 * {@link #row}, and vice versa. The included position count and bytes per value numbers still have the -1 offset
+	 * applied.
+	 */
 	private long metadataBits;
 
+	/**
+	 * Stores the row id of the extra file where the data bytes are located if, after analyzing the read row, it is
+	 * concluded that they would be too long for the index/main file.
+	 */
 	private long extraFileRowId;
 
+	/**
+	 * The first column of each row, and the first part of the metadata bits: It describes in how many columns this
+	 * resource appeared. A column is identified by resource type and chunk index. This variable contains the real
+	 * value, without the offset of -1 existing in the raw {@link #metadataBits}, {@link #row} and index file.
+	 */
 	private int positionCount;
 
+	/**
+	 * The second column of each row, and the second part of the metadata bits: It describes how many bytes are needed
+	 * to store the occurence values. This variable contains the real value, without the offset of -1 existing in the
+	 * raw {@link #metadataBits}, {@link #row} and index file.
+	 */
 	private byte bytesPerValue;
 
+	/**
+	 * Describes how the positions of the current row are encoded.
+	 */
 	private PositionEncoding positionEncoding;
 
+	/**
+	 * How many bytes are needed for the position info in the current row.
+	 */
 	private int positionLength;
 
+	/**
+	 * How long the data bytes are supposed to be, based on the metadata bits. This value is used for reading a row in
+	 * an extra file, but is *not* used or updated later on.
+	 */
 	private int dataLength;
 
+	/**
+	 * The second part of the row, basically the rest after the metadataBits. It contains the position info and the
+	 * corresponding occurence values, encoded as in {@link #positionEncoding} described.
+	 */
 	private byte[] dataBytes;
-
-//	/**
-//	 * The index of the dataBytes array where the column that will be updated is found. Only used in update operations.
-//	 */
-//	private int bitmapEntryArrayIndex;
-//
-//	/**
-//	 * The position in the byte referenced by {@link #bitmapEntryArrayIndex}, where the bit for the column that will be
-//	 * updated is found. Only used in update operations.
-//	 */
-//	private byte bitmapEntryOffset;
 
 	public StatisticsRowManager(int numberOfChunks) {
 		this.numberOfChunks = numberOfChunks;
@@ -130,6 +170,7 @@ public class StatisticsRowManager {
 	 * @return True if the row refers to an extra file for the position info, false if the position info is already
 	 *         included in the row.
 	 */
+	@SuppressWarnings("unused")
 	boolean load(byte[] row) {
 		this.row = row;
 		// Read metadata
@@ -138,8 +179,7 @@ public class StatisticsRowManager {
 		bytesPerValue = extractBytesPerValue();
 
 		positionEncoding = optimalPositionEncoding(positionCount);
-		System.out
-				.println("Loaded position encoding " + positionEncoding + " because of positionCount " + positionCount);
+		Logger.log("Enc: " + positionEncoding + ", PC: " + positionCount);
 		positionLength = getPositionLength(positionEncoding);
 
 		dataLength = (positionCount * bytesPerValue) + positionLength;
@@ -152,13 +192,10 @@ public class StatisticsRowManager {
 			extraFileRowId = -1;
 		} else {
 			dataExternal = true;
+			assert ROW_DATA_LENGTH <= 8 : "Long might overflow";
 			extraFileRowId = variableBytes2Long(row, metadataLength, ROW_DATA_LENGTH);
 			dataBytes = null;
 		}
-
-		// Reset member variables that were not overwritten already
-//		bitmapEntryArrayIndex = -1;
-//		bitmapEntryOffset = -1;
 
 		return dataExternal;
 
@@ -223,9 +260,8 @@ public class StatisticsRowManager {
 	 */
 	void incrementOccurence(ResourceType resourceType, int chunk) {
 		int columnNumber = getColumnNumber(resourceType, chunk);
-		System.out.println("Column Number " + columnNumber);
 		int currentOccurenceValueIndex = getOccurenceValueIndex(columnNumber);
-		System.out.println("Occurence Value Index: " + currentOccurenceValueIndex);
+		Logger.log("Col: " + columnNumber + "; OVI: " + currentOccurenceValueIndex);
 		if (currentOccurenceValueIndex < 0) {
 			// Resource never occured at this column position yet
 			if (optimalPositionEncoding(positionCount + 1) != positionEncoding) {
@@ -233,9 +269,10 @@ public class StatisticsRowManager {
 				long[] oldOccurences = decodeOccurenceData();
 				// Add new occurence
 				oldOccurences[columnNumber] = 1;
+				Logger.log("Occurences now: " + Arrays.toString(oldOccurences));
 				positionCount++;
 				positionEncoding = optimalPositionEncoding(positionCount);
-				System.out.println("Switched position encoding to " + positionEncoding);
+				Logger.log("Switched to " + positionEncoding);
 				encodeOccurenceData(oldOccurences);
 			} else {
 				// Insert value into dataBytes at the correct position
@@ -243,12 +280,10 @@ public class StatisticsRowManager {
 					// Set bitmap bit
 					setBitmapBit(columnNumber);
 					currentOccurenceValueIndex = getValueIndexOfColumn(columnNumber);
-					System.out.println("Occurence Value Index: " + currentOccurenceValueIndex);
 					// Prepare new data bytes that will need space for one more value
 					dataBytes = extendArray(dataBytes, bytesPerValue);
 					// Make space for new occurence value
 					int currentOccurenceOffset = positionLength + (currentOccurenceValueIndex * bytesPerValue);
-					System.out.println("Occurence Offset: " + currentOccurenceOffset);
 					// If the new value must be inserted somewhere inbetween/not at the last position...
 					if (currentOccurenceOffset != (dataBytes.length - 1)) {
 						// Make space by moving rightern bytes
@@ -261,16 +296,15 @@ public class StatisticsRowManager {
 					// Prepare new data bytes that will have space for one more position byte and one more value
 					dataBytes = extendArray(dataBytes, 1 + bytesPerValue);
 					// Make space for new position byte
-					moveBytesRight(dataBytes, positionLength, positionCount, 1);
+					moveBytesRight(dataBytes, positionLength, positionCount * bytesPerValue, 1);
 					// Extend position list with new position
 					dataBytes[positionLength] = (byte) columnNumber;
 					positionLength++;
 					// Extend value list with new value
-					dataBytes[positionLength + positionCount] = 1;
+					dataBytes[positionLength + (positionCount * bytesPerValue) + (bytesPerValue - 1)] = 1;
 				}
 				positionCount++;
 			}
-			// Write new position count into meta column
 			updatePositionCount();
 		} else {
 			// Resource column has entry that will be updated now
@@ -283,15 +317,20 @@ public class StatisticsRowManager {
 				// Extract old occurence values
 				long[] oldOccurences = decodeOccurenceData();
 				// Update current occurence
-				oldOccurences[currentOccurenceValueIndex] += 1;
+				oldOccurences[columnNumber] += 1;
+				Logger.log("new OC: " + Arrays.toString(oldOccurences));
 				bytesPerValue++;
 				// Rewrite values
 				dataBytes = extendArray(dataBytes, positionCount);
-				for (int i = 0; i < positionCount; i++) {
-					writeLongIntoBytes(oldOccurences[i], dataBytes, positionLength + (i * bytesPerValue),
-							bytesPerValue);
+				int positionIndex = 0;
+				for (int i = 0; i < oldOccurences.length; i++) {
+					if (oldOccurences[i] != 0) {
+						writeLongIntoBytes(oldOccurences[i], dataBytes,
+								positionLength + (positionIndex * bytesPerValue), bytesPerValue);
+						positionIndex++;
+					}
 				}
-				// Increase bytesPerValue column
+				Logger.log("DB: " + Arrays.toString(dataBytes));
 				updateBytesPerValue();
 			} else {
 				// Update data bytes/the one occurence value
@@ -313,9 +352,9 @@ public class StatisticsRowManager {
 	long[] decodeOccurenceData() {
 		long[] occurenceValues = new long[3 * numberOfChunks];
 		int[] positions = extractPositions();
-		System.out.println("Positions: " + Arrays.toString(positions));
+		Logger.log("Positions: " + Arrays.toString(positions));
 		for (int i = 0; i < positions.length; i++) {
-			long occurences = variableBytes2Long(dataBytes, positionLength + i, bytesPerValue);
+			long occurences = variableBytes2Long(dataBytes, positionLength + (i * bytesPerValue), bytesPerValue);
 			occurenceValues[positions[i]] = occurences;
 		}
 		return occurenceValues;
@@ -331,15 +370,12 @@ public class StatisticsRowManager {
 	 * @return A data byte array with the length only as long as needed
 	 */
 	private void encodeOccurenceData(long[] occurences) {
-		System.out.println("Encoding occurences: " + Arrays.toString(occurences));
 		positionLength = getPositionLength(positionEncoding);
 		dataBytes = new byte[positionLength + (positionCount * bytesPerValue)];
-		System.out.println("New DataBytes length: " + dataBytes.length);
 		// Counts the positions != 0
 		int positionIndex = 0;
 		for (int i = 0; i < occurences.length; i++) {
 			if (occurences[i] != 0) {
-				System.out.println("Found occurence at " + i + ": " + occurences[i]);
 				if (positionEncoding == PositionEncoding.BITMAP) {
 					setBitmapBit(i);
 				} else if (positionEncoding == PositionEncoding.LIST) {
@@ -347,7 +383,6 @@ public class StatisticsRowManager {
 				}
 				writeLongIntoBytes(occurences[i], dataBytes, positionLength + (positionIndex * bytesPerValue),
 						bytesPerValue);
-				System.out.println("Updated dataBytes: " + Arrays.toString(dataBytes));
 				positionIndex++;
 			}
 		}
@@ -385,16 +420,14 @@ public class StatisticsRowManager {
 		metadataBits &= bitFilter;
 		// Insert new position count
 		metadataBits |= (positionCount - 1) << postionCountOffset;
-		writeLongIntoBytes(metadataBits, row, 0, metadataLength);
+		updateMetadataBits();
 	}
 
 	/**
 	 * @return The value of the bytes-per-value column in the current {@link #row}. The offset of -1 is removed.
 	 */
 	private byte extractBytesPerValue() {
-		// This works only if the bits are all in the same (last) byte
-		assert VALUE_LENGTH_COLUMN_BITLENGTH <= 8;
-		return (byte) ((row[metadataLength - 1] & ((1 << VALUE_LENGTH_COLUMN_BITLENGTH) - 1)) + 1);
+		return (byte) ((metadataBits & ((1 << VALUE_LENGTH_COLUMN_BITLENGTH) - 1)) + 1);
 	}
 
 	/**
@@ -406,9 +439,17 @@ public class StatisticsRowManager {
 		// This works only if the bits are all in the same (last) byte
 		assert VALUE_LENGTH_COLUMN_BITLENGTH <= 8;
 		// Remove old value
-		row[metadataLength - 1] &= (1 << 31) >> (31 - VALUE_LENGTH_COLUMN_BITLENGTH);
+		metadataBits &= (1 << 31) >> (31 - VALUE_LENGTH_COLUMN_BITLENGTH);
 		// Insert new value
-		row[metadataLength] |= bytesPerValue - 1;
+		metadataBits |= bytesPerValue - 1;
+		updateMetadataBits();
+	}
+
+	/**
+	 * Writes the current {@link #metadataBits} into the {@link #row} array.
+	 */
+	private void updateMetadataBits() {
+		writeLongIntoBytes(metadataBits, row, 0, metadataLength);
 	}
 
 	/**
@@ -455,26 +496,40 @@ public class StatisticsRowManager {
 				positions[i] = dataBytes[i];
 			}
 		} else if (positionEncoding == PositionEncoding.BITMAP) {
-			long positionBitmap = variableBytes2Long(dataBytes, 0, positionLength);
-			System.out.println("Position bitmap: " + String.format("0x%08X", positionBitmap));
-			// Stores the position in the bitmap i.e. the index where the value will be stored
-			// We need an offset, because not every bit is used (bitmap size was rounded up to bytes)
-			int position = 0;
-			// Stores the index of the current occurence value
+			// Stores the index of the current occurence value / counts positions != 0
 			int valueIndex = 0;
-			// Iterate over each bit in the position bitmap with a filter index
-			for (long filterIndex = 1L << (positionBitmapBitLength - 1); // Start value is 1000...0
-					filterIndex >= 1; // Continue until filter index is at the last bit
-					filterIndex >>>= 1 // Move the 1 one to the right each step
-					) {
-				System.out.println("FilterIndex: " + String.format("0x%08X", filterIndex));
-				if ((filterIndex & positionBitmap) > 0) {
-					System.out.println("Position " + valueIndex + " is " + position);
-					positions[valueIndex] = position;
-					valueIndex++;
+			for (int i = 0; i < positionLength; i++) {
+				int j = 0;
+				// Skip the filled zeroes in the beginning
+				int fillZeroes = (positionBitmapLength * Byte.SIZE) - positionBitmapBitLength;
+				if (i == 0) {
+					j = fillZeroes;
 				}
-				position++;
+				for (; j < Byte.SIZE; j++) {
+					if ((dataBytes[i] & (0x80 >>> j)) != 0) {
+						positions[valueIndex] = ((i * Byte.SIZE) + j) - fillZeroes;
+						valueIndex++;
+					}
+				}
 			}
+
+//			long positionBitmap = variableBytes2Long(dataBytes, 0, positionLength);
+//			Logger.log("Position bitmap: " + String.format("0x%08X", positionBitmap));
+//			// Stores the position in the bitmap i.e. the index where the value will be stored
+//			int position = 0;
+//			// Stores the index of the current occurence value
+//			int valueIndex = 0;
+//			// Iterate over each bit in the position bitmap with a filter index
+//			for (long filterIndex = 1L << (positionBitmapBitLength - 1); // Start value is 1000...0
+//					filterIndex >= 1; // Continue until filter index is at the last bit
+//					filterIndex >>>= 1 // Move the 1 one to the right each step
+//					) {
+//				if ((filterIndex & positionBitmap) > 0) {
+//					positions[valueIndex] = position;
+//					valueIndex++;
+//				}
+//				position++;
+//			}
 		}
 		return positions;
 	}
@@ -501,9 +556,7 @@ public class StatisticsRowManager {
 		int positionBitmapIndex = getPositionBitmapIndex(columnNumber);
 		int bitmapEntryArrayIndex = positionBitmapIndex / 8;
 		byte bitmapEntryOffset = (byte) (positionBitmapIndex % 8);
-		System.out.println("Setting bitmap bit at " + bitmapEntryArrayIndex + "/" + bitmapEntryOffset);
 		dataBytes[bitmapEntryArrayIndex] |= 1 << (8 - bitmapEntryOffset - 1);
-		System.out.println("Bit set: " + String.format("0x%08X", dataBytes[bitmapEntryArrayIndex]));
 	}
 
 	/**
@@ -604,6 +657,8 @@ public class StatisticsRowManager {
 	 *            How many bytes will be overwritten
 	 */
 	private static void writeLongIntoBytes(long number, byte[] bytes, int startIndex, int length) {
+		Logger.log("Writing " + number + " into " + Arrays.toString(bytes) + " starting at " + startIndex
+				+ " with length " + length);
 		for (int i = 0; i < length; i++) {
 			// Update bytes in reverse order, and shift the necessary byte of the long to the last 8 bits
 			bytes[((startIndex + length) - 1) - i] = (byte) (0xFF & (number >>> (i * 8)));
@@ -651,10 +706,8 @@ public class StatisticsRowManager {
 	 *            By how many indexes each byte will move. Must be >=0
 	 */
 	private static void moveBytesRight(byte[] bytes, int startIndex, int length, int offset) {
-		System.out.println("Bytes: " + Arrays.toString(bytes));
-		System.out.println("Start: " + startIndex + ", length: " + length + ", offset: " + offset);
 		// Iterate interval in reverse order
-		for (int i = startIndex + length; i >= startIndex; i--) {
+		for (int i = (startIndex + length) - 1; i >= startIndex; i--) {
 			bytes[i + offset] = bytes[i];
 		}
 	}
