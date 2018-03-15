@@ -3,7 +3,6 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
@@ -11,23 +10,36 @@ import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
 public class FileManager {
 
-	private RowFile index;
+	private static final int DEFAULT_MAX_OPEN_FILES = 1000;
 
-	private final TreeMap<Long, ExtraRowFile> extraFiles;
+	private final LRUCache<Long, ExtraRowFile> extraFiles;
 
 	private final String storagePath;
 
 	private final File freeSpaceIndexFile;
 
-	public FileManager(String storagePath) {
+	private RowFile index;
+
+	public FileManager(String storagePath, int maxOpenFiles) {
 		this.storagePath = storagePath;
 		if (!this.storagePath.endsWith(File.separator)) {
 			storagePath += File.separator;
 		}
 
-		extraFiles = new TreeMap<>();
+		extraFiles = new LRUCache<Long, ExtraRowFile>(maxOpenFiles) {
+			@Override
+			protected void removeEldest(LRUCache<Long, ExtraRowFile>.DoublyLinkedNode eldest) {
+				// Don't call super, because this way the ExtraFileRow is retained in the internal index
+				eldest.value.close();
+			}
+		};
+
 		freeSpaceIndexFile = new File(storagePath + "freeSpaceIndex");
 		setup();
+	}
+
+	public FileManager(String storagePath) {
+		this(storagePath, DEFAULT_MAX_OPEN_FILES);
 	}
 
 	void setup() {
@@ -137,7 +149,7 @@ public class FileManager {
 	private ExtraRowFile getExtraFile(long fileId, boolean createIfNotExisting) {
 		ExtraRowFile extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new ExtraRowFile(String.valueOf(fileId), createIfNotExisting);
+			extra = new ExtraRowFile(storagePath + String.valueOf(fileId), createIfNotExisting);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
@@ -146,6 +158,9 @@ public class FileManager {
 		return extra;
 	}
 
+	/**
+	 * Deletes all extra files that are empty. Files must be closed with {@link #close()} beforehand.
+	 */
 	void deleteEmptyFiles() {
 		for (ExtraRowFile extraRowFile : extraFiles.values()) {
 			if (extraRowFile.isEmpty()) {
