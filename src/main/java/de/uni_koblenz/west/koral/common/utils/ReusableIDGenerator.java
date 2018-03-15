@@ -189,6 +189,14 @@ public class ReusableIDGenerator {
       ids[deletionBlockIndex + 2] = x2;
     }
   }
+  
+  public long[] getData() {
+	  return ids.clone();
+  }
+  
+  public boolean isEmpty() {
+	  return ids[0] == 0;
+  }
 
   @Override
   public String toString() {
