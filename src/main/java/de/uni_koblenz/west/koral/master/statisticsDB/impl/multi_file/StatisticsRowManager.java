@@ -174,7 +174,7 @@ public class StatisticsRowManager {
 	boolean load(byte[] row) {
 		this.row = row;
 		// Read metadata
-		metadataBits = variableBytes2Long(row, 0, metadataLength);
+		metadataBits = Utils.variableBytes2Long(row, 0, metadataLength);
 		positionCount = extractPositionCount();
 		bytesPerValue = extractBytesPerValue();
 
@@ -193,7 +193,7 @@ public class StatisticsRowManager {
 		} else {
 			dataExternal = true;
 			assert ROW_DATA_LENGTH <= 8 : "Long might overflow";
-			extraFileRowId = variableBytes2Long(row, metadataLength, ROW_DATA_LENGTH);
+			extraFileRowId = Utils.variableBytes2Long(row, metadataLength, ROW_DATA_LENGTH);
 			dataBytes = null;
 		}
 
@@ -246,7 +246,7 @@ public class StatisticsRowManager {
 	 *            Thw new row id
 	 */
 	void updateRowExtraOffset(long newRowId) {
-		writeLongIntoBytes(newRowId, row, metadataLength, ROW_DATA_LENGTH);
+		Utils.writeLongIntoBytes(newRowId, row, metadataLength, ROW_DATA_LENGTH);
 	}
 
 	/**
@@ -277,26 +277,25 @@ public class StatisticsRowManager {
 			} else {
 				// Insert value into dataBytes at the correct position
 				if (positionEncoding == PositionEncoding.BITMAP) {
-					// Set bitmap bit
 					setBitmapBit(columnNumber);
 					currentOccurenceValueIndex = getValueIndexOfColumn(columnNumber);
 					// Prepare new data bytes that will need space for one more value
-					dataBytes = extendArray(dataBytes, bytesPerValue);
+					dataBytes = Utils.extendArray(dataBytes, bytesPerValue);
 					// Make space for new occurence value
 					int currentOccurenceOffset = positionLength + (currentOccurenceValueIndex * bytesPerValue);
 					// If the new value must be inserted somewhere inbetween/not at the last position...
 					if (currentOccurenceOffset != (dataBytes.length - 1)) {
 						// Make space by moving rightern bytes
-						moveBytesRight(dataBytes, currentOccurenceOffset, positionCount - currentOccurenceValueIndex,
-								bytesPerValue);
+						Utils.moveBytesRight(dataBytes, currentOccurenceOffset,
+								positionCount - currentOccurenceValueIndex, bytesPerValue);
 					}
 					// Insert new occurence
-					writeLongIntoBytes(1, dataBytes, currentOccurenceOffset, bytesPerValue);
+					Utils.writeLongIntoBytes(1, dataBytes, currentOccurenceOffset, bytesPerValue);
 				} else if (positionEncoding == PositionEncoding.LIST) {
 					// Prepare new data bytes that will have space for one more position byte and one more value
-					dataBytes = extendArray(dataBytes, 1 + bytesPerValue);
+					dataBytes = Utils.extendArray(dataBytes, 1 + bytesPerValue);
 					// Make space for new position byte
-					moveBytesRight(dataBytes, positionLength, positionCount * bytesPerValue, 1);
+					Utils.moveBytesRight(dataBytes, positionLength, positionCount * bytesPerValue, 1);
 					// Extend position list with new position
 					dataBytes[positionLength] = (byte) columnNumber;
 					positionLength++;
@@ -309,7 +308,7 @@ public class StatisticsRowManager {
 		} else {
 			// Resource column has entry that will be updated now
 			// Get occurence value
-			long occurences = variableBytes2Long(dataBytes,
+			long occurences = Utils.variableBytes2Long(dataBytes,
 					positionLength + (currentOccurenceValueIndex * bytesPerValue), bytesPerValue);
 			occurences++;
 			// Check if more bytes are needed now for values
@@ -321,11 +320,11 @@ public class StatisticsRowManager {
 				Logger.log("new OC: " + Arrays.toString(oldOccurences));
 				bytesPerValue++;
 				// Rewrite values
-				dataBytes = extendArray(dataBytes, positionCount);
+				dataBytes = Utils.extendArray(dataBytes, positionCount);
 				int positionIndex = 0;
 				for (int i = 0; i < oldOccurences.length; i++) {
 					if (oldOccurences[i] != 0) {
-						writeLongIntoBytes(oldOccurences[i], dataBytes,
+						Utils.writeLongIntoBytes(oldOccurences[i], dataBytes,
 								positionLength + (positionIndex * bytesPerValue), bytesPerValue);
 						positionIndex++;
 					}
@@ -334,8 +333,8 @@ public class StatisticsRowManager {
 				updateBytesPerValue();
 			} else {
 				// Update data bytes/the one occurence value
-				writeLongIntoBytes(occurences, dataBytes, positionLength + (currentOccurenceValueIndex * bytesPerValue),
-						bytesPerValue);
+				Utils.writeLongIntoBytes(occurences, dataBytes,
+						positionLength + (currentOccurenceValueIndex * bytesPerValue), bytesPerValue);
 			}
 
 		}
@@ -354,7 +353,7 @@ public class StatisticsRowManager {
 		int[] positions = extractPositions();
 		Logger.log("Positions: " + Arrays.toString(positions));
 		for (int i = 0; i < positions.length; i++) {
-			long occurences = variableBytes2Long(dataBytes, positionLength + (i * bytesPerValue), bytesPerValue);
+			long occurences = Utils.variableBytes2Long(dataBytes, positionLength + (i * bytesPerValue), bytesPerValue);
 			occurenceValues[positions[i]] = occurences;
 		}
 		return occurenceValues;
@@ -381,7 +380,7 @@ public class StatisticsRowManager {
 				} else if (positionEncoding == PositionEncoding.LIST) {
 					dataBytes[positionIndex] = (byte) i;
 				}
-				writeLongIntoBytes(occurences[i], dataBytes, positionLength + (positionIndex * bytesPerValue),
+				Utils.writeLongIntoBytes(occurences[i], dataBytes, positionLength + (positionIndex * bytesPerValue),
 						bytesPerValue);
 				positionIndex++;
 			}
@@ -449,7 +448,7 @@ public class StatisticsRowManager {
 	 * Writes the current {@link #metadataBits} into the {@link #row} array.
 	 */
 	private void updateMetadataBits() {
-		writeLongIntoBytes(metadataBits, row, 0, metadataLength);
+		Utils.writeLongIntoBytes(metadataBits, row, 0, metadataLength);
 	}
 
 	/**
@@ -501,35 +500,17 @@ public class StatisticsRowManager {
 			for (int i = 0; i < positionLength; i++) {
 				int j = 0;
 				// Skip the filled zeroes in the beginning
-				int fillZeroes = (positionBitmapLength * Byte.SIZE) - positionBitmapBitLength;
+				int numberOfFillZeroes = (positionBitmapLength * Byte.SIZE) - positionBitmapBitLength;
 				if (i == 0) {
-					j = fillZeroes;
+					j = numberOfFillZeroes;
 				}
 				for (; j < Byte.SIZE; j++) {
 					if ((dataBytes[i] & (0x80 >>> j)) != 0) {
-						positions[valueIndex] = ((i * Byte.SIZE) + j) - fillZeroes;
+						positions[valueIndex] = ((i * Byte.SIZE) + j) - numberOfFillZeroes;
 						valueIndex++;
 					}
 				}
 			}
-
-//			long positionBitmap = variableBytes2Long(dataBytes, 0, positionLength);
-//			Logger.log("Position bitmap: " + String.format("0x%08X", positionBitmap));
-//			// Stores the position in the bitmap i.e. the index where the value will be stored
-//			int position = 0;
-//			// Stores the index of the current occurence value
-//			int valueIndex = 0;
-//			// Iterate over each bit in the position bitmap with a filter index
-//			for (long filterIndex = 1L << (positionBitmapBitLength - 1); // Start value is 1000...0
-//					filterIndex >= 1; // Continue until filter index is at the last bit
-//					filterIndex >>>= 1 // Move the 1 one to the right each step
-//					) {
-//				if ((filterIndex & positionBitmap) > 0) {
-//					positions[valueIndex] = position;
-//					valueIndex++;
-//				}
-//				position++;
-//			}
 		}
 		return positions;
 	}
@@ -582,7 +563,7 @@ public class StatisticsRowManager {
 		int positionBitmapIndex = getPositionBitmapIndex(columnNumber);
 		int bitmapEntryArrayIndex = positionBitmapIndex / 8;
 		byte bitmapEntryOffset = (byte) (positionBitmapIndex % 8);
-		return countOnesUntil(dataBytes, bitmapEntryArrayIndex, bitmapEntryOffset);
+		return Utils.countOnesUntil(dataBytes, bitmapEntryArrayIndex, bitmapEntryOffset);
 	}
 
 	/**
@@ -612,7 +593,7 @@ public class StatisticsRowManager {
 			byte bitmapEntry = (byte) (dataBytes[bitmapEntryArrayIndex] & (1 << (8 - bitmapEntryOffset - 1)));
 			// If that exists, find position of corresponding value
 			if (bitmapEntry != 0) {
-				return countOnesUntil(dataBytes, bitmapEntryArrayIndex, bitmapEntryOffset);
+				return Utils.countOnesUntil(dataBytes, bitmapEntryArrayIndex, bitmapEntryOffset);
 			}
 		} else if (positionEncoding == PositionEncoding.LIST) {
 			for (int i = 0; i < positionLength; i++) {
@@ -624,107 +605,4 @@ public class StatisticsRowManager {
 		return -1;
 	}
 
-	/**
-	 * Converts a part of a byte array into a long value.
-	 *
-	 * @param bytes
-	 *            A series of bytes
-	 * @param startIndex
-	 *            The first byte that will be incorporated
-	 * @param length
-	 *            How many bytes will be incorporated
-	 * @return
-	 */
-	private static long variableBytes2Long(byte[] bytes, int startIndex, int length) {
-		long result = 0L;
-		for (int i = 0; i < length; i++) {
-			byte currentByte = bytes[startIndex + i];
-			// Shift byte based on its position. -1 because we dont need to shift the last byte.
-			// Convert to unsigned long to prevent left bits being filled up with ones
-			result += (Byte.toUnsignedLong(currentByte)) << (8 * (length - 1 - i));
-		}
-		return result;
-	}
-
-	/**
-	 * Writes a long value into a part of a byte array.
-	 *
-	 * @param bytes
-	 *            The byte array where the long will be inserted
-	 * @param startIndex
-	 *            The first byte that will be overwritten
-	 * @param length
-	 *            How many bytes will be overwritten
-	 */
-	private static void writeLongIntoBytes(long number, byte[] bytes, int startIndex, int length) {
-		Logger.log("Writing " + number + " into " + Arrays.toString(bytes) + " starting at " + startIndex
-				+ " with length " + length);
-		for (int i = 0; i < length; i++) {
-			// Update bytes in reverse order, and shift the necessary byte of the long to the last 8 bits
-			bytes[((startIndex + length) - 1) - i] = (byte) (0xFF & (number >>> (i * 8)));
-		}
-	}
-
-	/**
-	 * Counts binary ones in a series of bytes up to a given position.
-	 *
-	 * @param array
-	 *            Series of bytes
-	 * @param lastIndex
-	 *            The last byte that will be regarded
-	 * @param lastBit
-	 *            The last bit of that last byte that will be regarded, it will not be counted. Indexing starts at zero.
-	 * @return Amount of ones
-	 */
-	private static int countOnesUntil(byte[] array, int lastIndex, byte lastBit) {
-		int ones = 0;
-		for (int i = 0; i <= lastIndex; i++) {
-			for (byte j = 0; j < 8; j++) {
-				if ((i == lastIndex) && (j == lastBit)) {
-					break;
-				}
-				// The position number j is converted to a byte with a one at j
-				if ((array[i] & (1 << (8 - 1 - j))) > 0) {
-					ones++;
-				}
-			}
-		}
-		return ones;
-	}
-
-	/**
-	 * Shifts a part of the bytes to the right. Bytes to the right of the specified interval will be overwritten. Moved
-	 * parts will *not* be overwritten.
-	 *
-	 * @param bytes
-	 *            The bytes that will be changed
-	 * @param startIndex
-	 *            The first byte that will be moved
-	 * @param length
-	 *            How many bytes will be moved
-	 * @param offset
-	 *            By how many indexes each byte will move. Must be >=0
-	 */
-	private static void moveBytesRight(byte[] bytes, int startIndex, int length, int offset) {
-		// Iterate interval in reverse order
-		for (int i = (startIndex + length) - 1; i >= startIndex; i--) {
-			bytes[i + offset] = bytes[i];
-		}
-	}
-
-	/**
-	 * Clones an array and extends it by additionalFields.
-	 *
-	 * @param array
-	 *            The array to be extended
-	 * @param additionalFields
-	 *            The additional value that is added to the size
-	 * @return A new array with the content from array until array.length, but with length array.length +
-	 *         additionalFields
-	 */
-	private static byte[] extendArray(byte[] array, int additionalFields) {
-		byte[] newArray = new byte[array.length + additionalFields];
-		System.arraycopy(array, 0, newArray, 0, array.length);
-		return newArray;
-	}
 }

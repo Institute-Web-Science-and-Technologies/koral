@@ -1,21 +1,23 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.util.Map.Entry;
 import java.util.TreeMap;
+
+import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
+import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
+import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
 public class FileManager {
 
-	private RandomAccessFile index;
+	private RowFile index;
 
-	private final TreeMap<Long, RandomAccessFile> extraFiles;
-
-	private final FileSpaceIndex fileSpaceIndex;
+	private final TreeMap<Long, ExtraRowFile> extraFiles;
 
 	private final String storagePath;
+
+	private final File freeSpaceIndexFile;
 
 	public FileManager(String storagePath) {
 		this.storagePath = storagePath;
@@ -24,17 +26,12 @@ public class FileManager {
 		}
 
 		extraFiles = new TreeMap<>();
-		fileSpaceIndex = new FileSpaceIndex(storagePath);
+		freeSpaceIndexFile = new File(storagePath + "freeSpaceIndex");
 		setup();
 	}
 
 	void setup() {
-		try {
-			index = new RandomAccessFile(new File(storagePath + "statistics"), "rw");
-		} catch (IOException e) {
-			close();
-			throw new RuntimeException(e);
-		}
+		index = new RowFile(storagePath + "statistics", true);
 	}
 
 	/**
@@ -47,7 +44,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	void writeIndexRow(long rowId, byte[] row) throws IOException {
-		writeRow(index, rowId, row);
+		index.writeRow(rowId, row);
 	}
 
 	/**
@@ -61,7 +58,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	byte[] readIndexRow(long rowId, int rowLength) throws IOException {
-		return readRow(index, rowId, rowLength);
+		return index.readRow(rowId, rowLength);
 	}
 
 	/**
@@ -75,9 +72,8 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	long writeExternalRow(long fileId, byte[] row) throws IOException {
-		long rowId = fileSpaceIndex.getFreeRow(fileId);
-		writeExternalRow(fileId, rowId, row);
-		return rowId;
+		ExtraRowFile extraFile = getExtraFile(fileId, true);
+		return extraFile.writeRow(row);
 	}
 
 	/**
@@ -93,8 +89,8 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	void writeExternalRow(long fileId, long rowId, byte[] row) throws IOException {
-		RandomAccessFile extraFile = getExtraFile(fileId, true);
-		writeRow(extraFile, rowId, row);
+		ExtraRowFile extraFile = getExtraFile(fileId, true);
+		extraFile.writeRow(rowId, row);
 	}
 
 	/**
@@ -110,8 +106,8 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	byte[] readExternalRow(long fileId, long rowId, int rowLength) throws IOException {
-		RandomAccessFile extraFile = getExtraFile(fileId, false);
-		return readRow(extraFile, rowId, rowLength);
+		ExtraRowFile extraFile = getExtraFile(fileId, false);
+		return extraFile.readRow(rowId, rowLength);
 	}
 
 	/**
@@ -124,68 +120,12 @@ public class FileManager {
 	 *            Which row to remove
 	 */
 	void deleteExternalRow(long fileId, long rowId) {
-		fileSpaceIndex.release(fileId, fileId);
-	}
-
-	/**
-	 * Retrieves a row from <code>file</code>. The offset is calculated by <code>rowId * row.length</code>.
-	 *
-	 * @param file
-	 *            The RandomAccessFile that will be read
-	 * @param rowId
-	 *            The row number in the file
-	 * @param rowLength
-	 *            The length of a row in the specified file
-	 * @return The row as a byte array. The returned array has the length of rowLength.
-	 * @throws IOException
-	 */
-	private byte[] readRow(RandomAccessFile file, long rowId, int rowLength) throws IOException {
-		long offset = rowId * rowLength;
-		file.seek(offset);
-		byte[] row = new byte[rowLength];
-		try {
-			file.readFully(row);
-		} catch (EOFException e) {
-			// Resource does not have an entry (yet)
-			return null;
-		}
-		return row;
-	}
-
-	/**
-	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by <code>rowId * row.length</code>.
-	 *
-	 * @param file
-	 *            A RandomAccessFile that will be updated
-	 * @param rowId
-	 *            The number of the row that will be written
-	 * @param row
-	 *            The data for the row as byte array
-	 * @throws IOException
-	 */
-	private void writeRow(RandomAccessFile file, long rowId, byte[] row) throws IOException {
-		file.seek(rowId * row.length);
-		file.write(row);
-	}
-
-	void close() {
-		try {
-			index.close();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-		for (RandomAccessFile file : extraFiles.values()) {
-			try {
-				file.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+		getExtraFile(fileId, false).deleteRow(rowId);
 	}
 
 	/**
 	 * Returns a RandomAccessFile instance of the specified extra file. If it needs to be created or re-opened, it's
-	 * also registered in the {@link #extraFiles} index through {@link #openExtraFile(long)}.
+	 * also registered in the {@link #extraFiles} index.
 	 *
 	 * @param fileId
 	 *            The identifier of the extra file. Equals the metadata bits of a main file row.
@@ -194,52 +134,96 @@ public class FileManager {
 	 * @return A RandomAccessFile instance of the specified extra file
 	 * @throws IOException
 	 */
-	private RandomAccessFile getExtraFile(long fileId, boolean createIfNotExisting) throws IOException {
-		RandomAccessFile extra = extraFiles.get(fileId);
-		if ((extra == null) || !extra.getFD().valid()) {
-			extra = openExtraFile(fileId, createIfNotExisting);
+	private ExtraRowFile getExtraFile(long fileId, boolean createIfNotExisting) {
+		ExtraRowFile extra = extraFiles.get(fileId);
+		if (extra == null) {
+			extra = new ExtraRowFile(String.valueOf(fileId), createIfNotExisting);
+			extraFiles.put(fileId, extra);
+		}
+		if (!extra.valid()) {
+			extra.open(createIfNotExisting);
 		}
 		return extra;
 	}
 
-	/**
-	 * Opens a {@link File} and a {@link RandomAccessFile} that is registered in {@link #extraFiles} and returned.
-	 *
-	 * @param fileId
-	 *            The fileId of the extra file that will be opened
-	 * @param createIfNotExisting
-	 *            If the file should be created if it doesn't exist already
-	 * @return A RandomAccessFile instance of the specified extra file
-	 * @throws FileNotFoundException
-	 */
-	private RandomAccessFile openExtraFile(long fileId, boolean createIfNotExisting) throws FileNotFoundException {
-		File extraFile = new File(storagePath + fileId);
-		if (!extraFile.exists() && !createIfNotExisting) {
-			return null;
+	void deleteEmptyFiles() {
+		for (ExtraRowFile extraRowFile : extraFiles.values()) {
+			if (extraRowFile.isEmpty()) {
+				extraRowFile.delete();
+			}
 		}
-		RandomAccessFile extra = new RandomAccessFile(extraFile, "rw");
-		extraFiles.put(fileId, extra);
-		return extra;
+	}
+
+	void load() {
+		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(freeSpaceIndexFile)) {
+			LongIterator iterator = input.iterator();
+			long fileId = -1;
+			int dataLength = -1;
+			long[] list = null;
+			int listIndex = 0;
+			while (iterator.hasNext()) {
+				long l = iterator.next();
+				if (fileId == -1) {
+					fileId = l;
+					continue;
+				}
+				if (dataLength == -1) {
+					dataLength = (int) l;
+					list = new long[dataLength];
+					continue;
+				}
+				if (listIndex < dataLength) {
+					list[listIndex] = l;
+				} else {
+					// TODO: We should not open each file we find a freeSpaceIndex for (open file limit)
+					// Reading one entry is done, store and reset everything for next one
+					extraFiles.put(fileId, new ExtraRowFile(storagePath + fileId, false, list));
+					fileId = -1;
+					dataLength = -1;
+					list = null;
+					listIndex = 0;
+				}
+
+			}
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	void flush() {
+		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(freeSpaceIndexFile, true)) {
+			for (Entry<Long, ExtraRowFile> entry : extraFiles.entrySet()) {
+				long[] data = entry.getValue().getFreeSpaceIndexData();
+				out.writeLong(entry.getKey());
+				out.writeLong(data.length);
+				for (int i = 0; i < data.length; i++) {
+					out.writeLong(data[i]);
+				}
+			}
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 	}
 
 	/**
 	 * @return The length of the index/main file, measured in bytes.
 	 */
 	long getIndexFileLength() {
-		try {
-			return index.length();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		return index.length();
 	}
 
-	void flush() {
-		fileSpaceIndex.flush();
-	}
-
+	/**
+	 * Clears internal fields, without actually deleting the files.
+	 */
 	void clear() {
 		index = null;
 		extraFiles.clear();
+	}
+
+	void close() {
+		index.close();
+		extraFiles.values().forEach(extraRowFile -> extraRowFile.close());
+		deleteEmptyFiles();
 	}
 
 }
