@@ -43,9 +43,16 @@ public class EncodedLongFileOutputStream implements AutoCloseable, LongOutputWri
   }
 
   public EncodedLongFileOutputStream(File outputFile, boolean append)
-          throws FileNotFoundException, IOException {
-    out = new DataOutputStream(new BufferedOutputStream(
-            new GZIPOutputStream(new FileOutputStream(outputFile, append))));
+		  throws FileNotFoundException, IOException {
+	    out = new DataOutputStream(new BufferedOutputStream(
+	            new GZIPOutputStream(new FileOutputStream(outputFile, append))));
+          
+  }
+  
+  public EncodedLongFileOutputStream(FileOutputStream outputStream) 
+		  throws FileNotFoundException, IOException {
+	    out = new DataOutputStream(new BufferedOutputStream(
+	            new GZIPOutputStream(outputStream)));
   }
 
   @Override
