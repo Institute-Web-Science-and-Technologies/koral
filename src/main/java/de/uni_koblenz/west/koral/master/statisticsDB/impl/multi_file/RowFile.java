@@ -17,7 +17,7 @@ class RowFile {
 		open(createIfNotExists);
 	}
 
-	void open(boolean createIfNotExists) {
+	protected void open(boolean createIfNotExists) {
 		File storageFile = new File(storageFilePath);
 		if (!createIfNotExists && !storageFile.exists()) {
 			throw new RuntimeException("Could not find file " + storageFilePath);
