@@ -36,4 +36,9 @@ class ExtraRowFile extends RowFile {
 		return freeSpaceIndex.isEmpty();
 	}
 
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + '@' + Integer.toHexString(hashCode());
+	}
+
 }
