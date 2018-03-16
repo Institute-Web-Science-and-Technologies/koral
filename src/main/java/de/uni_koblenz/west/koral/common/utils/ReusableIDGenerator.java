@@ -208,10 +208,6 @@ public class ReusableIDGenerator {
 		return data;
 	}
 
-	public void setData(long[] ids) {
-		this.ids = ids;
-	}
-
 	public boolean isEmpty() {
 		return ids[0] == 0;
 	}
