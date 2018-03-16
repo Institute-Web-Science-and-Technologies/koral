@@ -2,10 +2,17 @@ package playground;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.io.FileUtils;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
@@ -50,6 +57,15 @@ public class StatisticsDBTest {
 
 		System.out.println("Collecting Statistics...");
 
+		File statisticsDir = new File(conf.getStatisticsDir(true));
+		if (statisticsDir.exists()) {
+			try {
+				FileUtils.cleanDirectory(statisticsDir);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		GraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true),
 				numberOfChunks);
 		try (GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);) {
@@ -62,6 +78,31 @@ public class StatisticsDBTest {
 					time - TimeUnit.SECONDS.toMillis(TimeUnit.MILLISECONDS.toSeconds(time)));
 //				System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
+			// Read statistics and write into csv
+			System.out.println("Writing statistics to file...");
+			try {
+				CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+				CSVPrinter printer = new CSVPrinter(
+						new OutputStreamWriter(new FileOutputStream(encodedChunksDir.getCanonicalPath() + File.separator
+								+ statisticsDB.getClass().getSimpleName() + "-statistics.csv"), "UTF-8"),
+						csvFileFormat);
+				for (long l : statisticsDB.getChunkSizes()) {
+					printer.print(l);
+				}
+				printer.println();
+				for (int id = 1; id < statisticsDB.getMaxId(); id++) {
+					for (long l : statisticsDB.getStatisticsForResource(id)) {
+						printer.print(l);
+					}
+					if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
+						printer.print(0);
+					}
+					printer.println();
+				}
+				printer.close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		System.out.println("Finished.");
 
