@@ -6,7 +6,7 @@ public class LRUCacheTest {
 
 	public static void main(String[] args) {
 		LRUCache<Integer, String> cache = new LRUCache<>(10);
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 9; i++) {
 			cache.put(i, "'" + i + "'");
 		}
 		System.out.println(cache);

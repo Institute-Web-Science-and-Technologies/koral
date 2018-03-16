@@ -26,9 +26,6 @@ public class LRUCache<K, V> {
 	}
 
 	public V put(K key, V value) {
-		if (size >= capacity) {
-			removeEldest();
-		}
 		DoublyLinkedNode node = new DoublyLinkedNode();
 		node.key = key;
 		node.value = value;
@@ -36,7 +33,6 @@ public class LRUCache<K, V> {
 		if (head == null) {
 			head = node;
 		}
-		size++;
 		DoublyLinkedNode oldValue = index.put(key, node);
 		if (oldValue != null) {
 			return oldValue.value;
@@ -55,8 +51,16 @@ public class LRUCache<K, V> {
 	}
 
 	private void access(DoublyLinkedNode node) {
-		// Move to tail by removing from current position and reinserting at the end
-		remove(node);
+		if (node == tail) {
+			return;
+		}
+		// Move to tail by removing from current position (if appearing in linked list) and reinserting at the end
+		if ((node.before != null) || (node.after != null)) {
+			remove(node);
+		}
+		if (size >= capacity) {
+			removeEldest();
+		}
 
 		node.before = tail;
 		node.after = null;
@@ -75,10 +79,10 @@ public class LRUCache<K, V> {
 			tail = node.before;
 		}
 		if (node.after != null) {
-			node.after.before = null;
+			node.after.before = node.before;
 		}
 		if (node.before != null) {
-			node.before.after = null;
+			node.before.after = node.after;
 		}
 		node.before = null;
 		node.after = null;
@@ -120,7 +124,7 @@ public class LRUCache<K, V> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("[");
+		StringBuilder sb = new StringBuilder("Cache(" + size + "): [");
 		for (DoublyLinkedNode node = head; node != null; node = node.after) {
 			sb.append(node.key).append("=").append(node.value);
 			if (node.after != null) {
@@ -128,6 +132,8 @@ public class LRUCache<K, V> {
 			}
 		}
 		sb.append("]");
+		sb.append("\nIndex: ");
+		sb.append(index.toString());
 		return sb.toString();
 	}
 
@@ -135,6 +141,11 @@ public class LRUCache<K, V> {
 		DoublyLinkedNode before, after;
 		K key;
 		V value;
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + '@' + Integer.toHexString(hashCode());
+		}
 	}
 
 }
