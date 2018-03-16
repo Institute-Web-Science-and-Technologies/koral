@@ -29,7 +29,7 @@ public class EncodeGraphChunks {
 		}
 		File inputFile = new File(args[0]);
 		String workingDirPath = args[1].endsWith(File.separator) ? args[1] : args[1] + File.separator;
-		File workingDir = new File(workingDirPath + inputFile.getName().split(".")[0]);
+		File workingDir = new File(workingDirPath + inputFile.getName().split("\\.")[0]);
 		File masterDir = new File("/tmp/master");
 		File slaveDir = new File("/tmp/slave");
 		try {
