@@ -100,6 +100,7 @@ public class ReusableIDGenerator {
 			// extend array
 			ids = new long[ids.length + 10 + numberShifts];
 		}
+		System.arraycopy(src, 0, ids, 0, firstIndexToShift);
 		System.arraycopy(src, firstIndexToShift, ids, firstIndexToShift + numberShifts,
 				numberOfUsedBlocks - firstIndexToShift);
 		for (int i = firstIndexToShift; i < (firstIndexToShift + numberShifts); i++) {
