@@ -17,6 +17,7 @@ import org.apache.commons.io.FileUtils;
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 
 /**
@@ -27,8 +28,10 @@ public class StatisticsDBTest {
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		if (args.length != 1) {
-			System.out.println("Usage: java " + StatisticsDBTest.class.getName() + " <encodedChunksDir>");
+		if (args.length != 3) {
+			System.out.println("Usage: java " + StatisticsDBTest.class.getName()
+					+ " <encodedChunksDir> <numberOfChunks> <implementation: single|multi>");
+			return;
 		}
 		File encodedChunksDir = new File(args[0]);
 		if (!encodedChunksDir.exists() || !encodedChunksDir.isDirectory()) {
@@ -52,7 +55,9 @@ public class StatisticsDBTest {
 		for (File file : encodedFiles) {
 			System.out.println(file);
 		}
-		short numberOfChunks = 4;
+		short numberOfChunks = Short.parseShort(args[1]);
+		String implementation = args[2];
+
 		Configuration conf = new Configuration();
 
 		System.out.println("Collecting Statistics...");
@@ -62,50 +67,71 @@ public class StatisticsDBTest {
 			try {
 				FileUtils.cleanDirectory(statisticsDir);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		GraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true),
-				numberOfChunks);
+		GraphStatisticsDatabase statisticsDB = null;
+		if (implementation.trim().equalsIgnoreCase("single")) {
+			statisticsDB = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
+		} else if (implementation.trim().equalsIgnoreCase("multi")) {
+			statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
+		} else {
+			System.err.println("Unknown implementation: " + implementation);
+			return;
+		}
 		try (GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);) {
 			long start = System.currentTimeMillis();
 			statistics.collectStatistics(encodedFiles);
 			long time = System.currentTimeMillis() - start;
+
 			String timeFormatted = String.format("%d min, %d sec, %d ms", TimeUnit.MILLISECONDS.toMinutes(time),
 					TimeUnit.MILLISECONDS.toSeconds(time)
 							- TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(time)),
 					time - TimeUnit.SECONDS.toMillis(TimeUnit.MILLISECONDS.toSeconds(time)));
 //				System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
+
 			// Read statistics and write into csv
-			System.out.println("Writing statistics to file...");
-			try {
-				CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
-				CSVPrinter printer = new CSVPrinter(
-						new OutputStreamWriter(new FileOutputStream(encodedChunksDir.getCanonicalPath() + File.separator
-								+ statisticsDB.getClass().getSimpleName() + "-statistics.csv"), "UTF-8"),
-						csvFileFormat);
-				for (long l : statisticsDB.getChunkSizes()) {
-					printer.print(l);
-				}
-				printer.println();
-				for (int id = 1; id < statisticsDB.getMaxId(); id++) {
-					for (long l : statisticsDB.getStatisticsForResource(id)) {
-						printer.print(l);
-					}
-					if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
-						printer.print(0);
-					}
-					printer.println();
-				}
-				printer.close();
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
+//			System.out.println("Writing statistics to file...");
+//			writeResultsToCSV(encodedChunksDir, statisticsDB);
+
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 		System.out.println("Finished.");
 
+	}
+
+	private static void writeResultsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {
+		long maxId = 0;
+		if (statisticsDB instanceof SingleFileGraphStatisticsDatabase) {
+			maxId = ((SingleFileGraphStatisticsDatabase) statisticsDB).getMaxId();
+		} else if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
+			maxId = ((MultiFileGraphStatisticsDatabase) statisticsDB).getMaxId();
+		}
+		try {
+			CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+			CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(outputDir.getCanonicalPath()
+					+ File.separator + statisticsDB.getClass().getSimpleName() + "-statistics.csv"), "UTF-8"),
+					csvFileFormat);
+			for (long l : statisticsDB.getChunkSizes()) {
+				printer.print(l);
+			}
+			printer.println();
+			for (int id = 1; id < maxId; id++) {
+				for (long l : statisticsDB.getStatisticsForResource(id)) {
+					printer.print(l);
+				}
+				// SingleDB has another zero entry for total resources, add that one as well for easier diffing
+				if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
+					printer.print(0);
+				}
+				printer.println();
+			}
+			printer.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }
