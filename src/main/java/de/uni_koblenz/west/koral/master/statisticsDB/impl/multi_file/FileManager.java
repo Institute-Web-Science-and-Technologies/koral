@@ -210,6 +210,9 @@ public class FileManager {
 	void flush() {
 		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(freeSpaceIndexFile, true)) {
 			for (Entry<Long, ExtraRowFile> entry : extraFiles.entrySet()) {
+				if (entry.getValue().isEmpty()) {
+					continue;
+				}
 				long[] data = entry.getValue().getFreeSpaceIndexData();
 				out.writeLong(entry.getKey());
 				out.writeLong(data.length);
