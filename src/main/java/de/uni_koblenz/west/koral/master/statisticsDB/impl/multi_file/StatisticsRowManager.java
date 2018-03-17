@@ -33,10 +33,15 @@ public class StatisticsRowManager {
 	private final int positionBitmapBitLength;
 
 	/**
-	 * How many bytes are used for each position bitmap. This length is equal to {@link #positionBitmapBitLength} but
-	 * rounded up to bytes.
+	 * How many bytes are used for each position bitmap. This length is {@link #positionBitmapBitLength} rounded up to
+	 * bytes.
 	 */
 	private final int positionBitmapLength;
+
+	/**
+	 * How many bytes are needed for each entry in the position list, that refers to a column.
+	 */
+	private final int positionListEntryLength;
 
 	/**
 	 * How many bytes are used for metadata per row.
@@ -119,12 +124,15 @@ public class StatisticsRowManager {
 	public StatisticsRowManager(int numberOfChunks) {
 		this.numberOfChunks = numberOfChunks;
 
+		// This desribes the maximum value for the position count column
 		// -1 Offset for using zero as well
 		int maxPositionCount = (3 * numberOfChunks) - 1;
+		int maxColumnNumber = 3 * numberOfChunks;
 		positionCountBitLength = 32 - Integer.numberOfLeadingZeros(maxPositionCount);
 		metadataLength = (int) Math.ceil((positionCountBitLength + VALUE_LENGTH_COLUMN_BITLENGTH) / 8.0);
-		positionBitmapBitLength = (3 * numberOfChunks);
+		positionBitmapBitLength = maxColumnNumber;
 		positionBitmapLength = (int) Math.ceil(positionBitmapBitLength / 8.0);
+		positionListEntryLength = (int) Math.ceil((32 - Integer.numberOfLeadingZeros(maxColumnNumber)) / 8.0);
 		mainfileRowLength = metadataLength + ROW_DATA_LENGTH;
 	}
 
@@ -180,9 +188,9 @@ public class StatisticsRowManager {
 
 		positionEncoding = optimalPositionEncoding(positionCount);
 		Logger.log("Enc: " + positionEncoding + ", PC: " + positionCount);
-		positionLength = getPositionLength(positionEncoding);
+		positionLength = getPositionLength(positionEncoding, positionCount);
 
-		dataLength = (positionCount * bytesPerValue) + positionLength;
+		dataLength = positionLength + (positionCount * bytesPerValue);
 
 		if (dataLength <= ROW_DATA_LENGTH) {
 			// Values are here
@@ -226,9 +234,12 @@ public class StatisticsRowManager {
 		row = new byte[mainfileRowLength];
 		// Position count and bytesPerValue are already zero (-> one)
 		// Set first entry of position list
-		row[metadataLength] = (byte) (getColumnNumber(resourceType, chunk));
+		int columnNumber = getColumnNumber(resourceType, chunk);
+		Utils.writeLongIntoBytes(columnNumber, row, metadataLength, positionListEntryLength);
 		// Occurs once (until now)
-		row[metadataLength + 1] = 1;
+		row[metadataLength + positionListEntryLength] = 1;
+		positionCount++;
+		positionLength = positionListEntryLength;
 		return row;
 	}
 
@@ -284,28 +295,50 @@ public class StatisticsRowManager {
 					// Make space for new occurence value
 					int currentOccurenceOffset = positionLength + (currentOccurenceValueIndex * bytesPerValue);
 					// If the new value must be inserted somewhere inbetween/not at the last position...
-					if (currentOccurenceOffset != (dataBytes.length - 1)) {
+					if (currentOccurenceOffset != (dataBytes.length - bytesPerValue)) {
 						// Make space by moving rightern bytes
 						Utils.moveBytesRight(dataBytes, currentOccurenceOffset,
-								positionCount - currentOccurenceValueIndex, bytesPerValue);
+								(positionCount - currentOccurenceValueIndex) * bytesPerValue, bytesPerValue);
 					}
 					// Insert new occurence
 					Utils.writeLongIntoBytes(1, dataBytes, currentOccurenceOffset, bytesPerValue);
 				} else if (positionEncoding == PositionEncoding.LIST) {
 					// Prepare new data bytes that will have space for one more position byte and one more value
 					dataBytes = Utils.extendArray(dataBytes, 1 + bytesPerValue);
+					// Find new position for new entry in the position list, i.e. where in the position list the new
+					// column number will be inserted, because the position list should always be in sorted order
+					int newPositionInList = positionCount;
+					for (int i = 0; i < positionLength; i++) {
+						if (Utils.variableBytes2Long(dataBytes, i * positionListEntryLength,
+								positionListEntryLength) > columnNumber) {
+							newPositionInList = i;
+							break;
+						}
+					}
 					// Make space for new position byte
-					Utils.moveBytesRight(dataBytes, positionLength, positionCount * bytesPerValue, 1);
+					Utils.moveBytesRight(dataBytes, newPositionInList * positionListEntryLength,
+							((positionCount - newPositionInList) * positionListEntryLength)
+									+ (positionCount * bytesPerValue),
+							1);
 					// Extend position list with new position
-					dataBytes[positionLength] = (byte) columnNumber;
-					positionLength++;
-					// Extend value list with new value
-					dataBytes[positionLength + (positionCount * bytesPerValue) + (bytesPerValue - 1)] = 1;
+					Utils.writeLongIntoBytes(columnNumber, dataBytes, newPositionInList * positionListEntryLength,
+							positionListEntryLength);
+					positionLength += positionListEntryLength;
+					// Make space for new occurence value
+					Utils.moveBytesRight(dataBytes, positionLength + (newPositionInList * bytesPerValue),
+							(positionCount - newPositionInList) * bytesPerValue, bytesPerValue);
+					// Extend value list with new value. Use writeLong instead of single array access to overwrite
+					// zombie values left by moveBytesRight().
+					Utils.writeLongIntoBytes(1, dataBytes, positionLength + (newPositionInList * bytesPerValue),
+							bytesPerValue);
+//					dataBytes[(positionLength - 1) + (newPositionInList * bytesPerValue) + bytesPerValue] = 1;
 				}
 				positionCount++;
 			}
 			updatePositionCount();
 		} else {
+			Logger.log("DB: " + Arrays.toString(dataBytes));
+			Logger.log("PL: " + positionLength);
 			// Resource column has entry that will be updated now
 			// Get occurence value
 			long occurences = Utils.variableBytes2Long(dataBytes,
@@ -338,6 +371,11 @@ public class StatisticsRowManager {
 			}
 
 		}
+//		long[] occ = decodeOccurenceData();
+//		System.out.println(Arrays.toString(occ));
+//		if (occ[1] > 31) {
+//			System.out.println();
+//		}
 	}
 
 	/**
@@ -369,7 +407,7 @@ public class StatisticsRowManager {
 	 * @return A data byte array with the length only as long as needed
 	 */
 	private void encodeOccurenceData(long[] occurences) {
-		positionLength = getPositionLength(positionEncoding);
+		positionLength = getPositionLength(positionEncoding, positionCount);
 		dataBytes = new byte[positionLength + (positionCount * bytesPerValue)];
 		// Counts the positions != 0
 		int positionIndex = 0;
@@ -378,7 +416,8 @@ public class StatisticsRowManager {
 				if (positionEncoding == PositionEncoding.BITMAP) {
 					setBitmapBit(i);
 				} else if (positionEncoding == PositionEncoding.LIST) {
-					dataBytes[positionIndex] = (byte) i;
+					Utils.writeLongIntoBytes(i, dataBytes, positionIndex * positionListEntryLength,
+							positionListEntryLength);
 				}
 				Utils.writeLongIntoBytes(occurences[i], dataBytes, positionLength + (positionIndex * bytesPerValue),
 						bytesPerValue);
@@ -457,7 +496,8 @@ public class StatisticsRowManager {
 	 * @return
 	 */
 	private PositionEncoding optimalPositionEncoding(int positionCount) {
-		if (positionCount <= positionBitmapLength) {
+		if (getPositionLength(PositionEncoding.LIST, positionCount) <= getPositionLength(PositionEncoding.BITMAP,
+				positionCount)) {
 			return PositionEncoding.LIST;
 		} else {
 			return PositionEncoding.BITMAP;
@@ -466,17 +506,17 @@ public class StatisticsRowManager {
 
 	/**
 	 * Computes the length of a specified position encoding, using internal variables {@link #positionBitmapLength} or
-	 * {@link #positionCount}.
+	 * {@link #positionCount} and {@link #positionListEntryLength}.
 	 *
 	 * @param positionEncoding
 	 *            The encoding type
 	 * @return The amount of bytes that would be needed for the given encoding and the classes internal results
 	 */
-	private int getPositionLength(PositionEncoding positionEncoding) {
+	private int getPositionLength(PositionEncoding positionEncoding, int positionCount) {
 		if (positionEncoding == PositionEncoding.BITMAP) {
 			return positionBitmapLength;
 		} else if (positionEncoding == PositionEncoding.LIST) {
-			return positionCount;
+			return positionCount * positionListEntryLength;
 		}
 		return 0;
 	}
@@ -492,7 +532,8 @@ public class StatisticsRowManager {
 		int[] positions = new int[positionCount];
 		if (positionEncoding == PositionEncoding.LIST) {
 			for (int i = 0; i < positionLength; i++) {
-				positions[i] = dataBytes[i];
+				positions[i] = (int) Utils.variableBytes2Long(dataBytes, i * positionListEntryLength,
+						positionListEntryLength);
 			}
 		} else if (positionEncoding == PositionEncoding.BITMAP) {
 			// Stores the index of the current occurence value / counts positions != 0
@@ -553,7 +594,7 @@ public class StatisticsRowManager {
 
 	/**
 	 * Returns the index of the value that corresponds to the specified columnNumber, based on a bitmap given in
-	 * dataBytes.
+	 * dataBytes. Undefined results for list-encoded occurence data.
 	 *
 	 * @param columnNumber
 	 *            The column of the wanted occurence value
@@ -567,23 +608,10 @@ public class StatisticsRowManager {
 	}
 
 	/**
-	 * Converts a part of a byte array to a long value.
-	 *
-	 * @param bytes
-	 *            The byte array
-	 * @param startIndex
-	 *            The first byte that will be included
-	 * @param length
-	 *            How many bytes will be included
-	 * @return
-	 */
-
-	/**
-	 * Finds the index of the occurence value corresponding to the given position column. {@link #bitmapEntryArrayIndex}
-	 * and {@link #bitmapEntryOffset} must be set already before calling this method.
+	 * Finds the index of the occurence value corresponding to the given position column.
 	 *
 	 * @param columnNumber
-	 * @return
+	 * @return -1 If the column number doesn't appear in the position info
 	 */
 	private int getOccurenceValueIndex(int columnNumber) {
 		if (positionEncoding == PositionEncoding.BITMAP) {
@@ -597,7 +625,8 @@ public class StatisticsRowManager {
 			}
 		} else if (positionEncoding == PositionEncoding.LIST) {
 			for (int i = 0; i < positionLength; i++) {
-				if (dataBytes[i] == columnNumber) {
+				if (Utils.variableBytes2Long(dataBytes, i * positionListEntryLength,
+						positionListEntryLength) == columnNumber) {
 					return i;
 				}
 			}
