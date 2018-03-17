@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 
@@ -214,6 +215,14 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	public long getMaxId() {
 		return (fileManager.getIndexFileLength()) / mainfileRowLength;
+	}
+
+	public long getIndexFileLength() {
+		return fileManager.getIndexFileLength();
+	}
+
+	public Map<Long, Long> getFreeSpaceIndexLenghts() {
+		return fileManager.getFreeSpaceIndexLengths();
 	}
 
 	@Override

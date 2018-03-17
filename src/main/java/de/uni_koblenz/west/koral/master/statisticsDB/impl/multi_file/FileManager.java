@@ -2,7 +2,9 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
@@ -225,6 +227,14 @@ public class FileManager {
 	 */
 	long getIndexFileLength() {
 		return index.length();
+	}
+
+	Map<Long, Long> getFreeSpaceIndexLengths() {
+		Map<Long, Long> lengths = new TreeMap<>();
+		for (Entry<Long, ExtraRowFile> entry : extraFiles.entrySet()) {
+			lengths.put(entry.getKey(), (long) entry.getValue().getFreeSpaceIndexData().length);
+		}
+		return lengths;
 	}
 
 	/**

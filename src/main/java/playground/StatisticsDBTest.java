@@ -6,9 +6,18 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -37,6 +46,7 @@ public class StatisticsDBTest {
 		if (!encodedChunksDir.exists() || !encodedChunksDir.isDirectory()) {
 			System.err.println("Directory does not exist: " + encodedChunksDir);
 		}
+		String datasetName = encodedChunksDir.getName();
 		File[] encodedFiles = encodedChunksDir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
@@ -57,6 +67,7 @@ public class StatisticsDBTest {
 		}
 		short numberOfChunks = Short.parseShort(args[1]);
 		String implementation = args[2];
+		System.out.println("Chosen implementation: " + implementation);
 
 		Configuration conf = new Configuration();
 
@@ -91,9 +102,18 @@ public class StatisticsDBTest {
 //				System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
 
+			long dirSize = dirSize(conf.getStatisticsDir(true));
+			Map<Long, Long> freeSpaceIndexLengths = null;
+			long indexFileLength = -1;
+			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
+				freeSpaceIndexLengths = ((MultiFileGraphStatisticsDatabase) statisticsDB).getFreeSpaceIndexLenghts();
+				indexFileLength = ((MultiFileGraphStatisticsDatabase) statisticsDB).getIndexFileLength();
+			}
+			writeBenchmarkResultsToCSV(datasetName, implementation, numberOfChunks, time, dirSize, indexFileLength,
+					freeSpaceIndexLengths);
 			// Read statistics and write into csv
 //			System.out.println("Writing statistics to file...");
-//			writeResultsToCSV(encodedChunksDir, statisticsDB);
+//			writeStatisticsToCSV(encodedChunksDir, statisticsDB);
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -102,7 +122,29 @@ public class StatisticsDBTest {
 
 	}
 
-	private static void writeResultsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {
+	private static void writeBenchmarkResultsToCSV(String datasetName, String implementation, short numberOfChunks,
+			long time, long dirSize, long indexFileLength, Map<Long, Long> freeSpaceIndexLengths) {
+		try {
+			CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+			CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(
+					new FileOutputStream(datasetName + "_" + implementation + "_" + numberOfChunks + "_chunks.csv"),
+					"UTF-8"), csvFileFormat);
+			printer.printRecord("TIME IN MS", time);
+			printer.printRecord("DIR SIZE IN BYTES", dirSize);
+			printer.printRecord("INDEX SIZE IN BYTES", indexFileLength);
+			if (freeSpaceIndexLengths != null) {
+				for (Entry<Long, Long> entry : freeSpaceIndexLengths.entrySet()) {
+					printer.printRecord(entry.getKey(), entry.getValue());
+				}
+			}
+			printer.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+	}
+
+	private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {
 		long maxId = 0;
 		if (statisticsDB instanceof SingleFileGraphStatisticsDatabase) {
 			maxId = ((SingleFileGraphStatisticsDatabase) statisticsDB).getMaxId();
@@ -132,6 +174,53 @@ public class StatisticsDBTest {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Attempts to calculate the size of a file or directory.
+	 *
+	 * <p>
+	 * Since the operation is non-atomic, the returned value may be inaccurate. However, this method is quick and does
+	 * its best.
+	 */
+	public static long dirSize(String pathString) {
+
+		Path path = FileSystems.getDefault().getPath(pathString);
+
+		final AtomicLong size = new AtomicLong(0);
+
+		try {
+			Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+
+					size.addAndGet(attrs.size());
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult visitFileFailed(Path file, IOException exc) {
+
+					System.err.println("skipped: " + file + " (" + exc + ")");
+					// Skip folders that can't be traversed
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+
+					if (exc != null) {
+						System.err.println("had trouble traversing: " + dir + " (" + exc + ")");
+					}
+					// Ignore errors traversing a folder
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		} catch (IOException e) {
+			throw new AssertionError("walkFileTree will not throw IOException if the FileVisitor does not");
+		}
+
+		return size.get();
 	}
 
 }

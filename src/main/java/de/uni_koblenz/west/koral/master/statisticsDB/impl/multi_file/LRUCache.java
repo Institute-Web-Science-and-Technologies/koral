@@ -3,9 +3,11 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class LRUCache<K, V> {
 
@@ -87,6 +89,14 @@ public class LRUCache<K, V> {
 		node.before = null;
 		node.after = null;
 		size--;
+	}
+
+	public Set<K> keySet() {
+		Set<K> keys = new HashSet<>();
+		for (K key : index.keySet()) {
+			keys.add(key);
+		}
+		return keys;
 	}
 
 	public Collection<V> values() {
