@@ -31,7 +31,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	static enum ResourceType {
 		SUBJECT(0), PROPERTY(1), OBJECT(2);
 
-		private int position;
+		private final int position;
 
 		private ResourceType(int position) {
 			this.position = position;
@@ -68,6 +68,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		if (!Files.exists(triplesPerChunkFile)) {
 			return triplesPerChunk;
 		}
+		System.out.println("Found triplesPerChunk file, reading it...");
 		try {
 			byte[] content = Files.readAllBytes(triplesPerChunkFile);
 			for (int i = 0; i < (content.length / Long.BYTES); i++) {
@@ -209,6 +210,11 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			throw new RuntimeException(e);
 		}
 		fileManager.setup();
+	}
+
+	@Override
+	public long getMaxId() {
+		return (fileManager.getIndexFileLength()) / mainfileRowLength;
 	}
 
 	@Override
