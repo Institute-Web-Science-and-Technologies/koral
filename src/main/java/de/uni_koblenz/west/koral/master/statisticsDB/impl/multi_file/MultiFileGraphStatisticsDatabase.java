@@ -212,7 +212,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		fileManager.setup();
 	}
 
-	@Override
 	public long getMaxId() {
 		return (fileManager.getIndexFileLength()) / mainfileRowLength;
 	}
