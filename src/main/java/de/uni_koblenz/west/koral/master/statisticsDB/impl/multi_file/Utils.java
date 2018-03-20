@@ -106,4 +106,20 @@ class Utils {
 		System.arraycopy(array, 0, newArray, 0, array.length);
 		return newArray;
 	}
+
+	/**
+	 * Checks if every field of the array is equal to zero.
+	 *
+	 * @param array
+	 *            A byte array with arbitrary length
+	 * @return True if every entry is equal to zero, false if at least one entry is different from zero.
+	 */
+	public static boolean isArrayZero(byte[] array) {
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] != 0) {
+				return false;
+			}
+		}
+		return true;
+	}
 }
