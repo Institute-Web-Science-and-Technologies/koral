@@ -1,7 +1,6 @@
 package playground;
 
 import java.io.File;
-import java.util.Arrays;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
@@ -41,7 +40,10 @@ public class EncodeGraphChunks {
 			System.out.println("Encode graph chunks...");
 			File[] encodedFiles = encoder.encodeGraphChunksCompletely(graphCover, outputDir,
 					coverCreator.getRequiredInputEncoding());
-			System.out.println("Encoded Files:\n" + Arrays.toString(encodedFiles));
+			System.out.println("Encoded Files:");
+			for (File f : encodedFiles) {
+				System.out.println(f.getName());
+			}
 			System.out.println("Finished.");
 		}
 
