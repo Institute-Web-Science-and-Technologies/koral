@@ -2,7 +2,6 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase.ResourceType;
 
@@ -14,6 +13,12 @@ public class StatisticsRowManager {
 	 * then converting more than 8 bytes to a long might overflow.
 	 */
 	private static final int ROW_DATA_LENGTH = 8;
+
+	/**
+	 * How many bits are used for the column that describes the triple type of the resource. The triple type can be one
+	 * of [S, P, O, SP, SO, PO, SPO] and determines the length of the position bitmap.
+	 */
+	private static final int TRIPLE_TYPE_LENGTH = 2;
 
 	/**
 	 * How many bits are used for the column that describes how many bytes are used per occurence value.
@@ -153,7 +158,7 @@ public class StatisticsRowManager {
 	public StatisticsRowManager(int numberOfChunks) {
 		this.numberOfChunks = numberOfChunks;
 
-		// This desribes the maximum value for the position count column
+		// This describes the maximum value for the position count column
 		// -1 Offset for using zero as well
 		int maxPositionCount = (3 * numberOfChunks) - 1;
 		int maxColumnNumber = 3 * numberOfChunks;
@@ -668,13 +673,19 @@ public class StatisticsRowManager {
 
 	public String getStatistics() {
 		StringBuilder sb = new StringBuilder("STATISTICS:\n");
+		sb.append("Number of chunks: ").append(String.format("%,d", numberOfChunks)).append("\n");
 		sb.append("Total entries: ").append(String.format("%,d", entries)).append("\n");
 		sb.append("Bitmaps used: ").append(String.format("%,d", bitmapsUsed)).append("\n");
 		sb.append("Lists used: ").append(String.format("%,d", listsUsed)).append("\n");
 		sb.append("Unused Bytes: ").append(String.format("%,d", unusedBytes)).append("\n");
 		sb.append("Type Distribution:\n");
-		for (Entry<String, Long> entry : typeDistribution.entrySet()) {
-			sb.append(entry.getKey()).append(": ").append(String.format("%,d", entry.getValue())).append("\n");
+		String[] typesSorted = new String[] { "S", "P", "O", "SO", "SP", "PO", "SPO" };
+		for (String type : typesSorted) {
+			Long amount = typeDistribution.get(type);
+			if (amount == null) {
+				amount = 0L;
+			}
+			sb.append(type).append(": ").append(String.format("%,d", amount)).append("\n");
 		}
 		sb.append("Bitmap encoded resources with 1 type: ").append(String.format("%,d", singleResourceBitmaps))
 				.append("\n");
