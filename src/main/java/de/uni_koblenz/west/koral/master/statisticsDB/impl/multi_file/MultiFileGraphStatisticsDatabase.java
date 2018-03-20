@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
@@ -126,7 +125,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				if (rowManager.isTooLongForMain()) {
 					long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(),
 							rowManager.getDataBytes());
-					Logger.log("I->E: " + Arrays.toString(rowManager.getDataBytes()));
+//					Logger.log("I->E: " + Arrays.toString(rowManager.getDataBytes()));
 					rowManager.updateRowExtraOffset(newExtraFileRowId);
 				} else {
 					rowManager.mergeDataBytesIntoRow();
@@ -142,12 +141,12 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					// Overwrite old extra file entry
 					fileManager.writeExternalRow(fileIdWrite, newExtraFileRowID, rowManager.getDataBytes());
 				}
-				Logger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
-						+ Arrays.toString(rowManager.getDataBytes()));
+//				Logger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
+//						+ Arrays.toString(rowManager.getDataBytes()));
 				// Write new offset into index row
 				rowManager.updateRowExtraOffset(newExtraFileRowID);
 			}
-			Logger.log("New Row: " + Arrays.toString(rowManager.getRow()));
+//			Logger.log("New Row: " + Arrays.toString(rowManager.getRow()));
 			fileManager.writeIndexRow(resourceId, rowManager.getRow());
 
 		} catch (IOException e) {
@@ -165,22 +164,28 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		return rowManager.decodeOccurenceData();
 	}
 
+	/**
+	 * Loads the specified row from the file, and loads it into the rowManager if it was found. If the rowManager
+	 * detects that the row refers to an extra file, the row from the extra file is loaded as well and given to the
+	 * rowManager. Note that a row filled with only zeroes counts as not existing.
+	 *
+	 * @param id
+	 * @return True if the row was found.
+	 */
 	private boolean loadRow(long id) {
-		Logger.log("----- ID " + id);
+//		Logger.log("----- ID " + id);
 		try {
 			byte[] row = fileManager.readIndexRow(id, mainfileRowLength);
-			if ((row == null)
-					|| ((NumberConversion.bytes2long(row, 0) == 0) && (NumberConversion.bytes2long(row, 1) == 0))) {
+			if ((row == null) || Utils.isArrayZero(row)) {
 				return false;
 			}
 			boolean dataExternal = rowManager.load(row);
-			Logger.log("row " + id + ": " + Arrays.toString(rowManager.getRow()));
+//			Logger.log("row " + id + ": " + Arrays.toString(rowManager.getRow()));
 			if (dataExternal) {
-				Logger.log("externalFileRowId: " + rowManager.getExternalFileRowId());
 				byte[] dataBytes = fileManager.readExternalRow(rowManager.getFileId(),
 						rowManager.getExternalFileRowId(), rowManager.getDataLength());
 				rowManager.loadExternalRow(dataBytes);
-				Logger.log("E Row: " + Arrays.toString(dataBytes));
+//				Logger.log("E Row: " + Arrays.toString(dataBytes));
 			}
 		} catch (IOException e) {
 			close();
@@ -234,6 +239,18 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 	}
 
+	public String getStatistics() {
+		long maxId = getMaxId();
+		for (long id = 1; id <= maxId; id++) {
+			boolean rowFound = loadRow(id);
+			if (!rowFound) {
+				continue;
+			}
+			rowManager.collectStatistics();
+		}
+		return rowManager.getStatistics();
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -253,7 +270,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			sb.append(";").append("objectInChunk").append(i);
 		}
 		sb.append(";").append("overallOccurrance");
-		long maxId = (fileManager.getIndexFileLength()) / mainfileRowLength;
+		long maxId = getMaxId();
 		for (long id = 1; id <= maxId; id++) {
 			sb.append("\n");
 			sb.append(id);

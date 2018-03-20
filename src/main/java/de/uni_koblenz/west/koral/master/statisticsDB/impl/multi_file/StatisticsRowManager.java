@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase.ResourceType;
 
@@ -8,8 +10,8 @@ public class StatisticsRowManager {
 
 	/**
 	 * How many bytes are used for the data in the main/index file. This space is used for either file offset or
-	 * occurences values. Note that some code has to be adapted if this value is set to something >8, because then
-	 * converting more than 8 bytes to a long might overflow.
+	 * occurences values. Note that a few lines of code have to be adapted if this value is set to something >8, because
+	 * then converting more than 8 bytes to a long might overflow.
 	 */
 	private static final int ROW_DATA_LENGTH = 8;
 
@@ -18,8 +20,27 @@ public class StatisticsRowManager {
 	 */
 	private static final int VALUE_LENGTH_COLUMN_BITLENGTH = 3;
 
+	/**
+	 * The different possible encodings for the data bytes containing the occurence data. Each occurence value is
+	 * associated with a column, that describes this values resource in terms of type (S,P,O) and in which chunk it
+	 * occured this often. Because only the values != 0 are just listed in order, the mapping to their corresponding
+	 * column numbers happens with these encodings.
+	 *
+	 */
 	static enum PositionEncoding {
-		BITMAP, LIST
+		/**
+		 * Contains one bit for each column. If a column has an associated value, its bit is one. The order of ones
+		 * appearing in the bitmap equals to the order of their corresponding occurence values in the following bytes.
+		 */
+		BITMAP,
+
+		/**
+		 * Each column number is referred to with its enumerated id. For each occurence value, its column number is
+		 * stored in this list, before the values. The column numbers in the list are always sorted. The order of column
+		 * numbers appearing in the list equals to the order of their corresponding occurence values in the following
+		 * bytes.
+		 */
+		LIST
 	}
 
 	/**
@@ -121,6 +142,14 @@ public class StatisticsRowManager {
 	 */
 	private byte[] dataBytes;
 
+	private long bitmapsUsed;
+	private long listsUsed;
+	private long unusedBytes;
+	private final Map<String, Long> typeDistribution;
+	private long entries;
+	private long singleResourceBitmaps;
+	private long duoResourceBitmaps;
+
 	public StatisticsRowManager(int numberOfChunks) {
 		this.numberOfChunks = numberOfChunks;
 
@@ -134,6 +163,8 @@ public class StatisticsRowManager {
 		positionBitmapLength = (int) Math.ceil(positionBitmapBitLength / 8.0);
 		positionListEntryLength = (int) Math.ceil((32 - Integer.numberOfLeadingZeros(maxColumnNumber)) / 8.0);
 		mainfileRowLength = metadataLength + ROW_DATA_LENGTH;
+
+		typeDistribution = new HashMap<>();
 	}
 
 	int getMainFileRowLength() {
@@ -187,7 +218,7 @@ public class StatisticsRowManager {
 		bytesPerValue = extractBytesPerValue();
 
 		positionEncoding = optimalPositionEncoding(positionCount);
-		Logger.log("Enc: " + positionEncoding + ", PC: " + positionCount);
+//		Logger.log("Enc: " + positionEncoding + ", PC: " + positionCount);
 		positionLength = getPositionLength(positionEncoding, positionCount);
 
 		dataLength = positionLength + (positionCount * bytesPerValue);
@@ -272,7 +303,7 @@ public class StatisticsRowManager {
 	void incrementOccurence(ResourceType resourceType, int chunk) {
 		int columnNumber = getColumnNumber(resourceType, chunk);
 		int currentOccurenceValueIndex = getOccurenceValueIndex(columnNumber);
-		Logger.log("Col: " + columnNumber + "; OVI: " + currentOccurenceValueIndex);
+//		Logger.log("Col: " + columnNumber + "; OVI: " + currentOccurenceValueIndex);
 		if (currentOccurenceValueIndex < 0) {
 			// Resource never occured at this column position yet
 			if (optimalPositionEncoding(positionCount + 1) != positionEncoding) {
@@ -280,10 +311,10 @@ public class StatisticsRowManager {
 				long[] oldOccurences = decodeOccurenceData();
 				// Add new occurence
 				oldOccurences[columnNumber] = 1;
-				Logger.log("Occurences now: " + Arrays.toString(oldOccurences));
+//				Logger.log("Occurences now: " + Arrays.toString(oldOccurences));
 				positionCount++;
 				positionEncoding = optimalPositionEncoding(positionCount);
-				Logger.log("Switched to " + positionEncoding);
+//				Logger.log("Switched to " + positionEncoding);
 				encodeOccurenceData(oldOccurences);
 			} else {
 				// Insert value into dataBytes at the correct position
@@ -337,8 +368,8 @@ public class StatisticsRowManager {
 			}
 			updatePositionCount();
 		} else {
-			Logger.log("DB: " + Arrays.toString(dataBytes));
-			Logger.log("PL: " + positionLength);
+//			Logger.log("DB: " + Arrays.toString(dataBytes));
+//			Logger.log("PL: " + positionLength);
 			// Resource column has entry that will be updated now
 			// Get occurence value
 			long occurences = Utils.variableBytes2Long(dataBytes,
@@ -350,7 +381,7 @@ public class StatisticsRowManager {
 				long[] oldOccurences = decodeOccurenceData();
 				// Update current occurence
 				oldOccurences[columnNumber] += 1;
-				Logger.log("new OC: " + Arrays.toString(oldOccurences));
+//				Logger.log("new OC: " + Arrays.toString(oldOccurences));
 				bytesPerValue++;
 				// Rewrite values
 				dataBytes = Utils.extendArray(dataBytes, positionCount);
@@ -362,7 +393,7 @@ public class StatisticsRowManager {
 						positionIndex++;
 					}
 				}
-				Logger.log("DB: " + Arrays.toString(dataBytes));
+//				Logger.log("DB: " + Arrays.toString(dataBytes));
 				updateBytesPerValue();
 			} else {
 				// Update data bytes/the one occurence value
@@ -389,7 +420,7 @@ public class StatisticsRowManager {
 	long[] decodeOccurenceData() {
 		long[] occurenceValues = new long[3 * numberOfChunks];
 		int[] positions = extractPositions();
-		Logger.log("Positions: " + Arrays.toString(positions));
+//		Logger.log("Positions: " + Arrays.toString(positions));
 		for (int i = 0; i < positions.length; i++) {
 			long occurences = Utils.variableBytes2Long(dataBytes, positionLength + (i * bytesPerValue), bytesPerValue);
 			occurenceValues[positions[i]] = occurences;
@@ -598,7 +629,8 @@ public class StatisticsRowManager {
 	 *
 	 * @param columnNumber
 	 *            The column of the wanted occurence value
-	 * @return
+	 * @return The index to the corresponding value, for example if the value is the second one in the value bytes, this
+	 *         returns 1.
 	 */
 	private int getValueIndexOfColumn(int columnNumber) {
 		int positionBitmapIndex = getPositionBitmapIndex(columnNumber);
@@ -632,6 +664,61 @@ public class StatisticsRowManager {
 			}
 		}
 		return -1;
+	}
+
+	public String getStatistics() {
+		StringBuilder sb = new StringBuilder("STATISTICS:\n");
+		sb.append("Total entries: ").append(String.format("%,d", entries)).append("\n");
+		sb.append("Bitmaps used: ").append(String.format("%,d", bitmapsUsed)).append("\n");
+		sb.append("Lists used: ").append(String.format("%,d", listsUsed)).append("\n");
+		sb.append("Unused Bytes: ").append(String.format("%,d", unusedBytes)).append("\n");
+		sb.append("Type Distribution:\n");
+		for (Entry<String, Long> entry : typeDistribution.entrySet()) {
+			sb.append(entry.getKey()).append(": ").append(String.format("%,d", entry.getValue())).append("\n");
+		}
+		sb.append("Bitmap encoded resources with 1 type: ").append(String.format("%,d", singleResourceBitmaps))
+				.append("\n");
+		sb.append("Bitmap encoded resources with 2 type: ").append(String.format("%,d", duoResourceBitmaps))
+				.append("\n");
+		return sb.toString();
+	}
+
+	public void collectStatistics() {
+		entries++;
+		if (positionEncoding == PositionEncoding.BITMAP) {
+			bitmapsUsed++;
+		} else if (positionEncoding == PositionEncoding.LIST) {
+			listsUsed++;
+		}
+		if (!dataExternal) {
+			assert dataLength == dataBytes.length;
+			unusedBytes += ROW_DATA_LENGTH - dataLength;
+		}
+		long[] occurences = decodeOccurenceData();
+		String[] types = new String[] { "S", "P", "O" };
+		StringBuilder typeSB = new StringBuilder();
+		typeLoop: for (int i = 0; i < types.length; i++) {
+			for (int j = 0; j < numberOfChunks; j++) {
+				if (occurences[(i * numberOfChunks) + j] != 0) {
+					typeSB.append(types[i]);
+					continue typeLoop;
+				}
+			}
+		}
+		String type = typeSB.toString();
+		Long amount = typeDistribution.get(type);
+		if (amount == null) {
+			typeDistribution.put(type, 1L);
+		} else {
+			typeDistribution.put(type, amount + 1);
+		}
+		if (positionEncoding == PositionEncoding.BITMAP) {
+			if (type.equals("SP") || type.equals("PO") || type.equals("SO")) {
+				duoResourceBitmaps++;
+			} else if (!type.equals("SPO")) {
+				singleResourceBitmaps++;
+			}
+		}
 	}
 
 }

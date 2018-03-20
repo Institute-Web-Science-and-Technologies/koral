@@ -99,15 +99,17 @@ public class StatisticsDBTest {
 					TimeUnit.MILLISECONDS.toSeconds(time)
 							- TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(time)),
 					time - TimeUnit.SECONDS.toMillis(TimeUnit.MILLISECONDS.toSeconds(time)));
-//				System.out.println(statisticsDB);
+//			System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
 
 			long dirSize = dirSize(conf.getStatisticsDir(true));
 			Map<Long, Long> freeSpaceIndexLengths = null;
 			long indexFileLength = -1;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
-				freeSpaceIndexLengths = ((MultiFileGraphStatisticsDatabase) statisticsDB).getFreeSpaceIndexLenghts();
-				indexFileLength = ((MultiFileGraphStatisticsDatabase) statisticsDB).getIndexFileLength();
+				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
+				System.out.println(multiDB.getStatistics());
+				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
+				indexFileLength = multiDB.getIndexFileLength();
 			}
 			writeBenchmarkResultsToCSV(datasetName, implementation, numberOfChunks, time, dirSize, indexFileLength,
 					freeSpaceIndexLengths);
