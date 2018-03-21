@@ -113,7 +113,6 @@ public class MemoryMappedFileGraphStatisticsDatabase implements GraphStatisticsD
     incrementValue(object, (2 * numberOfChunks) + chunk);
   }
 
-  @Override
   public void incrementRessourceOccurrences(long resource, int chunk) {
     incrementValue(resource, 3 * numberOfChunks);
   }

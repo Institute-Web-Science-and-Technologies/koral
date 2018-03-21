@@ -35,8 +35,6 @@ public interface GraphStatisticsDatabase extends Closeable {
 
   public void incrementObjectCount(long object, int chunk);
 
-  public void incrementRessourceOccurrences(long resource, int chunk);
-
   public void incrementNumberOfTriplesPerChunk(int chunk);
 
   public long[] getChunkSizes();
