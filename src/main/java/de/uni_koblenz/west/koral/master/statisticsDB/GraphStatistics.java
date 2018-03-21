@@ -29,7 +29,7 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 
 /**
  * Stores statistical information about the occurrence of resources in the different graph chunks. It receives its data
@@ -53,7 +53,7 @@ public class GraphStatistics implements Closeable {
 		// TODO enable
 		// database = new SQLiteGraphStatisticsDatabase(conf.getStatisticsDir(),
 		// numberOfChunks);
-		database = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
+		database = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
 	}
 
 	public GraphStatistics(GraphStatisticsDatabase database, short numberOfChunks, Logger logger) {
