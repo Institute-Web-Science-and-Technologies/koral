@@ -9,6 +9,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+/**
+ * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
+ * access.
+ * 
+ * @author philipp
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class LRUCache<K, V> {
 
 	private final int capacity;

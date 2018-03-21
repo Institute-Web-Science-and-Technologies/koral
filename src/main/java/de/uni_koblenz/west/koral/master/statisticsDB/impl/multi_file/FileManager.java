@@ -192,7 +192,6 @@ public class FileManager {
 				if (listIndex < dataLength) {
 					list[listIndex] = l;
 				} else {
-					// TODO: We should not open each file we find a freeSpaceIndex for (open file limit)
 					// Reading one entry is done, store and reset everything for next one
 					extraFiles.put(fileId, new ExtraRowFile(storagePath + fileId, false, list));
 					fileId = -1;
