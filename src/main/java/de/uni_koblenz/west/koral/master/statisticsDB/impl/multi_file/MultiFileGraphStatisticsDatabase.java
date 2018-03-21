@@ -12,6 +12,13 @@ import org.apache.commons.io.FileUtils;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 
+/**
+ * The main class of this implementation, manages the {@link StatisticsRowManager} and persistence through
+ * {@link FileManager}.
+ *
+ * @author philipp
+ *
+ */
 public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
 	private final String statisticsDirPath;
@@ -239,6 +246,11 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 	}
 
+	/**
+	 * Collects and returns a formatted statistical report on all the written entries.
+	 * 
+	 * @return
+	 */
 	public String getStatistics() {
 		long maxId = getMaxId();
 		for (long id = 1; id <= maxId; id++) {

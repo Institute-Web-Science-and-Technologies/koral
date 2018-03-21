@@ -5,6 +5,12 @@ import java.util.Map;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase.ResourceType;
 
+/**
+ * Handles the raw bytes of each row, interprets and updates them.
+ *
+ * @author philipp
+ *
+ */
 public class StatisticsRowManager {
 
 	/**
@@ -599,6 +605,7 @@ public class StatisticsRowManager {
 	 *            Which column will be read
 	 * @return The bit as byte
 	 */
+	// TODO: Update this method to compute needed parameters or remove it. Could be used in extractPositions().
 //	private byte getBitmapBit(int columnNumber) {
 //		return (byte) (dataBytes[bitmapEntryArrayIndex] & (1 << (8 - bitmapEntryOffset - 1)));
 //	}
@@ -671,6 +678,10 @@ public class StatisticsRowManager {
 		return -1;
 	}
 
+	/**
+	 *
+	 * @return A string of the formatted statistical results that were computed with {@link #collectStatistics()} calls.
+	 */
 	public String getStatistics() {
 		StringBuilder sb = new StringBuilder("STATISTICS:\n");
 		sb.append("Number of chunks: ").append(String.format("%,d", numberOfChunks)).append("\n");
@@ -694,6 +705,9 @@ public class StatisticsRowManager {
 		return sb.toString();
 	}
 
+	/**
+	 * Adds properties of the current loaded row to internal statistics variables.
+	 */
 	public void collectStatistics() {
 		entries++;
 		if (positionEncoding == PositionEncoding.BITMAP) {
