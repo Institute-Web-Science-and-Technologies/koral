@@ -75,7 +75,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		if (!Files.exists(triplesPerChunkFile)) {
 			return triplesPerChunk;
 		}
-		System.out.println("Found triplesPerChunk file, reading it...");
 		try {
 			byte[] content = Files.readAllBytes(triplesPerChunkFile);
 			for (int i = 0; i < (content.length / Long.BYTES); i++) {
@@ -132,7 +131,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				if (rowManager.isTooLongForMain()) {
 					long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(),
 							rowManager.getDataBytes());
-//					Logger.log("I->E: " + Arrays.toString(rowManager.getDataBytes()));
 					rowManager.updateRowExtraOffset(newExtraFileRowId);
 				} else {
 					rowManager.mergeDataBytesIntoRow();
@@ -148,12 +146,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					// Overwrite old extra file entry
 					fileManager.writeExternalRow(fileIdWrite, newExtraFileRowID, rowManager.getDataBytes());
 				}
-//				Logger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
-//						+ Arrays.toString(rowManager.getDataBytes()));
 				// Write new offset into index row
 				rowManager.updateRowExtraOffset(newExtraFileRowID);
 			}
-//			Logger.log("New Row: " + Arrays.toString(rowManager.getRow()));
 			fileManager.writeIndexRow(resourceId, rowManager.getRow());
 
 		} catch (IOException e) {
@@ -180,19 +175,16 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @return True if the row was found.
 	 */
 	private boolean loadRow(long id) {
-//		Logger.log("----- ID " + id);
 		try {
 			byte[] row = fileManager.readIndexRow(id, mainfileRowLength);
 			if ((row == null) || Utils.isArrayZero(row)) {
 				return false;
 			}
 			boolean dataExternal = rowManager.load(row);
-//			Logger.log("row " + id + ": " + Arrays.toString(rowManager.getRow()));
 			if (dataExternal) {
 				byte[] dataBytes = fileManager.readExternalRow(rowManager.getFileId(),
 						rowManager.getExternalFileRowId(), rowManager.getDataLength());
 				rowManager.loadExternalRow(dataBytes);
-//				Logger.log("E Row: " + Arrays.toString(dataBytes));
 			}
 		} catch (IOException e) {
 			close();
@@ -248,7 +240,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	/**
 	 * Collects and returns a formatted statistical report on all the written entries.
-	 * 
+	 *
 	 * @return
 	 */
 	public String getStatistics() {

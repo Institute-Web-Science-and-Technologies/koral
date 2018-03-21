@@ -81,7 +81,6 @@ public class GraphStatistics implements Closeable {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		System.out.println("Chunk " + chunkIndex + " done.");
 
 	}
 
