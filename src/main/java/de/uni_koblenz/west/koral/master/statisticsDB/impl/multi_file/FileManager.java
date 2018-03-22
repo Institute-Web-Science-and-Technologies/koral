@@ -14,19 +14,28 @@ public class FileManager {
 
 	private static final int DEFAULT_MAX_OPEN_FILES = 1000;
 
+	private static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
+
 	private final LRUCache<Long, ExtraRowFile> extraFiles;
 
 	private final String storagePath;
+
+	private final long extraFilesCacheSize;
 
 	private final File freeSpaceIndexFile;
 
 	private RowFile index;
 
-	public FileManager(String storagePath, int maxOpenFiles) {
+	private final int maxExtraCacheSize;
+
+	public FileManager(String storagePath, int maxOpenFiles, int extraFilesTotalCacheSize) {
 		this.storagePath = storagePath;
 		if (!this.storagePath.endsWith(File.separator)) {
 			storagePath += File.separator;
 		}
+		extraFilesCacheSize = extraFilesTotalCacheSize;
+
+		maxExtraCacheSize = extraFilesTotalCacheSize / 100;
 
 		extraFiles = new LRUCache<Long, ExtraRowFile>(maxOpenFiles) {
 			@Override
@@ -41,7 +50,7 @@ public class FileManager {
 	}
 
 	public FileManager(String storagePath) {
-		this(storagePath, DEFAULT_MAX_OPEN_FILES);
+		this(storagePath, DEFAULT_MAX_OPEN_FILES, DEFAULT_EXTRAFILES_CACHE_SIZE);
 	}
 
 	void setup() {
@@ -151,7 +160,7 @@ public class FileManager {
 	private ExtraRowFile getExtraFile(long fileId, boolean createIfNotExisting) {
 		ExtraRowFile extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new ExtraRowFile(storagePath + String.valueOf(fileId), createIfNotExisting);
+			extra = new ExtraRowFile(storagePath + String.valueOf(fileId), maxExtraCacheSize, createIfNotExisting);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
@@ -193,7 +202,7 @@ public class FileManager {
 					list[listIndex] = l;
 				} else {
 					// Reading one entry is done, store and reset everything for next one
-					extraFiles.put(fileId, new ExtraRowFile(storagePath + fileId, false, list));
+					extraFiles.put(fileId, new ExtraRowFile(storagePath + fileId, maxExtraCacheSize, false, list));
 					fileId = -1;
 					dataLength = -1;
 					list = null;
