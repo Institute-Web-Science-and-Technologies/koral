@@ -12,7 +12,7 @@ import java.util.Set;
 /**
  * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
  * access.
- * 
+ *
  * @author philipp
  *
  * @param <K>
@@ -132,6 +132,14 @@ public class LRUCache<K, V> {
 
 	protected void removeEldest(DoublyLinkedNode eldest) {
 		index.remove(eldest.key);
+	}
+
+	/**
+	 * @return The amount of elements in the cache, that is the doubly linked list. There may be more in the index map,
+	 *         depending on sub-implementations of {@link #removeEldest(DoublyLinkedNode)}.
+	 */
+	public int size() {
+		return size;
 	}
 
 	public void clear() {
