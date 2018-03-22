@@ -8,31 +8,30 @@ import java.io.RandomAccessFile;
 
 class RowFile {
 
-	protected RandomAccessFile file;
+	protected final File file;
 
-	private final String storageFilePath;
+	protected RandomAccessFile rowFile;
 
 	public RowFile(String storageFilePath, boolean createIfNotExists) {
-		this.storageFilePath = storageFilePath;
+		file = new File(storageFilePath);
 		open(createIfNotExists);
 	}
 
 	protected void open(boolean createIfNotExists) {
-		File storageFile = new File(storageFilePath);
-		if (!createIfNotExists && !storageFile.exists()) {
-			throw new RuntimeException("Could not find file " + storageFilePath);
+		if (!createIfNotExists && !file.exists()) {
+			throw new RuntimeException("Could not find file " + file);
 		}
 		try {
-			file = new RandomAccessFile(storageFilePath, "rw");
+			rowFile = new RandomAccessFile(file, "rw");
 		} catch (FileNotFoundException e) {
-			throw new RuntimeException("Could not find file " + storageFilePath, e);
+			throw new RuntimeException("Could not find file " + file, e);
 		}
 	}
 
 	/**
 	 * Retrieves a row from <code>file</code>. The offset is calculated by <code>rowId * row.length</code>.
 	 *
-	 * @param file
+	 * @param rowFile
 	 *            The RandomAccessFile that will be read
 	 * @param rowId
 	 *            The row number in the file
@@ -43,10 +42,10 @@ class RowFile {
 	 */
 	byte[] readRow(long rowId, int rowLength) throws IOException {
 		long offset = rowId * rowLength;
-		file.seek(offset);
+		rowFile.seek(offset);
 		byte[] row = new byte[rowLength];
 		try {
-			file.readFully(row);
+			rowFile.readFully(row);
 		} catch (EOFException e) {
 			// Resource does not have an entry (yet)
 			return null;
@@ -57,7 +56,7 @@ class RowFile {
 	/**
 	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by <code>rowId * row.length</code>.
 	 *
-	 * @param file
+	 * @param rowFile
 	 *            A RandomAccessFile that will be updated
 	 * @param rowId
 	 *            The number of the row that will be written
@@ -66,14 +65,14 @@ class RowFile {
 	 * @throws IOException
 	 */
 	void writeRow(long rowId, byte[] row) throws IOException {
-		file.seek(rowId * row.length);
-		file.write(row);
+		rowFile.seek(rowId * row.length);
+		rowFile.write(row);
 	}
 
 	boolean valid() {
 		try {
 			// TODO: Does getFD() throw IOException on closed file?
-			return file.getFD().valid();
+			return rowFile.getFD().valid();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -81,7 +80,7 @@ class RowFile {
 
 	long length() {
 		try {
-			return file.length();
+			return rowFile.length();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -91,12 +90,12 @@ class RowFile {
 	 * Deletes the underlying file. {@link #close()} must be called beforehand.
 	 */
 	void delete() {
-		new File(storageFilePath).delete();
+		file.delete();
 	}
 
 	void close() {
 		try {
-			file.close();
+			rowFile.close();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
