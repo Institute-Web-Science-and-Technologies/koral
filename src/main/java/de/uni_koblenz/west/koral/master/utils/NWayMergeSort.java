@@ -21,6 +21,15 @@ import java.util.List;
 public class NWayMergeSort {
 
   public void sort(InitialChunkProducer producer, Merger merger, Comparator<long[]> comparator,
+          File workingDir, int maxNumberOfOpenFiles, File outputFile) {
+    try (EncodedLongFileOutputStream output = new EncodedLongFileOutputStream(outputFile);) {
+      sort(producer, merger, comparator, workingDir, maxNumberOfOpenFiles, output);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void sort(InitialChunkProducer producer, Merger merger, Comparator<long[]> comparator,
           File workingDir, int maxNumberOfOpenFiles, LongOutputWriter output) {
     maxNumberOfOpenFiles -= 1;
     if (maxNumberOfOpenFiles < 3) {

@@ -20,4 +20,7 @@ public interface Merger extends AutoCloseable {
   public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
           LongIterator[] iterators, LongOutputWriter out) throws IOException;
 
+  @Override
+  public void close();
+
 }

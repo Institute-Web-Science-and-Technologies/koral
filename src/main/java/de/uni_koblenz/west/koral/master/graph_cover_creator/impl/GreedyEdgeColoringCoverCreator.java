@@ -449,7 +449,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
           }
 
           @Override
-          public void close() throws Exception {
+          public void close() {
           }
         };
         NWayMergeSort sort = new NWayMergeSort();
@@ -653,7 +653,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
         }
       };
 
@@ -1061,9 +1061,13 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
           if (edgeListInput != null) {
-            edgeListInput.close();
+            try {
+              edgeListInput.close();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
           }
         }
       };
@@ -1384,7 +1388,7 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
         }
       };
 
