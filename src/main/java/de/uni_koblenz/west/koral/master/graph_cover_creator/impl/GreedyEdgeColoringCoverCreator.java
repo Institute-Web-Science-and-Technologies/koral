@@ -23,9 +23,7 @@ import de.uni_koblenz.west.koral.master.utils.Merger;
 import de.uni_koblenz.west.koral.master.utils.NWayMergeSort;
 import de.uni_koblenz.west.koral.master.utils.VertexDegreeComparator;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -44,7 +42,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -1451,129 +1448,6 @@ public class GreedyEdgeColoringCoverCreator extends GraphCoverCreatorBase {
   @Override
   public void close() {
     super.close();
-  }
-
-  private long countEntries(File input, int numberOfValuesPerRow) {
-    long countedValues = 0;
-    try (EncodedLongFileInputStream in = new EncodedLongFileInputStream(input);) {
-      LongIterator iterator = in.iterator();
-      while (iterator.hasNext()) {
-        countedValues++;
-        for (int i = 0; i < numberOfValuesPerRow; i++) {
-          iterator.next();
-        }
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return countedValues;
-  }
-
-  private void print(Map<Long, long[]> edge2vertex, File file) {
-    try (BufferedWriter out = new BufferedWriter(new FileWriter(file));) {
-      for (Entry<Long, long[]> entry : edge2vertex.entrySet()) {
-        String line = "e" + entry.getKey().longValue() + " v" + entry.getValue()[0] + " degree:"
-                + entry.getValue()[1] + "\n";
-        out.write(line);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void printBinary(File input, int numberOfNumbers) {
-    try (EncodedLongFileInputStream in = new EncodedLongFileInputStream(input);) {
-      LongIterator iterator = in.iterator();
-      while (iterator.hasNext()) {
-        System.out.print("[");
-        for (int i = 0; i < numberOfNumbers; i++) {
-          System.out.print((i == 0 ? "" : ", ") + iterator.next());
-        }
-        System.out.println("]");
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void printSimple(File vertexIncidentEdgesFile) {
-    try (EncodedLongFileInputStream in = new EncodedLongFileInputStream(vertexIncidentEdgesFile);) {
-      LongIterator iterator = in.iterator();
-      while (iterator.hasNext()) {
-        System.out.println("vertex" + iterator.next() + " out:" + iterator.next() + " in:"
-                + iterator.next() + " offset:" + iterator.next());
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void print(File vertexIncidentEdgesFile) {
-    try (EncodedLongFileInputStream in = new EncodedLongFileInputStream(vertexIncidentEdgesFile);) {
-      LongIterator iterator = in.iterator();
-      while (iterator.hasNext()) {
-        System.out.println("vertex" + iterator.next());
-        long outDegree = iterator.next();
-        long inDegree = iterator.next();
-        System.out.print("\tout: " + outDegree + " edges = {");
-        String delim = "";
-        for (long i = 0; i < outDegree; i++) {
-          System.out.print(delim + iterator.next());
-          delim = ", ";
-        }
-        System.out.println("}");
-
-        System.out.print("\tin: " + inDegree + " edges = {");
-        delim = "";
-        for (long i = 0; i < inDegree; i++) {
-          System.out.print(delim + iterator.next());
-          delim = ", ";
-        }
-        System.out.println("}");
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void createGraphChunkPerColor(ColoringManager colorManager, EncodedFileInputStream input,
-          File workingDir) {
-    try (EncodedFileInputStream newInput = new EncodedFileInputStream(input);) {
-      File colorDir = new File(workingDir.getCanonicalPath() + File.separator + "coloring");
-      if (colorDir.exists()) {
-        deleteFolder(colorDir);
-      }
-      colorDir.mkdirs();
-
-      File sortedColors = sortBinaryValues(colorManager.getIteratorOverColoredEdges(),
-              new FixedSizeLongArrayComparator(true, 0), workingDir,
-              GreedyEdgeColoringCoverCreator.NUMBER_OF_CACHED_VERTICES, 100, true);
-
-      Map<Long, EncodedFileOutputStream> outputs = new HashMap<>();
-      try (EncodedLongFileInputStream sortedColorsInput = new EncodedLongFileInputStream(
-              sortedColors);) {
-        for (Statement stmt : newInput) {
-          long color = sortedColorsInput.readLong();
-          EncodedFileOutputStream output = outputs.get(color);
-          if (output == null) {
-            output = new EncodedFileOutputStream(new File(colorDir.getCanonicalFile()
-                    + File.separator + "chunkColor" + color + ".enc.gz"));
-            outputs.put(color, output);
-          }
-          output.writeStatement(stmt);
-        }
-      }
-      sortedColors.delete();
-      for (EncodedFileOutputStream output : outputs.values()) {
-        try {
-          output.close();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
 }
