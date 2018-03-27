@@ -307,9 +307,9 @@ public class IterableSortedLongArrayList implements AutoCloseable {
         throw new RuntimeException(e);
       }
       output = null;
-      if (listFile != null) {
-        listFile.delete();
-      }
+    }
+    if (listFile != null) {
+      listFile.delete();
       listFile = null;
     }
   }

@@ -8,6 +8,7 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.LongOutputWriter;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.utils.Deleter;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.utils.FixedSizeLongArrayComparator;
@@ -148,11 +149,14 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                         adjacencyOutListsSortedByVertexId);) {
           LongIterator adjacencyIterator = adjacencyInput.iterator();
           // TODO remove
-          if (currentFrontier.getFreeCacheSpace() > 0) {
-            System.out.println(
-                    "\tselecting " + currentFrontier.getFreeCacheSpace() + " new seed vertices");
+          if (currentFrontier.getFreeCacheSpace() > currentFrontier.getSize()) {
+            System.out.println("\tselecting "
+                    + (currentFrontier.getFreeCacheSpace() - currentFrontier.getSize())
+                    + " new seed vertices");
           }
-          while (adjacencyIterator.hasNext() && (currentFrontier.getFreeCacheSpace() > 0)) {
+          while (adjacencyIterator.hasNext()
+                  && (currentFrontier.getFreeCacheSpace() > currentFrontier.getSize())) {
+            // refill frontier
             long startVertexId = adjacencyIterator.next();
             int chunkIndex = getChunkIndex(startVertexId, numberOfGraphChunks);
             long outDegree = adjacencyIterator.next();
@@ -251,13 +255,15 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                 + " vertices remaining)");
         currentIteration++;
       }
+      adjacencyOutListsSortedByVertexId.delete();
+      nextAdjacencyListSortedByVertexId.delete();
       currentFrontier.close();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
     // TODO activate
-    // Deleter.deleteFolder(internalWorkingDir);
+    Deleter.deleteFolder(internalWorkingDir);
 
     // TODO remove
     System.out.println("total execution time: " + (System.currentTimeMillis() - startTotal));
