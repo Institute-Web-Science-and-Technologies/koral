@@ -197,6 +197,10 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                   nextAdjacencyListOut.writeLong(adjacencyIterator.next());
                 }
                 remainingVerticesNumber++;
+                if (!adjacencyIterator.hasNext()) {
+                  vertexId = 0;
+                  break;
+                }
                 vertexId = adjacencyIterator.next();
               }
             }
@@ -223,17 +227,17 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                 }
               }
             }
-            adjacencyIterator.close();
-            frontierIterator.close();
           }
-          currentFrontier.close();
-          currentFrontier = nextFrontier;
-          // TODO remove
-          currentIteration++;
-          System.out.println("iteration " + currentIteration + ": "
-                  + (System.currentTimeMillis() - startIteration) + "msec ("
-                  + remainingVerticesNumber + " vertices remaining)");
+          adjacencyIterator.close();
+          frontierIterator.close();
         }
+        currentFrontier.close();
+        currentFrontier = nextFrontier;
+        // TODO remove
+        System.out.println("iteration " + currentIteration + ": "
+                + (System.currentTimeMillis() - startIteration) + "msec (" + remainingVerticesNumber
+                + " vertices remaining)");
+        currentIteration++;
       }
       currentFrontier.close();
     } catch (IOException e) {
@@ -349,14 +353,14 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
           elements = null;
         }
       };
-      merger = new Merger() {
 
-        // TODO remove
-        private long numberOfVertices;
+      // TODO remove
+      long[] numberOfVertices = new long[] { 0 };
+      merger = new Merger() {
 
         @Override
         public void startNextMergeLevel() {
-          numberOfVertices = 0;
+          numberOfVertices[0] = 0;
         }
 
         @Override
@@ -367,7 +371,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
         @Override
         public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
                 LongIterator[] iterators, LongOutputWriter out) throws IOException {
-          numberOfVertices++;
+          numberOfVertices[0]++;
           out.writeLong(elements[indicesOfSmallestElement.nextSetBit(0)][0]);
           long indegree = 0;
           long outdegree = 0;
@@ -389,10 +393,6 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
 
         @Override
         public void close() {
-          if (numberOfVertices != 0) {
-            System.out.println("\t" + numberOfVertices + " vertices");
-            numberOfVertices = 0;
-          }
         }
       };
       Comparator<long[]> comparator = new FixedSizeLongArrayComparator(true, 0);
@@ -401,6 +401,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
       NWayMergeSort sort = new NWayMergeSort();
       sort.sort(producer, merger, comparator, workingDir, maxNumberOfOpenFiles,
               adjacencyListSortedByVertex);
+      System.out.println("\t" + numberOfVertices[0] + " vertices");
       return adjacencyListSortedByVertex;
     } catch (IOException e) {
       throw new RuntimeException(e);

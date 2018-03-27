@@ -101,14 +101,21 @@ public class IterableSortedLongArrayList implements AutoCloseable {
 
         @Override
         public boolean hasNext() {
-          return (nextUnreturnedArray < nextFreeIndex)
-                  || ((nextUnreturnedArray == nextFreeIndex) && (nextUnreturnedArray < arraySize));
+          return nextUnreturnedArray < nextFreeIndex;
         }
 
         @Override
         public long next() {
           if (!hasNext()) {
             throw new NoSuchElementException();
+          }
+          // TODO remove
+          if (cache[nextUnreturnedArray] == null) {
+            System.out.println(Arrays.deepToString(Arrays.copyOf(cache, nextFreeIndex)));
+            System.out.println("nextFreeIndex: " + nextFreeIndex);
+            System.out.println("nextUnreturnedArray: " + nextUnreturnedArray);
+            System.out.println(
+                    "nextUnreturnedElementWithinArray: " + nextUnreturnedElementWithinArray);
           }
           long next = cache[nextUnreturnedArray][nextUnreturnedElementWithinArray++];
           if (nextUnreturnedElementWithinArray >= arraySize) {
