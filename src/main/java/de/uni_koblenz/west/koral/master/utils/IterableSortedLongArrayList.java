@@ -109,14 +109,6 @@ public class IterableSortedLongArrayList implements AutoCloseable {
           if (!hasNext()) {
             throw new NoSuchElementException();
           }
-          // TODO remove
-          if (cache[nextUnreturnedArray] == null) {
-            System.out.println(Arrays.deepToString(Arrays.copyOf(cache, nextFreeIndex)));
-            System.out.println("nextFreeIndex: " + nextFreeIndex);
-            System.out.println("nextUnreturnedArray: " + nextUnreturnedArray);
-            System.out.println(
-                    "nextUnreturnedElementWithinArray: " + nextUnreturnedElementWithinArray);
-          }
           long next = cache[nextUnreturnedArray][nextUnreturnedElementWithinArray++];
           if (nextUnreturnedElementWithinArray >= arraySize) {
             nextUnreturnedArray++;
