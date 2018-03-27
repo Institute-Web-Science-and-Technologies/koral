@@ -161,9 +161,10 @@ public class StatisticsRowManager {
 	private long singleResourceBitmaps;
 	private long duoResourceBitmaps;
 	private long singleResourceBitmapsFromList;
-	private long duoResourceBitmapsFromList;
-	private long singleResourceBitmapsFromListSavedBytes;
-	private long duoResourceBitmapsFromListSavedBytes;
+	// Key: positionLength
+	// Value: Amount of occurences
+	private final Map<Integer, Long> type1ResourcesAsListLengths;
+	private final Map<Integer, Long> type2ResourcesAsListLengths;
 
 	public StatisticsRowManager(int numberOfChunks) {
 		this.numberOfChunks = numberOfChunks;
@@ -180,6 +181,8 @@ public class StatisticsRowManager {
 		mainfileRowLength = metadataLength + ROW_DATA_LENGTH;
 
 		typeDistribution = new HashMap<>();
+		type1ResourcesAsListLengths = new HashMap<>();
+		type2ResourcesAsListLengths = new HashMap<>();
 	}
 
 	int getMainFileRowLength() {
@@ -706,14 +709,22 @@ public class StatisticsRowManager {
 				.append("\n");
 		sb.append("Bitmap encoded resources with 2 type: ").append(String.format("%,d", duoResourceBitmaps))
 				.append("\n");
-		sb.append("Type 1 resources that would be encoded as bitmap additionally: ")
-				.append(String.format("%,d", singleResourceBitmapsFromList)).append("\n");
-		sb.append("Bytes that would be saved because of encoding these type 1 lists: ")
-				.append(String.format("%,d", singleResourceBitmapsFromListSavedBytes)).append("\n");
-		sb.append("Type 2 resources that would be encoded as bitmap additionally: ")
-				.append(String.format("%,d", duoResourceBitmapsFromList)).append("\n");
-		sb.append("Bytes that would be saved because of encoding these type 2 lists: ")
-				.append(String.format("%,d", duoResourceBitmapsFromListSavedBytes)).append("\n");
+		sb.append("Type 1 Lists:").append("\n");
+		for (Integer positionLength : type1ResourcesAsListLengths.keySet()) {
+			Long amount = type1ResourcesAsListLengths.get(positionLength);
+			if (amount == null) {
+				amount = 0L;
+			}
+			sb.append(positionLength).append(": ").append(String.format("%,d", amount)).append("\n");
+		}
+		sb.append("Type 2 Lists:").append("\n");
+		for (Integer positionLength : type2ResourcesAsListLengths.keySet()) {
+			Long amount = type2ResourcesAsListLengths.get(positionLength);
+			if (amount == null) {
+				amount = 0L;
+			}
+			sb.append(positionLength).append(": ").append(String.format("%,d", amount)).append("\n");
+		}
 		return sb.toString();
 	}
 
@@ -757,15 +768,19 @@ public class StatisticsRowManager {
 			}
 		} else if (positionEncoding == PositionEncoding.LIST) {
 			if (type.equals("SP") || type.equals("PO") || type.equals("SO")) {
-				if (Math.ceil((2 * numberOfChunks) / 8) < positionLength) {
-					duoResourceBitmapsFromList++;
-					duoResourceBitmapsFromListSavedBytes += positionLength - Math.ceil((2 * numberOfChunks) / 8);
+				Long amountList = type2ResourcesAsListLengths.get(positionLength);
+				if (amountList == null) {
+					amountList = 0L;
 				}
+				amountList++;
+				type2ResourcesAsListLengths.put(positionLength, amountList);
 			} else if (!type.equals("SPO")) {
-				if (Math.ceil((1 * numberOfChunks) / 8) < positionLength) {
-					singleResourceBitmapsFromList++;
-					singleResourceBitmapsFromListSavedBytes += positionLength - Math.ceil((1 * numberOfChunks) / 8);
+				Long amountList = type1ResourcesAsListLengths.get(positionLength);
+				if (amountList == null) {
+					amountList = 0L;
 				}
+				amountList++;
+				type1ResourcesAsListLengths.put(positionLength, amountList);
 			}
 		}
 	}
