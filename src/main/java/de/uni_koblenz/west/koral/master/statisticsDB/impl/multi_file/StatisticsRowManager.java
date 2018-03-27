@@ -160,6 +160,10 @@ public class StatisticsRowManager {
 	private long entries;
 	private long singleResourceBitmaps;
 	private long duoResourceBitmaps;
+	private long singleResourceBitmapsFromList;
+	private long duoResourceBitmapsFromList;
+	private long singleResourceBitmapsFromListSavedBytes;
+	private long duoResourceBitmapsFromListSavedBytes;
 
 	public StatisticsRowManager(int numberOfChunks) {
 		this.numberOfChunks = numberOfChunks;
@@ -685,6 +689,14 @@ public class StatisticsRowManager {
 				.append("\n");
 		sb.append("Bitmap encoded resources with 2 type: ").append(String.format("%,d", duoResourceBitmaps))
 				.append("\n");
+		sb.append("Type 1 resources that would be encoded as bitmap additionally: ")
+				.append(String.format("%,d", singleResourceBitmapsFromList)).append("\n");
+		sb.append("Bytes that would be saved because of encoding these type 1 lists: ")
+				.append(String.format("%,d", singleResourceBitmapsFromListSavedBytes)).append("\n");
+		sb.append("Type 2 resources that would be encoded as bitmap additionally: ")
+				.append(String.format("%,d", duoResourceBitmapsFromList)).append("\n");
+		sb.append("Bytes that would be saved because of encoding these type 2 lists: ")
+				.append(String.format("%,d", duoResourceBitmapsFromListSavedBytes)).append("\n");
 		return sb.toString();
 	}
 
@@ -725,6 +737,18 @@ public class StatisticsRowManager {
 				duoResourceBitmaps++;
 			} else if (!type.equals("SPO")) {
 				singleResourceBitmaps++;
+			}
+		} else if (positionEncoding == PositionEncoding.LIST) {
+			if (type.equals("SP") || type.equals("PO") || type.equals("SO")) {
+				if (Math.ceil((2 * numberOfChunks) / 8) < positionLength) {
+					duoResourceBitmapsFromList++;
+					duoResourceBitmapsFromListSavedBytes += positionLength - Math.ceil((2 * numberOfChunks) / 8);
+				}
+			} else if (!type.equals("SPO")) {
+				if (Math.ceil((1 * numberOfChunks) / 8) < positionLength) {
+					singleResourceBitmapsFromList++;
+					singleResourceBitmapsFromListSavedBytes += positionLength - Math.ceil((1 * numberOfChunks) / 8);
+				}
 			}
 		}
 	}
