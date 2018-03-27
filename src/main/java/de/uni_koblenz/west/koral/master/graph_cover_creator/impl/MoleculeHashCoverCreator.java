@@ -34,12 +34,22 @@ import java.util.logging.Logger;
  */
 public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
 
+  private static final int DEFAULT_MAX_MOLECULE_DIAMETER = 2;
+
   private static final int MAX_NUMBER_OF_OPEN_FILES = 100;
 
   private static final long MAX_CASH_SIZE = 0x80_00_00L;
 
+  private final int maxMoleculeDiameter;
+
   public MoleculeHashCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
+    this(logger, measurementCollector, MoleculeHashCoverCreator.DEFAULT_MAX_MOLECULE_DIAMETER);
+  }
+
+  public MoleculeHashCoverCreator(Logger logger, MeasurementCollector measurementCollector,
+          int maxMoleculeDiameter) {
     super(logger, measurementCollector);
+    this.maxMoleculeDiameter = maxMoleculeDiameter;
   }
 
   @Override
@@ -62,7 +72,6 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
             MoleculeHashCoverCreator.MAX_CASH_SIZE);
 
     try {
-      // FIXME introduce parameter n to stop exploration
       // initialize with vertices that have an indegree 0
       /*
        * (startVertexID, outDegree, (outEdge, endVertexId)*)* sorted by
@@ -73,7 +82,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
       long remainingVerticesNumber = 0;
       IterableSortedLongArrayList currentFrontier = new IterableSortedLongArrayList(2,
               new FixedSizeLongArrayComparator(true, 0), MoleculeHashCoverCreator.MAX_CASH_SIZE / 2,
-              internalWorkingDir, MoleculeHashCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+              internalWorkingDir, MoleculeHashCoverCreator.MAX_NUMBER_OF_OPEN_FILES - 3);
       try (EncodedLongFileOutputStream nextAdjacencyListOut = new EncodedLongFileOutputStream(
               nextAdjacencyListSortedByVertexId);
               EncodedLongFileInputStream adjacencyInput = new EncodedLongFileInputStream(
@@ -97,7 +106,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                       NumberConversion.long2bytes(edgeId), NumberConversion.long2bytes(endVertexId),
                       getContainment(numberOfGraphChunks));
               writeStatementToChunk(chunkIndex, numberOfGraphChunks, stmt, outputs, writtenFiles);
-              currentFrontier.append(endVertexId, chunkIndex);
+              currentFrontier.append(endVertexId, chunkIndex, 1);
             }
           } else {
             // this vertex will be visited in the future
@@ -116,19 +125,18 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
         adjacencyOutListsSortedByVertexId = nextAdjacencyListSortedByVertexId;
         nextAdjacencyListSortedByVertexId = File.createTempFile("adjacencyList", "",
                 internalWorkingDir);
-        remainingVerticesNumber = 0;
         @SuppressWarnings("resource")
         IterableSortedLongArrayList nextFrontier = new IterableSortedLongArrayList(2,
                 new FixedSizeLongArrayComparator(true, 0),
                 MoleculeHashCoverCreator.MAX_CASH_SIZE / 2, internalWorkingDir,
-                MoleculeHashCoverCreator.MAX_NUMBER_OF_OPEN_FILES);
+                MoleculeHashCoverCreator.MAX_NUMBER_OF_OPEN_FILES - 3);
         try (EncodedLongFileOutputStream nextAdjacencyListOut = new EncodedLongFileOutputStream(
                 nextAdjacencyListSortedByVertexId);
                 EncodedLongFileInputStream adjacencyInput = new EncodedLongFileInputStream(
                         adjacencyOutListsSortedByVertexId);) {
           LongIterator adjacencyIterator = adjacencyInput.iterator();
           if (currentFrontier.isEmpty()) {
-            // find new seed
+            // pick first vertex as new seed
             if (!adjacencyIterator.hasNext()) {
               break;
             }
@@ -143,13 +151,18 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                       NumberConversion.long2bytes(edgeId), NumberConversion.long2bytes(endVertexId),
                       getContainment(numberOfGraphChunks));
               writeStatementToChunk(chunkIndex, numberOfGraphChunks, stmt, outputs, writtenFiles);
-              currentFrontier.append(endVertexId, chunkIndex);
+              currentFrontier.append(endVertexId, chunkIndex, 1);
+            }
+            if (remainingVerticesNumber == 1) {
+              break;
             }
           }
+          remainingVerticesNumber = 0;
           LongIterator frontierIterator = currentFrontier.iterator();
           while (adjacencyIterator.hasNext() && frontierIterator.hasNext()) {
             long frontierVertex = frontierIterator.next();
             long frontierChunk = frontierIterator.next();
+            long currentMoleculeDiameter = frontierIterator.next();
 
             long vertexId = adjacencyIterator.next();
             // search for a match
@@ -185,7 +198,12 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                         writtenFiles);
                 if (endVertexId != vertexId) {
                   // in case of self-loops do not visit vertex again
-                  nextFrontier.append(endVertexId, frontierChunk);
+                  nextFrontier.append(endVertexId,
+                          currentMoleculeDiameter == maxMoleculeDiameter
+                                  ? getChunkIndex(endVertexId, numberOfGraphChunks)
+                                  : frontierChunk,
+                          currentMoleculeDiameter == maxMoleculeDiameter ? 1
+                                  : (currentMoleculeDiameter + 1));
                 }
               }
             }
