@@ -20,6 +20,8 @@ import java.util.NoSuchElementException;
  */
 public class IterableSortedLongArrayList implements AutoCloseable {
 
+  private long size;
+
   private final long cacheSize;
 
   private final int arraySize;
@@ -50,6 +52,7 @@ public class IterableSortedLongArrayList implements AutoCloseable {
     cache = new long[(int) (cacheSize / arraySize / Long.BYTES)][];
     nextFreeIndex = 0;
     isSorted = false;
+    size = 0;
   }
 
   public void append(long... element) {
@@ -71,10 +74,12 @@ public class IterableSortedLongArrayList implements AutoCloseable {
       if (cache != null) {
         cache[nextFreeIndex] = element;
         nextFreeIndex++;
+        size++;
       } else if (output != null) {
         for (long value : element) {
           output.writeLong(value);
         }
+        size++;
       } else {
         throw new IllegalStateException("The " + IterableSortedLongArrayList.class.getName()
                 + " is already closed or was already iterated.");
@@ -86,6 +91,10 @@ public class IterableSortedLongArrayList implements AutoCloseable {
 
   public boolean isEmpty() {
     return nextFreeIndex == 0;
+  }
+
+  public long getSize() {
+    return size;
   }
 
   public LongIterator iterator() {

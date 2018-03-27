@@ -8,7 +8,6 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.LongOutputWriter;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
-import de.uni_koblenz.west.koral.common.utils.Deleter;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.utils.FixedSizeLongArrayComparator;
@@ -35,6 +34,10 @@ import java.util.logging.Logger;
 public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
 
   private static final int DEFAULT_MAX_MOLECULE_DIAMETER = 2;
+
+  private static final int NUMBER_OF_NEW_SEEDS_IN_PERCENT = 10;
+
+  private static final int MINIMAL_NUMBER_OF_NEW_SEEDS = 1000;
 
   private static final int MAX_NUMBER_OF_OPEN_FILES = 100;
 
@@ -149,37 +152,40 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                         adjacencyOutListsSortedByVertexId);) {
           LongIterator adjacencyIterator = adjacencyInput.iterator();
           if (currentFrontier.isEmpty()) {
-            // pick first vertex as new seed
-            if (!adjacencyIterator.hasNext()) {
-              break;
+            // pick new seeds
+            long numberOfNewSeeds = (remainingVerticesNumber
+                    * MoleculeHashCoverCreator.NUMBER_OF_NEW_SEEDS_IN_PERCENT) / 100;
+            if (numberOfNewSeeds < MoleculeHashCoverCreator.MINIMAL_NUMBER_OF_NEW_SEEDS) {
+              numberOfNewSeeds = MoleculeHashCoverCreator.MINIMAL_NUMBER_OF_NEW_SEEDS;
             }
             // TODO remove
-            System.out.println("\tselecting new seed vertex");
-            long startVertexId = adjacencyIterator.next();
-            int chunkIndex = getChunkIndex(startVertexId, numberOfGraphChunks);
-            long outDegree = adjacencyIterator.next();
-            for (int i = 0; i < outDegree; i++) {
-              long edgeId = adjacencyIterator.next();
-              long endVertexId = adjacencyIterator.next();
-              Statement stmt = Statement.getStatement(EncodingFileFormat.EEE,
-                      NumberConversion.long2bytes(startVertexId),
-                      NumberConversion.long2bytes(edgeId), NumberConversion.long2bytes(endVertexId),
-                      getContainment(numberOfGraphChunks));
-              writeStatementToChunk(chunkIndex, numberOfGraphChunks, stmt, outputs, writtenFiles);
-              currentFrontier.append(endVertexId, chunkIndex, 1);
-            }
-            if (remainingVerticesNumber == 1) {
-              break;
+            System.out.println("\tselecting " + numberOfNewSeeds + " new seed vertices");
+            for (long j = 0; (j < numberOfNewSeeds) && adjacencyIterator.hasNext(); j++) {
+              long startVertexId = adjacencyIterator.next();
+              int chunkIndex = getChunkIndex(startVertexId, numberOfGraphChunks);
+              long outDegree = adjacencyIterator.next();
+              for (int i = 0; i < outDegree; i++) {
+                long edgeId = adjacencyIterator.next();
+                long endVertexId = adjacencyIterator.next();
+                Statement stmt = Statement.getStatement(EncodingFileFormat.EEE,
+                        NumberConversion.long2bytes(startVertexId),
+                        NumberConversion.long2bytes(edgeId),
+                        NumberConversion.long2bytes(endVertexId),
+                        getContainment(numberOfGraphChunks));
+                writeStatementToChunk(chunkIndex, numberOfGraphChunks, stmt, outputs, writtenFiles);
+                currentFrontier.append(endVertexId, chunkIndex, 1);
+              }
             }
           }
           remainingVerticesNumber = 0;
           LongIterator frontierIterator = currentFrontier.iterator();
+          long vertexId = 0;
           while (adjacencyIterator.hasNext() && frontierIterator.hasNext()) {
             long frontierVertex = frontierIterator.next();
             long frontierChunk = frontierIterator.next();
             long currentMoleculeDiameter = frontierIterator.next();
 
-            long vertexId = adjacencyIterator.next();
+            vertexId = adjacencyIterator.next();
             // search for a match
             while (adjacencyIterator.hasNext() && frontierIterator.hasNext()
                     && (vertexId != frontierVertex)) {
@@ -226,7 +232,23 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                                   : (currentMoleculeDiameter + 1));
                 }
               }
+              vertexId = 0;
             }
+          }
+          // copy left over vertices
+          while (adjacencyIterator.hasNext()) {
+            if (vertexId == 0) {
+              vertexId = adjacencyIterator.next();
+            }
+            long outDegree = adjacencyIterator.next();
+            nextAdjacencyListOut.writeLong(vertexId);
+            nextAdjacencyListOut.writeLong(outDegree);
+            for (int i = 0; i < outDegree; i++) {
+              nextAdjacencyListOut.writeLong(adjacencyIterator.next());
+              nextAdjacencyListOut.writeLong(adjacencyIterator.next());
+            }
+            remainingVerticesNumber++;
+            vertexId = 0;
           }
           adjacencyIterator.close();
           frontierIterator.close();
@@ -244,7 +266,8 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
       throw new RuntimeException(e);
     }
 
-    Deleter.deleteFolder(internalWorkingDir);
+    // TODO activate
+    // Deleter.deleteFolder(internalWorkingDir);
 
     // TODO remove
     System.out.println("total execution time: " + (System.currentTimeMillis() - startTotal));
