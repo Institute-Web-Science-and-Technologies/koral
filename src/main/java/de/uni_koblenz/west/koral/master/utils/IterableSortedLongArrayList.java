@@ -265,7 +265,7 @@ public class IterableSortedLongArrayList implements AutoCloseable {
         };
         File newListFile = File.createTempFile("listFile", "", workingDir);
         NWayMergeSort sorter = new NWayMergeSort();
-        sorter.sort(producer, merger, comparator, newListFile, maxNumberOfOpenFiles, newListFile);
+        sorter.sort(producer, merger, comparator, workingDir, maxNumberOfOpenFiles, newListFile);
         listFile.delete();
         listFile = newListFile;
 
