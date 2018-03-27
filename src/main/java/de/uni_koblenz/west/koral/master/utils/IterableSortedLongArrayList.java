@@ -97,6 +97,10 @@ public class IterableSortedLongArrayList implements AutoCloseable {
     return size;
   }
 
+  public long getFreeCacheSpace() {
+    return cache == null ? 0 : (cache.length - nextFreeIndex);
+  }
+
   public LongIterator iterator() {
     if (!isSorted) {
       sort();
