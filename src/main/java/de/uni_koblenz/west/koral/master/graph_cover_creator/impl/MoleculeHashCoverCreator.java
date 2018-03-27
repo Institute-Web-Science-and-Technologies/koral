@@ -35,13 +35,13 @@ import java.util.logging.Logger;
  */
 public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
 
-  private static final int DEFAULT_MAX_MOLECULE_DIAMETER = 2;
+  public static final int DEFAULT_MAX_MOLECULE_DIAMETER = 2;
 
   private static final int MAX_NUMBER_OF_OPEN_FILES = 100;
 
   private static final long MAX_CASH_SIZE = 0x80_00_00L;
 
-  private final int maxMoleculeDiameter;
+  private int maxMoleculeDiameter;
 
   public MoleculeHashCoverCreator(Logger logger, MeasurementCollector measurementCollector) {
     this(logger, measurementCollector, MoleculeHashCoverCreator.DEFAULT_MAX_MOLECULE_DIAMETER);
@@ -51,11 +51,10 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
           int maxMoleculeDiameter) {
     super(logger, measurementCollector);
     this.maxMoleculeDiameter = maxMoleculeDiameter;
-    if (this.measurementCollector != null) {
-      this.measurementCollector.measureValue(
-              MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_MAXIMAL_MOLECULE_DIAMETER,
-              this.maxMoleculeDiameter);
-    }
+  }
+
+  public void setMaxMoleculeDiameter(int maxMoleculeDiameter) {
+    this.maxMoleculeDiameter = maxMoleculeDiameter;
   }
 
   @Override
@@ -67,6 +66,11 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
   protected void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
           int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
           File workingDir) {
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_MAXIMAL_MOLECULE_DIAMETER,
+              maxMoleculeDiameter);
+    }
 
     // TODO remove
     long startTotal = System.currentTimeMillis();
@@ -187,6 +191,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                     - currentFrontier.getSize();
             // TODO remove
             System.out.println("\tselecting " + numberOfNewSeedVertices + " new seed vertices");
+            numberOfNewSeedVertices = 0;
           }
           while (adjacencyIterator.hasNext()
                   && (currentFrontier.getFreeCacheSpace() > currentFrontier.getSize())) {
@@ -203,6 +208,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                       getContainment(numberOfGraphChunks));
               writeStatementToChunk(chunkIndex, numberOfGraphChunks, stmt, outputs, writtenFiles);
               currentFrontier.append(endVertexId, chunkIndex, 1);
+              numberOfNewSeedVertices++;
             }
           }
           remainingVerticesNumber = 0;
