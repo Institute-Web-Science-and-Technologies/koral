@@ -8,6 +8,7 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.LongOutputWriter;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.measurement.MeasurementCollector;
+import de.uni_koblenz.west.koral.common.measurement.MeasurementType;
 import de.uni_koblenz.west.koral.common.utils.Deleter;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
@@ -50,6 +51,11 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
           int maxMoleculeDiameter) {
     super(logger, measurementCollector);
     this.maxMoleculeDiameter = maxMoleculeDiameter;
+    if (this.measurementCollector != null) {
+      this.measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_MAXIMAL_MOLECULE_DIAMETER,
+              this.maxMoleculeDiameter);
+    }
   }
 
   @Override
@@ -70,9 +76,19 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
       internalWorkingDir.mkdirs();
     }
 
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_VERTEX_DEGREE_TRANSFORMATION_START,
+              System.currentTimeMillis());
+    }
     File adjacencyOutListsSortedByVertexId = createAdjacencyListsSortedByStartVertexId(input,
             internalWorkingDir, MoleculeHashCoverCreator.MAX_NUMBER_OF_OPEN_FILES,
             MoleculeHashCoverCreator.MAX_CASH_SIZE);
+    if (measurementCollector != null) {
+      measurementCollector.measureValue(
+              MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_VERTEX_DEGREE_TRANSFORMATION_END,
+              System.currentTimeMillis());
+    }
     // TODO remove
     System.out.println("create input format: " + (System.currentTimeMillis() - startTotal));
 
@@ -80,6 +96,11 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
       // TODO remove
       long startInitialization = System.currentTimeMillis();
       // initialize with vertices that have an indegree 0
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_ITERATION_START,
+                System.currentTimeMillis(), Long.toString(0));
+      }
       /*
        * (startVertexID, outDegree, (outEdge, endVertexId)*)* sorted by
        * startVertexID
@@ -127,11 +148,24 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
           }
         }
       }
+      if (measurementCollector != null) {
+        measurementCollector.measureValue(
+                MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_ITERATION_END,
+                System.currentTimeMillis(), Long.toString(0),
+                Long.toString(remainingVerticesNumber), Long.toString(currentFrontier.getSize()),
+                Long.toString(currentFrontier.getSize()));
+      }
       // TODO remove
       System.out.println("initialization: " + (System.currentTimeMillis() - startInitialization)
               + "msec (" + remainingVerticesNumber + " vertices remaining)");
       long currentIteration = 1;
       while (remainingVerticesNumber > 0) {
+        if (measurementCollector != null) {
+          measurementCollector.measureValue(
+                  MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_ITERATION_START,
+                  System.currentTimeMillis(), Long.toString(currentIteration));
+        }
+        long numberOfNewSeedVertices = 0;
         // TODO remove
         long startIteration = System.currentTimeMillis();
         adjacencyOutListsSortedByVertexId.delete();
@@ -148,11 +182,11 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
                 EncodedLongFileInputStream adjacencyInput = new EncodedLongFileInputStream(
                         adjacencyOutListsSortedByVertexId);) {
           LongIterator adjacencyIterator = adjacencyInput.iterator();
-          // TODO remove
           if (currentFrontier.getFreeCacheSpace() > currentFrontier.getSize()) {
-            System.out.println("\tselecting "
-                    + (currentFrontier.getFreeCacheSpace() - currentFrontier.getSize())
-                    + " new seed vertices");
+            numberOfNewSeedVertices = currentFrontier.getFreeCacheSpace()
+                    - currentFrontier.getSize();
+            // TODO remove
+            System.out.println("\tselecting " + numberOfNewSeedVertices + " new seed vertices");
           }
           while (adjacencyIterator.hasNext()
                   && (currentFrontier.getFreeCacheSpace() > currentFrontier.getSize())) {
@@ -249,6 +283,13 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
         }
         currentFrontier.close();
         currentFrontier = nextFrontier;
+        if (measurementCollector != null) {
+          measurementCollector.measureValue(
+                  MeasurementType.LOAD_GRAPH_COVER_CREATION_MOLECULE_ITERATION_END,
+                  System.currentTimeMillis(), Long.toString(currentIteration),
+                  Long.toString(remainingVerticesNumber), Long.toString(numberOfNewSeedVertices),
+                  Long.toString(nextFrontier.getSize()));
+        }
         // TODO remove
         System.out.println("iteration " + currentIteration + ": "
                 + (System.currentTimeMillis() - startIteration) + "msec (" + remainingVerticesNumber

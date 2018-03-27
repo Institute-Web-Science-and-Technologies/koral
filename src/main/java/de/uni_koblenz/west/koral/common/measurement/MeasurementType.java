@@ -184,6 +184,37 @@ public enum MeasurementType {
 
   /**
    * measured on master<br>
+   * maximal molecule diameter
+   */
+  LOAD_GRAPH_COVER_CREATION_MOLECULE_MAXIMAL_MOLECULE_DIAMETER,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_MOLECULE_VERTEX_DEGREE_TRANSFORMATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp
+   */
+  LOAD_GRAPH_COVER_CREATION_MOLECULE_VERTEX_DEGREE_TRANSFORMATION_END,
+
+  /**
+   * measured on master<br>
+   * timestamp, iteration number
+   */
+  LOAD_GRAPH_COVER_CREATION_MOLECULE_ITERATION_START,
+
+  /**
+   * measured on master<br>
+   * timestamp, iteration number, number of remaining vertices, number of filled
+   * seeds, next frontier size
+   */
+  LOAD_GRAPH_COVER_CREATION_MOLECULE_ITERATION_END,
+
+  /**
+   * measured on master<br>
    * timestamp
    */
   LOAD_GRAPH_COVER_CREATION_FILE_WRITE_START,
