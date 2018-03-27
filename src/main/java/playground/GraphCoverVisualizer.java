@@ -135,12 +135,22 @@ public class GraphCoverVisualizer {
   }
 
   private void executeDot(File outputFile, String format) throws IOException {
-    // ProcessBuilder pb = new ProcessBuilder("neato", "-T", format, "-O",
-    // outputFile.getAbsolutePath());
-    ProcessBuilder pb = new ProcessBuilder("dot", "-T", format, "-O", outputFile.getAbsolutePath());
+    ProcessBuilder pb = new ProcessBuilder("dot", "-T", format, "-o",
+            outputFile.getAbsolutePath().replace(".dot", "-dot." + format),
+            outputFile.getAbsolutePath());
+    pb.inheritIO();
     Process process = pb.start();
     try {
       process.waitFor();
+    } catch (InterruptedException e) {
+    }
+    ProcessBuilder pb2 = new ProcessBuilder("neato", "-T", format, "-o",
+            outputFile.getAbsolutePath().replace(".dot", "-naeto." + format),
+            outputFile.getAbsolutePath());
+    pb2.inheritIO();
+    Process process2 = pb2.start();
+    try {
+      process2.waitFor();
     } catch (InterruptedException e) {
     }
   }

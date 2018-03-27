@@ -61,6 +61,9 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
   protected void createCover(DictionaryEncoder dictionary, EncodedFileInputStream input,
           int numberOfGraphChunks, EncodedFileOutputStream[] outputs, boolean[] writtenFiles,
           File workingDir) {
+
+    // TODO remove
+    long startTotal = System.currentTimeMillis();
     File internalWorkingDir = new File(
             workingDir + File.separator + this.getClass().getSimpleName());
     if (!internalWorkingDir.exists()) {
@@ -70,8 +73,12 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
     File adjacencyOutListsSortedByVertexId = createAdjacencyListsSortedByStartVertexId(input,
             internalWorkingDir, MoleculeHashCoverCreator.MAX_NUMBER_OF_OPEN_FILES,
             MoleculeHashCoverCreator.MAX_CASH_SIZE);
+    // TODO remove
+    System.out.println("create input format: " + (System.currentTimeMillis() - startTotal));
 
     try {
+      // TODO remove
+      long startInitialization = System.currentTimeMillis();
       // initialize with vertices that have an indegree 0
       /*
        * (startVertexID, outDegree, (outEdge, endVertexId)*)* sorted by
@@ -80,7 +87,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
       File nextAdjacencyListSortedByVertexId = File.createTempFile("adjacencyList", "",
               internalWorkingDir);
       long remainingVerticesNumber = 0;
-      IterableSortedLongArrayList currentFrontier = new IterableSortedLongArrayList(2,
+      IterableSortedLongArrayList currentFrontier = new IterableSortedLongArrayList(3,
               new FixedSizeLongArrayComparator(true, 0), MoleculeHashCoverCreator.MAX_CASH_SIZE / 2,
               internalWorkingDir, MoleculeHashCoverCreator.MAX_NUMBER_OF_OPEN_FILES - 3);
       try (EncodedLongFileOutputStream nextAdjacencyListOut = new EncodedLongFileOutputStream(
@@ -120,13 +127,19 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
           }
         }
       }
+      // TODO remove
+      System.out.println("initialization: " + (System.currentTimeMillis() - startInitialization)
+              + "msec (" + remainingVerticesNumber + " vertices remaining)");
+      long currentIteration = 1;
       while (remainingVerticesNumber > 0) {
+        // TODO remove
+        long startIteration = System.currentTimeMillis();
         adjacencyOutListsSortedByVertexId.delete();
         adjacencyOutListsSortedByVertexId = nextAdjacencyListSortedByVertexId;
         nextAdjacencyListSortedByVertexId = File.createTempFile("adjacencyList", "",
                 internalWorkingDir);
         @SuppressWarnings("resource")
-        IterableSortedLongArrayList nextFrontier = new IterableSortedLongArrayList(2,
+        IterableSortedLongArrayList nextFrontier = new IterableSortedLongArrayList(3,
                 new FixedSizeLongArrayComparator(true, 0),
                 MoleculeHashCoverCreator.MAX_CASH_SIZE / 2, internalWorkingDir,
                 MoleculeHashCoverCreator.MAX_NUMBER_OF_OPEN_FILES - 3);
@@ -140,6 +153,8 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
             if (!adjacencyIterator.hasNext()) {
               break;
             }
+            // TODO remove
+            System.out.println("\tselecting new seed vertex");
             long startVertexId = adjacencyIterator.next();
             int chunkIndex = getChunkIndex(startVertexId, numberOfGraphChunks);
             long outDegree = adjacencyIterator.next();
@@ -171,6 +186,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
               if (frontierVertex < vertexId) {
                 frontierVertex = frontierIterator.next();
                 frontierChunk = frontierIterator.next();
+                currentMoleculeDiameter = frontierIterator.next();
               } else if (vertexId < frontierVertex) {
                 // skip unmatched vertices
                 long outDegree = adjacencyIterator.next();
@@ -212,6 +228,11 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
           }
           currentFrontier.close();
           currentFrontier = nextFrontier;
+          // TODO remove
+          currentIteration++;
+          System.out.println("iteration " + currentIteration + ": "
+                  + (System.currentTimeMillis() - startIteration) + "msec ("
+                  + remainingVerticesNumber + " vertices remaining)");
         }
       }
       currentFrontier.close();
@@ -220,6 +241,9 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
     }
 
     Deleter.deleteFolder(internalWorkingDir);
+
+    // TODO remove
+    System.out.println("total execution time: " + (System.currentTimeMillis() - startTotal));
   }
 
   private byte[] getContainment(int numberOfGraphChunks) {
@@ -327,8 +351,12 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
       };
       merger = new Merger() {
 
+        // TODO remove
+        private long numberOfVertices;
+
         @Override
         public void startNextMergeLevel() {
+          numberOfVertices = 0;
         }
 
         @Override
@@ -339,6 +367,7 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
         @Override
         public void mergeAndWrite(BitSet indicesOfSmallestElement, long[][] elements,
                 LongIterator[] iterators, LongOutputWriter out) throws IOException {
+          numberOfVertices++;
           out.writeLong(elements[indicesOfSmallestElement.nextSetBit(0)][0]);
           long indegree = 0;
           long outdegree = 0;
@@ -360,6 +389,10 @@ public class MoleculeHashCoverCreator extends GraphCoverCreatorBase {
 
         @Override
         public void close() {
+          if (numberOfVertices != 0) {
+            System.out.println("\t" + numberOfVertices + " vertices");
+            numberOfVertices = 0;
+          }
         }
       };
       Comparator<long[]> comparator = new FixedSizeLongArrayComparator(true, 0);
