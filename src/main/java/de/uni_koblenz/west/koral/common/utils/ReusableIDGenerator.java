@@ -210,7 +210,7 @@ public class ReusableIDGenerator {
 	}
 
 	public boolean isEmpty() {
-		return ids[0] == 0;
+		return (ids == null) || (ids[0] == 0);
 	}
 
 	@Override
