@@ -122,6 +122,14 @@ public class MeasurementReceiver extends Thread implements Closeable {
       NetworkContextFactory.destroyNetworkContext(context);
       System.out.println(getClass().getName() + " stopped");
       socket = null;
+      if (writer != null) {
+        try {
+          writer.flush();
+          writer.close();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
     }
   }
 
@@ -175,8 +183,8 @@ public class MeasurementReceiver extends Thread implements Closeable {
                     + MeasurementCollector.DEFAULT_PORT + " is used as default.")
             .required(false).build();
 
-    Option address = Option.builder("i").longOpt("ip").hasArg().argName("ipAddress")
-            .desc("specific IP address to which the measurement receiver should be bound. To specifiy the port use the -p option.")
+    Option address = Option.builder("i").longOpt("ip").hasArg().argName("ipAddress").desc(
+            "specific IP address to which the measurement receiver should be bound. To specifiy the port use the -p option.")
             .required(false).build();
 
     Option output = Option.builder("o").longOpt("output").hasArg().argName("file.csv")

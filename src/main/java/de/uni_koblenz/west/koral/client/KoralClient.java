@@ -43,6 +43,7 @@ import de.uni_koblenz.west.koral.common.utils.GraphFileFilter;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.CoverStrategyType;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MoleculeHashCoverCreator;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 
 import java.io.BufferedReader;
@@ -89,18 +90,19 @@ public class KoralClient {
   }
 
   public void loadGraph(CoverStrategyType graphCover, int nHopReplicationPathLength,
-          String... inputPaths) {
+          int maxMoleculeDiameter, String... inputPaths) {
     List<File> files = getFiles(inputPaths);
     System.out.println("loadGraph method called");
     if (files.isEmpty()) {
       throw new RuntimeException("No graph file could be found.");
     }
-    byte[][] args = new byte[4 + files.size()][];
+    byte[][] args = new byte[5 + files.size()][];
     args[0] = NumberConversion.int2bytes(args.length - 1);
     args[1] = NumberConversion.int2bytes(graphCover.ordinal());
     args[2] = NumberConversion.int2bytes(nHopReplicationPathLength);
-    args[3] = NumberConversion.int2bytes(files.size());
-    fillWithFileEndings(args, 4, files);
+    args[3] = NumberConversion.int2bytes(maxMoleculeDiameter);
+    args[4] = NumberConversion.int2bytes(files.size());
+    fillWithFileEndings(args, 5, files);
     connection.sendCommand("load", args);
 
     byte[][] response = connection.getResponse();
@@ -485,11 +487,16 @@ public class KoralClient {
       nHopReplicationPathLength = Integer.parseInt(commandLine.getOptionValue("n"));
     }
 
+    int maxMoleculeDiameter = MoleculeHashCoverCreator.DEFAULT_MAX_MOLECULE_DIAMETER;
+    if (commandLine.hasOption("d")) {
+      maxMoleculeDiameter = Integer.parseInt(commandLine.getOptionValue("d"));
+    }
+
     List<String> inputPaths = commandLine.getArgList();
     if (inputPaths.isEmpty()) {
       throw new ParseException("Please specify at least one graph file to load.");
     }
-    client.loadGraph(graphCover, nHopReplicationPathLength,
+    client.loadGraph(graphCover, nHopReplicationPathLength, maxMoleculeDiameter,
             inputPaths.toArray(new String[inputPaths.size()]));
   }
 
@@ -562,9 +569,15 @@ public class KoralClient {
 
     Option coverStrategy = Option.builder("c").longOpt("cover").hasArg()
             .argName("graphCoverStrategy")
-            .desc("The used graph cover strategy wher <graphCoverStrategy> is one of "
+            .desc("The used graph cover strategy where <graphCoverStrategy> is one of "
                     + sb.toString())
             .required(true).build();
+
+    Option maxMoleculeDiameter = Option.builder("d").longOpt("maxMoleculeDiameter").hasArg()
+            .argName("max molecule diameter")
+            .desc("If " + CoverStrategyType.MOLECULE_HASH
+                    + " is selected, this parameter specifies the maximal diameter of the molecules.")
+            .required(false).build();
 
     Option nHopReplication = Option.builder("n").longOpt("nHopReplication").hasArg()
             .argName("path length")
@@ -573,6 +586,7 @@ public class KoralClient {
 
     Options options = new Options();
     options.addOption(coverStrategy);
+    options.addOption(maxMoleculeDiameter);
     options.addOption(nHopReplication);
     return options;
   }

@@ -184,7 +184,7 @@ public class ReusableIDGenerator {
 			// the last id of a used block is freed
 			// [...,+x,-y,...] -> [...,+x-1,-y-1,...]
 			ids[deletionBlockIndex]--;
-			if (ids[deletionBlockIndex + 1] != 0) {
+			if (((deletionBlockIndex + 1) < ids.length) && (ids[deletionBlockIndex + 1] != 0)) {
 				ids[deletionBlockIndex + 1]--;
 			}
 		} else {
