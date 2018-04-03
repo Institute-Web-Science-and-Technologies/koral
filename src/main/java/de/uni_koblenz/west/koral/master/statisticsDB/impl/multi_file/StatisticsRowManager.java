@@ -14,13 +14,6 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGr
 public class StatisticsRowManager {
 
 	/**
-	 * How many bytes are used for the data in the main/index file. This space is used for either file offset or
-	 * occurences values. Note that a few lines of code have to be adapted if this value is set to something >8, because
-	 * then converting more than 8 bytes to a long might overflow.
-	 */
-	private static final int ROW_DATA_LENGTH = 8;
-
-	/**
 	 * How many bits are used for the column that describes the triple type of the resource. The triple type can be one
 	 * of [S, P, O, SP, SO, PO, SPO] and determines the length of the position bitmap.
 	 */
@@ -84,6 +77,12 @@ public class StatisticsRowManager {
 	 * Length in bytes of each row in the main/index file.
 	 */
 	private final int mainfileRowLength;
+
+	/**
+	 * How many bytes are used for the data in the main/index file. This space is used for either file offset or
+	 * occurences values.
+	 */
+	private final int rowDataLength;
 
 	/**
 	 * How many chunks where created, as specified in the constructor.
@@ -166,8 +165,9 @@ public class StatisticsRowManager {
 	private final Map<Integer, Long> type1ResourcesAsListLengths;
 	private final Map<Integer, Long> type2ResourcesAsListLengths;
 
-	public StatisticsRowManager(int numberOfChunks) {
+	public StatisticsRowManager(int numberOfChunks, int rowDataLength) {
 		this.numberOfChunks = numberOfChunks;
+		this.rowDataLength = rowDataLength;
 
 		// This describes the maximum value for the position count column
 		// -1 Offset for using zero as well
@@ -178,7 +178,7 @@ public class StatisticsRowManager {
 		positionBitmapBitLength = maxColumnNumber;
 		positionBitmapLength = (int) Math.ceil(positionBitmapBitLength / 8.0);
 		positionListEntryLength = (int) Math.ceil((32 - Integer.numberOfLeadingZeros(maxColumnNumber)) / 8.0);
-		mainfileRowLength = metadataLength + ROW_DATA_LENGTH;
+		mainfileRowLength = metadataLength + rowDataLength;
 
 		typeDistribution = new HashMap<>();
 		type1ResourcesAsListLengths = new HashMap<>();
@@ -227,7 +227,6 @@ public class StatisticsRowManager {
 	 * @return True if the row refers to an extra file for the position info, false if the position info is already
 	 *         included in the row.
 	 */
-	@SuppressWarnings("unused")
 	boolean load(byte[] row) {
 		this.row = row;
 		// Read metadata
@@ -241,7 +240,7 @@ public class StatisticsRowManager {
 
 		dataLength = positionLength + (positionCount * bytesPerValue);
 
-		if (dataLength <= ROW_DATA_LENGTH) {
+		if (dataLength <= rowDataLength) {
 			// Values are here
 			dataExternal = false;
 			dataBytes = new byte[dataLength];
@@ -249,8 +248,7 @@ public class StatisticsRowManager {
 			extraFileRowId = -1;
 		} else {
 			dataExternal = true;
-			assert ROW_DATA_LENGTH <= 8 : "Long might overflow";
-			extraFileRowId = Utils.variableBytes2Long(row, metadataLength, ROW_DATA_LENGTH);
+			extraFileRowId = Utils.variableBytes2Long(row, metadataLength, rowDataLength);
 			dataBytes = null;
 		}
 
@@ -306,7 +304,7 @@ public class StatisticsRowManager {
 	 *            Thw new row id
 	 */
 	void updateRowExtraOffset(long newRowId) {
-		Utils.writeLongIntoBytes(newRowId, row, metadataLength, ROW_DATA_LENGTH);
+		Utils.writeLongIntoBytes(newRowId, row, metadataLength, rowDataLength);
 	}
 
 	/**
@@ -740,7 +738,7 @@ public class StatisticsRowManager {
 		}
 		if (!dataExternal) {
 			assert dataLength == dataBytes.length;
-			unusedBytes += ROW_DATA_LENGTH - dataLength;
+			unusedBytes += rowDataLength - dataLength;
 		}
 		long[] occurences = decodeOccurenceData();
 		String[] types = new String[] { "S", "P", "O" };

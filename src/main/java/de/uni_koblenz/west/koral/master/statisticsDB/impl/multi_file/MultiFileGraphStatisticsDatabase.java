@@ -21,6 +21,8 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
  */
 public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
+	private static final int DEFAULT_ROW_DATA_LENGTH = 8;
+
 	private final String statisticsDirPath;
 
 	private final short numberOfChunks;
@@ -34,6 +36,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private final StatisticsRowManager rowManager;
 
 	private final int mainfileRowLength;
+
+	private final long maximumAddressableExtraFileRows;
 
 	static enum ResourceType {
 		SUBJECT(0), PROPERTY(1), OBJECT(2);
@@ -49,10 +53,12 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 	}
 
-	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks) {
+	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, int rowDataLength) {
 		this.numberOfChunks = numberOfChunks;
 
-		rowManager = new StatisticsRowManager(numberOfChunks);
+		maximumAddressableExtraFileRows = (1 << (rowDataLength * Byte.SIZE)) - 1;
+
+		rowManager = new StatisticsRowManager(numberOfChunks, rowDataLength);
 		mainfileRowLength = rowManager.getMainFileRowLength();
 
 		File statisticsDirFile = new File(statisticsDir);
@@ -68,6 +74,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 		triplesPerChunkFile = Paths.get(statisticsDirPath + "triplesPerChunk");
 		triplesPerChunk = loadTriplesPerChunk();
+	}
+
+	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks) {
+		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH);
 	}
 
 	private long[] loadTriplesPerChunk() {
@@ -132,6 +142,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				if (rowManager.isTooLongForMain()) {
 					long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(),
 							rowManager.getDataBytes());
+					checkIfDataBytesLengthIsEnough(newExtraFileRowId);
 //					Logger.log("I->E: " + Arrays.toString(rowManager.getDataBytes()));
 					rowManager.updateRowExtraOffset(newExtraFileRowId);
 				} else {
@@ -144,6 +155,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					// Move entry into different extra file
 					fileManager.deleteExternalRow(fileIdRead, extraFileRowId);
 					newExtraFileRowID = fileManager.writeExternalRow(fileIdWrite, rowManager.getDataBytes());
+					checkIfDataBytesLengthIsEnough(newExtraFileRowID);
 				} else {
 					// Overwrite old extra file entry
 					fileManager.writeExternalRow(fileIdWrite, newExtraFileRowID, rowManager.getDataBytes());
@@ -225,6 +237,13 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		fileManager.setup();
 	}
 
+	private void checkIfDataBytesLengthIsEnough(long newRowId) {
+		if (newRowId > maximumAddressableExtraFileRows) {
+			throw new IllegalArgumentException(
+					"Too many extra file rows for the current data bytes length. Please set rowDataLength parameter higher.");
+		}
+	}
+
 	public long getMaxId() {
 		return (fileManager.getIndexFileLength()) / mainfileRowLength;
 	}
@@ -248,7 +267,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	/**
 	 * Collects and returns a formatted statistical report on all the written entries.
-	 * 
+	 *
 	 * @return
 	 */
 	public String getStatistics() {
