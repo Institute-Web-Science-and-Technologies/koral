@@ -8,40 +8,51 @@ import java.util.TreeMap;
 
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.CachedExtraRowFile;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.CachedRowFile;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.LRUCache;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
 public class FileManager {
 
 	private static final int DEFAULT_MAX_OPEN_FILES = 1000;
 
+	private static final int DEFAULT_INDEX_FILE_CACHE_SIZE = 100 * 1024 * 1024;
+
+	private static final int INITIAL_INDEX_FILE_CACHE_SIZE = 512 * 1024;
+
 	private static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
 
-	private final LRUCache<Long, ExtraRowFile> extraFiles;
+	private final LRUCache<Long, ExtraRowStorage> extraFiles;
 
 	private final String storagePath;
 
-	private final long extraFilesCacheSize;
+	private final int indexFileCacheSize;
+
+	private final int extraFilesCacheSize;
 
 	private final File freeSpaceIndexFile;
 
-	private RowFile index;
+	private CachedRowFile index;
 
 	private final int maxExtraCacheSize;
 
-	public FileManager(String storagePath, int maxOpenFiles, int extraFilesTotalCacheSize) {
+	public FileManager(String storagePath, int maxOpenFiles, int indexFileCacheSize, int extraFilesCacheSize) {
 		this.storagePath = storagePath;
 		if (!this.storagePath.endsWith(File.separator)) {
 			storagePath += File.separator;
 		}
-		extraFilesCacheSize = extraFilesTotalCacheSize;
+		this.indexFileCacheSize = indexFileCacheSize;
+		this.extraFilesCacheSize = extraFilesCacheSize;
 
-		maxExtraCacheSize = extraFilesTotalCacheSize / 100;
+		maxExtraCacheSize = extraFilesCacheSize / 100;
 
-		extraFiles = new LRUCache<Long, ExtraRowFile>(maxOpenFiles) {
+		extraFiles = new LRUCache<Long, ExtraRowStorage>(maxOpenFiles) {
 			@Override
-			protected void removeEldest(LRUCache<Long, ExtraRowFile>.DoublyLinkedNode eldest) {
+			protected void removeEldest(Long fileId, ExtraRowStorage storage) {
 				// Don't call super, because this way the ExtraFileRow is retained in the internal index
-				eldest.value.close();
+				storage.close();
 			}
 		};
 
@@ -50,11 +61,11 @@ public class FileManager {
 	}
 
 	public FileManager(String storagePath) {
-		this(storagePath, DEFAULT_MAX_OPEN_FILES, DEFAULT_EXTRAFILES_CACHE_SIZE);
+		this(storagePath, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE, DEFAULT_EXTRAFILES_CACHE_SIZE);
 	}
 
 	void setup() {
-		index = new RowFile(storagePath + "statistics", true);
+		index = new CachedRowFile(storagePath + "statistics", INITIAL_INDEX_FILE_CACHE_SIZE, indexFileCacheSize, true);
 	}
 
 	/**
@@ -95,7 +106,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	long writeExternalRow(long fileId, byte[] row) throws IOException {
-		ExtraRowFile extraFile = getExtraFile(fileId, true);
+		ExtraRowStorage extraFile = getExtraFile(fileId, true);
 		return extraFile.writeRow(row);
 	}
 
@@ -112,7 +123,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	void writeExternalRow(long fileId, long rowId, byte[] row) throws IOException {
-		ExtraRowFile extraFile = getExtraFile(fileId, true);
+		ExtraRowStorage extraFile = getExtraFile(fileId, true);
 		extraFile.writeRow(rowId, row);
 	}
 
@@ -129,7 +140,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	byte[] readExternalRow(long fileId, long rowId, int rowLength) throws IOException {
-		ExtraRowFile extraFile = getExtraFile(fileId, false);
+		ExtraRowStorage extraFile = getExtraFile(fileId, false);
 		return extraFile.readRow(rowId, rowLength);
 	}
 
@@ -157,10 +168,11 @@ public class FileManager {
 	 * @return A RandomAccessFile instance of the specified extra file
 	 * @throws IOException
 	 */
-	private ExtraRowFile getExtraFile(long fileId, boolean createIfNotExisting) {
-		ExtraRowFile extra = extraFiles.get(fileId);
+	private ExtraRowStorage getExtraFile(long fileId, boolean createIfNotExisting) {
+		ExtraRowStorage extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new ExtraRowFile(storagePath + String.valueOf(fileId), maxExtraCacheSize, createIfNotExisting);
+			extra = new CachedExtraRowFile(storagePath + String.valueOf(fileId), maxExtraCacheSize,
+					createIfNotExisting);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
@@ -173,7 +185,7 @@ public class FileManager {
 	 * Deletes all extra files that are empty. Files must be closed with {@link #close()} beforehand.
 	 */
 	void deleteEmptyFiles() {
-		for (ExtraRowFile extraRowFile : extraFiles.values()) {
+		for (ExtraRowStorage extraRowFile : extraFiles.values()) {
 			if (extraRowFile.isEmpty()) {
 				extraRowFile.delete();
 			}
@@ -202,7 +214,8 @@ public class FileManager {
 					list[listIndex] = l;
 				} else {
 					// Reading one entry is done, store and reset everything for next one
-					extraFiles.put(fileId, new ExtraRowFile(storagePath + fileId, maxExtraCacheSize, false, list));
+					extraFiles.put(fileId,
+							new CachedExtraRowFile(storagePath + fileId, maxExtraCacheSize, false, list));
 					fileId = -1;
 					dataLength = -1;
 					list = null;
@@ -217,7 +230,7 @@ public class FileManager {
 
 	void flush() {
 		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(freeSpaceIndexFile, true)) {
-			for (Entry<Long, ExtraRowFile> entry : extraFiles.entrySet()) {
+			for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
 				if (entry.getValue().isEmpty()) {
 					continue;
 				}
@@ -242,7 +255,7 @@ public class FileManager {
 
 	Map<Long, Long> getFreeSpaceIndexLengths() {
 		Map<Long, Long> lengths = new TreeMap<>();
-		for (Entry<Long, ExtraRowFile> entry : extraFiles.entrySet()) {
+		for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
 			lengths.put(entry.getKey(), (long) entry.getValue().getFreeSpaceIndexData().length);
 		}
 		return lengths;

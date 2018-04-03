@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.io.EOFException;
 import java.io.File;
@@ -6,18 +6,22 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-class RowFile {
+public class RandomAccessRowFile implements RowStorage {
 
-	protected final File file;
+	final File file;
 
-	protected RandomAccessFile rowFile;
+	RandomAccessFile rowFile;
 
-	public RowFile(String storageFilePath, boolean createIfNotExists) {
+	final int rowLength;
+
+	public RandomAccessRowFile(String storageFilePath, int rowLength, boolean createIfNotExists) {
+		this.rowLength = rowLength;
 		file = new File(storageFilePath);
 		open(createIfNotExists);
 	}
 
-	protected void open(boolean createIfNotExists) {
+	@Override
+	public void open(boolean createIfNotExists) {
 		if (!createIfNotExists && !file.exists()) {
 			throw new RuntimeException("Could not find file " + file);
 		}
@@ -40,7 +44,8 @@ class RowFile {
 	 * @return The row as a byte array. The returned array has the length of rowLength.
 	 * @throws IOException
 	 */
-	byte[] readRow(long rowId, int rowLength) throws IOException {
+	@Override
+	public byte[] readRow(long rowId) throws IOException {
 		long offset = rowId * rowLength;
 		rowFile.seek(offset);
 		byte[] row = new byte[rowLength];
@@ -64,12 +69,14 @@ class RowFile {
 	 *            The data for the row as byte array
 	 * @throws IOException
 	 */
-	void writeRow(long rowId, byte[] row) throws IOException {
+	@Override
+	public void writeRow(long rowId, byte[] row) throws IOException {
 		rowFile.seek(rowId * row.length);
 		rowFile.write(row);
 	}
 
-	boolean valid() {
+	@Override
+	public boolean valid() {
 		try {
 			// TODO: Does getFD() throw IOException on closed file?
 			return rowFile.getFD().valid();
@@ -78,7 +85,8 @@ class RowFile {
 		}
 	}
 
-	long length() {
+	@Override
+	public long length() {
 		try {
 			return rowFile.length();
 		} catch (IOException e) {
@@ -89,11 +97,13 @@ class RowFile {
 	/**
 	 * Deletes the underlying file. {@link #close()} must be called beforehand.
 	 */
-	void delete() {
+	@Override
+	public void delete() {
 		file.delete();
 	}
 
-	void close() {
+	@Override
+	public void close() {
 		try {
 			rowFile.close();
 		} catch (IOException e) {

@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -22,13 +22,13 @@ public class LRUCache<K, V> {
 
 	private final int capacity;
 
-	protected final Map<K, DoublyLinkedNode> index;
+	final Map<K, DoublyLinkedNode> index;
 
-	protected DoublyLinkedNode head;
+	DoublyLinkedNode head;
 
-	protected DoublyLinkedNode tail;
+	DoublyLinkedNode tail;
 
-	protected int size;
+	int size;
 
 	public LRUCache(int capacity) {
 		this.capacity = capacity;
@@ -50,6 +50,15 @@ public class LRUCache<K, V> {
 		} else {
 			return null;
 		}
+	}
+
+	public void update(K key, V newValue) {
+		DoublyLinkedNode node = index.get(key);
+		if (node == null) {
+			throw new IllegalArgumentException("Could not find entry for key " + key);
+		}
+		access(node);
+		node.value = newValue;
 	}
 
 	public V get(K key) {
@@ -127,11 +136,11 @@ public class LRUCache<K, V> {
 	private void removeEldest() {
 		DoublyLinkedNode eldest = head;
 		remove(eldest);
-		removeEldest(eldest);
+		removeEldest(eldest.key, eldest.value);
 	}
 
-	protected void removeEldest(DoublyLinkedNode eldest) {
-		index.remove(eldest.key);
+	protected void removeEldest(K key, V value) {
+		index.remove(key);
 	}
 
 	/**
