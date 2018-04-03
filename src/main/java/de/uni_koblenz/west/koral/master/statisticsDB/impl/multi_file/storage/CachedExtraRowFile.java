@@ -13,9 +13,9 @@ public class CachedExtraRowFile extends CachedRowFile implements ExtraRowStorage
 	}
 
 	public CachedExtraRowFile(String storageFilePath, int rowLength, int maxCacheSize, boolean createIfNotExists,
-			long[] list) {
+			long[] loadedFreeSpaceIndex) {
 		super(storageFilePath, rowLength, maxCacheSize, createIfNotExists);
-		freeSpaceIndex = new ReusableIDGenerator(list);
+		freeSpaceIndex = new ReusableIDGenerator(loadedFreeSpaceIndex);
 	}
 
 	@Override
