@@ -12,6 +12,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.Cac
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.CachedRowFile;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.LRUCache;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RowStorage;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
 public class FileManager {
@@ -34,7 +35,7 @@ public class FileManager {
 
 	private final File freeSpaceIndexFile;
 
-	private CachedRowFile index;
+	private RowStorage index;
 
 	private final int maxExtraCacheSize;
 
@@ -91,8 +92,8 @@ public class FileManager {
 	 * @return The read bytes, with a length of rowLength
 	 * @throws IOException
 	 */
-	byte[] readIndexRow(long rowId, int rowLength) throws IOException {
-		return index.readRow(rowId, rowLength);
+	byte[] readIndexRow(long rowId) throws IOException {
+		return index.readRow(rowId);
 	}
 
 	/**
@@ -139,9 +140,9 @@ public class FileManager {
 	 * @return The read bytes with a length of rowLength
 	 * @throws IOException
 	 */
-	byte[] readExternalRow(long fileId, long rowId, int rowLength) throws IOException {
+	byte[] readExternalRow(long fileId, long rowId) throws IOException {
 		ExtraRowStorage extraFile = getExtraFile(fileId, false);
-		return extraFile.readRow(rowId, rowLength);
+		return extraFile.readRow(rowId);
 	}
 
 	/**
