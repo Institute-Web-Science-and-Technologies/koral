@@ -1,13 +1,17 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.util.Map.Entry;
 
 public class RandomAccessRowFile implements RowStorage {
 
@@ -27,8 +31,10 @@ public class RandomAccessRowFile implements RowStorage {
 		file = new File(storageFilePath);
 		open(true);
 
-		// TODO: maxCacheSize != capacity of byte arrays
-		fileCache = new LRUCache<Long, byte[]>(maxCacheSize) {
+		// Each cache entry will contain a byte array (the row) with the length of
+		// rowLength
+		// Therefore we divide maxCacheSize by rowLength for the capacity value
+		fileCache = new LRUCache<Long, byte[]>(maxCacheSize / rowLength) {
 			@Override
 			protected void removeEldest(Long rowId, byte[] row) {
 				// Persist entry before removing
@@ -56,7 +62,8 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Retrieves a row from <code>file</code>. The offset is calculated by <code>rowId * row.length</code>.
+	 * Retrieves a row from <code>file</code>. The offset is calculated by
+	 * <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            The RandomAccessFile that will be read
@@ -64,7 +71,8 @@ public class RandomAccessRowFile implements RowStorage {
 	 *            The row number in the file
 	 * @param rowLength
 	 *            The length of a row in the specified file
-	 * @return The row as a byte array. The returned array has the length of rowLength.
+	 * @return The row as a byte array. The returned array has the length of
+	 *         rowLength.
 	 * @throws IOException
 	 */
 	@Override
@@ -94,7 +102,8 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by <code>rowId * row.length</code>.
+	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by
+	 * <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            A RandomAccessFile that will be updated
@@ -116,21 +125,29 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Throws IOException if there are more than Integer.MAX_VALUE bytes in the file.
+	 * Throws IOException if there are resources with ID > Integer.MAX_VALUE in the
+	 * file or cache.
 	 */
 	@Override
 	public byte[] getRows() throws IOException {
-		// TODO: cache data is missing in the returned array
-		throw new UnsupportedOperationException();
-//		long fileLength = rowFile.length();
-//		if (fileLength > Integer.MAX_VALUE) {
-//			throw new IOException("File is too large to fit into a byte array");
-//		}
-//		byte[] rows = new byte[(int) fileLength];
-//		try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
-//			in.read(rows);
-//		}
-//		return rows;
+		long fileLength = rowFile.length();
+		if (fileLength > Integer.MAX_VALUE) {
+			throw new IOException("File is too large to fit into a byte array");
+		}
+		byte[] rows = new byte[(int) fileLength];
+		try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
+			in.read(rows);
+		}
+
+		// Add/overwrite data from cache
+		for (Entry<Long, byte[]> entry : fileCache) {
+			long rowId = entry.getKey();
+			if (rowId > Integer.MAX_VALUE) {
+				throw new IOException("RowFile too large for memory");
+			}
+			System.arraycopy(entry.getValue(), 0, rows, (int) rowId * rowLength, rowLength);
+		}
+		return rows;
 	}
 
 	/**
@@ -143,8 +160,10 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 	}
 
-	private void flushCache() {
-
+	private void flushCache() throws IOException {
+		for (Entry<Long, byte[]> entry : fileCache) {
+			writeRowToFile(entry.getKey(), entry.getValue());
+		}
 	}
 
 	@Override
