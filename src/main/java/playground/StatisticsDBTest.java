@@ -35,6 +35,12 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGr
  */
 public class StatisticsDBTest {
 
+	private static final boolean WRITE_BENCHMARK_RESULTS = false;
+
+	private static final boolean COLLECT_META_STATISTICS = false;
+
+	private static final boolean WRITE_STATISTICS_DATA = false;
+
 	public static void main(String[] args) throws FileNotFoundException {
 
 		if (args.length != 3) {
@@ -107,15 +113,21 @@ public class StatisticsDBTest {
 			long indexFileLength = -1;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
-				System.out.println(multiDB.getStatistics());
+				if (COLLECT_META_STATISTICS) {
+					System.out.println(multiDB.getStatistics());
+				}
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				indexFileLength = multiDB.getIndexFileLength();
 			}
-			writeBenchmarkResultsToCSV(datasetName, implementation, numberOfChunks, time, dirSize, indexFileLength,
-					freeSpaceIndexLengths);
-			// Read statistics and write into csv
-//			System.out.println("Writing statistics to file...");
-//			writeStatisticsToCSV(encodedChunksDir, statisticsDB);
+			if (WRITE_BENCHMARK_RESULTS) {
+				writeBenchmarkResultsToCSV(datasetName, implementation, numberOfChunks, time, dirSize, indexFileLength,
+						freeSpaceIndexLengths);
+			}
+			if (WRITE_STATISTICS_DATA) {
+				// Read statistics and write into csv
+				System.out.println("Writing statistics to file...");
+				writeStatisticsToCSV(encodedChunksDir, statisticsDB);
+			}
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);
