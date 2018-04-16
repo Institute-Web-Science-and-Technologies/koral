@@ -4,6 +4,7 @@ import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,7 +19,7 @@ import java.util.Set;
  * @param <K>
  * @param <V>
  */
-public class LRUCache<K, V> {
+public class LRUCache<K, V> implements Iterable<Entry<K, V>> {
 
 	private final int capacity;
 
@@ -52,10 +53,18 @@ public class LRUCache<K, V> {
 		}
 	}
 
+	/**
+	 * Creates entry if it doesn't exist.
+	 *
+	 * @param key
+	 * @param newValue
+	 */
 	public void update(K key, V newValue) {
+		assert newValue != null;
 		DoublyLinkedNode node = index.get(key);
 		if (node == null) {
-			throw new IllegalArgumentException("Could not find entry for key " + key);
+			put(key, newValue);
+			return;
 		}
 		access(node);
 		node.value = newValue;
@@ -133,6 +142,11 @@ public class LRUCache<K, V> {
 		return entrySet;
 	}
 
+	@Override
+	public Iterator<Entry<K, V>> iterator() {
+		return null;// index.entrySet().iterator();
+	}
+
 	private void removeEldest() {
 		DoublyLinkedNode eldest = head;
 		remove(eldest);
@@ -160,7 +174,7 @@ public class LRUCache<K, V> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("Cache(" + size + "): [");
+		StringBuilder sb = new StringBuilder("Cache size: " + size + " [");
 		for (DoublyLinkedNode node = head; node != null; node = node.after) {
 			sb.append(node.key).append("=").append(node.value);
 			if (node.after != null) {
