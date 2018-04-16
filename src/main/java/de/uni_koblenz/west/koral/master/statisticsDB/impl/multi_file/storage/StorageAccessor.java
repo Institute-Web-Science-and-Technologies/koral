@@ -38,8 +38,6 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void open(boolean createIfNotExisting) {
-		// TODO: RARF uses the LRUCache object which has overhead for each entry, so there might be more space used than
-		// maxCacheSize bytes
 		file = new RandomAccessRowFile(storageFilePath, rowLength, maxCacheSize);
 		currentStorage = file;
 		long storageLength = file.length();

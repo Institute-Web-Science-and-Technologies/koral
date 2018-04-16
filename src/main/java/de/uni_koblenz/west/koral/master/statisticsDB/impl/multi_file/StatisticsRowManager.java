@@ -166,7 +166,6 @@ public class StatisticsRowManager {
 	private long entries;
 	private long singleResourceBitmaps;
 	private long duoResourceBitmaps;
-	private long singleResourceBitmapsFromList;
 	// Key: positionLength
 	// Value: Amount of occurences
 	private final Map<Integer, Long> type1ResourcesAsListLengths;
