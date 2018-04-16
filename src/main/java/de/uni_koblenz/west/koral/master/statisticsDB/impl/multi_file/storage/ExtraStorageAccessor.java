@@ -4,17 +4,16 @@ import java.io.IOException;
 
 import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 
-public class CachedExtraRowFile extends CachedRowFile implements ExtraRowStorage {
+public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowStorage {
 
 	private final ReusableIDGenerator freeSpaceIndex;
 
-	public CachedExtraRowFile(String storageFilePath, int rowLength, int maxCacheSize, boolean createIfNotExists) {
-		this(storageFilePath, rowLength, maxCacheSize, createIfNotExists, null);
+	public ExtraStorageAccessor(String storageFilePath, int rowLength, int maxCacheSize) {
+		this(storageFilePath, rowLength, maxCacheSize, null);
 	}
 
-	public CachedExtraRowFile(String storageFilePath, int rowLength, int maxCacheSize, boolean createIfNotExists,
-			long[] loadedFreeSpaceIndex) {
-		super(storageFilePath, rowLength, maxCacheSize, createIfNotExists);
+	public ExtraStorageAccessor(String storageFilePath, int rowLength, int maxCacheSize, long[] loadedFreeSpaceIndex) {
+		super(storageFilePath, rowLength, maxCacheSize);
 		freeSpaceIndex = new ReusableIDGenerator(loadedFreeSpaceIndex);
 	}
 

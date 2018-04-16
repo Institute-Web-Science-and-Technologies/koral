@@ -8,11 +8,11 @@ import java.util.TreeMap;
 
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.CachedExtraRowFile;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.CachedRowFile;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraStorageAccessor;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.LRUCache;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RowStorage;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.StorageAccessor;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
 public class FileManager {
@@ -31,7 +31,7 @@ public class FileManager {
 
 	private final int indexFileCacheSize;
 
-	private final int extraFilesCacheSize;
+	private final int mainFileRowLength;
 
 	private final File freeSpaceIndexFile;
 
@@ -39,15 +39,18 @@ public class FileManager {
 
 	private final int maxExtraCacheSize;
 
-	public FileManager(String storagePath, int maxOpenFiles, int indexFileCacheSize, int extraFilesCacheSize) {
+	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, int maxOpenFiles,
+			int indexFileCacheSize, int extraFilesCacheSize) {
 		this.storagePath = storagePath;
 		if (!this.storagePath.endsWith(File.separator)) {
 			storagePath += File.separator;
 		}
 		this.indexFileCacheSize = indexFileCacheSize;
-		this.extraFilesCacheSize = extraFilesCacheSize;
+		this.mainFileRowLength = mainFileRowLength;
 
-		maxExtraCacheSize = extraFilesCacheSize / 100;
+		// We assume about a quarter of the possible amount of open extra files will be open and distribute each cache
+		// size equally.
+		maxExtraCacheSize = extraFilesCacheSize / (maxExtraFilesAmount / 4);
 
 		extraFiles = new LRUCache<Long, ExtraRowStorage>(maxOpenFiles) {
 			@Override
@@ -61,12 +64,14 @@ public class FileManager {
 		setup();
 	}
 
-	public FileManager(String storagePath) {
-		this(storagePath, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE, DEFAULT_EXTRAFILES_CACHE_SIZE);
+	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount) {
+		this(storagePath, mainFileRowLength, maxExtraFilesAmount, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE,
+				DEFAULT_EXTRAFILES_CACHE_SIZE);
 	}
 
 	void setup() {
-		index = new CachedRowFile(storagePath + "statistics", INITIAL_INDEX_FILE_CACHE_SIZE, indexFileCacheSize, true);
+		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, INITIAL_INDEX_FILE_CACHE_SIZE,
+				indexFileCacheSize);
 	}
 
 	/**
@@ -107,7 +112,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	long writeExternalRow(long fileId, byte[] row) throws IOException {
-		ExtraRowStorage extraFile = getExtraFile(fileId, true);
+		ExtraRowStorage extraFile = getOrCreateExtraFile(fileId, row.length);
 		return extraFile.writeRow(row);
 	}
 
@@ -124,7 +129,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	void writeExternalRow(long fileId, long rowId, byte[] row) throws IOException {
-		ExtraRowStorage extraFile = getExtraFile(fileId, true);
+		ExtraRowStorage extraFile = getOrCreateExtraFile(fileId, row.length);
 		extraFile.writeRow(rowId, row);
 	}
 
@@ -141,7 +146,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	byte[] readExternalRow(long fileId, long rowId) throws IOException {
-		ExtraRowStorage extraFile = getExtraFile(fileId, false);
+		ExtraRowStorage extraFile = getExtraFile(fileId);
 		return extraFile.readRow(rowId);
 	}
 
@@ -155,29 +160,42 @@ public class FileManager {
 	 *            Which row to remove
 	 */
 	void deleteExternalRow(long fileId, long rowId) {
-		getExtraFile(fileId, false).deleteRow(rowId);
+		getExtraFile(fileId).deleteRow(rowId);
 	}
 
 	/**
-	 * Returns a RandomAccessFile instance of the specified extra file. If it needs to be created or re-opened, it's
-	 * also registered in the {@link #extraFiles} index.
+	 * Returns a ExtraRowStorage instance of the specified extra file. If it needs to be created or re-opened, it's also
+	 * registered in the {@link #extraFiles} index.
 	 *
 	 * @param fileId
 	 *            The identifier of the extra file. Equals the metadata bits of a main file row.
-	 * @param createIfNotExisting
-	 *            If the file should be created if it doesn't exist already
 	 * @return A RandomAccessFile instance of the specified extra file
 	 * @throws IOException
 	 */
-	private ExtraRowStorage getExtraFile(long fileId, boolean createIfNotExisting) {
+	private ExtraRowStorage getOrCreateExtraFile(long fileId, int rowLength) {
 		ExtraRowStorage extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new CachedExtraRowFile(storagePath + String.valueOf(fileId), maxExtraCacheSize,
-					createIfNotExisting);
+			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), rowLength, maxExtraCacheSize);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
-			extra.open(createIfNotExisting);
+			extra.open(true);
+		}
+		return extra;
+	}
+
+	/**
+	 * Returns a ExtraRowStorage instance of the specified extra file, similar to
+	 * {@link #getOrCreateExtraFile(long, int)}. This method won't try to create a storage if it doesn't exist, and will
+	 * throw an exception instead.
+	 *
+	 * @param fileId
+	 * @return
+	 */
+	private ExtraRowStorage getExtraFile(long fileId) {
+		ExtraRowStorage extra = extraFiles.get(fileId);
+		if ((extra != null) && !extra.valid()) {
+			extra.open(false);
 		}
 		return extra;
 	}
@@ -197,6 +215,7 @@ public class FileManager {
 		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(freeSpaceIndexFile)) {
 			LongIterator iterator = input.iterator();
 			long fileId = -1;
+			int rowLength = -1;
 			int dataLength = -1;
 			long[] list = null;
 			int listIndex = 0;
@@ -204,6 +223,10 @@ public class FileManager {
 				long l = iterator.next();
 				if (fileId == -1) {
 					fileId = l;
+					continue;
+				}
+				if (rowLength == -1) {
+					rowLength = (int) l;
 					continue;
 				}
 				if (dataLength == -1) {
@@ -216,8 +239,9 @@ public class FileManager {
 				} else {
 					// Reading one entry is done, store and reset everything for next one
 					extraFiles.put(fileId,
-							new CachedExtraRowFile(storagePath + fileId, maxExtraCacheSize, false, list));
+							new ExtraStorageAccessor(storagePath + fileId, rowLength, maxExtraCacheSize, list));
 					fileId = -1;
+					rowLength = -1;
 					dataLength = -1;
 					list = null;
 					listIndex = 0;
@@ -237,6 +261,7 @@ public class FileManager {
 				}
 				long[] data = entry.getValue().getFreeSpaceIndexData();
 				out.writeLong(entry.getKey());
+				out.writeLong(entry.getValue().getRowLength());
 				out.writeLong(data.length);
 				for (int i = 0; i < data.length; i++) {
 					out.writeLong(data[i]);
@@ -272,7 +297,7 @@ public class FileManager {
 
 	void close() {
 		index.close();
-		extraFiles.values().forEach(extraRowFile -> extraRowFile.close());
+		extraFiles.values().forEach(extraRowStorage -> extraRowStorage.close());
 		deleteEmptyFiles();
 	}
 

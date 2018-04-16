@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,12 +18,12 @@ public class StatisticsRowManager {
 	 * How many bits are used for the column that describes the triple type of the resource. The triple type can be one
 	 * of [S, P, O, SP, SO, PO, SPO] and determines the length of the position bitmap.
 	 */
-	private static final int TRIPLE_TYPE_LENGTH = 2;
+//	private static final int TRIPLE_TYPE_LENGTH = 2;
 
 	/**
 	 * How many bits are used for the column that describes how many bytes are used per occurence value.
 	 */
-	private static final int VALUE_LENGTH_COLUMN_BITLENGTH = 3;
+	static final int VALUE_LENGTH_COLUMN_BITLENGTH = 3;
 
 	/**
 	 * The different possible encodings for the data bytes containing the occurence data. Each occurence value is
@@ -85,6 +86,12 @@ public class StatisticsRowManager {
 	private final int rowDataLength;
 
 	/**
+	 * How many bytes of the data bytes in the index file are used for referring to a row in an extra file. Maximum is 8
+	 * Bytes.
+	 */
+	private final int extraFileRowIdLength;
+
+	/**
 	 * How many chunks where created, as specified in the constructor.
 	 */
 	private final int numberOfChunks;
@@ -141,8 +148,8 @@ public class StatisticsRowManager {
 	private int positionLength;
 
 	/**
-	 * How long the data bytes are supposed to be, based on the metadata bits. This value is used for reading a row in
-	 * an extra file, but is *not* used or updated later on.
+	 * How long the data bytes are supposed to be, based on the metadata bits. This value might not be valid while
+	 * executing {@link #incrementOccurence(ResourceType, int)}.
 	 */
 	private int dataLength;
 
@@ -178,8 +185,10 @@ public class StatisticsRowManager {
 		positionBitmapBitLength = maxColumnNumber;
 		positionBitmapLength = (int) Math.ceil(positionBitmapBitLength / 8.0);
 		positionListEntryLength = (int) Math.ceil((32 - Integer.numberOfLeadingZeros(maxColumnNumber)) / 8.0);
+		extraFileRowIdLength = Math.min(rowDataLength, Long.BYTES);
 		mainfileRowLength = metadataLength + rowDataLength;
 
+		// Used only for data statistics
 		typeDistribution = new HashMap<>();
 		type1ResourcesAsListLengths = new HashMap<>();
 		type2ResourcesAsListLengths = new HashMap<>();
@@ -197,10 +206,6 @@ public class StatisticsRowManager {
 		return extraFileRowId;
 	}
 
-	int getDataLength() {
-		return dataLength;
-	}
-
 	long getFileId() {
 		return metadataBits;
 	}
@@ -214,7 +219,7 @@ public class StatisticsRowManager {
 	}
 
 	boolean isTooLongForMain() {
-		return (metadataLength + dataBytes.length) > mainfileRowLength;
+		return (metadataLength + dataLength) > mainfileRowLength;
 	}
 
 	/**
@@ -235,10 +240,9 @@ public class StatisticsRowManager {
 		bytesPerValue = extractBytesPerValue();
 
 		positionEncoding = optimalPositionEncoding(positionCount);
-//		Logger.log("Enc: " + positionEncoding + ", PC: " + positionCount);
+		Logger.log("Enc: " + positionEncoding + ", PC: " + positionCount);
 		positionLength = getPositionLength(positionEncoding, positionCount);
-
-		dataLength = positionLength + (positionCount * bytesPerValue);
+		updateDataLength();
 
 		if (dataLength <= rowDataLength) {
 			// Values are here
@@ -248,7 +252,7 @@ public class StatisticsRowManager {
 			extraFileRowId = -1;
 		} else {
 			dataExternal = true;
-			extraFileRowId = Utils.variableBytes2Long(row, metadataLength, rowDataLength);
+			extraFileRowId = Utils.variableBytes2Long(row, metadataLength, extraFileRowIdLength);
 			dataBytes = null;
 		}
 
@@ -258,7 +262,8 @@ public class StatisticsRowManager {
 
 	/**
 	 * Replaces the internal dataBytes array with the given one. This is needed if the actual position info is located
-	 * in an extra file, which must be read externally, and then given to this class by this method.
+	 * in an extra file, which must be read externally, and then given to this class by this method. The array is not
+	 * copied for internal use.
 	 *
 	 * @param dataBytes
 	 *            The new data bytes
@@ -277,17 +282,28 @@ public class StatisticsRowManager {
 	 *            The chunk in which the resource occured
 	 * @return The new row as byte array, with a length of the row length in the main file.
 	 */
-	byte[] create(ResourceType resourceType, int chunk) {
+	void create(ResourceType resourceType, int chunk) {
 		row = new byte[mainfileRowLength];
 		// Position count and bytesPerValue are already zero (-> one)
-		// Set first entry of position list
 		int columnNumber = getColumnNumber(resourceType, chunk);
-		Utils.writeLongIntoBytes(columnNumber, row, metadataLength, positionListEntryLength);
-		// Occurs once (until now)
-		row[metadataLength + positionListEntryLength] = 1;
+		// 1 Byte added for occurence value (= 1)
+		int minDataBytesSize = positionListEntryLength + 1;
+		if (minDataBytesSize <= rowDataLength) {
+			// Set first entry of position list
+			Utils.writeLongIntoBytes(columnNumber, row, metadataLength, positionListEntryLength);
+			// Occurs once (until now)
+			row[metadataLength + positionListEntryLength] = 1;
+		} else {
+			// The data will be put into an extra file, so put the occurence values in the databytes array.
+			dataBytes = new byte[minDataBytesSize];
+			Utils.writeLongIntoBytes(columnNumber, dataBytes, 0, positionListEntryLength);
+			// Occurs once (until now)
+			dataBytes[positionListEntryLength] = 1;
+		}
 		positionCount++;
 		positionLength = positionListEntryLength;
-		return row;
+		bytesPerValue = 1;
+		updateDataLength();
 	}
 
 	/**
@@ -304,7 +320,7 @@ public class StatisticsRowManager {
 	 *            Thw new row id
 	 */
 	void updateRowExtraOffset(long newRowId) {
-		Utils.writeLongIntoBytes(newRowId, row, metadataLength, rowDataLength);
+		Utils.writeLongIntoBytes(newRowId, row, metadataLength, extraFileRowIdLength);
 	}
 
 	/**
@@ -319,7 +335,7 @@ public class StatisticsRowManager {
 	void incrementOccurence(ResourceType resourceType, int chunk) {
 		int columnNumber = getColumnNumber(resourceType, chunk);
 		int currentOccurenceValueIndex = getOccurenceValueIndex(columnNumber);
-//		Logger.log("Col: " + columnNumber + "; OVI: " + currentOccurenceValueIndex);
+		Logger.log("Col: " + columnNumber + "; OVI: " + currentOccurenceValueIndex);
 		if (currentOccurenceValueIndex < 0) {
 			// Resource never occured at this column position yet
 			if (optimalPositionEncoding(positionCount + 1) != positionEncoding) {
@@ -327,10 +343,10 @@ public class StatisticsRowManager {
 				long[] oldOccurences = decodeOccurenceData();
 				// Add new occurence
 				oldOccurences[columnNumber] = 1;
-//				Logger.log("Occurences now: " + Arrays.toString(oldOccurences));
+				Logger.log("Occurences now: " + Arrays.toString(oldOccurences));
 				positionCount++;
 				positionEncoding = optimalPositionEncoding(positionCount);
-//				Logger.log("Switched to " + positionEncoding);
+				Logger.log("Switched to " + positionEncoding);
 				encodeOccurenceData(oldOccurences);
 			} else {
 				// Insert value into dataBytes at the correct position
@@ -378,14 +394,13 @@ public class StatisticsRowManager {
 					// zombie values left by moveBytesRight().
 					Utils.writeLongIntoBytes(1, dataBytes, positionLength + (newPositionInList * bytesPerValue),
 							bytesPerValue);
-//					dataBytes[(positionLength - 1) + (newPositionInList * bytesPerValue) + bytesPerValue] = 1;
 				}
 				positionCount++;
 			}
 			updatePositionCount();
 		} else {
-//			Logger.log("DB: " + Arrays.toString(dataBytes));
-//			Logger.log("PL: " + positionLength);
+			Logger.log("DB: " + Arrays.toString(dataBytes));
+			Logger.log("PL: " + positionLength);
 			// Resource column has entry that will be updated now
 			// Get occurence value
 			long occurences = Utils.variableBytes2Long(dataBytes,
@@ -397,7 +412,7 @@ public class StatisticsRowManager {
 				long[] oldOccurences = decodeOccurenceData();
 				// Update current occurence
 				oldOccurences[columnNumber] += 1;
-//				Logger.log("new OC: " + Arrays.toString(oldOccurences));
+				Logger.log("new OC: " + Arrays.toString(oldOccurences));
 				bytesPerValue++;
 				// Rewrite values
 				dataBytes = Utils.extendArray(dataBytes, positionCount);
@@ -409,7 +424,7 @@ public class StatisticsRowManager {
 						positionIndex++;
 					}
 				}
-//				Logger.log("DB: " + Arrays.toString(dataBytes));
+				Logger.log("DB: " + Arrays.toString(dataBytes));
 				updateBytesPerValue();
 			} else {
 				// Update data bytes/the one occurence value
@@ -418,6 +433,7 @@ public class StatisticsRowManager {
 			}
 
 		}
+		updateDataLength();
 //		long[] occ = decodeOccurenceData();
 //		System.out.println(Arrays.toString(occ));
 //		if (occ[1] > 31) {
@@ -436,7 +452,7 @@ public class StatisticsRowManager {
 	long[] decodeOccurenceData() {
 		long[] occurenceValues = new long[3 * numberOfChunks];
 		int[] positions = extractPositions();
-//		Logger.log("Positions: " + Arrays.toString(positions));
+		Logger.log("Positions: " + Arrays.toString(positions));
 		for (int i = 0; i < positions.length; i++) {
 			long occurences = Utils.variableBytes2Long(dataBytes, positionLength + (i * bytesPerValue), bytesPerValue);
 			occurenceValues[positions[i]] = occurences;
@@ -482,6 +498,10 @@ public class StatisticsRowManager {
 	 */
 	private int getColumnNumber(ResourceType resourceType, int chunk) {
 		return (resourceType.position() * numberOfChunks) + chunk;
+	}
+
+	private void updateDataLength() {
+		dataLength = positionLength + (positionCount * bytesPerValue);
 	}
 
 	/**

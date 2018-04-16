@@ -8,8 +8,6 @@ public interface ExtraRowStorage extends RowStorage {
 
 	public void deleteRow(long rowId);
 
-	public boolean isEmpty();
-
 	public long[] getFreeSpaceIndexData();
 
 }
