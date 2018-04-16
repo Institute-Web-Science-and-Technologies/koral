@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
- * access.
+ * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for
+ * access order plus an index (Map) for O(1) access.
  *
  * @author philipp
  *
@@ -83,7 +83,8 @@ public class LRUCache<K, V> implements Iterable<Entry<K, V>> {
 		if (node == tail) {
 			return;
 		}
-		// Move to tail by removing from current position (if appearing in linked list) and reinserting at the end
+		// Move to tail by removing from current position (if appearing in linked list)
+		// and reinserting at the end
 		if ((node.before != null) || (node.after != null)) {
 			remove(node);
 		}
@@ -137,14 +138,30 @@ public class LRUCache<K, V> implements Iterable<Entry<K, V>> {
 	public Collection<Entry<K, V>> entrySet() {
 		LinkedList<Entry<K, V>> entrySet = new LinkedList<>();
 		for (Entry<K, DoublyLinkedNode> entry : index.entrySet()) {
-			entrySet.add(new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), entry.getValue().value));
+			entrySet.add(
+					new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), entry.getValue().value));
 		}
 		return entrySet;
 	}
 
 	@Override
 	public Iterator<Entry<K, V>> iterator() {
-		return null;// index.entrySet().iterator();
+		Iterator<Entry<K, LRUCache<K, V>.DoublyLinkedNode>> iterator = index.entrySet().iterator();
+		return new Iterator<Entry<K, V>>() {
+
+			@Override
+			public boolean hasNext() {
+				return iterator.hasNext();
+			}
+
+			@Override
+			public Entry<K, V> next() {
+				Entry<K, LRUCache<K, V>.DoublyLinkedNode> next = iterator.next();
+				Entry<K, V> result = new AbstractMap.SimpleImmutableEntry<>(next.getKey(),
+						next.getValue().value);
+				return result;
+			}
+		};
 	}
 
 	private void removeEldest() {
@@ -158,8 +175,9 @@ public class LRUCache<K, V> implements Iterable<Entry<K, V>> {
 	}
 
 	/**
-	 * @return The amount of elements in the cache, that is the doubly linked list. There may be more in the index map,
-	 *         depending on sub-implementations of {@link #removeEldest(DoublyLinkedNode)}.
+	 * @return The amount of elements in the cache, that is the doubly linked list.
+	 *         There may be more in the index map, depending on sub-implementations
+	 *         of {@link #removeEldest(DoublyLinkedNode)}.
 	 */
 	public int size() {
 		return size;
