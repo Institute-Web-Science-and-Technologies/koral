@@ -35,9 +35,9 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGr
  */
 public class StatisticsDBTest {
 
-	private static final boolean WRITE_BENCHMARK_RESULTS = false;
+	private static final boolean WRITE_BENCHMARK_RESULTS = true;
 
-	private static final boolean COLLECT_META_STATISTICS = false;
+	private static final boolean COLLECT_META_STATISTICS = true;
 
 	private static final boolean WRITE_STATISTICS_DATA = false;
 
@@ -108,19 +108,22 @@ public class StatisticsDBTest {
 //			System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
 
-			long dirSize = dirSize(conf.getStatisticsDir(true));
-			Map<Long, Long> freeSpaceIndexLengths = null;
 			long indexFileLength = -1;
+			Map<Long, Long> freeSpaceIndexLengths = null;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
 				if (COLLECT_META_STATISTICS) {
 					System.out.println(multiDB.getStatistics());
 				}
+				multiDB.flush();
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				indexFileLength = multiDB.getIndexFileLength();
 			}
+			long dirSize = dirSize(conf.getStatisticsDir(true));
+			System.out.println("Dir Size: " + String.format("%,d", dirSize) + " Bytes");
+			System.out.println("Index File size: " + String.format("%,d", indexFileLength) + " Bytes");
 			if (WRITE_BENCHMARK_RESULTS) {
-				writeBenchmarkResultsToCSV(datasetName, implementation, numberOfChunks, time, dirSize, indexFileLength,
+				writeBenchmarkResultsToCSV(datasetName, implementation, numberOfChunks, conf.getStatisticsDir(true),
 						freeSpaceIndexLengths);
 			}
 			if (WRITE_STATISTICS_DATA) {
@@ -128,7 +131,6 @@ public class StatisticsDBTest {
 				System.out.println("Writing statistics to file...");
 				writeStatisticsToCSV(encodedChunksDir, statisticsDB);
 			}
-
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -137,18 +139,19 @@ public class StatisticsDBTest {
 	}
 
 	private static void writeBenchmarkResultsToCSV(String datasetName, String implementation, short numberOfChunks,
-			long time, long dirSize, long indexFileLength, Map<Long, Long> freeSpaceIndexLengths) {
+			String extraFilesDir, Map<Long, Long> freeSpaceIndexLengths) {
 		try {
 			CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 			CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(
 					new FileOutputStream(datasetName + "_" + implementation + "_" + numberOfChunks + "_chunks.csv"),
 					"UTF-8"), csvFileFormat);
-			printer.printRecord("TIME IN MS", time);
-			printer.printRecord("DIR SIZE IN BYTES", dirSize);
-			printer.printRecord("INDEX SIZE IN BYTES", indexFileLength);
 			if (freeSpaceIndexLengths != null) {
+				printer.printRecord("FILE_ID", "FREESPACEINDEX_LENGTH", "SIZE_IN_BYTES");
 				for (Entry<Long, Long> entry : freeSpaceIndexLengths.entrySet()) {
-					printer.printRecord(entry.getKey(), entry.getValue());
+					long fileId = entry.getKey();
+					File extraFile = new File(extraFilesDir + "/" + fileId);
+					long fileSize = extraFile.length();
+					printer.printRecord(fileId, entry.getValue(), fileSize);
 				}
 			}
 			printer.close();

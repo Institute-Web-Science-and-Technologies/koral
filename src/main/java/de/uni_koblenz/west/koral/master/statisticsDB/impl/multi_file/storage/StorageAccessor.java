@@ -80,21 +80,29 @@ public class StorageAccessor implements RowStorage {
 	}
 
 	private void switchToFile() {
-		System.out.println("Switching storage to file");
-		flushCache();
+		String[] pathElements = storageFilePath.split("/");
+		System.out.println("Switching storage " + pathElements[pathElements.length - 1] + " to file");
+		try {
+			flush();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 		cache.close();
 		cache = null;
 		currentStorage = file;
 	}
 
-	private void flushCache() {
+	@Override
+	public void flush() throws IOException {
 		if (cache == null) {
-			return;
-		}
-		try {
-			file.storeRows(cache.getRows());
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+			file.flush();
+		} else {
+			try {
+				file.storeRows(cache.getRows());
+				// TODO: Different implementations of file may not flush to disk in storeRows
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
@@ -139,10 +147,13 @@ public class StorageAccessor implements RowStorage {
 	@Override
 	public void close() {
 		try {
-			flushCache();
+			flush();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		} finally {
 			if (cache != null) {
 				cache.close();
+				cache = null;
 			}
 			file.close();
 		}

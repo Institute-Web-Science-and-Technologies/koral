@@ -47,10 +47,11 @@ public class FileManager {
 		}
 		this.indexFileCacheSize = indexFileCacheSize;
 		this.mainFileRowLength = mainFileRowLength;
-
 		// We assume about a quarter of the possible amount of open extra files will be open and distribute each cache
 		// size equally.
 		maxExtraCacheSize = extraFilesCacheSize / (maxExtraFilesAmount / 4);
+
+		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
 
 		extraFiles = new LRUCache<Long, ExtraRowStorage>(maxOpenFiles) {
 			@Override
@@ -253,7 +254,11 @@ public class FileManager {
 		}
 	}
 
-	void flush() {
+	void flush() throws IOException {
+		index.flush();
+		for (ExtraRowStorage extraStorage : extraFiles.values()) {
+			extraStorage.flush();
+		}
 		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(freeSpaceIndexFile, true)) {
 			for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
 				if (entry.getValue().isEmpty()) {
@@ -291,14 +296,21 @@ public class FileManager {
 	 * Clears internal fields, without actually deleting the files.
 	 */
 	void clear() {
+		// TODO: clear() RowStorage objects? Also Close() them
 		index = null;
 		extraFiles.clear();
 	}
 
 	void close() {
-		index.close();
-		extraFiles.values().forEach(extraRowStorage -> extraRowStorage.close());
-		deleteEmptyFiles();
+		try {
+			flush();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			index.close();
+			extraFiles.values().forEach(extraRowStorage -> extraRowStorage.close());
+			deleteEmptyFiles();
+		}
 	}
 
 }

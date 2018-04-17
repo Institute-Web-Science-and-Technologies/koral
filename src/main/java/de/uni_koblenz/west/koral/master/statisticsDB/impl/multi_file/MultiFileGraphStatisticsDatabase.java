@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
@@ -22,7 +21,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
  */
 public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
-	private static final int DEFAULT_ROW_DATA_LENGTH = 33;
+	private static final int DEFAULT_ROW_DATA_LENGTH = 8;
 
 	private final String statisticsDirPath;
 
@@ -37,8 +36,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private final StatisticsRowManager rowManager;
 
 	private final int mainfileRowLength;
-
-//	private final long maximumAddressableExtraFileRows;
 
 	private final int rowDataLength;
 
@@ -164,12 +161,12 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					// Overwrite old extra file entry
 					fileManager.writeExternalRow(fileIdWrite, extraFileRowId, rowManager.getDataBytes());
 				}
-				Logger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
-						+ Arrays.toString(rowManager.getDataBytes()));
+//				Logger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
+//						+ Arrays.toString(rowManager.getDataBytes()));
 				// Write new offset into index row
 				rowManager.updateRowExtraOffset(newExtraFileRowID);
 			}
-			Logger.log("New Row: " + Arrays.toString(rowManager.getRow()));
+//			Logger.log("New Row: " + Arrays.toString(rowManager.getRow()));
 			fileManager.writeIndexRow(resourceId, rowManager.getRow());
 
 		} catch (IOException e) {
@@ -196,21 +193,22 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @return True if the row was found.
 	 */
 	private boolean loadRow(long id) {
-		Logger.log("----- ID " + id);
+//		Logger.log("----- ID " + id);
 		try {
 			byte[] row = fileManager.readIndexRow(id);
 			// TODO: row can be a zero array, when rowDataLength is e.g. 1 so one position entries are in the extra file
 			// with id 0, and possibly rowId 0.
 			if ((row == null) || Utils.isArrayZero(row)) {
+//				Logger.log("No entry found");
 				return false;
 			}
 			boolean dataExternal = rowManager.load(row);
-			Logger.log("row " + id + ": " + Arrays.toString(rowManager.getRow()));
+//			Logger.log("row " + id + ": " + Arrays.toString(rowManager.getRow()));
 			if (dataExternal) {
 				byte[] dataBytes = fileManager.readExternalRow(rowManager.getFileId(),
 						rowManager.getExternalFileRowId());
 				rowManager.loadExternalRow(dataBytes);
-				Logger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
+//				Logger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
 			}
 		} catch (IOException e) {
 			close();
@@ -222,12 +220,16 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private void moveEntryToExtraFile() throws IOException {
 		long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(), rowManager.getDataBytes());
 		checkIfDataBytesLengthIsEnough(newExtraFileRowId);
-		Logger.log("I->E " + newExtraFileRowId + ": " + Arrays.toString(rowManager.getDataBytes()));
+//		Logger.log("I->E " + newExtraFileRowId + ": " + Arrays.toString(rowManager.getDataBytes()));
 		rowManager.updateRowExtraOffset(newExtraFileRowId);
 	}
 
-	private void flush() {
-		fileManager.flush();
+	public void flush() {
+		try {
+			fileManager.flush();
+		} catch (IOException e1) {
+			throw new RuntimeException(e1);
+		}
 		byte[] bytes = new byte[Long.BYTES * triplesPerChunk.length];
 		for (int i = 0; i < triplesPerChunk.length; i++) {
 			NumberConversion.long2bytes(triplesPerChunk[i], bytes, i * Long.BYTES);

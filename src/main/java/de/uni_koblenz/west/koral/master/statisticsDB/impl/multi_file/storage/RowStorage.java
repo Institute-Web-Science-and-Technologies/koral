@@ -55,6 +55,8 @@ public interface RowStorage extends AutoCloseable {
 
 	public int getRowLength();
 
+	public void flush() throws IOException;
+
 	public void delete();
 
 	@Override

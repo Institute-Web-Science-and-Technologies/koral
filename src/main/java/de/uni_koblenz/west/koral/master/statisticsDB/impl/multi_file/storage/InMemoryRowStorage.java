@@ -39,8 +39,6 @@ class InMemoryRowStorage implements RowStorage {
 			return null;
 		}
 		byte[] data = new byte[rowLength];
-//		System.out.println("Rows Length: " + rows.length);
-//		System.out.println("offset: " + offset + ", rowLength: " + rowLength);
 		System.arraycopy(rows, offset, data, 0, rowLength);
 		return data;
 	}
@@ -53,7 +51,6 @@ class InMemoryRowStorage implements RowStorage {
 		if (lastByteIndex < maxCacheSize) {
 			// Check if cache has to extend
 			if (lastByteIndex > rows.length) {
-				// TODO: int might overflow if lastByteIndex/maxCacheSize is greater than Interger.MAX/2
 				int newLength = 2 * rows.length;
 				while (newLength < lastByteIndex) {
 					// Prevent integer overflow
@@ -71,9 +68,6 @@ class InMemoryRowStorage implements RowStorage {
 			if (lastByteIndex > currentCacheFillSize) {
 				currentCacheFillSize = lastByteIndex;
 			}
-//			System.out.println("Row: " + Arrays.toString(row));
-//			System.out.println("Rows length: " + rows.length);
-//			System.out.println("Offset: " + offset + ", rowLength: " + rowLength);
 			System.arraycopy(row, 0, rows, offset, rowLength);
 			return true;
 		} else {
@@ -115,6 +109,11 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public int getRowLength() {
 		return rowLength;
+	}
+
+	@Override
+	public void flush() {
+		// Nothing to flush to
 	}
 
 	@Override
