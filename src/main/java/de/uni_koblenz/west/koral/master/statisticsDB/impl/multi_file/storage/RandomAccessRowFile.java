@@ -15,6 +15,9 @@ import java.util.Map.Entry;
 
 public class RandomAccessRowFile implements RowStorage {
 
+	private static final int ESTIMATED_SPACE_PER_ENTRY = 128 /* index entry */ + 24 /* Long value */
+			+ 64 /* DoublyLinkedNode */;
+
 	final File file;
 
 	RandomAccessFile rowFile;
@@ -31,10 +34,10 @@ public class RandomAccessRowFile implements RowStorage {
 		file = new File(storageFilePath);
 		open(true);
 
-		// Each cache entry will contain a byte array (the row) with the length of
-		// rowLength
-		// Therefore we divide maxCacheSize by rowLength for the capacity value
-		fileCache = new LRUCache<Long, byte[]>(maxCacheSize / rowLength) {
+		// Capacity is calculated by dividing the available space by estimated space per entry, rowLength refers to the
+		// amount of bytes used for the row.
+		long capacity = maxCacheSize / (ESTIMATED_SPACE_PER_ENTRY + rowLength);
+		fileCache = new LRUCache<Long, byte[]>(capacity) {
 			@Override
 			protected void removeEldest(Long rowId, byte[] row) {
 				// Persist entry before removing
@@ -62,8 +65,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Retrieves a row from <code>file</code>. The offset is calculated by
-	 * <code>rowId * row.length</code>.
+	 * Retrieves a row from <code>file</code>. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            The RandomAccessFile that will be read
@@ -71,8 +73,7 @@ public class RandomAccessRowFile implements RowStorage {
 	 *            The row number in the file
 	 * @param rowLength
 	 *            The length of a row in the specified file
-	 * @return The row as a byte array. The returned array has the length of
-	 *         rowLength.
+	 * @return The row as a byte array. The returned array has the length of rowLength.
 	 * @throws IOException
 	 */
 	@Override
@@ -88,7 +89,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 	}
 
-	public byte[] readRowFromFile(long rowId) throws IOException {
+	private byte[] readRowFromFile(long rowId) throws IOException {
 		long offset = rowId * rowLength;
 		rowFile.seek(offset);
 		byte[] row = new byte[rowLength];
@@ -102,8 +103,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by
-	 * <code>rowId * row.length</code>.
+	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            A RandomAccessFile that will be updated
@@ -119,14 +119,13 @@ public class RandomAccessRowFile implements RowStorage {
 		return true;
 	}
 
-	public void writeRowToFile(long rowId, byte[] row) throws IOException {
+	private void writeRowToFile(long rowId, byte[] row) throws IOException {
 		rowFile.seek(rowId * rowLength);
 		rowFile.write(row);
 	}
 
 	/**
-	 * Throws IOException if there are resources with ID > Integer.MAX_VALUE in the
-	 * file or cache.
+	 * Throws IOException if there are resources with ID > Integer.MAX_VALUE in the file or cache.
 	 */
 	@Override
 	public byte[] getRows() throws IOException {
@@ -160,7 +159,8 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 	}
 
-	private void flushCache() throws IOException {
+	@Override
+	public void flush() throws IOException {
 		for (Entry<Long, byte[]> entry : fileCache) {
 			writeRowToFile(entry.getKey(), entry.getValue());
 		}
@@ -205,7 +205,7 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public void close() {
 		try {
-			flushCache();
+			flush();
 			rowFile.close();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
