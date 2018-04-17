@@ -86,8 +86,8 @@ public class GraphStatistics implements Closeable {
 	}
 
 	public void count(long subject, long property, long object, int chunk) {
-		de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Logger
-				.log("Chunk " + chunk + ": _" + subject + "_" + property + "_" + object + "_");
+//		de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Logger
+//				.log("Chunk " + chunk + ": _" + subject + "_" + property + "_" + object + "_");
 		database.incrementSubjectCount(subject, chunk);
 		database.incrementPropertyCount(property, chunk);
 		database.incrementObjectCount(object, chunk);
