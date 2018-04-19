@@ -56,6 +56,7 @@ public class StorageAccessor implements RowStorage {
 				}
 			}
 			currentStorage = cache;
+			file.close();
 		}
 	}
 
@@ -94,6 +95,9 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void flush() throws IOException {
+		if (!file.valid()) {
+			file.open(false);
+		}
 		if (cache == null) {
 			file.flush();
 		} else {
