@@ -259,8 +259,13 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 	}
 
+	/**
+	 * Only works if the index file is flushed already
+	 *
+	 * @return
+	 */
 	public long getMaxId() {
-		return (fileManager.getIndexFileLength()) / mainfileRowLength;
+		return ((fileManager.getIndexFileLength()) / mainfileRowLength) - 1;
 	}
 
 	public long getIndexFileLength() {
@@ -281,7 +286,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	/**
-	 * Collects and returns a formatted statistical report on all the written entries.
+	 * Collects and returns a formatted statistical report on all the written entries. Note that not all entries may be
+	 * counted if the index file is not flushed beforehand.
 	 *
 	 * @return
 	 */
@@ -290,6 +296,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		for (long id = 1; id <= maxId; id++) {
 			boolean rowFound = loadRow(id);
 			if (!rowFound) {
+				System.err.println("Missing Row for Ressource ID " + id);
 				continue;
 			}
 			rowManager.collectStatistics();
