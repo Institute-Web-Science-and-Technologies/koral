@@ -39,7 +39,7 @@ public class StatisticsDBTest {
 
 	private static final boolean COLLECT_META_STATISTICS = true;
 
-	private static final boolean WRITE_STATISTICS_DATA = false;
+	private static final boolean WRITE_STATISTICS_DATA = true;
 
 	public static void main(String[] args) throws FileNotFoundException {
 
@@ -112,10 +112,10 @@ public class StatisticsDBTest {
 			Map<Long, Long> freeSpaceIndexLengths = null;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
+				multiDB.flush();
 				if (COLLECT_META_STATISTICS) {
 					System.out.println(multiDB.getStatistics());
 				}
-				multiDB.flush();
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				indexFileLength = multiDB.getIndexFileLength();
 			}
@@ -177,11 +177,12 @@ public class StatisticsDBTest {
 				printer.print(l);
 			}
 			printer.println();
-			for (int id = 1; id < maxId; id++) {
+			for (int id = 1; id <= maxId; id++) {
 				for (long l : statisticsDB.getStatisticsForResource(id)) {
 					printer.print(l);
 				}
-				// SingleDB has another zero entry for total resources, add that one as well for easier diffing
+				// SingleDB has another zero entry per column for total resources, add that one as well for easier
+				// diffing
 				if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 					printer.print(0);
 				}
