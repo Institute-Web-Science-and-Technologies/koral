@@ -14,6 +14,9 @@ class InMemoryRowStorage implements RowStorage {
 
 	private byte[] rows;
 
+	/**
+	 * Index of the last byte of the last row
+	 */
 	private int currentCacheFillSize;
 
 	public InMemoryRowStorage(int rowLength, int initialCacheSize, int maxCacheSize) {

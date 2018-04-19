@@ -60,7 +60,6 @@ public class LRUCache<K, V> implements Iterable<Entry<K, V>> {
 	 * @param newValue
 	 */
 	public void update(K key, V newValue) {
-		assert newValue != null;
 		DoublyLinkedNode node = index.get(key);
 		if (node == null) {
 			put(key, newValue);
