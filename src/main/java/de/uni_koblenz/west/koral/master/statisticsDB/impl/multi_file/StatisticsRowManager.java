@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -250,7 +251,8 @@ public class StatisticsRowManager {
 			extraFileRowId = -1;
 		} else {
 			dataExternal = true;
-			extraFileRowId = Utils.variableBytes2Long(row, metadataLength, extraFileRowIdLength);
+			// The row ids of the extra files use an offset of +1 to prevent zero-only rows
+			extraFileRowId = Utils.variableBytes2Long(row, metadataLength, extraFileRowIdLength) - 1;
 			dataBytes = null;
 		}
 
@@ -322,7 +324,8 @@ public class StatisticsRowManager {
 	 *            Thw new row id
 	 */
 	void updateRowExtraOffset(long newRowId) {
-		Utils.writeLongIntoBytes(newRowId, row, metadataLength, extraFileRowIdLength);
+		// The row ids of the extra files use an offset of +1 to prevent zero-only rows
+		Utils.writeLongIntoBytes(newRowId + 1, row, metadataLength, extraFileRowIdLength);
 	}
 
 	/**
@@ -703,6 +706,23 @@ public class StatisticsRowManager {
 			}
 		}
 		return -1;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("---RowManager:\n");
+		sb.append("Row: ").append(Arrays.toString(row)).append("\n");
+		sb.append("Data External: ").append(dataExternal).append("\n");
+		sb.append("Metadata Bits: ").append(metadataBits).append("\n");
+		sb.append("ExtraFileRowId: ").append(extraFileRowId).append("\n");
+		sb.append("PositionCount: ").append(positionCount).append("\n");
+		sb.append("Bytes per Value: ").append(bytesPerValue).append("\n");
+		sb.append("Position Encoding: ").append(positionEncoding).append("\n");
+		sb.append("Position Length: ").append(positionLength).append("\n");
+		sb.append("Data Length: ").append(dataLength).append("\n");
+		sb.append("Data Bytes: ").append(Arrays.toString(dataBytes)).append("\n");
+		sb.append("---END RowManager---").append("\n");
+		return sb.toString();
 	}
 
 	/**
