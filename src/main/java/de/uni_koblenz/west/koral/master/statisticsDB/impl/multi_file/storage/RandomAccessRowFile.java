@@ -25,7 +25,13 @@ public class RandomAccessRowFile implements RowStorage {
 	final int rowLength;
 
 	/**
-	 * Maps RowIds to their rows.
+	 * Maps RowIds to their rows. Note: It should always be ensured that the values are not-null (on
+	 * inserting/updating), because LRUCache doesn't care and the NullPointerException is not thrown before actually
+	 * writing to file, when it is too late to find out where the null came from.
+	 *
+	 * TODO: On the other hand, we could cache null values so querying not-existing rows doesn't require disk access
+	 * each time. In our use case though, when a row is not found it is created, and because of the (surjective)
+	 * dictionary there should be no read queries for missing rows.
 	 */
 	private final LRUCache<Long, byte[]> fileCache;
 
@@ -83,6 +89,9 @@ public class RandomAccessRowFile implements RowStorage {
 			return row;
 		} else {
 			row = readRowFromFile(rowId);
+			if (row == null) {
+				return null;
+			}
 			fileCache.put(rowId, row);
 			return row;
 		}
@@ -115,6 +124,9 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	@Override
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
+		if (row == null) {
+			throw new NullPointerException("Row can't be null");
+		}
 		fileCache.update(rowId, row);
 		return true;
 	}
