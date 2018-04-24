@@ -168,8 +168,8 @@ public class StatisticsRowManager {
 	private long duoResourceBitmaps;
 	// Key: positionLength
 	// Value: Amount of occurences
-	private final Map<Integer, Long> type1ResourcesAsListLengths;
-	private final Map<Integer, Long> type2ResourcesAsListLengths;
+	private final Map<Integer, Long> type1ResourcesAmounts;
+	private final Map<Integer, Long> type2ResourcesAmounts;
 
 	public StatisticsRowManager(int numberOfChunks, int rowDataLength) {
 		this.numberOfChunks = numberOfChunks;
@@ -189,8 +189,8 @@ public class StatisticsRowManager {
 
 		// Used only for data statistics
 		typeDistribution = new HashMap<>();
-		type1ResourcesAsListLengths = new HashMap<>();
-		type2ResourcesAsListLengths = new HashMap<>();
+		type1ResourcesAmounts = new HashMap<>();
+		type2ResourcesAmounts = new HashMap<>();
 	}
 
 	int getMainFileRowLength() {
@@ -745,21 +745,21 @@ public class StatisticsRowManager {
 			}
 			sb.append(type).append(": ").append(String.format("%,d", amount)).append("\n");
 		}
-		sb.append("Bitmap encoded resources with 1 type: ").append(String.format("%,d", singleResourceBitmaps))
-				.append("\n");
-		sb.append("Bitmap encoded resources with 2 type: ").append(String.format("%,d", duoResourceBitmaps))
-				.append("\n");
-		sb.append("Type 1 Lists:").append("\n");
-		for (Integer positionLength : type1ResourcesAsListLengths.keySet()) {
-			Long amount = type1ResourcesAsListLengths.get(positionLength);
+//		sb.append("Bitmap encoded resources with 1 type: ").append(String.format("%,d", singleResourceBitmaps))
+//				.append("\n");
+//		sb.append("Bitmap encoded resources with 2 type: ").append(String.format("%,d", duoResourceBitmaps))
+//				.append("\n");
+		sb.append("Type 1 resources with position count...").append("\n");
+		for (Integer positionLength : type1ResourcesAmounts.keySet()) {
+			Long amount = type1ResourcesAmounts.get(positionLength);
 			if (amount == null) {
 				amount = 0L;
 			}
 			sb.append(positionLength).append(": ").append(String.format("%,d", amount)).append("\n");
 		}
-		sb.append("Type 2 Lists:").append("\n");
-		for (Integer positionLength : type2ResourcesAsListLengths.keySet()) {
-			Long amount = type2ResourcesAsListLengths.get(positionLength);
+		sb.append("Type 2 resources with position count...").append("\n");
+		for (Integer positionLength : type2ResourcesAmounts.keySet()) {
+			Long amount = type2ResourcesAmounts.get(positionLength);
 			if (amount == null) {
 				amount = 0L;
 			}
@@ -800,28 +800,20 @@ public class StatisticsRowManager {
 		} else {
 			typeDistribution.put(type, amount + 1);
 		}
-		if (positionEncoding == PositionEncoding.BITMAP) {
-			if (type.equals("SP") || type.equals("PO") || type.equals("SO")) {
-				duoResourceBitmaps++;
-			} else if (!type.equals("SPO")) {
-				singleResourceBitmaps++;
+		if (type.equals("SP") || type.equals("PO") || type.equals("SO")) {
+			Long amountPosCount = type2ResourcesAmounts.get(positionCount);
+			if (amountPosCount == null) {
+				amountPosCount = 0L;
 			}
-		} else if (positionEncoding == PositionEncoding.LIST) {
-			if (type.equals("SP") || type.equals("PO") || type.equals("SO")) {
-				Long amountList = type2ResourcesAsListLengths.get(positionLength);
-				if (amountList == null) {
-					amountList = 0L;
-				}
-				amountList++;
-				type2ResourcesAsListLengths.put(positionLength, amountList);
-			} else if (!type.equals("SPO")) {
-				Long amountList = type1ResourcesAsListLengths.get(positionLength);
-				if (amountList == null) {
-					amountList = 0L;
-				}
-				amountList++;
-				type1ResourcesAsListLengths.put(positionLength, amountList);
+			amountPosCount++;
+			type2ResourcesAmounts.put(positionCount, amountPosCount);
+		} else if (!type.equals("SPO")) {
+			Long amountPosCount = type1ResourcesAmounts.get(positionCount);
+			if (amountPosCount == null) {
+				amountPosCount = 0L;
 			}
+			amountPosCount++;
+			type1ResourcesAmounts.put(positionCount, amountPosCount);
 		}
 	}
 
