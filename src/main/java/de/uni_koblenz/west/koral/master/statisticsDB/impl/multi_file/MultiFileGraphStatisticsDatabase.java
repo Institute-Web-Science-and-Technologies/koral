@@ -69,6 +69,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		// Calculate the theoretically maximal amount of extra files. Used for caching space distribution in the file
+		// manager
 		int maxValueBytesPerOccurenceValue = 1 << StatisticsRowManager.VALUE_LENGTH_COLUMN_BITLENGTH;
 		int maxExtraFilesAmount = 3 * numberOfChunks * maxValueBytesPerOccurenceValue;
 		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, maxExtraFilesAmount);
@@ -139,7 +141,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 				return;
 			}
-			// Extract file id before incrementing for comparison
+			// Extract file id before incrementing for later comparison
 			long fileIdRead = rowManager.getFileId();
 			rowManager.incrementOccurence(resourceType, chunk);
 			if (!rowManager.isDataExternal()) {
@@ -196,8 +198,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 //		Logger.log("----- ID " + id);
 		try {
 			byte[] row = fileManager.readIndexRow(id);
-			// TODO: row can be a zero array, when rowDataLength is e.g. 1 so one position entries are in the extra file
-			// with id 0, and possibly rowId 0.
 			if ((row == null) || Utils.isArrayZero(row)) {
 //				Logger.log("No entry found");
 				return false;
