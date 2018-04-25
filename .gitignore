@@ -28,3 +28,5 @@
 /build/
 /target/
 /bigone_*_chunks.csv
+/SingleFileGraphStatisticsDatabase-statistics.csv
+/MultiFileGraphStatisticsDatabase-statistics.csv
