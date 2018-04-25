@@ -50,7 +50,7 @@ class InMemoryRowStorage implements RowStorage {
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
 		assert row.length == rowLength;
 		int offset = (int) (rowId * rowLength);
-		int lastByteIndex = offset + rowLength;
+		int lastByteIndex = offset + (rowLength - 1);
 		if (lastByteIndex < maxCacheSize) {
 			// Check if cache has to extend
 			if (lastByteIndex > rows.length) {
@@ -106,7 +106,8 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public long length() {
-		return currentCacheFillSize;
+		// currentCacheFillSize refers to the last written index, therefore we have +1 total bytes written
+		return currentCacheFillSize + 1;
 	}
 
 	@Override
