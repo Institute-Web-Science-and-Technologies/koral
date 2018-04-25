@@ -78,28 +78,30 @@ public class FileManager {
 	/**
 	 * Writes a row into the index file.
 	 *
-	 * @param rowId
-	 *            Which row will be (over-)written
+	 * @param resourceId
+	 *            Which resource will be (over-)written
 	 * @param row
 	 *            The bytes of the row, its full length will be written
 	 * @throws IOException
 	 */
-	void writeIndexRow(long rowId, byte[] row) throws IOException {
-		index.writeRow(rowId, row);
+	void writeIndexRow(long resourceId, byte[] row) throws IOException {
+		// resourceIds start at 1
+		index.writeRow(resourceId - 1, row);
 	}
 
 	/**
 	 * Retrieves a row from the index file.
 	 *
-	 * @param rowId
-	 *            Which row to read
+	 * @param resourceId
+	 *            Which resource to read
 	 * @param rowLength
 	 *            How long a row in the index file is in bytes
 	 * @return The read bytes, with a length of rowLength
 	 * @throws IOException
 	 */
-	byte[] readIndexRow(long rowId) throws IOException {
-		return index.readRow(rowId);
+	byte[] readIndexRow(long resourceId) throws IOException {
+		// resourceIds start at 1
+		return index.readRow(resourceId - 1);
 	}
 
 	/**
