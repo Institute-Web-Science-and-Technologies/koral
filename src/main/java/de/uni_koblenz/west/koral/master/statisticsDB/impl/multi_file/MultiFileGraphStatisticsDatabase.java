@@ -27,7 +27,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	private final short numberOfChunks;
 
-	private final long[] triplesPerChunk;
+	private long[] triplesPerChunk;
 
 	private final Path triplesPerChunkFile;
 
@@ -107,9 +107,28 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		triplesPerChunk[chunk]++;
 	}
 
+	/**
+	 * Sets the number of triples per chunk array, containing a long value for each existing chunk. The array is cloned
+	 * for further internal use.
+	 * 
+	 * @param triplesPerChunk
+	 */
+	public void setNumberOfTriplesPerChunk(long[] triplesPerChunk) {
+		this.triplesPerChunk = triplesPerChunk.clone();
+	}
+
 	@Override
 	public long[] getChunkSizes() {
 		return triplesPerChunk;
+	}
+
+	@Override
+	public long[] getStatisticsForResource(long id) {
+		boolean rowFound = loadRow(id);
+		if (!rowFound) {
+			return new long[3 * numberOfChunks];
+		}
+		return rowManager.decodeOccurenceData();
 	}
 
 	@Override
@@ -136,7 +155,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			if (!rowFound) {
 				rowManager.create(resourceType, chunk);
 				if (rowManager.isTooLongForMain()) {
-					moveEntryToExtraFile();
+					insertEntryInExtraFile();
 				}
 				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 				return;
@@ -146,7 +165,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			rowManager.incrementOccurence(resourceType, chunk);
 			if (!rowManager.isDataExternal()) {
 				if (rowManager.isTooLongForMain()) {
-					moveEntryToExtraFile();
+					insertEntryInExtraFile();
 				} else {
 					rowManager.mergeDataBytesIntoRow();
 				}
@@ -177,29 +196,45 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 	}
 
-	@Override
-	public long[] getStatisticsForResource(long id) {
-		boolean rowFound = loadRow(id);
-		if (!rowFound) {
-			return new long[3 * numberOfChunks];
+	/**
+	 * Stores already computed statistics for a resource. Can be used for inserting statistics of an other statistic
+	 * database implementation. Calling this multiple times for the same resource might result in orphaned storage
+	 * space.
+	 *
+	 * @param resourceId
+	 *            The resource which entry will be created
+	 * @param occurences
+	 *            Occurence values for each column, like the returned array of {@link #getStatisticsForResource(long)}.
+	 */
+	public void insertEntry(long resourceId, long[] occurences) {
+		// TODO: increment number of triples per chunk
+		try {
+			rowManager.loadFromOccurenceData(occurences);
+			if (rowManager.isTooLongForMain()) {
+				insertEntryInExtraFile();
+			} else {
+				rowManager.mergeDataBytesIntoRow();
+			}
+			fileManager.writeIndexRow(resourceId, rowManager.getRow());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
-		return rowManager.decodeOccurenceData();
 	}
 
 	/**
-	 * Loads the specified row from the file, and loads it into the rowManager if it was found. If the rowManager
-	 * detects that the row refers to an extra file, the row from the extra file is loaded as well and given to the
-	 * rowManager. Note that a row filled with only zeroes counts as not existing.
+	 * Loads the row of the specified resource from the file, and loads it into the rowManager if it was found. If the
+	 * rowManager detects that the row refers to an extra file, the row from the extra file is loaded as well and given
+	 * to the rowManager. Note that a row filled with only zeroes counts as not existing.
 	 *
-	 * @param id
+	 * @param resourceId
+	 *            The desired resource
 	 * @return True if the row was found.
 	 */
-	private boolean loadRow(long id) {
+	private boolean loadRow(long resourceId) {
 //		Logger.log("----- ID " + id);
 		try {
-			byte[] row = fileManager.readIndexRow(id);
+			byte[] row = fileManager.readIndexRow(resourceId);
 			if ((row == null) || Utils.isArrayZero(row)) {
-//				Logger.log("No entry found");
 				return false;
 			}
 			boolean dataExternal = rowManager.load(row);
@@ -217,7 +252,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		return true;
 	}
 
-	private void moveEntryToExtraFile() throws IOException {
+	private void insertEntryInExtraFile() throws IOException {
 		long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(), rowManager.getDataBytes());
 		checkIfDataBytesLengthIsEnough(newExtraFileRowId);
 //		Logger.log("I->E " + newExtraFileRowId + ": " + Arrays.toString(rowManager.getDataBytes()));
@@ -265,7 +300,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @return
 	 */
 	public long getMaxId() {
-		return ((fileManager.getIndexFileLength()) / mainfileRowLength) - 1;
+		return (fileManager.getIndexFileLength()) / mainfileRowLength;
 	}
 
 	public long getIndexFileLength() {

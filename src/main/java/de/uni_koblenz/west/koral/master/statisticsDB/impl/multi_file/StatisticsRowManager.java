@@ -135,7 +135,7 @@ public class StatisticsRowManager {
 	 * to store the occurence values. This variable contains the real value, without the offset of -1 existing in the
 	 * raw {@link #metadataBits}, {@link #row} and index file.
 	 */
-	private byte bytesPerValue;
+	private int bytesPerValue;
 
 	/**
 	 * Describes how the positions of the current row are encoded.
@@ -143,7 +143,8 @@ public class StatisticsRowManager {
 	private PositionEncoding positionEncoding;
 
 	/**
-	 * How many bytes are needed for the position info in the current row.
+	 * How many bytes are needed for the position info in the current row, that is e.g. the list of columns or the
+	 * bitmap only, without the actual values.
 	 */
 	private int positionLength;
 
@@ -159,13 +160,12 @@ public class StatisticsRowManager {
 	 */
 	private byte[] dataBytes;
 
+	// Variables only used for meta statistics
 	private long bitmapsUsed;
 	private long listsUsed;
 	private long unusedBytes;
 	private final Map<String, Long> typeDistribution;
 	private long entries;
-	private long singleResourceBitmaps;
-	private long duoResourceBitmaps;
 	// Key: positionLength
 	// Value: Amount of occurences
 	private final Map<Integer, Long> type1ResourcesAmounts;
@@ -273,8 +273,47 @@ public class StatisticsRowManager {
 	}
 
 	/**
-	 * Creates and returns a row for a resource that occured for the first time. The position count is one, the value of
-	 * the bytes-per-value column is one, and the position is encoded as list.
+	 * Loads a row similar to {@link #load(byte[])} based on the given occurence data array. Can be used for inserting
+	 * entries of other statistic databases. <br>
+	 * <br>
+	 * Some unnecessary variables like {@link #dataExternal} or {@link #extraFileRowId} may not be set to valid values,
+	 * though.
+	 *
+	 * @param occurences
+	 *            The occurence amounts for a resource, each value describing the occurence amount of a column, that is
+	 *            in a certain chunk as a certain type. Has the form of the returned array of
+	 *            {@link #decodeOccurenceData()}
+	 */
+	void loadFromOccurenceData(long[] occurences) {
+		positionCount = 0;
+		bytesPerValue = 1;
+		for (long occurenceCount : occurences) {
+			if (occurenceCount > 0) {
+				positionCount++;
+				int bitsNeeded = Long.SIZE - Long.numberOfLeadingZeros(occurenceCount);
+				int bytesNeeded = (int) Math.ceil(bitsNeeded / 8.0);
+				if (bytesNeeded > bytesPerValue) {
+					bytesPerValue = bytesNeeded;
+				}
+			}
+		}
+		if (positionCount == 0) {
+			throw new IllegalArgumentException("Resource must occure at least once");
+		}
+		positionEncoding = optimalPositionEncoding(positionCount);
+		positionLength = getPositionLength(positionEncoding, positionCount);
+		updateDataLength();
+		row = new byte[mainfileRowLength];
+		updatePositionCount();
+		updateBytesPerValue();
+		encodeOccurenceData(occurences);
+	}
+
+	/**
+	 * Creates a row internally for a resource that occured for the first time. The position count is one, the value of
+	 * the bytes-per-value column is one, and the position is encoded as list. If the entry fits in the main file, only
+	 * the row array is filled, and no {@link #mergeDataBytesIntoRow()} is required. Otherwise, the data bytes have to
+	 * be merged beforehand.
 	 *
 	 * @param resourceType
 	 *            The type of the resource that is to be incremented
@@ -420,6 +459,7 @@ public class StatisticsRowManager {
 //				Logger.log("new OC: " + Arrays.toString(oldOccurences));
 				bytesPerValue++;
 				// Rewrite values
+				// TODO: Why not just encodeOccurenceData()?
 				dataBytes = Utils.extendArray(dataBytes, positionCount);
 				int positionIndex = 0;
 				for (int i = 0; i < oldOccurences.length; i++) {
@@ -466,8 +506,8 @@ public class StatisticsRowManager {
 	}
 
 	/**
-	 * Encodes occurence data into the data byte format, either with a bitmap or list encoding (as specified).
-	 * Overwrites {@link #dataBytes}.
+	 * Encodes occurence data into the data byte format, either with a bitmap or list encoding (as specified by
+	 * {@link #positionEncoding}). Overwrites {@link #dataBytes}.
 	 *
 	 * @param occurences
 	 *            An array that maps each column number to its occurences, like the output of
@@ -518,7 +558,7 @@ public class StatisticsRowManager {
 
 	/**
 	 * Replaces the old positionCount value in {@link #row} with the given new one. The offset of -1 is applied
-	 * beforehand.
+	 * beforehand. Both {@link #metadataBits} and {@link #row} are updated.
 	 *
 	 */
 	private void updatePositionCount() {
@@ -542,7 +582,7 @@ public class StatisticsRowManager {
 
 	/**
 	 * Replaces the old bytesPerValue value in {@link #row} with the given new one. The offset of -1 is applied
-	 * beforehand.
+	 * beforehand. Both {@link #metadataBits} and {@link #row} are updated.
 	 *
 	 */
 	private void updateBytesPerValue() {
@@ -582,7 +622,7 @@ public class StatisticsRowManager {
 	 *
 	 * @param positionEncoding
 	 *            The encoding type
-	 * @return The amount of bytes that would be needed for the given encoding and the classes internal results
+	 * @return The amount of bytes that would be needed for the given encoding
 	 */
 	private int getPositionLength(PositionEncoding positionEncoding, int positionCount) {
 		if (positionEncoding == PositionEncoding.BITMAP) {
@@ -594,8 +634,8 @@ public class StatisticsRowManager {
 	}
 
 	/**
-	 * Extracts all positions/column numbers which have an occurence value >1, i.e. have an associated value in the data
-	 * bytes.
+	 * Extracts all positions/column numbers from {@link #dataBytes} which have an occurence value >1, i.e. have an
+	 * associated value in the data bytes.
 	 *
 	 * @return An array of all columns with occurences, sorted by the order of their corresponding values (second
 	 *         element of this maps to second occurence value). The length is positionCount. Example: [1,1,2,1,5,3,1]
