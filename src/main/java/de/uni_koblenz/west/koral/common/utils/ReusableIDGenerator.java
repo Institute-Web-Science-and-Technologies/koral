@@ -199,6 +199,39 @@ public class ReusableIDGenerator {
 		}
 	}
 
+	public boolean isUsed(long id) {
+		if ((ids == null) || (id < 0)) {
+			return false;
+		}
+		// Refers to the last id that the RLE list currently refers to
+		long idCounter = -1;
+		for (int i = 0; i < ids.length; i++) {
+			if (ids[i] == 0) {
+				// End of RLE
+				return false;
+			}
+			// Negative value implies the last values aren't used
+			boolean idsUsed = ids[i] > 0;
+			idCounter += Math.abs(ids[i]);
+			if (idCounter >= id) {
+				// Found the section where the desired id is included
+				return idsUsed;
+			}
+		}
+		return false;
+	}
+
+	public void defrag() {
+		long maxId = 0;
+		for (long idCount : ids) {
+			if (idCount > 0) {
+				maxId += idCount;
+			}
+		}
+		ids = new long[10];
+		ids[0] = maxId;
+	}
+
 	public long[] getData() {
 		int dataLength = 0;
 		for (; ids[dataLength] != 0; dataLength++) {
