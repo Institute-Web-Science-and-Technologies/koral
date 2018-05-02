@@ -18,6 +18,14 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 	}
 
 	@Override
+	public byte[] readRow(long rowId) throws IOException {
+		if (!freeSpaceIndex.isUsed(rowId)) {
+			return null;
+		}
+		return super.readRow(rowId);
+	}
+
+	@Override
 	public long writeRow(byte[] row) throws IOException {
 		long rowId = freeSpaceIndex.getNextId();
 		writeRow(rowId, row);
@@ -27,6 +35,14 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 	@Override
 	public void deleteRow(long rowId) {
 		freeSpaceIndex.release(rowId);
+	}
+
+	@Override
+	public void defrag() {
+		long[] freeSpaceIndexData = freeSpaceIndex.getData();
+		if (currentStorage.defrag(freeSpaceIndexData)) {
+			freeSpaceIndex.defrag();
+		}
 	}
 
 	@Override

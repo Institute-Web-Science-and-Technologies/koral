@@ -17,7 +17,7 @@ class InMemoryRowStorage implements RowStorage {
 	/**
 	 * Index of the last byte of the last row
 	 */
-	private int currentCacheFillSize;
+	private int lastFilledByteIndex;
 
 	public InMemoryRowStorage(int rowLength, int initialCacheSize, int maxCacheSize) {
 		this.rowLength = rowLength;
@@ -68,8 +68,8 @@ class InMemoryRowStorage implements RowStorage {
 				}
 				rows = Utils.extendArray(rows, newLength - rows.length);
 			}
-			if (lastByteIndex > currentCacheFillSize) {
-				currentCacheFillSize = lastByteIndex;
+			if (lastByteIndex > lastFilledByteIndex) {
+				lastFilledByteIndex = lastByteIndex;
 			}
 			System.arraycopy(row, 0, rows, offset, rowLength);
 			return true;
@@ -81,8 +81,8 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public byte[] getRows() {
-		byte[] cutRows = new byte[currentCacheFillSize];
-		System.arraycopy(rows, 0, cutRows, 0, currentCacheFillSize);
+		byte[] cutRows = new byte[lastFilledByteIndex + 1];
+		System.arraycopy(rows, 0, cutRows, 0, lastFilledByteIndex + 1);
 		return cutRows;
 	}
 
@@ -95,19 +95,26 @@ class InMemoryRowStorage implements RowStorage {
 	}
 
 	@Override
+	public boolean defrag(long[] freeSpaceIndexData) {
+		return false;
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
 	public boolean valid() {
 		return rows != null;
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return currentCacheFillSize == 0;
+		return lastFilledByteIndex == 0;
 	}
 
 	@Override
 	public long length() {
-		// currentCacheFillSize refers to the last written index, therefore we have +1 total bytes written
-		return currentCacheFillSize + 1;
+		// lastFilledByteIndex refers to the last written index, therefore we have +1 total bytes written
+		return lastFilledByteIndex + 1;
 	}
 
 	@Override

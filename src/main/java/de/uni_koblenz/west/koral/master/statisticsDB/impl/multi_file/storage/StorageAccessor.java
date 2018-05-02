@@ -18,7 +18,7 @@ public class StorageAccessor implements RowStorage {
 
 	private RowStorage file;
 
-	private RowStorage currentStorage;
+	RowStorage currentStorage;
 
 	public StorageAccessor(String storageFilePath, int rowLength, int initialCacheSize, int maxCacheSize) {
 		this.storageFilePath = storageFilePath;
@@ -82,7 +82,8 @@ public class StorageAccessor implements RowStorage {
 
 	private void switchToFile() {
 		String[] pathElements = storageFilePath.split("/");
-		System.out.println("Switching storage " + pathElements[pathElements.length - 1] + " to file");
+		String fileId = pathElements[pathElements.length - 1];
+		System.out.println("Switching storage " + fileId + " to file");
 		try {
 			flush();
 		} catch (IOException e) {
@@ -104,6 +105,7 @@ public class StorageAccessor implements RowStorage {
 			try {
 				file.storeRows(cache.getRows());
 				// TODO: Different implementations of file may not flush to disk in storeRows
+				// TODO: Data may become incoherent here, if file is defragged and cache not cleared
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -161,5 +163,10 @@ public class StorageAccessor implements RowStorage {
 			}
 			file.close();
 		}
+	}
+
+	@Override
+	public boolean defrag(long[] freeSpaceIndexData) {
+		return false;
 	}
 }

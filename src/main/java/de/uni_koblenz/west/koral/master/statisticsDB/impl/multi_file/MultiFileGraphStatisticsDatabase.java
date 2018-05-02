@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
@@ -110,7 +111,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	/**
 	 * Sets the number of triples per chunk array, containing a long value for each existing chunk. The array is cloned
 	 * for further internal use.
-	 * 
+	 *
 	 * @param triplesPerChunk
 	 */
 	public void setNumberOfTriplesPerChunk(long[] triplesPerChunk) {
@@ -231,19 +232,23 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @return True if the row was found.
 	 */
 	private boolean loadRow(long resourceId) {
-//		Logger.log("----- ID " + id);
+//		Logger.log("----- ID " + resourceId);
 		try {
 			byte[] row = fileManager.readIndexRow(resourceId);
 			if ((row == null) || Utils.isArrayZero(row)) {
 				return false;
 			}
 			boolean dataExternal = rowManager.load(row);
-//			Logger.log("row " + id + ": " + Arrays.toString(rowManager.getRow()));
+//			Logger.log("row " + resourceId + ": " + Arrays.toString(rowManager.getRow()));
 			if (dataExternal) {
-				byte[] dataBytes = fileManager.readExternalRow(rowManager.getFileId(),
-						rowManager.getExternalFileRowId());
+				long fileId = rowManager.getFileId();
+				long rowId = rowManager.getExternalFileRowId();
+				byte[] dataBytes = fileManager.readExternalRow(fileId, rowId);
+				if (dataBytes == null) {
+					throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
+				}
 				rowManager.loadExternalRow(dataBytes);
-//				Logger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
+				Logger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
 			}
 		} catch (IOException e) {
 			close();
@@ -260,6 +265,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	public void flush() {
+		fileManager.defrag();
 		try {
 			fileManager.flush();
 		} catch (IOException e1) {

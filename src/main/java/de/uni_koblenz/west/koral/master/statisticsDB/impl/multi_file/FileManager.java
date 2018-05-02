@@ -214,6 +214,12 @@ public class FileManager {
 		}
 	}
 
+	void defrag() {
+		for (ExtraRowStorage extraRowFile : extraFiles.values()) {
+			extraRowFile.defrag();
+		}
+	}
+
 	void load() {
 		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(freeSpaceIndexFile)) {
 			LongIterator iterator = input.iterator();
