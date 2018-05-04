@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 
@@ -23,6 +24,8 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase {
 
 	private static final int DEFAULT_ROW_DATA_LENGTH = 8;
+
+	private final Logger logger;
 
 	private final String statisticsDirPath;
 
@@ -54,9 +57,11 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 	}
 
-	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, int rowDataLength) {
+	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, int rowDataLength,
+			Logger logger) {
 		this.numberOfChunks = numberOfChunks;
 		this.rowDataLength = rowDataLength;
+		this.logger = logger;
 
 		rowManager = new StatisticsRowManager(numberOfChunks, rowDataLength);
 		mainfileRowLength = rowManager.getMainFileRowLength();
@@ -80,8 +85,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		triplesPerChunk = loadTriplesPerChunk();
 	}
 
-	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks) {
-		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH);
+	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, Logger logger) {
+		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, logger);
 	}
 
 	private long[] loadTriplesPerChunk() {
@@ -89,7 +94,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		if (!Files.exists(triplesPerChunkFile)) {
 			return triplesPerChunk;
 		}
-		System.out.println("Found triplesPerChunk file, reading it...");
+		if (logger != null) {
+			logger.finest("Found existing triplesPerChunk file, reading it...");
+		}
 		try {
 			byte[] content = Files.readAllBytes(triplesPerChunkFile);
 			for (int i = 0; i < (content.length / Long.BYTES); i++) {
@@ -97,9 +104,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			}
 			return triplesPerChunk;
 		} catch (IOException e) {
-			System.err.println("Error reading triples-per-chunk file:");
-			e.printStackTrace();
-			return new long[numberOfChunks];
+			throw new RuntimeException("Could not read existing triplePerChunk file", e);
 		}
 	}
 
@@ -248,7 +253,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
 				}
 				rowManager.loadExternalRow(dataBytes);
-				Logger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
+				SimpleLogger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
 			}
 		} catch (IOException e) {
 			close();

@@ -53,7 +53,7 @@ public class GraphStatistics implements Closeable {
 		// TODO enable
 		// database = new SQLiteGraphStatisticsDatabase(conf.getStatisticsDir(),
 		// numberOfChunks);
-		database = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
+		database = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks, logger);
 	}
 
 	public GraphStatistics(GraphStatisticsDatabase database, short numberOfChunks, Logger logger) {
