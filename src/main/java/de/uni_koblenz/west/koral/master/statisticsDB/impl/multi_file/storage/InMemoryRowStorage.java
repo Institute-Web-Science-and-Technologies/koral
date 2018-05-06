@@ -93,13 +93,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void storeRows(byte[] rows) throws IOException {
 		this.rows = rows;
-	}
-
-	@Override
-	public boolean defrag(long[] freeSpaceIndexData) {
-		return false;
-		// TODO
-
+		lastFilledByteIndex = rows.length - 1;
 	}
 
 	@Override
