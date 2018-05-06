@@ -26,6 +26,7 @@ class InMemoryRowStorage implements RowStorage {
 		if (initialCacheSize > maxCacheSize) {
 			throw new IllegalArgumentException("Initial cache size can't be larger than maximum cache size");
 		}
+		lastFilledByteIndex = -1;
 		open(true);
 	}
 
@@ -97,7 +98,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public boolean defrag(long[] freeSpaceIndexData) {
 		return false;
-		// TODO Auto-generated method stub
+		// TODO
 
 	}
 
@@ -108,7 +109,7 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public boolean isEmpty() {
-		return lastFilledByteIndex == 0;
+		return lastFilledByteIndex == -1;
 	}
 
 	@Override
@@ -130,6 +131,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void delete() {
 		rows = null;
+		lastFilledByteIndex = -1;
 	}
 
 	/**
