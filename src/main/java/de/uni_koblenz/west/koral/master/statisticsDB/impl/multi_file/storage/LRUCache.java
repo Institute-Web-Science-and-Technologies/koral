@@ -118,6 +118,12 @@ public class LRUCache<K, V> implements Iterable<Entry<K, V>> {
 		size--;
 	}
 
+	public void remove(K key) {
+		DoublyLinkedNode node = index.get(key);
+		index.remove(key);
+		remove(node);
+	}
+
 	public Set<K> keySet() {
 		Set<K> keys = new HashSet<>();
 		for (K key : index.keySet()) {
