@@ -10,6 +10,6 @@ public interface ExtraRowStorage extends RowStorage {
 
 	public long[] getFreeSpaceIndexData();
 
-	public void defrag();
+	public void defragFreeSpaceIndex();
 
 }

@@ -40,11 +40,8 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 	}
 
 	@Override
-	public void defrag() {
-		long[] freeSpaceIndexData = freeSpaceIndex.getData();
-		if (currentStorage.defrag(freeSpaceIndexData)) {
-			freeSpaceIndex.defrag();
-		}
+	public void defragFreeSpaceIndex() {
+		freeSpaceIndex.defrag();
 	}
 
 	@Override

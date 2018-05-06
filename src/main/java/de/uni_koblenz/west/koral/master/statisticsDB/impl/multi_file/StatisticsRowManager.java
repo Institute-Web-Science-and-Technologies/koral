@@ -362,7 +362,7 @@ public class StatisticsRowManager {
 	 * @param newRowId
 	 *            Thw new row id
 	 */
-	void updateRowExtraOffset(long newRowId) {
+	void updateExtraRowId(long newRowId) {
 		// The row ids of the extra files use an offset of +1 to prevent zero-only rows
 		Utils.writeLongIntoBytes(newRowId + 1, row, metadataLength, extraFileRowIdLength);
 	}

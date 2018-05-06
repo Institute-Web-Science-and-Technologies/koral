@@ -194,7 +194,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 //				Logger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
 //						+ Arrays.toString(rowManager.getDataBytes()));
 				// Write new offset into index row
-				rowManager.updateRowExtraOffset(newExtraFileRowID);
+				rowManager.updateExtraRowId(newExtraFileRowID);
 			}
 //			Logger.log("New Row: " + Arrays.toString(rowManager.getRow()));
 			fileManager.writeIndexRow(resourceId, rowManager.getRow());
@@ -259,7 +259,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 //				SimpleLogger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
 			}
 		} catch (IOException e) {
-			close();
+//			close();
 			throw new RuntimeException(e);
 		}
 		return true;
@@ -269,13 +269,60 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(), rowManager.getDataBytes());
 		checkIfDataBytesLengthIsEnough(newExtraFileRowId);
 //		Logger.log("I->E " + newExtraFileRowId + ": " + Arrays.toString(rowManager.getDataBytes()));
-		rowManager.updateRowExtraOffset(newExtraFileRowId);
+		rowManager.updateExtraRowId(newExtraFileRowId);
 	}
 
+	/**
+	 * Flushes and closes the fileManager.
+	 *
+	 * @throws IOException
+	 */
+	private void defrag() throws IOException {
+//		fileManager.close();
+		// Stores the last written rowId of each extra file
+		Map<Long, Long> rowCounts = new TreeMap<>();
+		// TODO: There might be too many files opened, enforce limit maybe via LRUCache
+		Map<Long, OutputStream> outputStreams = new TreeMap<>();
+		for (int resourceId = 1; resourceId <= getMaxId(); resourceId++) {
+			if (!loadRow(resourceId)) {
+				throw new RuntimeException("Empty row found while defragging");
+			}
+			if (rowManager.isDataExternal()) {
+				long fileId = rowManager.getFileId();
+				OutputStream out = outputStreams.get(fileId);
+				if (out == null) {
+					out = new BufferedOutputStream(new FileOutputStream(statisticsDirPath + fileId + ".tmp"));
+					outputStreams.put(fileId, out);
+					rowCounts.put(fileId, -1L);
+				}
+				out.write(rowManager.getDataBytes());
+				long newRowId = rowCounts.get(fileId) + 1;
+				rowManager.updateExtraRowId(newRowId);
+				rowCounts.put(fileId, newRowId);
+				fileManager.writeIndexRow(resourceId, rowManager.getRow());
+			}
+		}
+		for (OutputStream out : outputStreams.values()) {
+			out.flush();
+			out.close();
+		}
+		fileManager.close();
+		for (Long fileId : outputStreams.keySet()) {
+			File oldFile = new File(statisticsDirPath + fileId);
+			File newFile = new File(statisticsDirPath + fileId + ".tmp");
+			oldFile.delete();
+			newFile.renameTo(oldFile);
+		}
+		fileManager.defragFreeSpaceIndexes();
+	}
+
+	/**
+	 * Defrags the extra files before flushing, therefore the file manager is closed as well.
+	 */
 	public void flush() {
-		fileManager.defrag();
 		try {
-			fileManager.flush();
+			defrag();
+//			fileManager.flush();
 		} catch (IOException e1) {
 			throw new RuntimeException(e1);
 		}
@@ -327,11 +374,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	@Override
 	public void close() {
-		try {
-			flush();
-		} finally {
-			fileManager.close();
-		}
+		flush();
 	}
 
 	/**

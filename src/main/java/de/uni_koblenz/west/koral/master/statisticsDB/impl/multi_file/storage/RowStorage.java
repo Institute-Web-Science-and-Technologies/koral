@@ -32,8 +32,6 @@ public interface RowStorage extends AutoCloseable {
 
 	public void storeRows(byte[] rows) throws IOException;
 
-	public boolean defrag(long[] freeSpaceIndexData);
-
 	/**
 	 * TODO: If valid == false, storage must be reopened
 	 *

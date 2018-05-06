@@ -169,15 +169,13 @@ public class StorageAccessor implements RowStorage {
 			throw new RuntimeException(e);
 		} finally {
 			if (cache != null) {
+				if (currentStorage == cache) {
+					currentStorage = file;
+				}
 				cache.close();
 				cache = null;
 			}
 			file.close();
 		}
-	}
-
-	@Override
-	public boolean defrag(long[] freeSpaceIndexData) {
-		return false;
 	}
 }

@@ -92,6 +92,9 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	void writeIndexRow(long resourceId, byte[] row) throws IOException {
+		if (!index.valid()) {
+			index.open(false);
+		}
 		// resourceIds start at 1
 		index.writeRow(resourceId - 1, row);
 	}
@@ -107,6 +110,9 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	byte[] readIndexRow(long resourceId) throws IOException {
+		if (!index.valid()) {
+			index.open(false);
+		}
 		// resourceIds start at 1
 		return index.readRow(resourceId - 1);
 	}
@@ -215,16 +221,18 @@ public class FileManager {
 	 * Deletes all extra files that are empty. Files must be closed with {@link #close()} beforehand.
 	 */
 	void deleteEmptyFiles() {
-		for (ExtraRowStorage extraRowFile : extraFiles.values()) {
+		for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
+			ExtraRowStorage extraRowFile = entry.getValue();
 			if (extraRowFile.isEmpty()) {
 				extraRowFile.delete();
+				extraFiles.remove(entry.getKey());
 			}
 		}
 	}
 
-	void defrag() {
+	void defragFreeSpaceIndexes() {
 		for (ExtraRowStorage extraRowFile : extraFiles.values()) {
-			extraRowFile.defrag();
+			extraRowFile.defragFreeSpaceIndex();
 		}
 	}
 

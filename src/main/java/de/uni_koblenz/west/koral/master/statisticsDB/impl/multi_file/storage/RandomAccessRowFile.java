@@ -11,11 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.nio.channels.Channels;
-import java.util.Arrays;
 import java.util.Map.Entry;
-
-import org.apache.commons.io.IOUtils;
 
 public class RandomAccessRowFile implements RowStorage {
 
@@ -175,100 +171,6 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 	}
 
-//	@Override
-	public void defrag2(long[] freeSpaceIndexData) {
-		for (int i = 0; i < freeSpaceIndexData.length; i++) {
-			if ((freeSpaceIndexData[i] * rowLength) > Integer.MAX_VALUE) {
-				System.err.println("Cannot defrag row file: Fragment(s) too large for memory");
-				return;
-			}
-		}
-		try {
-			flush();
-			long defraggedRows = 0;
-			long rowPointer = 0;
-			for (int i = 0; i < freeSpaceIndexData.length; i++) {
-				if (freeSpaceIndexData[i] == 0) {
-					break;
-				}
-				if (freeSpaceIndexData[i] < 0) {
-					rowPointer += -freeSpaceIndexData[i];
-					continue;
-				}
-				if ((i == 0) && (freeSpaceIndexData[i] > 0)) {
-					// Skip unfragmented rows at the beginning
-					defraggedRows += freeSpaceIndexData[i];
-					rowPointer += freeSpaceIndexData[i];
-					continue;
-				}
-				byte[] fragment = new byte[(int) freeSpaceIndexData[i] * rowLength];
-				rowFile.seek(rowPointer * rowLength);
-				try (InputStream in = Channels.newInputStream(rowFile.getChannel())) {
-
-				}
-				rowFile.read(fragment);
-				rowFile.seek(defraggedRows * rowLength);
-				rowFile.write(fragment);
-				defraggedRows += freeSpaceIndexData[i];
-				rowPointer += freeSpaceIndexData[i];
-
-			}
-			rowFile.setLength(defraggedRows * rowLength);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * After failure, the file is unchanged. The internal cache is cleared.
-	 *
-	 * @return True on success, false if failed
-	 */
-	@Override
-	public boolean defrag(long[] freeSpaceIndexData) {
-		close();
-		File tmpOutputFile;
-		try {
-			tmpOutputFile = new File(file.getCanonicalPath() + ".tmp");
-		} catch (IOException e1) {
-			throw new RuntimeException(e1);
-		}
-		System.out.println(file);
-		System.out.println("FreeSpaceIndexData: " + Arrays.toString(freeSpaceIndexData));
-		System.out.println("File size Before defrag: " + String.format("%,d", file.length()));
-		// We don't need a BufferedInputStream because IOUtils.copyLarge() buffers internally
-		try (InputStream in = new FileInputStream(file)) {
-			try (OutputStream out = new BufferedOutputStream(new FileOutputStream(tmpOutputFile))) {
-				for (int i = 0; i < freeSpaceIndexData.length; i++) {
-					if ((freeSpaceIndexData[i] * rowLength) > Integer.MAX_VALUE) {
-						System.err.println("Cannot defrag row file: Fragment(s) too large for memory");
-						tmpOutputFile.delete();
-						return false;
-					}
-					if (freeSpaceIndexData[i] == 0) {
-						break;
-					}
-					if (freeSpaceIndexData[i] < 0) {
-						IOUtils.skip(in, -freeSpaceIndexData[i] * rowLength);
-						continue;
-					}
-					// Copy the current RLE fragment to the new file
-					IOUtils.copyLarge(in, out, 0, freeSpaceIndexData[i] * rowLength);
-				}
-			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-
-		file.delete();
-		if (!tmpOutputFile.renameTo(file)) {
-			throw new RuntimeException("Could not rename file " + tmpOutputFile + " to " + file);
-		}
-		fileCache.clear();
-		System.out.println("File size After defrag: " + String.format("%,d", file.length()));
-		return true;
-	}
-
 	@Override
 	public void flush() throws IOException {
 		for (Entry<Long, byte[]> entry : fileCache) {
@@ -292,11 +194,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public long length() {
-		try {
-			return rowFile.length();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		return file.length();
 	}
 
 	@Override
@@ -318,6 +216,7 @@ public class RandomAccessRowFile implements RowStorage {
 		try {
 			flush();
 			rowFile.close();
+			fileCache.clear();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
