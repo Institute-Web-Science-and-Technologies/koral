@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
@@ -25,6 +26,8 @@ public class FileManager {
 
 	private static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
 
+	private final Logger logger;
+
 	private final LRUCache<Long, ExtraRowStorage> extraFiles;
 
 	private final String storagePath;
@@ -40,23 +43,27 @@ public class FileManager {
 	private final int maxExtraCacheSize;
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, int maxOpenFiles,
-			int indexFileCacheSize, int extraFilesCacheSize) {
+			int indexFileCacheSize, int extraFilesCacheSize, Logger logger) {
 		this.storagePath = storagePath;
 		if (!this.storagePath.endsWith(File.separator)) {
 			storagePath += File.separator;
 		}
 		this.indexFileCacheSize = indexFileCacheSize;
 		this.mainFileRowLength = mainFileRowLength;
+		this.logger = logger;
 		// We assume about a quarter of the possible amount of open extra files will be open and distribute each cache
 		// size equally.
 		maxExtraCacheSize = extraFilesCacheSize / (maxExtraFilesAmount / 4);
+		if (this.logger != null) {
+			this.logger.finest("Setting cache size per extra file to " + maxExtraCacheSize + " Bytes");
+		}
 
 		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
 
 		extraFiles = new LRUCache<Long, ExtraRowStorage>(maxOpenFiles) {
 			@Override
 			protected void removeEldest(Long fileId, ExtraRowStorage storage) {
-				// Don't call super, because this way the ExtraFileRow is retained in the internal index
+				// Don't call super so the ExtraFileRow is retained in the internal index
 				storage.close();
 			}
 		};
@@ -65,14 +72,14 @@ public class FileManager {
 		setup();
 	}
 
-	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount) {
+	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, Logger logger) {
 		this(storagePath, mainFileRowLength, maxExtraFilesAmount, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE,
-				DEFAULT_EXTRAFILES_CACHE_SIZE);
+				DEFAULT_EXTRAFILES_CACHE_SIZE, logger);
 	}
 
 	void setup() {
 		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, INITIAL_INDEX_FILE_CACHE_SIZE,
-				indexFileCacheSize);
+				indexFileCacheSize, logger);
 	}
 
 	/**
@@ -178,7 +185,8 @@ public class FileManager {
 	private ExtraRowStorage getOrCreateExtraFile(long fileId, int rowLength) {
 		ExtraRowStorage extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), rowLength, maxExtraCacheSize);
+			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), rowLength, maxExtraCacheSize,
+					logger);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
@@ -221,6 +229,7 @@ public class FileManager {
 	}
 
 	void load() {
+		// TODO: use this method
 		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(freeSpaceIndexFile)) {
 			LongIterator iterator = input.iterator();
 			long fileId = -1;
@@ -248,7 +257,7 @@ public class FileManager {
 				} else {
 					// Reading one entry is done, store and reset everything for next one
 					extraFiles.put(fileId,
-							new ExtraStorageAccessor(storagePath + fileId, rowLength, maxExtraCacheSize, list));
+							new ExtraStorageAccessor(storagePath + fileId, rowLength, maxExtraCacheSize, list, logger));
 					fileId = -1;
 					rowLength = -1;
 					dataLength = -1;

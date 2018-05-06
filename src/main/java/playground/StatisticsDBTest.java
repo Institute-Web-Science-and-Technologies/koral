@@ -91,7 +91,7 @@ public class StatisticsDBTest {
 		if (implementation.trim().equalsIgnoreCase("single")) {
 			statisticsDB = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
-			statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
+			statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
 			return;

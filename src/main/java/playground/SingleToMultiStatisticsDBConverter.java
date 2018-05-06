@@ -79,9 +79,9 @@ public class SingleToMultiStatisticsDBConverter {
 		MultiFileGraphStatisticsDatabase newDatabase = null;
 		if (rowDataLength >= 0) {
 			newDatabase = new MultiFileGraphStatisticsDatabase(statisticsDir.getCanonicalPath(), numberOfChunks,
-					rowDataLength);
+					rowDataLength, null);
 		} else {
-			newDatabase = new MultiFileGraphStatisticsDatabase(statisticsDir.getCanonicalPath(), numberOfChunks);
+			newDatabase = new MultiFileGraphStatisticsDatabase(statisticsDir.getCanonicalPath(), numberOfChunks, null);
 		}
 
 		System.out.println("Copying entries...");

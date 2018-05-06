@@ -1,12 +1,15 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -79,7 +82,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		// manager
 		int maxValueBytesPerOccurenceValue = 1 << StatisticsRowManager.VALUE_LENGTH_COLUMN_BITLENGTH;
 		int maxExtraFilesAmount = 3 * numberOfChunks * maxValueBytesPerOccurenceValue;
-		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, maxExtraFilesAmount);
+		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, maxExtraFilesAmount, logger);
 
 		triplesPerChunkFile = Paths.get(statisticsDirPath + "triplesPerChunk");
 		triplesPerChunk = loadTriplesPerChunk();
@@ -204,8 +207,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	/**
 	 * Stores already computed statistics for a resource. Can be used for inserting statistics of an other statistic
-	 * database implementation. Calling this multiple times for the same resource might result in orphaned storage
-	 * space.
+	 * database implementation. Calling this multiple times for the same resource might result in orphaned storage space
+	 * (perviously used extra file rows are not marked as deleted).
 	 *
 	 * @param resourceId
 	 *            The resource which entry will be created
@@ -253,7 +256,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
 				}
 				rowManager.loadExternalRow(dataBytes);
-				SimpleLogger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
+//				SimpleLogger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
 			}
 		} catch (IOException e) {
 			close();
@@ -300,7 +303,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	private void checkIfDataBytesLengthIsEnough(long newRowId) {
 		if ((Long.SIZE - Long.numberOfLeadingZeros(newRowId)) > (rowDataLength * Byte.SIZE)) {
-			throw new IllegalArgumentException(
+			throw new RuntimeException(
 					"There are too many extra file rows to be adressable with the current data bytes length. Please set rowDataLength parameter to a larger value.");
 		}
 	}

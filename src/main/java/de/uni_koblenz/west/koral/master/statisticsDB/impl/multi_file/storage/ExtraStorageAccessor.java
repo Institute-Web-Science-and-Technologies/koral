@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 
@@ -8,12 +9,13 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 
 	private final ReusableIDGenerator freeSpaceIndex;
 
-	public ExtraStorageAccessor(String storageFilePath, int rowLength, int maxCacheSize) {
-		this(storageFilePath, rowLength, maxCacheSize, null);
+	public ExtraStorageAccessor(String storageFilePath, int rowLength, int maxCacheSize, Logger logger) {
+		this(storageFilePath, rowLength, maxCacheSize, null, logger);
 	}
 
-	public ExtraStorageAccessor(String storageFilePath, int rowLength, int maxCacheSize, long[] loadedFreeSpaceIndex) {
-		super(storageFilePath, rowLength, maxCacheSize);
+	public ExtraStorageAccessor(String storageFilePath, int rowLength, int maxCacheSize, long[] loadedFreeSpaceIndex,
+			Logger logger) {
+		super(storageFilePath, rowLength, maxCacheSize, logger);
 		freeSpaceIndex = new ReusableIDGenerator(loadedFreeSpaceIndex);
 	}
 

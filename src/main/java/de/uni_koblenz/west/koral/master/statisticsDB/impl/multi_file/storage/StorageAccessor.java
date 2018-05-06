@@ -1,10 +1,13 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 public class StorageAccessor implements RowStorage {
 
 	private static final int DEFAULT_MIN_CACHE_SIZE = 1024;
+
+	private final Logger logger;
 
 	private final String storageFilePath;
 
@@ -20,10 +23,12 @@ public class StorageAccessor implements RowStorage {
 
 	RowStorage currentStorage;
 
-	public StorageAccessor(String storageFilePath, int rowLength, int initialCacheSize, int maxCacheSize) {
+	public StorageAccessor(String storageFilePath, int rowLength, int initialCacheSize, int maxCacheSize,
+			Logger logger) {
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
 		this.initialCacheSize = initialCacheSize;
+		this.logger = logger;
 
 		this.maxCacheSize = maxCacheSize;
 		if (initialCacheSize > maxCacheSize) {
@@ -32,8 +37,8 @@ public class StorageAccessor implements RowStorage {
 		open(true);
 	}
 
-	public StorageAccessor(String storageFilePath, int rowLength, int maxCacheSize) {
-		this(storageFilePath, rowLength, Math.min(DEFAULT_MIN_CACHE_SIZE, maxCacheSize), maxCacheSize);
+	public StorageAccessor(String storageFilePath, int rowLength, int maxCacheSize, Logger logger) {
+		this(storageFilePath, rowLength, Math.min(DEFAULT_MIN_CACHE_SIZE, maxCacheSize), maxCacheSize, logger);
 	}
 
 	@Override
@@ -49,6 +54,9 @@ public class StorageAccessor implements RowStorage {
 			cacheSize = Math.min(cacheSize, maxCacheSize);
 			cache = new InMemoryRowStorage(rowLength, cacheSize, maxCacheSize);
 			if (storageLength > 0) {
+				if (logger != null) {
+					logger.finest("Loading existing storage with path " + storageFilePath);
+				}
 				try {
 					cache.storeRows(file.getRows());
 				} catch (IOException e) {
@@ -84,6 +92,9 @@ public class StorageAccessor implements RowStorage {
 		String[] pathElements = storageFilePath.split("/");
 		String fileId = pathElements[pathElements.length - 1];
 		System.out.println("Switching storage " + fileId + " to file");
+		if (logger != null) {
+			logger.finest("Switching storage " + fileId + " to file");
+		}
 		try {
 			flush();
 		} catch (IOException e) {
