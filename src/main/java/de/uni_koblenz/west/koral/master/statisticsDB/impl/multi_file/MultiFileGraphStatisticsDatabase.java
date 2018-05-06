@@ -273,7 +273,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	/**
-	 * Flushes and closes the fileManager.
+	 * Flushes and closes the fileManager. Note: This method is not threadsafe
 	 *
 	 * @throws IOException
 	 */
