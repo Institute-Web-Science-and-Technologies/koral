@@ -54,9 +54,9 @@ class InMemoryRowStorage implements RowStorage {
 		int lastByteIndex = offset + (rowLength - 1);
 		if (lastByteIndex < maxCacheSize) {
 			// Check if cache has to extend
-			if (lastByteIndex > rows.length) {
+			if (lastByteIndex >= rows.length) {
 				int newLength = 2 * rows.length;
-				while (newLength < lastByteIndex) {
+				while (newLength <= lastByteIndex) {
 					// Prevent integer overflow
 					if (newLength >= (Integer.MAX_VALUE / 2)) {
 						newLength = maxCacheSize;
