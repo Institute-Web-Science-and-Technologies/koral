@@ -102,7 +102,7 @@ public class RandomAccessRowFile implements RowStorage {
 			rowFile.readFully(row);
 		} catch (EOFException e) {
 			long fileLength = rowFile.length();
-			if ((fileLength >= offset) && ((fileLength - offset) < rowLength)) {
+			if ((fileLength > offset) && ((fileLength - offset) < rowLength)) {
 				throw new RuntimeException("Corrupted database: EOF before row end");
 			}
 			// Resource does not have an entry (yet)
