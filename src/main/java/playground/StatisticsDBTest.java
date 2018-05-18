@@ -45,7 +45,7 @@ public class StatisticsDBTest {
 
 		if (args.length != 3) {
 			System.out.println("Usage: java " + StatisticsDBTest.class.getName()
-					+ " <encodedChunksDir> <numberOfChunks> <implementation: single|multi>");
+					+ " <encodedChunksDir> <implementation: single|multi> <rowDataLength>");
 			return;
 		}
 		File encodedChunksDir = new File(args[0]);
@@ -71,9 +71,11 @@ public class StatisticsDBTest {
 		for (File file : encodedFiles) {
 			System.out.println(file);
 		}
-		short numberOfChunks = Short.parseShort(args[1]);
-		String implementation = args[2];
+		short numberOfChunks = (short) encodedFiles.length;
+		String implementation = args[1];
 		System.out.println("Chosen implementation: " + implementation);
+
+		int rowDataLength = Integer.parseInt(args[2]);
 
 		Configuration conf = new Configuration();
 
@@ -91,7 +93,8 @@ public class StatisticsDBTest {
 		if (implementation.trim().equalsIgnoreCase("single")) {
 			statisticsDB = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
-			statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks, null);
+			statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks,
+					rowDataLength, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
 			return;
