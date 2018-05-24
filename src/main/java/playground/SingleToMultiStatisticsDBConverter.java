@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 
@@ -79,7 +80,8 @@ public class SingleToMultiStatisticsDBConverter {
 		MultiFileGraphStatisticsDatabase newDatabase = null;
 		if (rowDataLength >= 0) {
 			newDatabase = new MultiFileGraphStatisticsDatabase(statisticsDir.getCanonicalPath(), numberOfChunks,
-					rowDataLength, null);
+					rowDataLength, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE, FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE,
+					null);
 		} else {
 			newDatabase = new MultiFileGraphStatisticsDatabase(statisticsDir.getCanonicalPath(), numberOfChunks, null);
 		}
@@ -98,7 +100,7 @@ public class SingleToMultiStatisticsDBConverter {
 			}
 			newDatabase.insertEntry(resourceId, occurences);
 		}
-
+		// For testing the correctness: comparing via diff
 		if (WRITE_STATISTICS_TO_CSV) {
 			System.out.println("Writing data to CSV...");
 			writeStatisticsToCSV(new File("."), oldDatabase);
