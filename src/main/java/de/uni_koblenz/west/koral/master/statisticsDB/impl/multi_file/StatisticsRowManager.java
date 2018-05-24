@@ -808,6 +808,14 @@ public class StatisticsRowManager {
 		return sb.toString();
 	}
 
+	long getTotalEntries() {
+		return entries;
+	}
+
+	long getUnusedBytes() {
+		return unusedBytes;
+	}
+
 	/**
 	 * Adds properties of the current loaded row to internal statistics variables.
 	 */

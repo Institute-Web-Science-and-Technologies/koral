@@ -397,6 +397,14 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		return rowManager.getStatistics();
 	}
 
+	public long getTotalEntries() {
+		return rowManager.getTotalEntries();
+	}
+
+	public long getUnusedBytes() {
+		return rowManager.getUnusedBytes();
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
