@@ -18,13 +18,13 @@ import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
 public class FileManager {
 
-	private static final int DEFAULT_MAX_OPEN_FILES = 1000;
+	public static final int DEFAULT_MAX_OPEN_FILES = 1000;
 
-	private static final int DEFAULT_INDEX_FILE_CACHE_SIZE = 100 * 1024 * 1024;
+	public static final int DEFAULT_INDEX_FILE_CACHE_SIZE = 100 * 1024 * 1024;
 
 	private static final int INITIAL_INDEX_FILE_CACHE_SIZE = 512 * 1024;
 
-	private static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
+	public static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
 
 	private final Logger logger;
 
@@ -32,7 +32,7 @@ public class FileManager {
 
 	private final String storagePath;
 
-	private final int indexFileCacheSize;
+	private final long indexFileCacheSize;
 
 	private final int mainFileRowLength;
 
@@ -40,10 +40,10 @@ public class FileManager {
 
 	private RowStorage index;
 
-	private final int maxExtraCacheSize;
+	private final long maxExtraCacheSize;
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, int maxOpenFiles,
-			int indexFileCacheSize, int extraFilesCacheSize, Logger logger) {
+			long indexFileCacheSize, long extraFilesCacheSize, Logger logger) {
 		this.storagePath = storagePath;
 		if (!this.storagePath.endsWith(File.separator)) {
 			storagePath += File.separator;

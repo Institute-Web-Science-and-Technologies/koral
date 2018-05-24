@@ -8,9 +8,9 @@ class InMemoryRowStorage implements RowStorage {
 
 	private final int rowLength;
 
-	private final int initialCacheSize;
+	private final long initialCacheSize;
 
-	private final int maxCacheSize;
+	private final long maxCacheSize;
 
 	private byte[] rows;
 
@@ -19,12 +19,15 @@ class InMemoryRowStorage implements RowStorage {
 	 */
 	private int lastFilledByteIndex;
 
-	public InMemoryRowStorage(int rowLength, int initialCacheSize, int maxCacheSize) {
+	public InMemoryRowStorage(int rowLength, long initialCacheSize, long maxCacheSize) {
 		this.rowLength = rowLength;
 		this.initialCacheSize = initialCacheSize;
 		this.maxCacheSize = maxCacheSize;
 		if (initialCacheSize > maxCacheSize) {
 			throw new IllegalArgumentException("Initial cache size can't be larger than maximum cache size");
+		}
+		if (maxCacheSize > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException("Cache size can't be larger than Integer.MAX_VALUE");
 		}
 		lastFilledByteIndex = -1;
 		open(true);
@@ -32,7 +35,7 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public void open(boolean createIfNotExisting) {
-		rows = new byte[initialCacheSize];
+		rows = new byte[(int) initialCacheSize];
 	}
 
 	@Override
@@ -55,7 +58,7 @@ class InMemoryRowStorage implements RowStorage {
 		if (lastByteIndex < maxCacheSize) {
 			// Check if cache has to extend
 			if (lastByteIndex >= rows.length) {
-				int newLength = 2 * rows.length;
+				long newLength = 2 * rows.length;
 				while (newLength <= lastByteIndex) {
 					// Prevent integer overflow
 					if (newLength >= (Integer.MAX_VALUE / 2)) {
@@ -67,7 +70,7 @@ class InMemoryRowStorage implements RowStorage {
 				if (newLength > maxCacheSize) {
 					newLength = maxCacheSize;
 				}
-				rows = Utils.extendArray(rows, newLength - rows.length);
+				rows = Utils.extendArray(rows, (int) (newLength - rows.length));
 			}
 			if (lastByteIndex > lastFilledByteIndex) {
 				lastFilledByteIndex = lastByteIndex;

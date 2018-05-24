@@ -13,9 +13,9 @@ public class StorageAccessor implements RowStorage {
 
 	private final int rowLength;
 
-	private final int initialCacheSize;
+	private final long initialCacheSize;
 
-	private final int maxCacheSize;
+	private final long maxCacheSize;
 
 	private RowStorage cache;
 
@@ -23,7 +23,7 @@ public class StorageAccessor implements RowStorage {
 
 	RowStorage currentStorage;
 
-	public StorageAccessor(String storageFilePath, int rowLength, int initialCacheSize, int maxCacheSize,
+	public StorageAccessor(String storageFilePath, int rowLength, long initialCacheSize, long maxCacheSize,
 			Logger logger) {
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
@@ -37,7 +37,7 @@ public class StorageAccessor implements RowStorage {
 		open(true);
 	}
 
-	public StorageAccessor(String storageFilePath, int rowLength, int maxCacheSize, Logger logger) {
+	public StorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, Logger logger) {
 		this(storageFilePath, rowLength, Math.min(DEFAULT_MIN_CACHE_SIZE, maxCacheSize), maxCacheSize, logger);
 	}
 
@@ -47,9 +47,9 @@ public class StorageAccessor implements RowStorage {
 		currentStorage = file;
 		long storageLength = file.length();
 		if (storageLength < maxCacheSize) {
-			int cacheSize = initialCacheSize;
+			long cacheSize = initialCacheSize;
 			if (storageLength > cacheSize) {
-				cacheSize = (int) (2 * storageLength);
+				cacheSize = 2 * storageLength;
 			}
 			cacheSize = Math.min(cacheSize, maxCacheSize);
 			cache = new InMemoryRowStorage(rowLength, cacheSize, maxCacheSize);

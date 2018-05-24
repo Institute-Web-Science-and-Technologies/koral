@@ -31,7 +31,7 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	private final LRUCache<Long, byte[]> fileCache;
 
-	public RandomAccessRowFile(String storageFilePath, int rowLength, int maxCacheSize) {
+	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize) {
 		this.rowLength = rowLength;
 		file = new File(storageFilePath);
 		open(true);
