@@ -17,6 +17,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -104,6 +105,7 @@ public class StatisticsDBTest {
 		int tripleCount = -1;
 		short numberOfChunks_datasetName = -1;
 		String configName = "";
+		String configNameWithoutCaches = "";
 		try {
 			coveringAlgorithm = datasetInfo[0];
 			numberOfChunks_datasetName = Short.parseShort(datasetInfo[1].replace("C", ""));
@@ -112,8 +114,9 @@ public class StatisticsDBTest {
 						+ " while there are " + numberOfChunks + " chunk files.");
 			}
 			tripleCount = Integer.parseInt(datasetInfo[2].replace("M", "000000").replace("K", "000"));
-			configName = coveringAlgorithm + "_" + numberOfChunks + "C_" + datasetInfo[2] + "_" + indexCacheSize + "IC_"
-					+ extraFilesCacheSize + "EC";
+			configNameWithoutCaches = implementation + "_" + coveringAlgorithm + "_" + numberOfChunks + "C_"
+					+ datasetInfo[2] + "T_" + rowDataLength + "DB";
+			configName = configNameWithoutCaches + "_" + indexCacheSize + "IC_" + extraFilesCacheSize + "EC";
 		} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
 			System.err.println(
 					"Unknown directory name format, please use [CoverAlgorithm]_[Chunks]C_[Triples][K/M]. Benchmark CSV will be filled with NULLs.");
@@ -125,6 +128,7 @@ public class StatisticsDBTest {
 			System.setOut(out);
 			System.setErr(out);
 		}
+		System.out.println("Starting at " + new Date());
 		System.out.println("Config string: " + configName);
 
 		Configuration conf = new Configuration();
@@ -187,7 +191,7 @@ public class StatisticsDBTest {
 				writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, durationSec, dirSize, indexFileLength,
 						dirSize - indexFileLength, totalEntries, unusedBytes);
-				writeFileDistributionToCSV(configName, conf.getStatisticsDir(true), freeSpaceIndexLengths);
+				writeFileDistributionToCSV(configNameWithoutCaches, conf.getStatisticsDir(true), freeSpaceIndexLengths);
 			}
 			if (WRITE_STATISTICS_DATA) {
 				// Read statistics and write into csv
@@ -195,7 +199,7 @@ public class StatisticsDBTest {
 				writeStatisticsToCSV(encodedChunksDir, statisticsDB);
 			}
 		}
-		System.out.println("Finished.");
+		System.out.println("Finished at " + new Date() + ".");
 
 	}
 
