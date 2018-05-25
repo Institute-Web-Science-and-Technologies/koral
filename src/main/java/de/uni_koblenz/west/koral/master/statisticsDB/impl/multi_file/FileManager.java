@@ -78,8 +78,8 @@ public class FileManager {
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, INITIAL_INDEX_FILE_CACHE_SIZE,
-				indexFileCacheSize, logger);
+		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength,
+				Math.min(INITIAL_INDEX_FILE_CACHE_SIZE, indexFileCacheSize), indexFileCacheSize, logger);
 	}
 
 	/**
