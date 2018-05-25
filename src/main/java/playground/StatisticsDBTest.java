@@ -172,8 +172,10 @@ public class StatisticsDBTest {
 			long unusedBytes = -1;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
+				System.out.println("Flushing database...");
 				multiDB.flush();
 				if (COLLECT_META_STATISTICS) {
+					System.out.println("Collecting meta statistics...");
 					System.out.println(multiDB.getStatistics());
 				}
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
@@ -191,6 +193,7 @@ public class StatisticsDBTest {
 				writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, durationSec, dirSize, indexFileLength,
 						dirSize - indexFileLength, totalEntries, unusedBytes);
+				System.out.println("Writing file distribution to CSV...");
 				writeFileDistributionToCSV(configNameWithoutCaches, conf.getStatisticsDir(true), freeSpaceIndexLengths);
 			}
 			if (WRITE_STATISTICS_DATA) {
