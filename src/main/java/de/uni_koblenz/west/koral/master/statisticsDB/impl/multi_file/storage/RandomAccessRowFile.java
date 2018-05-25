@@ -36,22 +36,27 @@ public class RandomAccessRowFile implements RowStorage {
 		file = new File(storageFilePath);
 		open(true);
 
-		// Capacity is calculated by dividing the available space by estimated space per entry, rowLength refers to the
-		// amount of bytes used for the row.
-		long capacity = maxCacheSize / (ESTIMATED_SPACE_PER_ENTRY + rowLength);
-		fileCache = new LRUCache<Long, byte[]>(capacity) {
-			@Override
-			protected void removeEldest(Long rowId, byte[] row) {
-				// Persist entry before removing
-				try {
-					writeRowToFile(rowId, row);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
+		if (maxCacheSize > 0) {
+			// Capacity is calculated by dividing the available space by estimated space per entry, rowLength refers to
+			// the
+			// amount of bytes used for the row.
+			long capacity = maxCacheSize / (ESTIMATED_SPACE_PER_ENTRY + rowLength);
+			fileCache = new LRUCache<Long, byte[]>(capacity) {
+				@Override
+				protected void removeEldest(Long rowId, byte[] row) {
+					// Persist entry before removing
+					try {
+						writeRowToFile(rowId, row);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+					// Remove from cache
+					super.removeEldest(rowId, row);
 				}
-				// Remove from cache
-				super.removeEldest(rowId, row);
-			}
-		};
+			};
+		} else {
+			fileCache = null;
+		}
 	}
 
 	@Override
@@ -80,16 +85,21 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
-		byte[] row = fileCache.get(rowId);
-		if (row != null) {
-			return row;
-		} else {
-			row = readRowFromFile(rowId);
-			if (row == null) {
-				return null;
+		if (fileCache != null) {
+			byte[] row = fileCache.get(rowId);
+			if (row != null) {
+				return row;
+			} else {
+				row = readRowFromFile(rowId);
+				if (row == null) {
+					// Return before fileCache is accessed to prevent null entries
+					return null;
+				}
+				fileCache.put(rowId, row);
+				return row;
 			}
-			fileCache.put(rowId, row);
-			return row;
+		} else {
+			return readRowFromFile(rowId);
 		}
 
 	}
@@ -127,7 +137,11 @@ public class RandomAccessRowFile implements RowStorage {
 		if (row == null) {
 			throw new NullPointerException("Row can't be null");
 		}
-		fileCache.update(rowId, row);
+		if (fileCache != null) {
+			fileCache.update(rowId, row);
+		} else {
+			writeRowToFile(rowId, row);
+		}
 		return true;
 	}
 
@@ -151,12 +165,14 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 
 		// Add/overwrite data from cache
-		for (Entry<Long, byte[]> entry : fileCache) {
-			long rowId = entry.getKey();
-			if (rowId > Integer.MAX_VALUE) {
-				throw new IOException("RowFile too large for memory");
+		if (fileCache != null) {
+			for (Entry<Long, byte[]> entry : fileCache) {
+				long rowId = entry.getKey();
+				if (rowId > Integer.MAX_VALUE) {
+					throw new IOException("RowFile too large for memory");
+				}
+				System.arraycopy(entry.getValue(), 0, rows, (int) rowId * rowLength, rowLength);
 			}
-			System.arraycopy(entry.getValue(), 0, rows, (int) rowId * rowLength, rowLength);
 		}
 		return rows;
 	}
@@ -173,8 +189,10 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public void flush() throws IOException {
-		for (Entry<Long, byte[]> entry : fileCache) {
-			writeRowToFile(entry.getKey(), entry.getValue());
+		if (fileCache != null) {
+			for (Entry<Long, byte[]> entry : fileCache) {
+				writeRowToFile(entry.getKey(), entry.getValue());
+			}
 		}
 	}
 
@@ -207,7 +225,9 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	@Override
 	public void delete() {
-		fileCache.clear();
+		if (fileCache != null) {
+			fileCache.clear();
+		}
 		file.delete();
 	}
 
@@ -216,7 +236,9 @@ public class RandomAccessRowFile implements RowStorage {
 		try {
 			flush();
 			rowFile.close();
-			fileCache.clear();
+			if (fileCache != null) {
+				fileCache.clear();
+			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
