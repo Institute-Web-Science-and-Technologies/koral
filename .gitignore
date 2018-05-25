@@ -30,6 +30,5 @@
 /bigone_*_chunks.csv
 /SingleFileGraphStatisticsDatabase-statistics.csv
 /MultiFileGraphStatisticsDatabase-statistics.csv
-/fileDistribution-hash_4C_341.csv
-/fileDistribution-hash_10C_6M.csv
+/fileDistribution-*.csv
 /results.csv
