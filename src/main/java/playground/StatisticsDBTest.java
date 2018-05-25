@@ -46,12 +46,12 @@ public class StatisticsDBTest {
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
-				+ " <encodedChunksDir> <logDir> <resultCSVFile> <implementation: single|multi> <rowDataLength>");
+				+ " <encodedChunksDir> <logDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB>");
 	}
 
 	public static void main(String[] args) throws IOException {
 		boolean logging = true;
-		if (args.length != 5) {
+		if (args.length != 7) {
 			System.err.println("Invalid amount of arguments.");
 			printUsage();
 			return;
@@ -96,6 +96,8 @@ public class StatisticsDBTest {
 		System.out.println("Chosen implementation: " + implementation);
 
 		int rowDataLength = Integer.parseInt(args[4]);
+		long indexCacheSize = Long.parseLong(args[5]);
+		long extraFilesCacheSize = Long.parseLong(args[6]);
 
 		String[] datasetInfo = datasetName.split("_");
 		String coveringAlgorithm = "NULL";
@@ -110,7 +112,8 @@ public class StatisticsDBTest {
 						+ " while there are " + numberOfChunks + " chunk files.");
 			}
 			tripleCount = Integer.parseInt(datasetInfo[2].replace("M", "000000").replace("K", "000"));
-			configName = coveringAlgorithm + "_" + numberOfChunks + "C_" + datasetInfo[2];
+			configName = coveringAlgorithm + "_" + numberOfChunks + "C_" + datasetInfo[2] + "_" + indexCacheSize + "IC_"
+					+ extraFilesCacheSize + "EC";
 		} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
 			System.err.println(
 					"Unknown directory name format, please use [CoverAlgorithm]_[Chunks]C_[Triples][K/M]. Benchmark CSV will be filled with NULLs.");
@@ -122,6 +125,7 @@ public class StatisticsDBTest {
 			System.setOut(out);
 			System.setErr(out);
 		}
+		System.out.println("Config string: " + configName);
 
 		Configuration conf = new Configuration();
 
@@ -140,7 +144,7 @@ public class StatisticsDBTest {
 			statisticsDB = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
 			statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks,
-					rowDataLength, null);
+					rowDataLength, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
 			return;
@@ -180,9 +184,9 @@ public class StatisticsDBTest {
 				System.out.println("Writing benchmarks to CSV...");
 				// For the extra file size the difference of dir and index size is calculated. For
 				// 1000M dataset, deviation is less than 0.001%
-				writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, rowDataLength, implementation,
-						coveringAlgorithm, durationSec, dirSize, indexFileLength, dirSize - indexFileLength,
-						totalEntries, unusedBytes);
+				writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
+						extraFilesCacheSize, implementation, coveringAlgorithm, durationSec, dirSize, indexFileLength,
+						dirSize - indexFileLength, totalEntries, unusedBytes);
 				writeFileDistributionToCSV(configName, conf.getStatisticsDir(true), freeSpaceIndexLengths);
 			}
 			if (WRITE_STATISTICS_DATA) {
@@ -196,21 +200,24 @@ public class StatisticsDBTest {
 	}
 
 	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, short numberOfChunks, int dataBytes,
-			String dbImplementation, String coveringAlgorithm, long durationSec, long dirSizeBytes, long indexSizeBytes,
-			long extraFilesSizeBytes, long totalEntries, long unusedBytes)
-			throws UnsupportedEncodingException, FileNotFoundException, IOException {
+			long indexCacheSize, long extraFilesCacheSize, String dbImplementation, String coveringAlgorithm,
+			long durationSec, long dirSizeBytes, long indexSizeBytes, long extraFilesSizeBytes, long totalEntries,
+			long unusedBytes) throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
 				csvFileFormat);
 		if (resultFile.length() == 0) {
-			// The extra file size is only approximate, because the difference of dir and index size is calculated. For
+			// The extra file size is only approximate, because only the difference of dir and index size is calculated.
+			// For
 			// 1000M dataset, deviation is less than 0.001%
-			printer.printRecord("TRIPLE_COUNT", "NUMBER_OF_CHUNKS", "ROW_DATA_LENGTH", "DB_IMPLEMENTATION",
-					"COVERING_ALGORITHM", "DURATION_SEC", "DIR_SIZE_BYTES", "INDEX_SIZE_BYTES",
-					"APPROX_EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
+			printer.printRecord("TRIPLE_COUNT", "NUMBER_OF_CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_SIZE_MB",
+					"EXTRAFILES_CACHE_SIZE", "DB_IMPLEMENTATION", "COVERING_ALGORITHM", "DURATION_SEC",
+					"DIR_SIZE_BYTES", "INDEX_SIZE_BYTES", "APPROX_EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES",
+					"UNUSED_BYTES");
 		}
-		printer.printRecord(tripleCount, numberOfChunks, dataBytes, dbImplementation, coveringAlgorithm, durationSec,
-				dirSizeBytes, indexSizeBytes, extraFilesSizeBytes, totalEntries, unusedBytes);
+		printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
+				dbImplementation, coveringAlgorithm, durationSec, dirSizeBytes, indexSizeBytes, extraFilesSizeBytes,
+				totalEntries, unusedBytes);
 		printer.close();
 	}
 
