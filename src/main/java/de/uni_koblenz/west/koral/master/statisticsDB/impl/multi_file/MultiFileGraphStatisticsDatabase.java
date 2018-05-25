@@ -61,8 +61,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, int rowDataLength,
-			Logger logger) {
+			long indexCacheSize, long extraFilesCacheSize, Logger logger) {
 		this.numberOfChunks = numberOfChunks;
+		// TODO: rowDataLength should be inferred on loaded database
 		this.rowDataLength = rowDataLength;
 		this.logger = logger;
 
@@ -82,14 +83,16 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		// manager
 		int maxValueBytesPerOccurenceValue = 1 << StatisticsRowManager.VALUE_LENGTH_COLUMN_BITLENGTH;
 		int maxExtraFilesAmount = 3 * numberOfChunks * maxValueBytesPerOccurenceValue;
-		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, maxExtraFilesAmount, logger);
+		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, maxExtraFilesAmount,
+				FileManager.DEFAULT_MAX_OPEN_FILES, indexCacheSize, extraFilesCacheSize, logger);
 
 		triplesPerChunkFile = Paths.get(statisticsDirPath + "triplesPerChunk");
 		triplesPerChunk = loadTriplesPerChunk();
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, Logger logger) {
-		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, logger);
+		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
+				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, logger);
 	}
 
 	private long[] loadTriplesPerChunk() {
