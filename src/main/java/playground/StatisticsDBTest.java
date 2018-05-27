@@ -69,6 +69,10 @@ public class StatisticsDBTest {
 			logging = false;
 		}
 		File resultCSV = new File(args[2]);
+		if (resultCSV.getParent() == null) {
+			System.err.println("Invalid path for result file: " + args[2]);
+			printUsage();
+		}
 		File resultCSVDir = new File(resultCSV.getParent());
 		if (!resultCSVDir.exists()) {
 			resultCSVDir.mkdirs();
@@ -215,10 +219,9 @@ public class StatisticsDBTest {
 				csvFileFormat);
 		if (resultFile.length() == 0) {
 			// The extra file size is only approximate, because only the difference of dir and index size is calculated.
-			// For
-			// 1000M dataset, deviation is less than 0.001%
+			// For 1000M dataset, deviation is less than 0.001%
 			printer.printRecord("TRIPLE_COUNT", "NUMBER_OF_CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_SIZE_MB",
-					"EXTRAFILES_CACHE_SIZE", "DB_IMPLEMENTATION", "COVERING_ALGORITHM", "DURATION_SEC",
+					"EXTRAFILES_CACHE_SIZE_MB", "DB_IMPLEMENTATION", "COVERING_ALGORITHM", "DURATION_SEC",
 					"DIR_SIZE_BYTES", "INDEX_SIZE_BYTES", "APPROX_EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES",
 					"UNUSED_BYTES");
 		}
