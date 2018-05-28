@@ -70,6 +70,7 @@ class InMemoryRowStorage implements RowStorage {
 				if (newLength > maxCacheSize) {
 					newLength = maxCacheSize;
 				}
+//				System.out.println("Increasing InMemoryCache size to " + newLength + " Bytes");
 				rows = Utils.extendArray(rows, (int) (newLength - rows.length));
 			}
 			if (lastByteIndex > lastFilledByteIndex) {
@@ -85,6 +86,7 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public byte[] getRows() {
+		// TODO: On full cache, the whole cache is copied, resulting in 2*maxCache memory usage => OOM
 		byte[] cutRows = new byte[lastFilledByteIndex + 1];
 		System.arraycopy(rows, 0, cutRows, 0, lastFilledByteIndex + 1);
 		return cutRows;
