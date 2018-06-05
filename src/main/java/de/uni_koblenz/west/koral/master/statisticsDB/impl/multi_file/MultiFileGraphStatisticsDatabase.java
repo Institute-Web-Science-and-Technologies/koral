@@ -195,12 +195,12 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					// Overwrite old extra file entry
 					fileManager.writeExternalRow(fileIdWrite, extraFileRowId, rowManager.getDataBytes());
 				}
-//				Logger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
+//				SimpleLogger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
 //						+ Arrays.toString(rowManager.getDataBytes()));
 				// Write new offset into index row
 				rowManager.updateExtraRowId(newExtraFileRowID);
 			}
-//			Logger.log("New Row: " + Arrays.toString(rowManager.getRow()));
+//			SimpleLogger.log("New Row: " + Arrays.toString(rowManager.getRow()));
 			fileManager.writeIndexRow(resourceId, rowManager.getRow());
 
 		} catch (IOException e) {
@@ -241,17 +241,17 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 *
 	 * @param resourceId
 	 *            The desired resource
-	 * @return True if the row was found.
+	 * @return True if the row was found in the index.
 	 */
 	private boolean loadRow(long resourceId) {
-//		Logger.log("----- ID " + resourceId);
+//		SimpleLogger.log("----- ID " + resourceId);
 		try {
 			byte[] row = fileManager.readIndexRow(resourceId);
 			if ((row == null) || Utils.isArrayZero(row)) {
 				return false;
 			}
 			boolean dataExternal = rowManager.load(row);
-//			Logger.log("row " + resourceId + ": " + Arrays.toString(rowManager.getRow()));
+//			SimpleLogger.log("row " + resourceId + ": " + Arrays.toString(rowManager.getRow()));
 			if (dataExternal) {
 				long fileId = rowManager.getFileId();
 				long rowId = rowManager.getExternalFileRowId();
@@ -272,7 +272,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private void insertEntryInExtraFile() throws IOException {
 		long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(), rowManager.getDataBytes());
 		checkIfDataBytesLengthIsEnough(newExtraFileRowId);
-//		Logger.log("I->E " + newExtraFileRowId + ": " + Arrays.toString(rowManager.getDataBytes()));
+//		SimpleLogger.log("I->E " + newExtraFileRowId + ": " + Arrays.toString(rowManager.getDataBytes()));
 		rowManager.updateExtraRowId(newExtraFileRowId);
 	}
 
@@ -289,7 +289,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		Map<Long, OutputStream> outputStreams = new TreeMap<>();
 		for (int resourceId = 1; resourceId <= getMaxId(); resourceId++) {
 			if (!loadRow(resourceId)) {
-				throw new RuntimeException("Empty row found while defragging");
+				throw new RuntimeException("Empty row for resource " + resourceId + " found while defragging");
 			}
 			if (rowManager.isDataExternal()) {
 				long fileId = rowManager.getFileId();
