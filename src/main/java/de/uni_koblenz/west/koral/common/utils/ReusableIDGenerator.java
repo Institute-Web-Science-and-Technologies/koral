@@ -44,14 +44,31 @@ public class ReusableIDGenerator {
 		this.ids = ids;
 	}
 
+	/**
+	 *
+	 * @return Next ID without changing internal list. Returns -1 if there are no free ids available.
+	 */
 	public long getNextId() {
 		if (ids == null) {
-			ids = new long[10];
-			ids[0] = 1;
 			return 0;
 		}
 		long firstFreeID = ids[0] > 0 ? ids[0] : 0;
 		if (firstFreeID > ReusableIDGenerator.MAX_NUMBER_OF_IDS) {
+			return -1;
+		}
+		return firstFreeID;
+	}
+
+	public long next() {
+		long firstFreeID;
+		if (ids == null) {
+			ids = new long[10];
+			ids[0] = 1;
+			firstFreeID = 0;
+		} else {
+			firstFreeID = getNextId();
+		}
+		if (firstFreeID < 0) {
 			throw new RuntimeException("There are no free ids available any more.");
 		}
 		if (ids[0] == 0) {
