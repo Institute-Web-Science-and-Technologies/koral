@@ -238,6 +238,79 @@ public class ReusableIDGenerator {
 		return false;
 	}
 
+	/**
+	 * Returns the amount of used ids before the given id. It is assumed that the id is currently in use (no exceptions
+	 * are thrown if not). The given id itself is not counted. Can be viewed as translating a total index to an index of
+	 * the used subset. Pretty much the opposite of {@link #positionOf(long)}.
+	 *
+	 * @param id
+	 * @return
+	 */
+	public long usedIdsBefore(long id) {
+		if (id < 0) {
+			throw new IllegalArgumentException("Id can't be negative");
+		}
+		long usedIdsCount = 0;
+		long currentId = 0;
+		for (int i = 0; i < ids.length; i++) {
+			if (ids[i] == 0) {
+				break;
+			}
+			if (ids[i] < 0) {
+				currentId += Math.abs(ids[i]);
+			} else {
+				long newId = currentId + ids[i];
+				if (newId > id) {
+					usedIdsCount += id - currentId;
+					return usedIdsCount;
+				} else {
+					currentId += ids[i];
+					usedIdsCount += ids[i];
+				}
+			}
+		}
+		if (currentId <= id) {
+			throw new IllegalArgumentException("Given id " + id + " is not in range of RLE");
+		}
+		return usedIdsCount;
+	}
+
+	/**
+	 * Returns the (n+1)th used id. Can be viewed as translating an index of the used subset to the total index. Pretty
+	 * much the opposite of {@link #usedIdsBefore(long)}.
+	 *
+	 * @param n
+	 * @return
+	 */
+	public long positionOf(long n) {
+		if (n < 0) {
+			throw new IllegalArgumentException("n can't be null");
+		}
+		long usedIdsCount = 0;
+		long currentId = 0;
+		for (int i = 0; i < ids.length; i++) {
+			if (ids[i] == 0) {
+				break;
+			}
+			if (ids[i] < 0) {
+				currentId += Math.abs(ids[i]);
+			} else {
+				long newUsedIdsCount = usedIdsCount + ids[i];
+				if (newUsedIdsCount > n) {
+					currentId += n - usedIdsCount;
+					return currentId;
+				} else {
+					currentId += ids[i];
+					usedIdsCount += ids[i];
+				}
+			}
+		}
+		if (usedIdsCount < (n + 1)) {
+			throw new IllegalArgumentException("RLE list has less than the required " + n + " ids in use.");
+		}
+		return currentId;
+	}
+
 	public void defrag() {
 		long maxId = 0;
 		for (long idCount : ids) {

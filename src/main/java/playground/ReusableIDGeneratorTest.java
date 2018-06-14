@@ -8,9 +8,8 @@ import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 public class ReusableIDGeneratorTest {
 
 	public static void main(String[] args) {
-		long[] rle = new long[] { 3, -1, 1, -1, 5, -1, 2, -1, 10, 0 };
+		long[] rle = new long[] { 3, -1, 1, -2, 5, -1, 2, -1, 10, 0 };
 		long maxId = Arrays.stream(rle).reduce(0, new LongBinaryOperator() {
-
 			@Override
 			public long applyAsLong(long left, long right) {
 				return left + Math.abs(right);
@@ -18,9 +17,30 @@ public class ReusableIDGeneratorTest {
 		});
 		ReusableIDGenerator rig = new ReusableIDGenerator(rle);
 		System.out.println(rig);
-		for (long id = -3; id <= (maxId + 5); id++) {
-			System.out.println(id + ":" + rig.isUsed(id));
+		System.out.println(ReusableIDGeneratorTest.visualizeRLE(rle));
+		for (long id = 0; id <= (maxId + 5); id++) {
+//			if (rig.isUsed(id)) {
+			System.out.println(id + ":" + rig.usedIdsBefore(id));
+//			}
 		}
+	}
+
+	static String visualizeRLE(long[] rle) {
+		StringBuilder sb = new StringBuilder("[");
+		for (int i = 0; i < rle.length; i++) {
+			if (rle[i] == 0) {
+				break;
+			}
+			char symbol = rle[i] > 0 ? 'X' : '-';
+			for (int j = 0; j < Math.abs(rle[i]); j++) {
+				sb.append(symbol);
+			}
+			if (i < (rle.length - 1)) {
+				sb.append("|");
+			}
+		}
+		sb.append("]");
+		return sb.toString();
 	}
 
 }
