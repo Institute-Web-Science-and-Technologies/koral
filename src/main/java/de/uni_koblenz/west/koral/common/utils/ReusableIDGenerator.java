@@ -34,10 +34,9 @@ public class ReusableIDGenerator {
 	 * positive values represent used ids<br>
 	 * negative values represent free ids
 	 */
-	private long[] ids;
+	long[] ids;
 
 	public ReusableIDGenerator() {
-
 	}
 
 	public ReusableIDGenerator(long[] ids) {

@@ -3,11 +3,17 @@ package playground;
 import java.util.Arrays;
 import java.util.function.LongBinaryOperator;
 
+import de.uni_koblenz.west.koral.common.utils.RandomAccessRLEList;
 import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 
 public class ReusableIDGeneratorTest {
 
 	public static void main(String[] args) {
+//		test1();
+		test2();
+	}
+
+	static void test1() {
 		long[] rle = new long[] { 3, -1, 1, -2, 5, -1, 2, -1, 10, 0 };
 		long maxId = Arrays.stream(rle).reduce(0, new LongBinaryOperator() {
 			@Override
@@ -16,6 +22,7 @@ public class ReusableIDGeneratorTest {
 			}
 		});
 		ReusableIDGenerator rig = new ReusableIDGenerator(rle);
+		rig.release(25);
 		System.out.println(rig);
 		System.out.println(ReusableIDGeneratorTest.visualizeRLE(rle));
 		for (long id = 0; id <= (maxId + 5); id++) {
@@ -23,6 +30,30 @@ public class ReusableIDGeneratorTest {
 			System.out.println(id + ":" + rig.usedIdsBefore(id));
 //			}
 		}
+	}
+
+	static void test2() {
+		RandomAccessRLEList rlel = new RandomAccessRLEList();
+		System.out.println(rlel);
+		System.out.println("Set 0");
+		rlel.set(0);
+		System.out.println(rlel);
+		System.out.println("Set 2");
+		rlel.set(2);
+		System.out.println(rlel);
+		System.out.println("Set 3");
+		rlel.set(3);
+		System.out.println(rlel);
+
+		System.out.println("New RLE");
+		rlel = new RandomAccessRLEList();
+		System.out.println("Set 4");
+		rlel.set(4);
+		System.out.println(rlel);
+		System.out.println("Set 7");
+		rlel.set(7);
+		System.out.println(rlel);
+
 	}
 
 	static String visualizeRLE(long[] rle) {
