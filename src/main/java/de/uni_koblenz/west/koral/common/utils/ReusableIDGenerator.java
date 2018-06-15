@@ -249,6 +249,9 @@ public class ReusableIDGenerator {
 		if (id < 0) {
 			throw new IllegalArgumentException("Id can't be negative");
 		}
+		if (ids == null) {
+			return 0;
+		}
 		long usedIdsCount = 0;
 		long currentId = 0;
 		for (int i = 0; i < ids.length; i++) {
@@ -284,6 +287,9 @@ public class ReusableIDGenerator {
 	public long positionOf(long n) {
 		if (n < 0) {
 			throw new IllegalArgumentException("n can't be null");
+		}
+		if (ids == null) {
+			throw new NullPointerException("No ids used yet");
 		}
 		long usedIdsCount = 0;
 		long currentId = 0;
