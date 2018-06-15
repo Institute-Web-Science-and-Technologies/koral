@@ -316,6 +316,19 @@ public class ReusableIDGenerator {
 		return currentId;
 	}
 
+	public long usedIdsCount() {
+		if (ids == null) {
+			return 0;
+		}
+		long count = 0;
+		for (int i = 0; i < ids.length; i++) {
+			if (ids[i] > 0) {
+				count += ids[i];
+			}
+		}
+		return count;
+	}
+
 	public void defrag() {
 		long maxId = 0;
 		for (long idCount : ids) {
