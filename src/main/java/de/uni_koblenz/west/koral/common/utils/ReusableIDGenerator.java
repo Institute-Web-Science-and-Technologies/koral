@@ -63,7 +63,7 @@ public class ReusableIDGenerator {
 		if (ids == null) {
 			ids = new long[10];
 			ids[0] = 1;
-			firstFreeID = 0;
+			return 0;
 		} else {
 			firstFreeID = getNextId();
 		}
