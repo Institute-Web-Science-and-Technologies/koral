@@ -52,7 +52,7 @@ public class StorageAccessor implements RowStorage {
 				cacheSize = 2 * storageLength;
 			}
 			cacheSize = Math.min(cacheSize, maxCacheSize);
-			cache = new InMemoryRowStorage(rowLength, cacheSize, maxCacheSize);
+			cache = new InMemoryRowStorage(rowLength, maxCacheSize);
 			if (storageLength > 0) {
 				if (logger != null) {
 					logger.finest("Loading existing storage with path " + storageFilePath);
@@ -116,7 +116,8 @@ public class StorageAccessor implements RowStorage {
 			try {
 				file.storeRows(cache.getRows());
 				// TODO: Different implementations of file may not flush to disk in storeRows
-				// TODO: Data may become incoherent here, if file is defragged and cache not cleared
+				// TODO: Data may become incoherent here, if file is defragged and cache not
+				// cleared
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}

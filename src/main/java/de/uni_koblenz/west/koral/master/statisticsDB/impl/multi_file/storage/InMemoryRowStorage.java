@@ -1,104 +1,94 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.TreeMap;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
+import org.apache.commons.lang3.NotImplementedException;
 
 class InMemoryRowStorage implements RowStorage {
 
-	private final int rowLength;
+	private static final int DEFAULT_CACHE_BLOCKSIZE = 4096;
 
-	private final long initialCacheSize;
+	private final int rowLength;
 
 	private final long maxCacheSize;
 
-	private byte[] rows;
+	private Map<Long, byte[]> rows;
 
-	/**
-	 * Index of the last byte of the last row
-	 */
-	private int lastFilledByteIndex;
+	private final int cacheBlockSize;
 
-	public InMemoryRowStorage(int rowLength, long initialCacheSize, long maxCacheSize) {
+	private final long maxBlockId;
+
+	public InMemoryRowStorage(int rowLength, long maxCacheSize, int cacheBlockSize) {
 		this.rowLength = rowLength;
-		this.initialCacheSize = initialCacheSize;
 		this.maxCacheSize = maxCacheSize;
-		if (initialCacheSize > maxCacheSize) {
-			throw new IllegalArgumentException("Initial cache size can't be larger than maximum cache size");
-		}
-		if (maxCacheSize > Integer.MAX_VALUE) {
-			throw new IllegalArgumentException("Cache size can't be larger than Integer.MAX_VALUE");
-		}
-		lastFilledByteIndex = -1;
+		this.cacheBlockSize = cacheBlockSize;
+		maxBlockId = maxCacheSize / cacheBlockSize;
+//		if (maxBlockId > Integer.MAX_VALUE) {
+//			throw new IllegalArgumentException("Cache size is too large/Cache block size too small");
+//		}
 		open(true);
+	}
+
+	public InMemoryRowStorage(int rowLength, long maxCacheSize) {
+		this(rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE);
 	}
 
 	@Override
 	public void open(boolean createIfNotExisting) {
-		rows = new byte[(int) initialCacheSize];
+		// TODO: What to do if createIfNotExisting is false?
+		rows = new TreeMap<>();
 	}
 
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
-		int offset = (int) (rowId * rowLength);
-		if ((offset + rowLength) > rows.length) {
-			// Entry does not have an entry (yet)
+		long offset = rowId * rowLength;
+		long blockId = offset / cacheBlockSize;
+		int blockOffset = (int) (offset % cacheBlockSize);
+		byte[] block = rows.get(blockId);
+		if (block != null) {
+			byte[] row = new byte[rowLength];
+			System.arraycopy(block, blockOffset, row, 0, rowLength);
+			return row;
+		} else {
 			return null;
 		}
-		byte[] data = new byte[rowLength];
-		System.arraycopy(rows, offset, data, 0, rowLength);
-		return data;
 	}
 
 	@Override
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
-		assert row.length == rowLength;
-		int offset = (int) (rowId * rowLength);
-		int lastByteIndex = offset + (rowLength - 1);
-		if (lastByteIndex < maxCacheSize) {
-			// Check if cache has to extend
-			if (lastByteIndex >= rows.length) {
-				long newLength = 2 * rows.length;
-				while (newLength <= lastByteIndex) {
-					// Prevent integer overflow
-					if (newLength >= (Integer.MAX_VALUE / 2)) {
-						newLength = maxCacheSize;
-						break;
-					}
-					newLength *= 2;
-				}
-				if (newLength > maxCacheSize) {
-					newLength = maxCacheSize;
-				}
-//				System.out.println("Increasing InMemoryCache size to " + newLength + " Bytes");
-				rows = Utils.extendArray(rows, (int) (newLength - rows.length));
-			}
-			if (lastByteIndex > lastFilledByteIndex) {
-				lastFilledByteIndex = lastByteIndex;
-			}
-			System.arraycopy(row, 0, rows, offset, rowLength);
+		long offset = rowId * rowLength;
+		long blockId = offset / cacheBlockSize;
+		int blockOffset = (int) (offset % cacheBlockSize);
+//		System.out.println("Writing at " + blockId + " / " + blockOffset);
+		byte[] block = rows.get(blockId);
+		if (block != null) {
+			System.arraycopy(row, 0, block, blockOffset, row.length);
+			// TODO: Necessary?
+			rows.put(blockId, block);
 			return true;
 		} else {
-			return false;
+			if (rows.size() >= (maxBlockId - 1)) {
+				return false;
+			} else {
+				block = new byte[cacheBlockSize];
+				System.arraycopy(row, 0, block, blockOffset, row.length);
+				rows.put(blockId, block);
+				return true;
+			}
 		}
-
 	}
 
 	@Override
 	public byte[] getRows() {
-		// TODO: On full cache, the whole cache is copied, resulting in 2*maxCache memory usage => OOM
-		byte[] cutRows = new byte[lastFilledByteIndex + 1];
-		System.arraycopy(rows, 0, cutRows, 0, lastFilledByteIndex + 1);
-		return cutRows;
+		System.err.println("getRows() not implemented yet");
+		return new byte[0];
 	}
 
-	/**
-	 * The specified array will be used for internal storage, without copying into a new one.
-	 */
 	@Override
 	public void storeRows(byte[] rows) throws IOException {
-		this.rows = rows;
-		lastFilledByteIndex = rows.length - 1;
+		throw new NotImplementedException("TODO");
 	}
 
 	@Override
@@ -108,13 +98,12 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public boolean isEmpty() {
-		return lastFilledByteIndex == -1;
+		return rows.isEmpty();
 	}
 
 	@Override
 	public long length() {
-		// lastFilledByteIndex refers to the last written index, therefore we have +1 total bytes written
-		return lastFilledByteIndex + 1;
+		return rows.size();
 	}
 
 	@Override
@@ -130,7 +119,6 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void delete() {
 		rows = null;
-		lastFilledByteIndex = -1;
 	}
 
 	/**
