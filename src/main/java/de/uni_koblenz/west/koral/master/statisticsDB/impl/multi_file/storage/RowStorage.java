@@ -5,8 +5,9 @@ import java.io.IOException;
 public interface RowStorage extends AutoCloseable {
 
 	/**
-	 * TODO: What does this do? Should it be idempotent? - Can be called after close() to reopen - Throws exception if
-	 * createIfNotExisting is false and file doesn't exist
+	 * TODO: What does this do? Should it be idempotent? - Can be called after
+	 * close() to reopen - Throws exception if createIfNotExisting is false and file
+	 * doesn't exist Currently not idempotent
 	 *
 	 * @param createIfNotExisting
 	 */
@@ -26,7 +27,8 @@ public interface RowStorage extends AutoCloseable {
 	public boolean writeRow(long rowId, byte[] row) throws IOException;
 
 	/**
-	 * @return All rows contained in the storage. Be careful to not call this on large stores.
+	 * @return All rows contained in the storage. Be careful to not call this on
+	 *         large stores.
 	 */
 	public byte[] getRows() throws IOException;
 
@@ -40,14 +42,16 @@ public interface RowStorage extends AutoCloseable {
 	public boolean valid();
 
 	/**
-	 * If no useful information is contained, so that the storage can be cleaned up/deleted.
+	 * If no useful information is contained, so that the storage can be cleaned
+	 * up/deleted.
 	 *
 	 * @return
 	 */
 	public boolean isEmpty();
 
 	/**
-	 * TODO: Length of valid data or used space? Currently only used for index space.
+	 * TODO: Length of valid data or used space? Currently only used for index
+	 * space.
 	 *
 	 * @return
 	 */
