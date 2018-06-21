@@ -20,11 +20,14 @@ class InMemoryRowStorage implements RowStorage {
 
 	private final long maxBlockId;
 
+	private final int rowsPerBlock;
+
 	public InMemoryRowStorage(int rowLength, long maxCacheSize, int cacheBlockSize) {
 		this.rowLength = rowLength;
 		this.maxCacheSize = maxCacheSize;
 		this.cacheBlockSize = cacheBlockSize;
 		maxBlockId = maxCacheSize / cacheBlockSize;
+		rowsPerBlock = cacheBlockSize / rowLength;
 //		if (maxBlockId > Integer.MAX_VALUE) {
 //			throw new IllegalArgumentException("Cache size is too large/Cache block size too small");
 //		}
@@ -43,9 +46,8 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
-		long offset = rowId * rowLength;
-		long blockId = offset / cacheBlockSize;
-		int blockOffset = (int) (offset % cacheBlockSize);
+		long blockId = rowId / rowsPerBlock;
+		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = rows.get(blockId);
 		if (block != null) {
 			byte[] row = new byte[rowLength];
@@ -58,9 +60,8 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
-		long offset = rowId * rowLength;
-		long blockId = offset / cacheBlockSize;
-		int blockOffset = (int) (offset % cacheBlockSize);
+		long blockId = rowId / rowsPerBlock;
+		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 //		System.out.println("Writing at " + blockId + " / " + blockOffset);
 		byte[] block = rows.get(blockId);
 		if (block != null) {
