@@ -281,7 +281,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @throws IOException
 	 */
 	private void defrag() throws IOException {
-		System.out.println("Defragging database...");
 //		fileManager.close();
 		// Stores file ids of all extra files that are defragged and therefore need to be exchanged by the temporary
 		// files.

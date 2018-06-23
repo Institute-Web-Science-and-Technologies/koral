@@ -232,7 +232,6 @@ public class FileManager {
 		for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
 			ExtraRowStorage extraRowFile = entry.getValue();
 			if (extraRowFile.isEmpty()) {
-				System.out.println("Deleting empty file " + entry.getKey());
 				extraRowFile.delete();
 				extraFiles.remove(entry.getKey());
 			}

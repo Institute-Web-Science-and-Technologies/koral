@@ -110,7 +110,6 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void flush() throws IOException {
-		System.out.println("Flushing " + storageFilePath);
 		if (!file.valid()) {
 			file.open(false);
 		}
@@ -160,7 +159,6 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void delete() {
-		System.out.println("Deleting " + storageFilePath);
 		if (cache != null) {
 			cache.delete();
 		}
@@ -169,7 +167,6 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void close() {
-		System.out.println("Closing " + storageFilePath);
 		try {
 			flush();
 		} catch (IOException e) {

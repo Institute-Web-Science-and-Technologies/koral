@@ -39,11 +39,11 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGr
  */
 public class StatisticsDBTest {
 
-	private static final boolean WRITE_BENCHMARK_RESULTS = false;
+	private static final boolean WRITE_BENCHMARK_RESULTS = true;
 
-	private static final boolean COLLECT_META_STATISTICS = true;
+	private static final boolean COLLECT_META_STATISTICS = false;
 
-	private static final boolean WRITE_STATISTICS_DATA = true;
+	private static final boolean WRITE_STATISTICS_DATA = false;
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
