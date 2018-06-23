@@ -219,6 +219,9 @@ public class FileManager {
 		if ((extra != null) && !extra.valid()) {
 			extra.open(false);
 		}
+		if (extra == null) {
+			throw new RuntimeException("File " + fileId + " does not exist");
+		}
 		return extra;
 	}
 
@@ -229,10 +232,17 @@ public class FileManager {
 		for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
 			ExtraRowStorage extraRowFile = entry.getValue();
 			if (extraRowFile.isEmpty()) {
+				System.out.println("Deleting empty file " + entry.getKey());
 				extraRowFile.delete();
 				extraFiles.remove(entry.getKey());
 			}
 		}
+	}
+
+	void deleteExtraFile(long fileId) {
+		ExtraRowStorage extraRowFile = extraFiles.get(fileId);
+		extraRowFile.delete();
+		extraFiles.remove(fileId);
 	}
 
 	void defragFreeSpaceIndexes() {

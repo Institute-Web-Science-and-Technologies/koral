@@ -1,15 +1,13 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -285,39 +283,30 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private void defrag() throws IOException {
 		System.out.println("Defragging database...");
 //		fileManager.close();
-		// Stores the last written rowId of each extra file
-		Map<Long, Long> rowCounts = new TreeMap<>();
-		// TODO: There might be too many files opened, enforce limit maybe via LRUCache
-		Map<Long, OutputStream> outputStreams = new TreeMap<>();
+		// Stores file ids of all extra files that are defragged and therefore need to be exchanged by the temporary
+		// files.
+		Set<Long> defraggedFiles = new TreeSet<>();
 		for (int resourceId = 1; resourceId <= getMaxId(); resourceId++) {
 			if (!loadRow(resourceId)) {
 				throw new RuntimeException("Empty row for resource " + resourceId + " found while defragging");
 			}
 			if (rowManager.isDataExternal()) {
 				long fileId = rowManager.getFileId();
-				OutputStream out = outputStreams.get(fileId);
-				if (out == null) {
-					out = new BufferedOutputStream(new FileOutputStream(statisticsDirPath + fileId + ".tmp"));
-					outputStreams.put(fileId, out);
-					rowCounts.put(fileId, -1L);
-				}
-				out.write(rowManager.getDataBytes());
-				long newRowId = rowCounts.get(fileId) + 1;
+				// Use negative file ids for the temporary extra files. This is not only simple, but also ensures that
+				// the maximal amount of open files (set in the FileManager) is adhered to.
+				long newRowId = fileManager.writeExternalRow(-fileId, rowManager.getDataBytes());
 				rowManager.updateExtraRowId(newRowId);
-				rowCounts.put(fileId, newRowId);
+				defraggedFiles.add(fileId);
 				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 			}
 		}
-		for (OutputStream out : outputStreams.values()) {
-			out.flush();
-			out.close();
-		}
 		fileManager.close();
-		for (Long fileId : outputStreams.keySet()) {
+		for (Long fileId : defraggedFiles) {
 			File oldFile = new File(statisticsDirPath + fileId);
-			File newFile = new File(statisticsDirPath + fileId + ".tmp");
+			File newFile = new File(statisticsDirPath + (-fileId));
 			oldFile.delete();
 			newFile.renameTo(oldFile);
+			fileManager.deleteExtraFile(-fileId);
 		}
 		fileManager.defragFreeSpaceIndexes();
 	}
