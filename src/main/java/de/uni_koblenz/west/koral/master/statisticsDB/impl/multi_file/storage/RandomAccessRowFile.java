@@ -1,17 +1,13 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
 public class RandomAccessRowFile implements RowStorage {
 
@@ -24,22 +20,24 @@ public class RandomAccessRowFile implements RowStorage {
 
 	final int rowLength;
 
+	final int rowsPerBlock;
+
 	/**
 	 * Maps RowIds to their rows. Note: It should always be ensured that the values are not-null (on
-	 * inserting/updating), because LRUCache doesn't care and the NullPointerException is not thrown before actually
-	 * writing to file, when it is too late to find out where the null came from.
+	 * inserting/updating), because the LRUCache doesn't care and NullPointerExceptions are not thrown before actually
+	 * writing to file, when it is too late to find out where the null came from, in the case of a bug.
 	 */
 	private final LRUCache<Long, byte[]> fileCache;
 
-	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize) {
+	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize) {
 		this.rowLength = rowLength;
 		file = new File(storageFilePath);
+		rowsPerBlock = blockSize / rowLength;
 		open(true);
 
 		if (maxCacheSize > 0) {
 			// Capacity is calculated by dividing the available space by estimated space per entry, rowLength refers to
-			// the
-			// amount of bytes used for the row.
+			// the amount of bytes used for the row.
 			long capacity = maxCacheSize / (ESTIMATED_SPACE_PER_ENTRY + rowLength);
 			fileCache = new LRUCache<Long, byte[]>(capacity) {
 				@Override
@@ -150,40 +148,55 @@ public class RandomAccessRowFile implements RowStorage {
 		rowFile.write(row);
 	}
 
-	/**
-	 * Throws IOException if there are resources with ID > Integer.MAX_VALUE in the file or cache.
-	 */
 	@Override
-	public byte[] getRows() throws IOException {
-		long fileLength = rowFile.length();
-		if (fileLength > Integer.MAX_VALUE) {
-			throw new IOException("File is too large to fit into a byte array");
-		}
-		byte[] rows = new byte[(int) fileLength];
-		try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
-			in.read(rows);
-		}
+	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException {
+		flush();
+		long rowFileLength = rowFile.length();
+		return new Iterator<Entry<Long, byte[]>>() {
 
-		// Add/overwrite data from cache
-		if (fileCache != null) {
-			for (Entry<Long, byte[]> entry : fileCache) {
-				long rowId = entry.getKey();
-				if (rowId > Integer.MAX_VALUE) {
-					throw new IOException("RowFile too large for memory");
-				}
-				System.arraycopy(entry.getValue(), 0, rows, (int) rowId * rowLength, rowLength);
+			long blockId = 0;
+			// In the RAFile, the blocks do not contain fillspace but only data
+			int blockSize = rowsPerBlock * rowLength;
+
+			@Override
+			public boolean hasNext() {
+				return ((blockId + 1) * blockSize) <= rowFileLength;
 			}
-		}
-		return rows;
+
+			@Override
+			public Entry<Long, byte[]> next() {
+				if (!hasNext()) {
+					throw new NoSuchElementException("Use hasNext() before calling next()");
+				}
+				try {
+					long offset = blockId * blockSize;
+					rowFile.seek(offset);
+					byte[] block = new byte[blockSize];
+					try {
+						rowFile.readFully(block);
+					} catch (EOFException e) {
+						// This should never happen because hasNext() checks for this
+						throw new IOException("Invalid file length");
+					}
+					return BlockEntry.getInstance(blockId++, block);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+
+		};
 	}
 
 	/**
 	 * The cache will be ignored/not filled.
 	 */
 	@Override
-	public void storeRows(byte[] rows) throws IOException {
-		try (OutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
-			out.write(rows);
+	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {
+		while (blocks.hasNext()) {
+			Entry<Long, byte[]> blockEntry = blocks.next();
+			byte[] block = blockEntry.getValue();
+			rowFile.seek(blockEntry.getKey() * rowsPerBlock * rowLength);
+			rowFile.write(block, 0, rowsPerBlock * rowLength);
 		}
 	}
 

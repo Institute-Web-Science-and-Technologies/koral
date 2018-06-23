@@ -1,6 +1,8 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 public class StorageAccessor implements RowStorage {
@@ -43,7 +45,8 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void open(boolean createIfNotExisting) {
-		file = new RandomAccessRowFile(storageFilePath, rowLength, maxCacheSize);
+		// TODO: Use the same variable for block sizes of this file and cache below
+		file = new RandomAccessRowFile(storageFilePath, rowLength, maxCacheSize, 4096);
 		currentStorage = file;
 		long storageLength = file.length();
 		if (storageLength < maxCacheSize) {
@@ -58,7 +61,7 @@ public class StorageAccessor implements RowStorage {
 					logger.finest("Loading existing storage with path " + storageFilePath);
 				}
 				try {
-					cache.storeRows(file.getRows());
+					cache.storeBlocks(file.getBlockIterator());
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -107,6 +110,7 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void flush() throws IOException {
+		System.out.println("Flushing " + storageFilePath);
 		if (!file.valid()) {
 			file.open(false);
 		}
@@ -114,7 +118,7 @@ public class StorageAccessor implements RowStorage {
 			file.flush();
 		} else {
 			try {
-				file.storeRows(cache.getRows());
+				file.storeBlocks(cache.getBlockIterator());
 				// TODO: Different implementations of file may not flush to disk in storeRows
 				// TODO: Data may become incoherent here, if file is defragged and cache not
 				// cleared
@@ -125,13 +129,13 @@ public class StorageAccessor implements RowStorage {
 	}
 
 	@Override
-	public byte[] getRows() throws IOException {
-		return currentStorage.getRows();
+	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException {
+		return currentStorage.getBlockIterator();
 	}
 
 	@Override
-	public void storeRows(byte[] rows) throws IOException {
-		currentStorage.storeRows(rows);
+	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {
+		currentStorage.storeBlocks(blocks);
 	}
 
 	@Override
@@ -156,6 +160,7 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void delete() {
+		System.out.println("Deleting " + storageFilePath);
 		if (cache != null) {
 			cache.delete();
 		}
@@ -164,6 +169,7 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void close() {
+		System.out.println("Closing " + storageFilePath);
 		try {
 			flush();
 		} catch (IOException e) {

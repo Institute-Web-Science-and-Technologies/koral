@@ -42,6 +42,8 @@ public class FileManager {
 
 	private final long maxExtraCacheSize;
 
+	private long maxResourceId;
+
 	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, int maxOpenFiles,
 			long indexFileCacheSize, long extraFilesCacheSize, Logger logger) {
 		this.storagePath = storagePath;
@@ -97,6 +99,9 @@ public class FileManager {
 		}
 		// resourceIds start at 1
 		index.writeRow(resourceId - 1, row);
+		if (resourceId > maxResourceId) {
+			maxResourceId = resourceId;
+		}
 	}
 
 	/**
@@ -307,6 +312,10 @@ public class FileManager {
 	 */
 	long getIndexFileLength() {
 		return index.length();
+	}
+
+	long getMaxResourceId() {
+		return maxResourceId;
 	}
 
 	Map<Long, Long> getFreeSpaceIndexLengths() {

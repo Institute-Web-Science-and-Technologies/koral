@@ -257,6 +257,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				long rowId = rowManager.getExternalFileRowId();
 				byte[] dataBytes = fileManager.readExternalRow(fileId, rowId);
 				if (dataBytes == null) {
+					fileManager.readExternalRow(fileId, rowId);
 					throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
 				}
 				rowManager.loadExternalRow(dataBytes);
@@ -282,6 +283,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @throws IOException
 	 */
 	private void defrag() throws IOException {
+		System.out.println("Defragging database...");
 //		fileManager.close();
 		// Stores the last written rowId of each extra file
 		Map<Long, Long> rowCounts = new TreeMap<>();
@@ -365,7 +367,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @return
 	 */
 	public long getMaxId() {
-		return (fileManager.getIndexFileLength()) / mainfileRowLength;
+		return fileManager.getMaxResourceId();
 	}
 
 	public long getIndexFileLength() {

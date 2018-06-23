@@ -1,10 +1,10 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
-
-import org.apache.commons.lang3.NotImplementedException;
 
 class InMemoryRowStorage implements RowStorage {
 
@@ -14,11 +14,11 @@ class InMemoryRowStorage implements RowStorage {
 
 	private final long maxCacheSize;
 
-	private Map<Long, byte[]> rows;
+	private Map<Long, byte[]> blocks;
 
 	private final int cacheBlockSize;
 
-	private final long maxBlockId;
+	private final long maxBlockCount;
 
 	private final int rowsPerBlock;
 
@@ -26,7 +26,7 @@ class InMemoryRowStorage implements RowStorage {
 		this.rowLength = rowLength;
 		this.maxCacheSize = maxCacheSize;
 		this.cacheBlockSize = cacheBlockSize;
-		maxBlockId = maxCacheSize / cacheBlockSize;
+		maxBlockCount = maxCacheSize / cacheBlockSize;
 		rowsPerBlock = cacheBlockSize / rowLength;
 //		if (maxBlockId > Integer.MAX_VALUE) {
 //			throw new IllegalArgumentException("Cache size is too large/Cache block size too small");
@@ -41,14 +41,14 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void open(boolean createIfNotExisting) {
 		// TODO: What to do if createIfNotExisting is false?
-		rows = new TreeMap<>();
+		blocks = new TreeMap<>();
 	}
 
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
-		byte[] block = rows.get(blockId);
+		byte[] block = blocks.get(blockId);
 		if (block != null) {
 			byte[] row = new byte[rowLength];
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
@@ -63,48 +63,52 @@ class InMemoryRowStorage implements RowStorage {
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 //		System.out.println("Writing at " + blockId + " / " + blockOffset);
-		byte[] block = rows.get(blockId);
+		byte[] block = blocks.get(blockId);
 		if (block != null) {
 			System.arraycopy(row, 0, block, blockOffset, row.length);
 			// TODO: Necessary?
-			rows.put(blockId, block);
+			blocks.put(blockId, block);
 			return true;
 		} else {
-			if (rows.size() >= (maxBlockId - 1)) {
+			if (blocks.size() >= maxBlockCount) {
 				return false;
 			} else {
+				// TODO: Allocate blocks of block size or only of used data size (i.e. rowsPerBlock * rowLength)?
 				block = new byte[cacheBlockSize];
 				System.arraycopy(row, 0, block, blockOffset, row.length);
-				rows.put(blockId, block);
+				blocks.put(blockId, block);
 				return true;
 			}
 		}
 	}
 
 	@Override
-	public byte[] getRows() {
-		System.err.println("getRows() not implemented yet");
-		return new byte[0];
+	public Iterator<Entry<Long, byte[]>> getBlockIterator() {
+		return blocks.entrySet().iterator();
 	}
 
 	@Override
-	public void storeRows(byte[] rows) throws IOException {
-		throw new NotImplementedException("TODO");
+	public void storeBlocks(Iterator<Entry<Long, byte[]>> rowIterator) throws IOException {
+		while (rowIterator.hasNext()) {
+			Entry<Long, byte[]> rowEntry = rowIterator.next();
+			blocks.put(rowEntry.getKey(), rowEntry.getValue());
+		}
 	}
 
 	@Override
 	public boolean valid() {
-		return rows != null;
+		return blocks != null;
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return rows.isEmpty();
+		return blocks.isEmpty();
 	}
 
 	@Override
 	public long length() {
-		return rows.size();
+		// TODO: This returns a higher number than the amount of actual rows
+		return blocks.size() * rowsPerBlock * rowLength;
 	}
 
 	@Override
@@ -119,7 +123,7 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public void delete() {
-		rows = null;
+		blocks = null;
 	}
 
 	/**
