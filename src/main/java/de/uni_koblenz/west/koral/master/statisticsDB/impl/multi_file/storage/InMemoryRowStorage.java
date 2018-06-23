@@ -12,8 +12,6 @@ class InMemoryRowStorage implements RowStorage {
 
 	private final int rowLength;
 
-	private final long maxCacheSize;
-
 	private Map<Long, byte[]> blocks;
 
 	private final int cacheBlockSize;
@@ -24,7 +22,6 @@ class InMemoryRowStorage implements RowStorage {
 
 	public InMemoryRowStorage(int rowLength, long maxCacheSize, int cacheBlockSize) {
 		this.rowLength = rowLength;
-		this.maxCacheSize = maxCacheSize;
 		this.cacheBlockSize = cacheBlockSize;
 		maxBlockCount = maxCacheSize / cacheBlockSize;
 		rowsPerBlock = cacheBlockSize / rowLength;

@@ -20,7 +20,11 @@ public class RandomAccessRowFile implements RowStorage {
 
 	final int rowLength;
 
-	final int rowsPerBlock;
+	/**
+	 * Here, blockSize refers to the size of a block that contains exactly how many rows would fit into a block with the
+	 * size given in the constructor, but without any filled space in the end.
+	 */
+	final int blockSize;
 
 	/**
 	 * Maps RowIds to their rows. Note: It should always be ensured that the values are not-null (on
@@ -32,7 +36,7 @@ public class RandomAccessRowFile implements RowStorage {
 	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize) {
 		this.rowLength = rowLength;
 		file = new File(storageFilePath);
-		rowsPerBlock = blockSize / rowLength;
+		this.blockSize = blockSize - (blockSize % rowLength);
 		open(true);
 
 		if (maxCacheSize > 0) {
@@ -156,7 +160,6 @@ public class RandomAccessRowFile implements RowStorage {
 
 			long blockId = 0;
 			// In the RAFile, the blocks do not contain fillspace but only data
-			int blockSize = rowsPerBlock * rowLength;
 
 			@Override
 			public boolean hasNext() {
@@ -195,8 +198,8 @@ public class RandomAccessRowFile implements RowStorage {
 		while (blocks.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
-			rowFile.seek(blockEntry.getKey() * rowsPerBlock * rowLength);
-			rowFile.write(block, 0, rowsPerBlock * rowLength);
+			rowFile.seek(blockEntry.getKey() * blockSize);
+			rowFile.write(block, 0, blockSize);
 		}
 	}
 
