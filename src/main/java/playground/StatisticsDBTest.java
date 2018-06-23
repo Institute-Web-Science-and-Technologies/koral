@@ -126,7 +126,7 @@ public class StatisticsDBTest {
 			configNameWithoutCaches = implementation + "_" + coveringAlgorithm + "_" + numberOfChunks + "C_"
 					+ datasetInfo[2] + "T_" + rowDataLength + "DB";
 			configName = configNameWithoutCaches + "_" + indexCacheSize + "IC_" + extraFilesCacheSize + "EC";
-			configName += implementationNote.isEmpty() ? "" : "_" + implementationNote;
+			configName += implementationNote.isEmpty() ? "" : "_" + implementationNote.replace(" ", "-");
 		} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
 			System.err.println(
 					"Unknown directory name format, please use [CoverAlgorithm]_[Chunks]C_[Triples][K/M]. Benchmark CSV will be filled with NULLs.");
