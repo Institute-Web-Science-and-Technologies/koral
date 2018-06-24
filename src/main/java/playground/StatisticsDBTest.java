@@ -227,10 +227,9 @@ public class StatisticsDBTest {
 		if (resultFile.length() == 0) {
 			// The extra file size is only approximate, because only the difference of dir and index size is calculated.
 			// For 1000M dataset, deviation is less than 0.001%
-			printer.printRecord("TRIPLE_COUNT", "NUMBER_OF_CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_SIZE_MB",
-					"EXTRAFILES_CACHE_SIZE_MB", "DB_IMPLEMENTATION", "COVERING_ALGORITHM", "IMPLEMENTATION_NOTE",
-					"DURATION_SEC", "DIR_SIZE_BYTES", "INDEX_SIZE_BYTES", "APPROX_EXTRAFILES_SIZE_BYTES",
-					"TOTAL_ENTRIES", "UNUSED_BYTES");
+			printer.printRecord("TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB", "EXTRAFILES_CACHE_MB",
+					"DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "DIR_SIZE_BYTES", "INDEX_SIZE_BYTES",
+					"APPROX_EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
 		}
 		printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
 				dbImplementation, coveringAlgorithm, implementationNote, durationSec, dirSizeBytes, indexSizeBytes,
