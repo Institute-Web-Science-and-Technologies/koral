@@ -41,7 +41,7 @@ public class StatisticsDBTest {
 
 	private static final boolean WRITE_BENCHMARK_RESULTS = true;
 
-	private static final boolean COLLECT_META_STATISTICS = false;
+	private static final boolean COLLECT_META_STATISTICS = true;
 
 	private static final boolean WRITE_STATISTICS_DATA = false;
 
@@ -168,10 +168,7 @@ public class StatisticsDBTest {
 			statistics.collectStatistics(encodedFiles);
 			long time = System.currentTimeMillis() - start;
 
-			String timeFormatted = String.format("%d min, %d sec, %d ms", TimeUnit.MILLISECONDS.toMinutes(time),
-					TimeUnit.MILLISECONDS.toSeconds(time)
-							- TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(time)),
-					time - TimeUnit.SECONDS.toMillis(TimeUnit.MILLISECONDS.toSeconds(time)));
+			String timeFormatted = formatTime(time);
 			long durationSec = time / 1_000;
 //			System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
@@ -183,7 +180,9 @@ public class StatisticsDBTest {
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
 				System.out.println("Flushing database...");
+				start = System.currentTimeMillis();
 				multiDB.flush();
+				System.out.println("Flushing took " + formatTime(System.currentTimeMillis() - start));
 				if (COLLECT_META_STATISTICS) {
 					System.out.println("Collecting meta statistics...");
 					System.out.println(multiDB.getStatistics());
@@ -338,6 +337,13 @@ public class StatisticsDBTest {
 		}
 
 		return size.get();
+	}
+
+	public static String formatTime(long milliseconds) {
+		return String.format("%d min, %d sec, %d ms", TimeUnit.MILLISECONDS.toMinutes(milliseconds),
+				TimeUnit.MILLISECONDS.toSeconds(milliseconds)
+						- TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(milliseconds)),
+				milliseconds - TimeUnit.SECONDS.toMillis(TimeUnit.MILLISECONDS.toSeconds(milliseconds)));
 	}
 
 }
