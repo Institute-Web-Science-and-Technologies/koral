@@ -14,6 +14,7 @@ import org.apache.commons.io.FileUtils;
 
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
+import playground.StatisticsDBTest;
 
 /**
  * The main class of this implementation, manages the {@link StatisticsRowManager} and persistence through
@@ -43,6 +44,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private final int mainfileRowLength;
 
 	private final int rowDataLength;
+
+	private boolean dirty;
 
 	static enum ResourceType {
 		SUBJECT(0), PROPERTY(1), OBJECT(2);
@@ -86,6 +89,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 		triplesPerChunkFile = Paths.get(statisticsDirPath + "triplesPerChunk");
 		triplesPerChunk = loadTriplesPerChunk();
+		dirty = false;
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, Logger logger) {
@@ -160,6 +164,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	private void incrementOccurences(long resourceId, ResourceType resourceType, int chunk) {
+		dirty = true;
 		resourceId = resourceId & 0x00_00_FF_FF_FF_FF_FF_FFL;
 		try {
 			boolean rowFound = loadRow(resourceId);
@@ -219,6 +224,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 */
 	public void insertEntry(long resourceId, long[] occurences) {
 		// TODO: increment number of triples per chunk
+		dirty = true;
 		try {
 			rowManager.loadFromOccurenceData(occurences);
 			if (rowManager.isTooLongForMain()) {
@@ -314,20 +320,25 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * Defrags the extra files before flushing, therefore the file manager is closed as well.
 	 */
 	public void flush() {
-		try {
-			defrag();
-//			fileManager.flush();
-		} catch (IOException e1) {
-			throw new RuntimeException(e1);
-		}
+		// Always flush triplesPerChunk because low cost
 		byte[] bytes = new byte[Long.BYTES * triplesPerChunk.length];
 		for (int i = 0; i < triplesPerChunk.length; i++) {
 			NumberConversion.long2bytes(triplesPerChunk[i], bytes, i * Long.BYTES);
 		}
 		try {
 			Files.write(triplesPerChunkFile, bytes);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+			// Flush and defrag heavy data only if dirty
+			if (!dirty) {
+				return;
+			}
+			System.out.println("Defragging database...");
+			long start = System.currentTimeMillis();
+			defrag();
+			System.out.println("Defragging took " + StatisticsDBTest.formatTime(System.currentTimeMillis() - start));
+//			fileManager.flush();
+			dirty = false;
+		} catch (IOException e1) {
+			throw new RuntimeException(e1);
 		}
 	}
 
