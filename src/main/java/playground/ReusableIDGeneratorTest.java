@@ -3,7 +3,6 @@ package playground;
 import java.util.Arrays;
 import java.util.function.LongBinaryOperator;
 
-import de.uni_koblenz.west.koral.common.utils.RandomAccessRLEList;
 import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 
 public class ReusableIDGeneratorTest {
@@ -33,7 +32,7 @@ public class ReusableIDGeneratorTest {
 	}
 
 	static void test2() {
-		RandomAccessRLEList rlel = new RandomAccessRLEList();
+		ReusableIDGenerator rlel = new ReusableIDGenerator();
 		System.out.println(rlel);
 		System.out.println("Set 0");
 		rlel.set(0);
@@ -46,12 +45,19 @@ public class ReusableIDGeneratorTest {
 		System.out.println(rlel);
 
 		System.out.println("New RLE");
-		rlel = new RandomAccessRLEList();
+		rlel = new ReusableIDGenerator();
 		System.out.println("Set 4");
 		rlel.set(4);
 		System.out.println(rlel);
 		System.out.println("Set 7");
 		rlel.set(7);
+		System.out.println(rlel);
+
+		System.out.println("Next id: " + rlel.next());
+		System.out.println(rlel);
+		System.out.println("Next id: " + rlel.next());
+		System.out.println(rlel);
+		System.out.println("Next id: " + rlel.next());
 		System.out.println(rlel);
 
 	}
