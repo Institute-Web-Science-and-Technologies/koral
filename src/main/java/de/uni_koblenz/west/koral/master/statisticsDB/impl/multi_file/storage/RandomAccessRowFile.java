@@ -38,7 +38,7 @@ public class RandomAccessRowFile implements RowStorage {
 	/**
 	 * Stores the dirty bits for each cached block in an RLE list.
 	 */
-	private ReusableIDGenerator dirties;
+	private final ReusableIDGenerator dirties;
 
 	private long kickOuts, notDirties;
 
@@ -231,7 +231,7 @@ public class RandomAccessRowFile implements RowStorage {
 			for (Entry<Long, byte[]> entry : fileCache) {
 				writeRowToFile(entry.getKey(), entry.getValue());
 			}
-			// TODO: Reset dirties
+			dirties.clear();
 		}
 	}
 
@@ -266,6 +266,7 @@ public class RandomAccessRowFile implements RowStorage {
 	public void delete() {
 		if (fileCache != null) {
 			fileCache.clear();
+			dirties.clear();
 		}
 		file.delete();
 	}
@@ -277,6 +278,7 @@ public class RandomAccessRowFile implements RowStorage {
 			rowFile.close();
 			if (fileCache != null) {
 				fileCache.clear();
+				dirties.clear();
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
