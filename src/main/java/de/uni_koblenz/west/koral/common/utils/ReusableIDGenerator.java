@@ -440,6 +440,10 @@ public class ReusableIDGenerator {
 		return data;
 	}
 
+	public void clear() {
+		ids = null;
+	}
+
 	public boolean isEmpty() {
 		return (ids == null) || (ids[0] == 0);
 	}
