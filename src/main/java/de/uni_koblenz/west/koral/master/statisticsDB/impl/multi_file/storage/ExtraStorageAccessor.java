@@ -29,7 +29,7 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 
 	@Override
 	public long writeRow(byte[] row) throws IOException {
-		long rowId = freeSpaceIndex.getNextId();
+		long rowId = freeSpaceIndex.next();
 		writeRow(rowId, row);
 		return rowId;
 	}
