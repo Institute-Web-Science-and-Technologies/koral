@@ -175,6 +175,7 @@ public class ReusableIDGenerator {
 				// [1,-x,...] -> [-x-1,...]
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
 				ids[0]--;
+				ids[ids.length - 1] = 0;
 			} else {
 				// [..,+w,-x,1,-y,+z,...] -> [...,+w,-x-y-1,+z,...]
 				int lastUsedBlockIndex = getNumberOfUsedBlocks() - 1;
@@ -216,40 +217,91 @@ public class ReusableIDGenerator {
 	}
 
 	/**
-	 * Sets the given id to used. Must be greater than the current maximum id.
+	 * Sets the given id to used.
 	 *
 	 * @param id
 	 */
-	public void set(long id) {
-		if (ids == null) {
+	public void set(long idToSet) {
+		if ((ids == null) || (ids.length == 0)) {
 			ids = new long[10];
 		}
-		long currentId = 0;
-		for (int i = 0; i < ids.length; i++) {
-			if (ids[i] != 0) {
-				currentId += Math.abs(ids[i]);
-			} else {
-				long unusedIds = id - currentId;
-				if (unusedIds > 0) {
-					// 1 offset for i because it's an index and we want the length, and 1 byte for negative and positive
-					// entry each
-					int neededLength = (i + 1) + 2;
-					if (ids.length < neededLength) {
-						long[] newIds = new long[neededLength + 10];
-						System.arraycopy(ids, 0, newIds, 0, ids.length);
-						ids = newIds;
-					}
-					ids[i] = -unusedIds;
-					ids[i + 1] = 1;
-				} else {
-					if (i > 0) {
-						ids[i - 1]++;
-					} else {
-						ids[0] = 1;
-					}
-				}
+		// find block that contains idToSet
+		int blockIndex;
+		// Largest id of the block before the block that contains idToSet
+		long maxPreviousId = -1;
+		for (blockIndex = 0; (blockIndex < ids.length) && (ids[blockIndex] != 0); blockIndex++) {
+			long maxCurrentId = maxPreviousId + Math.abs(ids[blockIndex]);
+			if (idToSet <= maxCurrentId) {
 				break;
+			} else {
+				maxPreviousId = maxCurrentId;
 			}
+		}
+		if (blockIndex == ids.length) {
+			// id list is full and new id is larger
+			// Extend ids array
+			long[] newIds = new long[blockIndex + 1 + 10];
+			System.arraycopy(ids, 0, newIds, 0, ids.length);
+			ids = newIds;
+		}
+		if (ids[blockIndex] == 0) {
+			// the id is larger than previous ids
+			long unusedIds = idToSet - maxPreviousId - 1;
+			if (unusedIds > 0) {
+				ids[blockIndex] = -unusedIds;
+				ids[blockIndex + 1] = 1;
+			} else {
+				if (blockIndex > 0) {
+					ids[blockIndex - 1]++;
+				} else {
+					ids[0] = 1;
+				}
+			}
+		} else if (ids[blockIndex] > 0) {
+			// the id was already set
+			return;
+		} else if (ids[blockIndex] == -1) {
+			// the only unused id in this block is set
+			if (blockIndex == 0) {
+				// [-1,x,...] -> [x+1,...]
+				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
+				ids[0]++;
+				ids[ids.length - 1] = 0;
+			} else {
+				// [..,-w,+x,1,+y,-z,...] -> [...,-w,+x+y+1,-z,...]
+				int lastUsedBlockIndex = getNumberOfUsedBlocks() - 1;
+				ids[blockIndex - 1] += ids[blockIndex + 1] + 1;
+				System.arraycopy(ids, blockIndex + 2, ids, blockIndex, ids.length - blockIndex - 2);
+				// Remove leftover data that wasn't overwritten
+				ids[lastUsedBlockIndex] = 0;
+				ids[lastUsedBlockIndex - 1] = 0;
+			}
+		} else if ((maxPreviousId + 1) == idToSet) {
+			// the first id of an unused block is set
+			if (blockIndex == 0) {
+				// [-x,...]->[+1,-x+1,...]
+				shiftArrayToRight(0, 1);
+				ids[0] = 1;
+				ids[1]++;
+			} else {
+				// [..,+x,-y,...] -> [...,+x+1,-y+1,...]
+				ids[blockIndex]++;
+				ids[blockIndex - 1]++;
+			}
+		} else if ((maxPreviousId - ids[blockIndex]) == idToSet) {
+			// the last id of an unused block is set
+			// [...,-x,+y,...] -> [...,-x+1,+y+1,...]
+			ids[blockIndex]++;
+			ids[blockIndex + 1]++;
+		} else {
+			// the set id is in the middle of the unused block
+			// [...,-x,...]->[...,-x1,+1,-x2,...]
+			long x1 = idToSet - maxPreviousId - 1;
+			long x2 = (maxPreviousId - ids[blockIndex]) - idToSet;
+			shiftArrayToRight(blockIndex, 2);
+			ids[blockIndex] = -x1;
+			ids[blockIndex + 1] = 1;
+			ids[blockIndex + 2] = -x2;
 		}
 	}
 

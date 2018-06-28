@@ -8,11 +8,42 @@ import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 public class ReusableIDGeneratorTest {
 
 	public static void main(String[] args) {
-//		test1();
-		test2();
+		test1();
+//		test2();
+//		test3();
 	}
 
 	static void test1() {
+		ReusableIDGenerator rig = new ReusableIDGenerator();
+		set(rig, 0);
+		release(rig, 0);
+		set(rig, 1);
+		set(rig, 2);
+		set(rig, 2);
+		set(rig, 4);
+		set(rig, 4);
+		release(rig, 4);
+		set(rig, 5);
+		release(rig, 2);
+		release(rig, 1);
+		set(rig, 0);
+		set(rig, 8);
+		release(rig, 4);
+		set(rig, 2);
+		set(rig, 1);
+		set(rig, 3);
+		set(rig, 7);
+		release(rig, 0);
+		set(rig, 9);
+		release(rig, 2);
+		release(rig, 8);
+		set(rig, 10);
+		set(rig, 12);
+
+		set(rig, 0);
+	}
+
+	static void test2() {
 		long[] rle = new long[] { 3, -1, 1, -2, 5, -1, 2, -1, 10, 0 };
 		long maxId = Arrays.stream(rle).reduce(0, new LongBinaryOperator() {
 			@Override
@@ -31,35 +62,16 @@ public class ReusableIDGeneratorTest {
 		}
 	}
 
-	static void test2() {
-		ReusableIDGenerator rlel = new ReusableIDGenerator();
-		System.out.println(rlel);
-		System.out.println("Set 0");
-		rlel.set(0);
-		System.out.println(rlel);
-		System.out.println("Set 2");
-		rlel.set(2);
-		System.out.println(rlel);
-		System.out.println("Set 3");
-		rlel.set(3);
-		System.out.println(rlel);
+	private static void set(ReusableIDGenerator rig, long id) {
+		System.out.print("Set " + id);
+		rig.set(id);
+		System.out.println("\t" + rig);
+	}
 
-		System.out.println("New RLE");
-		rlel = new ReusableIDGenerator();
-		System.out.println("Set 4");
-		rlel.set(4);
-		System.out.println(rlel);
-		System.out.println("Set 7");
-		rlel.set(7);
-		System.out.println(rlel);
-
-		System.out.println("Next id: " + rlel.next());
-		System.out.println(rlel);
-		System.out.println("Next id: " + rlel.next());
-		System.out.println(rlel);
-		System.out.println("Next id: " + rlel.next());
-		System.out.println(rlel);
-
+	private static void release(ReusableIDGenerator rig, long id) {
+		System.out.print("Rel " + id);
+		rig.release(id);
+		System.out.println("\t" + rig);
 	}
 
 	static String visualizeRLE(long[] rle) {
