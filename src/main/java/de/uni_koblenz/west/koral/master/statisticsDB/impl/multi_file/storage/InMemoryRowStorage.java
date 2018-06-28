@@ -25,9 +25,11 @@ class InMemoryRowStorage implements RowStorage {
 		this.cacheBlockSize = cacheBlockSize;
 		maxBlockCount = maxCacheSize / cacheBlockSize;
 		rowsPerBlock = cacheBlockSize / rowLength;
-//		if (maxBlockId > Integer.MAX_VALUE) {
-//			throw new IllegalArgumentException("Cache size is too large/Cache block size too small");
-//		}
+		if (cacheBlockSize < rowLength) {
+			System.err.println(
+					"Warning: cache block size is smaller than row length. Falling back to single-block cache.");
+			cacheBlockSize = Integer.MAX_VALUE;
+		}
 		open(true);
 	}
 
