@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
+import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
+
 public class RandomAccessRowFile implements RowStorage {
 
 	private static final int ESTIMATED_SPACE_PER_ENTRY = 128 /* index entry */ + 24 /* Long value */
@@ -33,6 +35,13 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	private final LRUCache<Long, byte[]> fileCache;
 
+	/**
+	 * Stores the dirty bits for each cached block in an RLE list.
+	 */
+	private ReusableIDGenerator dirties;
+
+	private long kickOuts, notDirties;
+
 	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize) {
 		this.rowLength = rowLength;
 		file = new File(storageFilePath);
@@ -46,18 +55,25 @@ public class RandomAccessRowFile implements RowStorage {
 			fileCache = new LRUCache<Long, byte[]>(capacity) {
 				@Override
 				protected void removeEldest(Long rowId, byte[] row) {
-					// Persist entry before removing
-					try {
-						writeRowToFile(rowId, row);
-					} catch (IOException e) {
-						throw new RuntimeException(e);
+					kickOuts++;
+					if (dirties.isUsed(rowId)) {
+						// Persist entry before removing
+						try {
+							writeRowToFile(rowId, row);
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+					} else {
+						notDirties++;
 					}
 					// Remove from cache
 					super.removeEldest(rowId, row);
 				}
 			};
+			dirties = new ReusableIDGenerator();
 		} else {
 			fileCache = null;
+			dirties = null;
 		}
 	}
 
@@ -141,6 +157,7 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 		if (fileCache != null) {
 			fileCache.update(rowId, row);
+			dirties.set(rowId);
 		} else {
 			writeRowToFile(rowId, row);
 		}
@@ -206,9 +223,15 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public void flush() throws IOException {
 		if (fileCache != null) {
+			if (kickOuts > 0) {
+				System.out.println("Closing " + file);
+				System.out.println("Total writes caused by full cache: " + kickOuts);
+				System.out.println("Writes saved: " + notDirties);
+			}
 			for (Entry<Long, byte[]> entry : fileCache) {
 				writeRowToFile(entry.getKey(), entry.getValue());
 			}
+			// TODO: Reset dirties
 		}
 	}
 
