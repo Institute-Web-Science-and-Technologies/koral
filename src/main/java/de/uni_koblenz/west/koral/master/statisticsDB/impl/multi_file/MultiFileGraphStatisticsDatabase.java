@@ -165,7 +165,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	private void incrementOccurences(long resourceId, ResourceType resourceType, int chunk) {
 		dirty = true;
-		resourceId = resourceId & 0x00_00_FF_FF_FF_FF_FF_FFL;
 		try {
 			boolean rowFound = loadRow(resourceId);
 			if (!rowFound) {

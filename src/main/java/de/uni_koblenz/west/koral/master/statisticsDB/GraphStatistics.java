@@ -87,9 +87,10 @@ public class GraphStatistics implements Closeable {
 
 	public void count(long subject, long property, long object, int chunk) {
 //		SimpleLogger.log("Chunk " + chunk + ": _" + subject + "_" + property + "_" + object + "_");
-		database.incrementSubjectCount(subject, chunk);
-		database.incrementPropertyCount(property, chunk);
-		database.incrementObjectCount(object, chunk);
+		// Remove ownership bits
+		database.incrementSubjectCount(subject & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
+		database.incrementPropertyCount(property & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
+		database.incrementObjectCount(object & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
 		database.incrementNumberOfTriplesPerChunk(chunk);
 	}
 
