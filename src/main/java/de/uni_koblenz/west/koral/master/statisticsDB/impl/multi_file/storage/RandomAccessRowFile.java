@@ -24,7 +24,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 	/**
 	 * Here, blockSize refers to the size of a block that contains exactly how many rows would fit into a block with the
-	 * size given in the constructor, but without any filled space in the end.
+	 * size given in the constructor, but without any padding/filled space in the end.
 	 */
 	final int blockSize;
 
@@ -38,30 +38,30 @@ public class RandomAccessRowFile implements RowStorage {
 	/**
 	 * Stores the dirty bits for each cached block in an RLE list.
 	 */
-	private final ReusableIDGenerator dirties;
+	private final ReusableIDGenerator dirtyBlocks;
 
-	private long kickOuts, notDirties, setTime;
+	private long writesCausedByFullCache, undirtyWriteAttempts, setTime;
 
-	private final int cacheBlockSize, rowsPerBlock;
+	private final int rowsPerBlock;
 
 	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize) {
 		this.rowLength = rowLength;
+		rowsPerBlock = blockSize / rowLength;
+		this.blockSize = rowsPerBlock * rowLength;
 		file = new File(storageFilePath);
-		this.blockSize = blockSize - (blockSize % rowLength);
 		open(true);
-
-		cacheBlockSize = 4096;
-		rowsPerBlock = cacheBlockSize / rowLength;
 
 		if (maxCacheSize > 0) {
 			// Capacity is calculated by dividing the available space by estimated space per entry, rowLength refers to
 			// the amount of bytes used for the row.
+			// TODO: Check if this calculation is correct
 			long capacity = maxCacheSize / (ESTIMATED_SPACE_PER_ENTRY + (rowLength * rowsPerBlock));
 			fileCache = new LRUCache<Long, byte[]>(capacity) {
+
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
-					kickOuts++;
-					if (dirties.isUsed(blockId)) {
+					writesCausedByFullCache++;
+					if (dirtyBlocks.isUsed(blockId)) {
 						// Persist entry before removing
 						try {
 							writeBlockToFile(blockId, block);
@@ -69,16 +69,16 @@ public class RandomAccessRowFile implements RowStorage {
 							throw new RuntimeException(e);
 						}
 					} else {
-						notDirties++;
+						undirtyWriteAttempts++;
 					}
 					// Remove from cache
 					super.removeEldest(blockId, block);
 				}
 			};
-			dirties = new ReusableIDGenerator();
+			dirtyBlocks = new ReusableIDGenerator();
 		} else {
 			fileCache = null;
-			dirties = null;
+			dirtyBlocks = null;
 		}
 	}
 
@@ -109,33 +109,33 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
 		if (fileCache != null) {
-
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
-			byte[] block = fileCache.get(blockId);
-			if (block != null) {
-				byte[] row = new byte[rowLength];
-				System.arraycopy(block, blockOffset, row, 0, rowLength);
-				return row;
-			} else {
-				block = readBlockFromFile(blockId);
-				if (block != null) {
-					byte[] row = new byte[rowLength];
-					System.arraycopy(block, blockOffset, row, 0, rowLength);
-					fileCache.put(blockId, block);
-					return row;
-				} else {
-					return null;
-				}
+			byte[] block = readBlock(blockId);
+			if (block == null) {
+				return null;
 			}
+			byte[] row = new byte[rowLength];
+			System.arraycopy(block, blockOffset, row, 0, rowLength);
+			return row;
 		} else {
 			return readRowFromFile(rowId);
 		}
 
 	}
 
+	private byte[] readBlock(long blockId) throws IOException {
+		byte[] block = fileCache.get(blockId);
+		if (block == null) {
+			block = readBlockFromFile(blockId);
+			if (block != null) {
+				fileCache.put(blockId, block);
+			}
+		}
+		return block;
+	}
+
 	private byte[] readBlockFromFile(long blockId) throws IOException {
-		int blockSize = rowsPerBlock * rowLength;
 		long offset = blockId * blockSize;
 		rowFile.seek(offset);
 		byte[] block = new byte[blockSize];
@@ -144,7 +144,7 @@ public class RandomAccessRowFile implements RowStorage {
 		} catch (EOFException e) {
 			long fileLength = rowFile.length();
 			if ((fileLength > offset) && ((fileLength - offset) < blockSize)) {
-				throw new RuntimeException("Corrupted database: EOF before row end");
+				throw new RuntimeException("Corrupted database: EOF before block end");
 			}
 			// Resource does not have an entry (yet)
 			return null;
@@ -182,25 +182,26 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	@Override
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
+		if (!valid()) {
+			// TODO: Ensure this everywhere
+			throw new RuntimeException("Open Storage before writing to it");
+		}
 		if (row == null) {
 			throw new NullPointerException("Row can't be null");
 		}
 		if (fileCache != null) {
-
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 //			System.out.println("Writing at " + blockId + " / " + blockOffset);
-			byte[] block = fileCache.get(blockId);
-			if (block != null) {
-				System.arraycopy(row, 0, block, blockOffset, row.length);
-			} else {
+			byte[] block = readBlock(blockId);
+			if (block == null) {
 				// TODO: Allocate blocks of block size or only of used data size (i.e. rowsPerBlock * rowLength)?
-				block = new byte[cacheBlockSize];
-				System.arraycopy(row, 0, block, blockOffset, row.length);
+				block = new byte[blockSize];
 			}
+			System.arraycopy(row, 0, block, blockOffset, row.length);
 			fileCache.update(blockId, block);
 			long start = System.nanoTime();
-			dirties.set(blockId);
+			dirtyBlocks.set(blockId);
 			setTime += System.nanoTime() - start;
 		} else {
 			writeRowToFile(rowId, row);
@@ -214,7 +215,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private void writeBlockToFile(long blockId, byte[] block) throws IOException {
-		rowFile.seek(blockId * rowsPerBlock * rowLength);
+		rowFile.seek(blockId * blockSize);
 		rowFile.write(block);
 	}
 
@@ -238,12 +239,11 @@ public class RandomAccessRowFile implements RowStorage {
 					throw new NoSuchElementException("Use hasNext() before calling next()");
 				}
 				try {
-					long offset = blockId * blockSize;
-					rowFile.seek(offset);
-					byte[] block = new byte[blockSize];
-					try {
-						rowFile.readFully(block);
-					} catch (EOFException e) {
+					// TODO: Block arrays created here have the length blockSize/without padding, not the actual given
+					// blockSize. These blocks are given to the IMRS which is supposed to work on full blocks
+					// TODO: Cache could be used?
+					byte[] block = readBlockFromFile(blockId);
+					if (block == null) {
 						// This should never happen because hasNext() checks for this
 						throw new IOException("Invalid file length");
 					}
@@ -252,7 +252,6 @@ public class RandomAccessRowFile implements RowStorage {
 					throw new RuntimeException(e);
 				}
 			}
-
 		};
 	}
 
@@ -272,15 +271,18 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public void flush() throws IOException {
 		if (fileCache != null) {
-			if (kickOuts > 0) {
-				System.out.println("Flushing " + file);
-				System.out.println("Total writes caused by full cache: " + kickOuts);
-				System.out.println("Writes saved: " + notDirties);
+			if (writesCausedByFullCache > 0) {
+				System.out.println(file.getName() + ": Total writes caused by full cache: " + writesCausedByFullCache);
+				System.out.println(file.getName() + ": Writes saved: " + undirtyWriteAttempts);
 			}
+			long blocksFlushed = 0;
 			for (Entry<Long, byte[]> entry : fileCache) {
-				writeRowToFile(entry.getKey(), entry.getValue());
+				writeBlockToFile(entry.getKey(), entry.getValue());
+				blocksFlushed++;
 			}
-			dirties.clear();
+			writesCausedByFullCache = 0;
+			undirtyWriteAttempts = 0;
+			dirtyBlocks.clear();
 		}
 	}
 
@@ -315,7 +317,7 @@ public class RandomAccessRowFile implements RowStorage {
 	public void delete() {
 		if (fileCache != null) {
 			fileCache.clear();
-			dirties.clear();
+			dirtyBlocks.clear();
 		}
 		file.delete();
 	}
@@ -327,7 +329,7 @@ public class RandomAccessRowFile implements RowStorage {
 			rowFile.close();
 			if (fileCache != null) {
 				fileCache.clear();
-				dirties.clear();
+				dirtyBlocks.clear();
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
