@@ -14,7 +14,6 @@ import org.apache.commons.io.FileUtils;
 
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
-import playground.StatisticsDBTest;
 
 /**
  * The main class of this implementation, manages the {@link StatisticsRowManager} and persistence through
@@ -313,6 +312,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			fileManager.deleteExtraFile(-fileId);
 		}
 		fileManager.defragFreeSpaceIndexes();
+		// TODO ensure flushing afterwards
 	}
 
 	/**
@@ -333,7 +333,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			System.out.println("Defragging database...");
 			long start = System.currentTimeMillis();
 			defrag();
-			System.out.println("Defragging took " + StatisticsDBTest.formatTime(System.currentTimeMillis() - start));
 //			fileManager.flush();
 			dirty = false;
 		} catch (IOException e1) {
