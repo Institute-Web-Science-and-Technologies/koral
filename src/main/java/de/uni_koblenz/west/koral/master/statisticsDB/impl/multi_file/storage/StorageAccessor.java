@@ -7,15 +7,11 @@ import java.util.logging.Logger;
 
 public class StorageAccessor implements RowStorage {
 
-	private static final int DEFAULT_MIN_CACHE_SIZE = 1024;
-
 	private final Logger logger;
 
 	private final String storageFilePath;
 
 	private final int rowLength;
-
-	private final long initialCacheSize;
 
 	private final long maxCacheSize;
 
@@ -25,22 +21,13 @@ public class StorageAccessor implements RowStorage {
 
 	RowStorage currentStorage;
 
-	public StorageAccessor(String storageFilePath, int rowLength, long initialCacheSize, long maxCacheSize,
-			Logger logger) {
+	public StorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, Logger logger) {
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
-		this.initialCacheSize = initialCacheSize;
 		this.logger = logger;
 
 		this.maxCacheSize = maxCacheSize;
-		if (initialCacheSize > maxCacheSize) {
-			throw new IllegalArgumentException("Initial cache size can't be larger than maximum cache size");
-		}
 		open(true);
-	}
-
-	public StorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, Logger logger) {
-		this(storageFilePath, rowLength, Math.min(DEFAULT_MIN_CACHE_SIZE, maxCacheSize), maxCacheSize, logger);
 	}
 
 	@Override
@@ -50,11 +37,6 @@ public class StorageAccessor implements RowStorage {
 		currentStorage = file;
 		long storageLength = file.length();
 		if (storageLength < maxCacheSize) {
-			long cacheSize = initialCacheSize;
-			if (storageLength > cacheSize) {
-				cacheSize = 2 * storageLength;
-			}
-			cacheSize = Math.min(cacheSize, maxCacheSize);
 			cache = new InMemoryRowStorage(rowLength, maxCacheSize);
 			if (storageLength > 0) {
 				if (logger != null) {

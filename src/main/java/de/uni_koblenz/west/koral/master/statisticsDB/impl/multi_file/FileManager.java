@@ -22,8 +22,6 @@ public class FileManager {
 
 	public static final int DEFAULT_INDEX_FILE_CACHE_SIZE = 100 * 1024 * 1024;
 
-	private static final int INITIAL_INDEX_FILE_CACHE_SIZE = 512 * 1024;
-
 	public static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
 
 	private final Logger logger;
@@ -80,8 +78,7 @@ public class FileManager {
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength,
-				Math.min(INITIAL_INDEX_FILE_CACHE_SIZE, indexFileCacheSize), indexFileCacheSize, logger);
+		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, indexFileCacheSize, logger);
 	}
 
 	/**
