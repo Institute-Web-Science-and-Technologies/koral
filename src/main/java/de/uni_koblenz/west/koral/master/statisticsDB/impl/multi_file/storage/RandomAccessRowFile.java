@@ -13,7 +13,7 @@ import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
 
 public class RandomAccessRowFile implements RowStorage {
 
-	private static final int ESTIMATED_SPACE_PER_ENTRY = 128 /* index entry */ + 24 /* Long value */
+	private static final int ESTIMATED_SPACE_PER_LRUCACHE_ENTRY = 128 /* index entry */ + 24 /* Long value */
 			+ 64 /* DoublyLinkedNode */;
 
 	final File file;
@@ -52,11 +52,10 @@ public class RandomAccessRowFile implements RowStorage {
 		open(true);
 
 		if (maxCacheSize > 0) {
-			// Capacity is calculated by dividing the available space by estimated space per entry, rowLength refers to
-			// the amount of bytes used for the row.
-			// TODO: Check if this calculation is correct
-			long capacity = maxCacheSize / (ESTIMATED_SPACE_PER_ENTRY + (rowLength * rowsPerBlock));
-			fileCache = new LRUCache<Long, byte[]>(capacity) {
+			// Capacity is calculated by dividing the available space by estimated space per entry, blockSize is the
+			// amount of bytes used for the values in the cache.
+			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + blockSize);
+			fileCache = new LRUCache<Long, byte[]>(maxCacheEntries) {
 
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
