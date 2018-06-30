@@ -101,8 +101,6 @@ public class StorageAccessor implements RowStorage {
 			try {
 				file.storeBlocks(cache.getBlockIterator());
 				// TODO: Different implementations of file may not flush to disk in storeRows
-				// TODO: Data may become incoherent here, if file is defragged and cache not
-				// cleared
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}

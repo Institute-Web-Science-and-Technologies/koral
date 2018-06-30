@@ -303,6 +303,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 			}
 		}
+		// Close all StorageAccessors because we are deleting the files they have open.
+		// Also, closing clears all caches that are incoherent to the changed files now.
 		fileManager.close();
 		for (Long fileId : defraggedFiles) {
 			File oldFile = new File(statisticsDirPath + fileId);
