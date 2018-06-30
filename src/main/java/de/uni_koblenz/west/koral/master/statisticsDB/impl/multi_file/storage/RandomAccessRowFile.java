@@ -274,10 +274,8 @@ public class RandomAccessRowFile implements RowStorage {
 				System.out.println(file.getName() + ": Total writes caused by full cache: " + writesCausedByFullCache);
 				System.out.println(file.getName() + ": Writes saved: " + undirtyWriteAttempts);
 			}
-			long blocksFlushed = 0;
 			for (Entry<Long, byte[]> entry : fileCache) {
 				writeBlockToFile(entry.getKey(), entry.getValue());
-				blocksFlushed++;
 			}
 			writesCausedByFullCache = 0;
 			undirtyWriteAttempts = 0;
@@ -323,6 +321,10 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public void close() {
+		if (setTime > 0) {
+			System.out.println(file.getName() + ": Setting dirty flags took " + (setTime / 1e9) + " sec");
+			setTime = 0;
+		}
 		try {
 			flush();
 			rowFile.close();
