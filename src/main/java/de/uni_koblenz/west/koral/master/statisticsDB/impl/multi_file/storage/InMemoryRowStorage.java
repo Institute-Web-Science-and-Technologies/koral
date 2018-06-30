@@ -8,8 +8,6 @@ import java.util.TreeMap;
 
 class InMemoryRowStorage implements RowStorage {
 
-	private static final int DEFAULT_CACHE_BLOCKSIZE = 4096;
-
 	private final int rowLength;
 
 	private Map<Long, byte[]> blocks;
@@ -31,10 +29,6 @@ class InMemoryRowStorage implements RowStorage {
 			cacheBlockSize = Integer.MAX_VALUE;
 		}
 		open(true);
-	}
-
-	public InMemoryRowStorage(int rowLength, long maxCacheSize) {
-		this(rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE);
 	}
 
 	@Override

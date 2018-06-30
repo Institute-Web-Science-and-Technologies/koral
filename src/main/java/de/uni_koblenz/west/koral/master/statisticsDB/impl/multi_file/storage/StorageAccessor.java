@@ -7,6 +7,8 @@ import java.util.logging.Logger;
 
 public class StorageAccessor implements RowStorage {
 
+	private static final int DEFAULT_CACHE_BLOCKSIZE = 4096;
+
 	private final Logger logger;
 
 	private final String storageFilePath;
@@ -32,12 +34,12 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void open(boolean createIfNotExisting) {
-		// TODO: Use the same variable for block sizes of this file and cache below
-		file = new RandomAccessRowFile(storageFilePath, rowLength, maxCacheSize, 4096);
+		// TODO: Extract cache blocksize as own parameter to CLI/config
+		file = new RandomAccessRowFile(storageFilePath, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE);
 		currentStorage = file;
 		long storageLength = file.length();
 		if (storageLength < maxCacheSize) {
-			cache = new InMemoryRowStorage(rowLength, maxCacheSize);
+			cache = new InMemoryRowStorage(rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE);
 			if (storageLength > 0) {
 				if (logger != null) {
 					logger.finest("Loading existing storage with path " + storageFilePath);
