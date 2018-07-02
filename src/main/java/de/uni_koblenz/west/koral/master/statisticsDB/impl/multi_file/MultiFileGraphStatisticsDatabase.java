@@ -333,7 +333,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				return;
 			}
 			System.out.println("Defragging database...");
-			long start = System.currentTimeMillis();
 			defrag();
 //			fileManager.flush();
 			dirty = false;
