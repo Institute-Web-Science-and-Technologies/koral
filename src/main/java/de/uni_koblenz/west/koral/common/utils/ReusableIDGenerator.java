@@ -239,16 +239,16 @@ public class ReusableIDGenerator {
 		}
 		if (blockIndex == ids.length) {
 			// id list is full and new id is larger
-			// Extend ids array
-			long[] newIds = new long[blockIndex + 1 + 10];
-			System.arraycopy(ids, 0, newIds, 0, ids.length);
-			ids = newIds;
+			extendIdsArray(blockIndex + 1 + 1);
 		}
 		if (ids[blockIndex] == 0) {
 			// the id is larger than previous ids
 			long unusedIds = idToSet - maxPreviousId - 1;
 			if (unusedIds > 0) {
 				ids[blockIndex] = -unusedIds;
+				if ((blockIndex + 1) >= ids.length) {
+					extendIdsArray(blockIndex + 1 + 1);
+				}
 				ids[blockIndex + 1] = 1;
 			} else {
 				if (blockIndex > 0) {
@@ -451,6 +451,12 @@ public class ReusableIDGenerator {
 	@Override
 	public String toString() {
 		return ids == null ? "[]" : Arrays.toString(ids);
+	}
+
+	private void extendIdsArray(int minLength) {
+		long[] newIds = new long[minLength + 10];
+		System.arraycopy(ids, 0, newIds, 0, ids.length);
+		ids = newIds;
 	}
 
 }

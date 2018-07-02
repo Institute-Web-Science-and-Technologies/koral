@@ -37,10 +37,9 @@ public class ReusableIDGeneratorTest {
 		set(rig, 9);
 		release(rig, 2);
 		release(rig, 8);
+		set(rig, 0);
 		set(rig, 10);
 		set(rig, 12);
-
-		set(rig, 0);
 	}
 
 	static void test2() {
