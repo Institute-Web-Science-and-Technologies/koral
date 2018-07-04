@@ -67,6 +67,7 @@ public class RandomAccessRowFile implements RowStorage {
 						} catch (IOException e) {
 							throw new RuntimeException(e);
 						}
+						dirtyBlocks.release(blockId);
 					} else {
 						undirtyWriteAttempts++;
 					}
