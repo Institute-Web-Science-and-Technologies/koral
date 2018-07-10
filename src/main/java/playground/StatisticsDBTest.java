@@ -8,6 +8,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -129,7 +130,7 @@ public class StatisticsDBTest {
 			configName += implementationNote.isEmpty() ? "" : "_" + implementationNote.replace(" ", "-");
 		} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
 			System.err.println(
-					"Unknown directory name format, please use [CoverAlgorithm]_[Chunks]C_[Triples][K/M]. Benchmark CSV will be filled with NULLs.");
+					"Unknown directory name format, please use [CoverAlgorithm]_[Chunks]C_[Triples][K/M]. Benchmark CSV will now be filled with NULLs.");
 		}
 		if (!configName.equals("") && logging) {
 			File logFile = new File(logDir.getCanonicalPath() + File.separator + configName + ".log");
@@ -186,7 +187,7 @@ public class StatisticsDBTest {
 				System.out.println("Flushing took " + formatTime(System.currentTimeMillis() - start));
 				if (COLLECT_META_STATISTICS) {
 					System.out.println("Collecting meta statistics...");
-					System.out.println(multiDB.getStatistics());
+					writeMetaStatisticsToFile(configNameWithoutCaches, multiDB.getStatistics());
 				}
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				indexFileLength = multiDB.getIndexFileLength();
@@ -235,6 +236,14 @@ public class StatisticsDBTest {
 				dbImplementation, coveringAlgorithm, implementationNote, durationSec, dirSizeBytes, indexSizeBytes,
 				extraFilesSizeBytes, totalEntries, unusedBytes);
 		printer.close();
+	}
+
+	private static void writeMetaStatisticsToFile(String configNameWithoutCaches, String statistics)
+			throws FileNotFoundException {
+		System.out.println("Writing meta statistics to file...");
+		try (PrintWriter writer = new PrintWriter("metastatistics-" + configNameWithoutCaches + ".txt")) {
+			writer.write(statistics);
+		}
 	}
 
 	private static void writeFileDistributionToCSV(String configName, String extraFilesDir,
