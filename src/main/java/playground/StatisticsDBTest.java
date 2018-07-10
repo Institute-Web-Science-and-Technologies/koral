@@ -52,7 +52,7 @@ public class StatisticsDBTest {
 	}
 
 	public static void main(String[] args) throws IOException {
-		boolean logging = true;
+		boolean fileLogging = true;
 		if ((args.length != 8) && (args.length != 9)) {
 			System.err.println("Invalid amount of arguments.");
 			printUsage();
@@ -67,12 +67,12 @@ public class StatisticsDBTest {
 		File logDir = new File(args[1]);
 		if (!logDir.exists() || !logDir.isDirectory()) {
 			System.err.println("Directory does not exist: " + logDir + ". Logging to file disabled.");
-			logging = false;
+			fileLogging = false;
 		}
 		File storageDir = new File(args[2]);
 		if (!storageDir.exists() || !storageDir.isDirectory()) {
-			System.out.println(
-					"The path " + storageDir + " is not a valid, exisiting directory. Database will be stored in temp dir.");
+			System.out.println("The path " + storageDir
+					+ " is not a valid, exisiting directory. Database will be stored in temp dir.");
 			storageDir = null;
 		} else if (storageDir.list().length > 0) {
 			// We don't want to be responsible for deleting directory content
@@ -83,40 +83,24 @@ public class StatisticsDBTest {
 		if (resultCSV.getParent() == null) {
 			System.err.println("Invalid path for result file: " + args[3]);
 			printUsage();
+			return;
 		}
 		File resultCSVDir = new File(resultCSV.getParent());
 		if (!resultCSVDir.exists()) {
 			resultCSVDir.mkdirs();
 		}
+
 		String datasetName = encodedChunksDir.getName();
-		File[] encodedFiles = encodedChunksDir.listFiles(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.contains("chunk") && name.endsWith(".gz");
-			}
-		});
-		Arrays.sort(encodedFiles, new Comparator<File>() {
-			@Override
-			public int compare(File file1, File file2) {
-				int chunkIndex1 = Integer.parseInt(file1.getName().split("\\.")[0].replace("chunk", ""));
-				int chunkIndex2 = Integer.parseInt(file2.getName().split("\\.")[0].replace("chunk", ""));
-				return Integer.compare(chunkIndex1, chunkIndex2);
-			}
-		});
-		System.out.println("Recognized chunk files:");
-		for (File file : encodedFiles) {
-			System.out.println(file);
-		}
+		File[] encodedFiles = getEncodedChunkFiles(encodedChunksDir);
 		short numberOfChunks = (short) encodedFiles.length;
+
 		String implementation = args[4];
 		System.out.println("Chosen implementation: " + implementation);
-
 		int rowDataLength = Integer.parseInt(args[5]);
 		long indexCacheSize = Long.parseLong(args[6]);
 		long extraFilesCacheSize = Long.parseLong(args[7]);
-
 		String implementationNote = "";
-		if (args.length == 8) {
+		if (args.length == 9) {
 			implementationNote = args[8];
 		}
 
@@ -142,18 +126,19 @@ public class StatisticsDBTest {
 			System.err.println(
 					"Unknown directory name format, please use [CoverAlgorithm]_[Chunks]C_[Triples][K/M]. Benchmark CSV will now be filled with NULLs.");
 		}
-		if (!configName.equals("") && logging) {
+
+		if (!configName.equals("") && fileLogging) {
 			File logFile = new File(logDir.getCanonicalPath() + File.separator + configName + ".log");
 			System.out.println("Redirecting stdout and stderr to " + logFile.getCanonicalPath() + " now.");
 			PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(logFile)), true);
 			System.setOut(out);
 			System.setErr(out);
 		}
+
 		System.out.println("Starting at " + new Date());
 		System.out.println("Config string: " + configName);
 
 		Configuration conf = new Configuration();
-
 		System.out.println("Collecting Statistics...");
 
 		if (storageDir == null) {
@@ -228,6 +213,28 @@ public class StatisticsDBTest {
 		}
 		System.out.println("Finished at " + new Date() + ".");
 
+	}
+
+	private static File[] getEncodedChunkFiles(File encodedChunksDir) {
+		File[] encodedFiles = encodedChunksDir.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.contains("chunk") && name.endsWith(".gz");
+			}
+		});
+		Arrays.sort(encodedFiles, new Comparator<File>() {
+			@Override
+			public int compare(File file1, File file2) {
+				int chunkIndex1 = Integer.parseInt(file1.getName().split("\\.")[0].replace("chunk", ""));
+				int chunkIndex2 = Integer.parseInt(file2.getName().split("\\.")[0].replace("chunk", ""));
+				return Integer.compare(chunkIndex1, chunkIndex2);
+			}
+		});
+		System.out.println("Recognized chunk files:");
+		for (File file : encodedFiles) {
+			System.out.println(file);
+		}
+		return encodedFiles;
 	}
 
 	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, short numberOfChunks, int dataBytes,
