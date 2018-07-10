@@ -35,8 +35,6 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	private final LRUCache<Long, byte[]> fileCache;
 
-	private long writesCausedByFullCache, undirtyWriteAttempts, setTime;
-
 	private final int rowsPerBlock;
 
 	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize) {
@@ -57,7 +55,6 @@ public class RandomAccessRowFile implements RowStorage {
 
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
-					writesCausedByFullCache++;
 					if (block[dataBlockSize] == 1) {
 						// Persist entry before removing
 						try {
@@ -66,8 +63,6 @@ public class RandomAccessRowFile implements RowStorage {
 							throw new RuntimeException(e);
 						}
 						block[dataBlockSize] = 0;
-					} else {
-						undirtyWriteAttempts++;
 					}
 					// Remove from cache
 					super.removeEldest(blockId, block);
@@ -197,10 +192,8 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 			System.arraycopy(row, 0, block, blockOffset, row.length);
 			fileCache.update(blockId, block);
-			long start = System.nanoTime();
 			// Set dirty flag (located right behind the data)
 			block[dataBlockSize] = 1;
-			setTime += System.nanoTime() - start;
 		} else {
 			writeRowToFile(rowId, row);
 		}
@@ -268,10 +261,6 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public void flush() throws IOException {
 		if (fileCache != null) {
-			if (writesCausedByFullCache > 0) {
-				System.out.println(file.getName() + ": Total writes caused by full cache: " + writesCausedByFullCache);
-				System.out.println(file.getName() + ": Writes saved: " + undirtyWriteAttempts);
-			}
 			for (Entry<Long, byte[]> entry : fileCache) {
 				byte[] block = entry.getValue();
 				writeBlockToFile(entry.getKey(), block);
@@ -280,8 +269,6 @@ public class RandomAccessRowFile implements RowStorage {
 				// TODO: Necessary?
 				fileCache.update(entry.getKey(), block);
 			}
-			writesCausedByFullCache = 0;
-			undirtyWriteAttempts = 0;
 		}
 	}
 
@@ -322,10 +309,6 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public void close() {
-		if (setTime > 0) {
-			System.out.println(file.getName() + ": Setting dirty flags took " + (setTime / 1e9) + " sec");
-			setTime = 0;
-		}
 		try {
 			flush();
 			rowFile.close();
