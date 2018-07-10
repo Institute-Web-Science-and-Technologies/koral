@@ -48,12 +48,12 @@ public class StatisticsDBTest {
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
-				+ " <encodedChunksDir> <logDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");
+				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");
 	}
 
 	public static void main(String[] args) throws IOException {
 		boolean logging = true;
-		if ((args.length != 7) && (args.length != 8)) {
+		if ((args.length != 8) && (args.length != 9)) {
 			System.err.println("Invalid amount of arguments.");
 			printUsage();
 			return;
@@ -69,9 +69,19 @@ public class StatisticsDBTest {
 			System.err.println("Directory does not exist: " + logDir + ". Logging to file disabled.");
 			logging = false;
 		}
-		File resultCSV = new File(args[2]);
+		File storageDir = new File(args[2]);
+		if (!storageDir.exists() || !storageDir.isDirectory()) {
+			System.out.println(
+					"The path " + storageDir + " is not a valid, exisiting directory. Database will be stored in temp dir.");
+			storageDir = null;
+		} else if (storageDir.list().length > 0) {
+			// We don't want to be responsible for deleting directory content
+			System.err.println("The given storage directory " + storageDir + " is not empty.");
+			return;
+		}
+		File resultCSV = new File(args[3]);
 		if (resultCSV.getParent() == null) {
-			System.err.println("Invalid path for result file: " + args[2]);
+			System.err.println("Invalid path for result file: " + args[3]);
 			printUsage();
 		}
 		File resultCSVDir = new File(resultCSV.getParent());
@@ -98,16 +108,16 @@ public class StatisticsDBTest {
 			System.out.println(file);
 		}
 		short numberOfChunks = (short) encodedFiles.length;
-		String implementation = args[3];
+		String implementation = args[4];
 		System.out.println("Chosen implementation: " + implementation);
 
-		int rowDataLength = Integer.parseInt(args[4]);
-		long indexCacheSize = Long.parseLong(args[5]);
-		long extraFilesCacheSize = Long.parseLong(args[6]);
+		int rowDataLength = Integer.parseInt(args[5]);
+		long indexCacheSize = Long.parseLong(args[6]);
+		long extraFilesCacheSize = Long.parseLong(args[7]);
 
 		String implementationNote = "";
 		if (args.length == 8) {
-			implementationNote = args[7];
+			implementationNote = args[8];
 		}
 
 		String[] datasetInfo = datasetName.split("_");
@@ -146,19 +156,22 @@ public class StatisticsDBTest {
 
 		System.out.println("Collecting Statistics...");
 
-		File statisticsDir = new File(conf.getStatisticsDir(true));
-		if (statisticsDir.exists()) {
-			try {
-				FileUtils.cleanDirectory(statisticsDir);
-			} catch (IOException e) {
-				e.printStackTrace();
+		if (storageDir == null) {
+			// Default to tmp dir
+			storageDir = new File(conf.getStatisticsDir(true));
+			if (storageDir.exists()) {
+				try {
+					FileUtils.cleanDirectory(storageDir);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		GraphStatisticsDatabase statisticsDB = null;
 		if (implementation.trim().equalsIgnoreCase("single")) {
-			statisticsDB = new SingleFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
+			statisticsDB = new SingleFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks);
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
-			statisticsDB = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks,
+			statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks,
 					rowDataLength, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
