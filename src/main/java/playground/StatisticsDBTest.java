@@ -181,6 +181,7 @@ public class StatisticsDBTest {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
+				multiDB.defrag();
 				multiDB.flush();
 				System.out.println("Flushing took " + formatTime(System.currentTimeMillis() - start));
 				if (COLLECT_META_STATISTICS) {

@@ -137,7 +137,13 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	@Override
 	public long[] getStatisticsForResource(long id) {
-		boolean rowFound = loadRow(id);
+		boolean rowFound;
+		try {
+			rowFound = loadRow(id);
+		} catch (IOException e) {
+			close();
+			throw new RuntimeException(e);
+		}
 		if (!rowFound) {
 			return new long[3 * numberOfChunks];
 		}
@@ -245,29 +251,24 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 *            The desired resource
 	 * @return True if the row was found in the index.
 	 */
-	private boolean loadRow(long resourceId) {
+	private boolean loadRow(long resourceId) throws IOException {
 //		SimpleLogger.log("----- ID " + resourceId);
-		try {
-			byte[] row = fileManager.readIndexRow(resourceId);
-			if ((row == null) || Utils.isArrayZero(row)) {
-				return false;
+		byte[] row = fileManager.readIndexRow(resourceId);
+		if ((row == null) || Utils.isArrayZero(row)) {
+			return false;
+		}
+		boolean dataExternal = rowManager.load(row);
+//		SimpleLogger.log("row " + resourceId + ": " + Arrays.toString(rowManager.getRow()));
+		if (dataExternal) {
+			long fileId = rowManager.getFileId();
+			long rowId = rowManager.getExternalFileRowId();
+			byte[] dataBytes = fileManager.readExternalRow(fileId, rowId);
+			if (dataBytes == null) {
+				fileManager.readExternalRow(fileId, rowId);
+				throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
 			}
-			boolean dataExternal = rowManager.load(row);
-//			SimpleLogger.log("row " + resourceId + ": " + Arrays.toString(rowManager.getRow()));
-			if (dataExternal) {
-				long fileId = rowManager.getFileId();
-				long rowId = rowManager.getExternalFileRowId();
-				byte[] dataBytes = fileManager.readExternalRow(fileId, rowId);
-				if (dataBytes == null) {
-					fileManager.readExternalRow(fileId, rowId);
-					throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
-				}
-				rowManager.loadExternalRow(dataBytes);
-//				SimpleLogger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
-			}
-		} catch (IOException e) {
-//			close();
-			throw new RuntimeException(e);
+			rowManager.loadExternalRow(dataBytes);
+//			SimpleLogger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
 		}
 		return true;
 	}
@@ -280,12 +281,11 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	/**
-	 * Flushes and closes the fileManager. Note: This method is not threadsafe
+	 * Flushes and closes the fileManager. Also resets internal dirty flag. Note: This method is not threadsafe
 	 *
 	 * @throws IOException
 	 */
-	private void defrag() throws IOException {
-//		fileManager.close();
+	public void defrag() throws IOException {
 		// Stores file ids of all extra files that are defragged and therefore need to be exchanged by the temporary
 		// files.
 		Set<Long> defraggedFiles = new TreeSet<>();
@@ -306,6 +306,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		// Close all StorageAccessors because we are deleting the files they have open.
 		// Also, closing clears all caches that are incoherent to the changed files now.
 		fileManager.close();
+		dirty = false;
 		for (Long fileId : defraggedFiles) {
 			File oldFile = new File(statisticsDirPath + fileId);
 			File newFile = new File(statisticsDirPath + (-fileId));
@@ -318,7 +319,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	/**
-	 * Defrags the extra files before flushing, therefore the file manager is closed as well.
+	 * Flushes triplesPerChunk data, and if the internal dirty flag is set, the FileManager.
 	 */
 	public void flush() {
 		// Always flush triplesPerChunk because low cost
@@ -328,13 +329,11 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 		try {
 			Files.write(triplesPerChunkFile, bytes);
-			// Flush and defrag heavy data only if dirty
+			// Flush heavy data only if dirty
 			if (!dirty) {
 				return;
 			}
-			System.out.println("Defragging database...");
-			defrag();
-//			fileManager.flush();
+			fileManager.flush();
 			dirty = false;
 		} catch (IOException e1) {
 			throw new RuntimeException(e1);
@@ -379,6 +378,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	@Override
 	public void close() {
 		flush();
+		fileManager.close();
 	}
 
 	/**
@@ -386,8 +386,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * counted if the index file is not flushed beforehand.
 	 *
 	 * @return
+	 * @throws IOException
 	 */
-	public String getStatistics() {
+	public String getStatistics() throws IOException {
 		long maxId = getMaxId();
 		for (long id = 1; id <= maxId; id++) {
 			boolean rowFound = loadRow(id);
