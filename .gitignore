@@ -31,4 +31,5 @@
 /SingleFileGraphStatisticsDatabase-statistics.csv
 /MultiFileGraphStatisticsDatabase-statistics.csv
 /fileDistribution-*.csv
+/metastatistics-*.txt
 /results.csv
