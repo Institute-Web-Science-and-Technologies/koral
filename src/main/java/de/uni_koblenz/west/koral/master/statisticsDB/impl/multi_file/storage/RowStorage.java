@@ -32,6 +32,14 @@ public interface RowStorage extends AutoCloseable {
 	 */
 	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException;
 
+	/**
+	 * Store the given blocks. It must be ensured that the data is persisted if possible, i.e. no flush is required
+	 * afterwards. Note that some implementations may only store a fixed size of each block (the rest is assumed to be
+	 * padding/metadata).
+	 *
+	 * @param blocks
+	 * @throws IOException
+	 */
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException;
 
 	/**
@@ -49,9 +57,7 @@ public interface RowStorage extends AutoCloseable {
 	public boolean isEmpty();
 
 	/**
-	 * TODO: Length of valid data or used space? Currently only used for index space.
-	 *
-	 * @return
+	 * @return The used space that is needed to persist the data as is (might include padding/metadata).
 	 */
 	public long length();
 

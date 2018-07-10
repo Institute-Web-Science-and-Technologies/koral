@@ -332,15 +332,6 @@ public class FileManager {
 		return lengths;
 	}
 
-	/**
-	 * Clears internal fields, without actually deleting the files.
-	 */
-	void clear() {
-		// TODO: clear() RowStorage objects? Also Close() them
-		index = null;
-		extraFiles.clear();
-	}
-
 	void close() {
 		try {
 			flush();

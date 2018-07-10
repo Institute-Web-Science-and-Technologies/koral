@@ -33,7 +33,8 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public void open(boolean createIfNotExisting) {
-		// TODO: What to do if createIfNotExisting is false?
+		// The createIfNotExisting flag does not matter here, because there is no persisted data that has to be checked
+		// for being missing/corrupted.
 		blocks = new TreeMap<>();
 	}
 
@@ -100,7 +101,6 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public long length() {
-		// TODO: This returns a higher number than the amount of actual rows
 		return blocks.size() * rowsPerBlock * rowLength;
 	}
 

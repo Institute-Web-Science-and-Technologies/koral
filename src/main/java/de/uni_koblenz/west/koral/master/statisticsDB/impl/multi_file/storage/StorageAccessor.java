@@ -102,7 +102,6 @@ public class StorageAccessor implements RowStorage {
 		} else {
 			try {
 				file.storeBlocks(cache.getBlockIterator());
-				// TODO: Different implementations of file may not flush to disk in storeRows
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -121,7 +120,7 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public boolean valid() {
-		return currentStorage.valid();
+		return (currentStorage != null) && currentStorage.valid();
 	}
 
 	@Override
@@ -155,12 +154,10 @@ public class StorageAccessor implements RowStorage {
 			throw new RuntimeException(e);
 		} finally {
 			if (cache != null) {
-				if (currentStorage == cache) {
-					currentStorage = file;
-				}
 				cache.close();
 				cache = null;
 			}
+			currentStorage = null;
 			file.close();
 		}
 	}

@@ -21,19 +21,17 @@ public class RandomAccessRowFile implements RowStorage {
 	final int rowLength;
 
 	/**
-	 * Here, blockSize refers to the size of a block that contains exactly how many
-	 * rows would fit into a block with the size given in the constructor, but
-	 * without any padding/filled space in the end.
+	 * Here, blockSize refers to the size of a block that contains exactly how many rows would fit into a block with the
+	 * size given in the constructor, but without any padding/filled space in the end.
 	 */
 	final int dataBlockSize;
 
 	final int blockSizeWithPadding;
 
 	/**
-	 * Maps RowIds to their rows. Note: It should always be ensured that the values
-	 * are not-null (on inserting/updating), because the LRUCache doesn't care and
-	 * NullPointerExceptions are not thrown before actually writing to file, when it
-	 * is too late to find out where the null came from, in the case of a bug.
+	 * Maps RowIds to their rows. Note: It should always be ensured that the values are not-null (on
+	 * inserting/updating), because the LRUCache doesn't care and NullPointerExceptions are not thrown before actually
+	 * writing to file, when it is too late to find out where the null came from, in the case of a bug.
 	 */
 	private final LRUCache<Long, byte[]> fileCache;
 
@@ -93,8 +91,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Retrieves a row from <code>file</code>. The offset is calculated by
-	 * <code>rowId * row.length</code>.
+	 * Retrieves a row from <code>file</code>. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            The RandomAccessFile that will be read
@@ -102,8 +99,7 @@ public class RandomAccessRowFile implements RowStorage {
 	 *            The row number in the file
 	 * @param rowLength
 	 *            The length of a row in the specified file
-	 * @return The row as a byte array. The returned array has the length of
-	 *         rowLength.
+	 * @return The row as a byte array. The returned array has the length of rowLength.
 	 * @throws IOException
 	 */
 	@Override
@@ -170,8 +166,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by
-	 * <code>rowId * row.length</code>.
+	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            A RandomAccessFile that will be updated
@@ -229,7 +224,6 @@ public class RandomAccessRowFile implements RowStorage {
 		return new Iterator<Entry<Long, byte[]>>() {
 
 			long blockId = 0;
-			// In the RAFile, the blocks do not contain fillspace but only data
 
 			@Override
 			public boolean hasNext() {
@@ -242,11 +236,8 @@ public class RandomAccessRowFile implements RowStorage {
 					throw new NoSuchElementException("Use hasNext() before calling next()");
 				}
 				try {
-					// TODO: Block arrays created here have the length blockSize/without padding,
-					// not the actual given
-					// blockSize. These blocks are given to the IMRS which is supposed to work on
-					// full blocks (for efficiency)
-					// TODO: Cache could be used?
+					// We ignore the cache to prevent lots of cache updates (one per read) and a not optimal cache
+					// content afterwards (the last few blocks would be stored, and not the most frequent used ones).
 					byte[] block = readBlockFromFile(blockId);
 					if (block == null) {
 						// This should never happen because hasNext() checks for this
@@ -261,7 +252,8 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * The cache will be ignored/not filled.
+	 * The cache will be ignored/not filled. Note than only the first {@link #dataBlockSize} bytes will be stored, the
+	 * rest of each block is assumed to be padding/metadata.
 	 */
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {

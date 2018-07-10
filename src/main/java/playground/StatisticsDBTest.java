@@ -43,7 +43,7 @@ public class StatisticsDBTest {
 
 	private static final boolean COLLECT_META_STATISTICS = true;
 
-	private static final boolean WRITE_STATISTICS_DATA = false;
+	private static final boolean WRITE_STATISTICS_DATA = true;
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
