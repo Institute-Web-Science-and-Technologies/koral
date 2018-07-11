@@ -2,11 +2,13 @@ package playground;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -110,8 +112,9 @@ public class StatisticsDBRead {
 		System.out.println("Config string: " + configName);
 		System.out.println("Reading Statistics...");
 
-		GraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(),
-				numberOfChunks, -99, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L, null);
+		MultiFileGraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(
+				storageDir.getCanonicalPath(), numberOfChunks, -99, indexCacheSize * 1024 * 1024L,
+				extraFilesCacheSize * 1024 * 1024L, null);
 
 		long optimizationPreventer = 0;
 		GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);
@@ -128,6 +131,9 @@ public class StatisticsDBRead {
 		long time = System.currentTimeMillis() - start;
 		System.out.println("Reading took " + (time / 1000) + " sec");
 		System.out.println(optimizationPreventer);
+		System.out.println("Writing benchmark results to CSV...");
+		writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, statisticsDB.getRowDataLength(), indexCacheSize,
+				extraFilesCacheSize, coveringAlgorithm, implementationNote, time);
 		if (WRITE_STATISTICS_DATA) {
 			// Read statistics and write into csv
 			System.out.println("Writing statistics to file...");
@@ -158,6 +164,21 @@ public class StatisticsDBRead {
 			System.out.println(file);
 		}
 		return encodedFiles;
+	}
+
+	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, int numberOfChunks, int dataBytes,
+			long indexCacheSize, long extraFilesCacheSize, String coveringAlgorithm, String implementationNote,
+			long durationMs) throws UnsupportedEncodingException, FileNotFoundException, IOException {
+		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
+				csvFileFormat);
+		if (resultFile.length() == 0) {
+			printer.printRecord("TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB", "EXTRAFILES_CACHE_MB",
+					"COV_ALG", "NOTE", "DURATION_MS");
+		}
+		printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
+				coveringAlgorithm, implementationNote, durationMs);
+		printer.close();
 	}
 
 	private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {

@@ -386,6 +386,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		return fileManager.getMaxResourceId();
 	}
 
+	public int getRowDataLength() {
+		return rowDataLength;
+	}
+
 	public long getIndexFileLength() {
 		return fileManager.getIndexFileLength();
 	}
