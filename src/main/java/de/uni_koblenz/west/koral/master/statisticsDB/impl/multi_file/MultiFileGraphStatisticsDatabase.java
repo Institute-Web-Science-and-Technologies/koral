@@ -262,9 +262,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		if (dataExternal) {
 			long fileId = rowManager.getFileId();
 			long rowId = rowManager.getExternalFileRowId();
-			byte[] dataBytes = fileManager.readExternalRow(fileId, rowId);
+			byte[] dataBytes = fileManager.readExternalRow(fileId, rowId, rowManager.getDataLength());
 			if (dataBytes == null) {
-				fileManager.readExternalRow(fileId, rowId);
+				fileManager.readExternalRow(fileId, rowId, rowManager.getDataLength());
 				throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
 			}
 			rowManager.loadExternalRow(dataBytes);
