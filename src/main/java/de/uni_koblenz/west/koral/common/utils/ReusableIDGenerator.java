@@ -432,7 +432,7 @@ public class ReusableIDGenerator {
 
 	public long[] getData() {
 		int dataLength = 0;
-		for (; ids[dataLength] != 0; dataLength++) {
+		for (; (dataLength < ids.length) && (ids[dataLength] != 0); dataLength++) {
 			;
 		}
 		long[] data = new long[dataLength];
