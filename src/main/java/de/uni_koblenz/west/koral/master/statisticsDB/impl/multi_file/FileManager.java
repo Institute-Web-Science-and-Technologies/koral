@@ -82,7 +82,7 @@ public class FileManager {
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, indexFileCacheSize, true, logger);
+		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, indexFileCacheSize, logger);
 	}
 
 	/**
@@ -134,7 +134,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	long writeExternalRow(long fileId, byte[] row) throws IOException {
-		ExtraRowStorage extraFile = getOrOpenExtraFile(fileId, row.length);
+		ExtraRowStorage extraFile = getOrCreateExtraFile(fileId, row.length);
 		return extraFile.writeRow(row);
 	}
 
@@ -151,7 +151,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	void writeExternalRow(long fileId, long rowId, byte[] row) throws IOException {
-		ExtraRowStorage extraFile = getOrOpenExtraFile(fileId, row.length);
+		ExtraRowStorage extraFile = getOrCreateExtraFile(fileId, row.length);
 		extraFile.writeRow(rowId, row);
 	}
 
@@ -163,12 +163,12 @@ public class FileManager {
 	 * @param rowId
 	 *            Which row to read
 	 * @param rowLength
-	 *            How long the row is in bytes. This is needed because the storage might be needed to reopen.
+	 *            How long the row is in bytes
 	 * @return The read bytes with a length of rowLength
 	 * @throws IOException
 	 */
-	byte[] readExternalRow(long fileId, long rowId, int rowLength) throws IOException {
-		ExtraRowStorage extraFile = getOrOpenExtraFile(fileId, rowLength);
+	byte[] readExternalRow(long fileId, long rowId) throws IOException {
+		ExtraRowStorage extraFile = getExtraFile(fileId);
 		return extraFile.readRow(rowId);
 	}
 
@@ -194,10 +194,10 @@ public class FileManager {
 	 * @return A RandomAccessFile instance of the specified extra file
 	 * @throws IOException
 	 */
-	private ExtraRowStorage getOrOpenExtraFile(long fileId, int rowLength) {
+	private ExtraRowStorage getOrCreateExtraFile(long fileId, int rowLength) {
 		ExtraRowStorage extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), rowLength, maxExtraCacheSize, true,
+			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), rowLength, maxExtraCacheSize,
 					logger);
 			extraFiles.put(fileId, extra);
 		}
@@ -209,7 +209,7 @@ public class FileManager {
 
 	/**
 	 * Returns a ExtraRowStorage instance of the specified extra file, similar to
-	 * {@link #getOrOpenExtraFile(long, int)}. This method won't try to create a storage if it doesn't exist, and will
+	 * {@link #getOrCreateExtraFile(long, int)}. This method won't try to create a storage if it doesn't exist, and will
 	 * throw an exception instead.
 	 *
 	 * @param fileId
@@ -217,10 +217,11 @@ public class FileManager {
 	 */
 	private ExtraRowStorage getExtraFile(long fileId) {
 		ExtraRowStorage extra = extraFiles.get(fileId);
+		if ((extra != null) && !extra.valid()) {
+			extra.open(false);
+		}
 		if (extra == null) {
 			throw new RuntimeException("File " + fileId + " does not exist");
-		} else if (!extra.valid()) {
-			extra.open(false);
 		}
 		return extra;
 	}
@@ -277,8 +278,8 @@ public class FileManager {
 					list[listIndex] = l;
 				} else {
 					// Reading one entry is done, store and reset everything for next one
-					extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, rowLength, maxExtraCacheSize,
-							list, false, logger));
+					extraFiles.put(fileId,
+							new ExtraStorageAccessor(storagePath + fileId, rowLength, maxExtraCacheSize, list, logger));
 					fileId = -1;
 					rowLength = -1;
 					dataLength = -1;

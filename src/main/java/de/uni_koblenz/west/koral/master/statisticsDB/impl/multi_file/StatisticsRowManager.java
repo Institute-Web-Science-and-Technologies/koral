@@ -217,10 +217,6 @@ public class StatisticsRowManager {
 		return dataBytes;
 	}
 
-	int getDataLength() {
-		return dataLength;
-	}
-
 	boolean isTooLongForMain() {
 		return (metadataLength + dataLength) > mainfileRowLength;
 	}
