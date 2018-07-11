@@ -34,7 +34,7 @@ public class FileManager {
 
 	private final int mainFileRowLength;
 
-	private final File freeSpaceIndexFile;
+	private final File extraFilesMetadataFile;
 
 	private RowStorage index;
 
@@ -68,8 +68,12 @@ public class FileManager {
 			}
 		};
 
-		freeSpaceIndexFile = new File(storagePath + "freeSpaceIndex");
+		extraFilesMetadataFile = new File(storagePath + "extraFilesMetadata");
+		if (extraFilesMetadataFile.exists()) {
+			loadExtraFiles();
+		}
 		setup();
+
 	}
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, Logger logger) {
@@ -246,9 +250,8 @@ public class FileManager {
 		}
 	}
 
-	void load() {
-		// TODO: use this method
-		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(freeSpaceIndexFile)) {
+	private void loadExtraFiles() {
+		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(extraFilesMetadataFile)) {
 			LongIterator iterator = input.iterator();
 			long fileId = -1;
 			int rowLength = -1;
@@ -284,8 +287,8 @@ public class FileManager {
 				}
 
 			}
-		} catch (IOException e1) {
-			e1.printStackTrace();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -294,7 +297,7 @@ public class FileManager {
 		for (ExtraRowStorage extraStorage : extraFiles.values()) {
 			extraStorage.flush();
 		}
-		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(freeSpaceIndexFile, true)) {
+		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(extraFilesMetadataFile, true)) {
 			for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
 				if (entry.getValue().isEmpty()) {
 					continue;
