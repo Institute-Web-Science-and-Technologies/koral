@@ -82,7 +82,7 @@ public class FileManager {
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, indexFileCacheSize, logger);
+		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, indexFileCacheSize, true, logger);
 	}
 
 	/**
@@ -151,7 +151,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	void writeExternalRow(long fileId, long rowId, byte[] row) throws IOException {
-		ExtraRowStorage extraFile = getOrCreateExtraFile(fileId, row.length);
+		ExtraRowStorage extraFile = getExtraFile(fileId);
 		extraFile.writeRow(rowId, row);
 	}
 
@@ -197,7 +197,7 @@ public class FileManager {
 	private ExtraRowStorage getOrCreateExtraFile(long fileId, int rowLength) {
 		ExtraRowStorage extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), rowLength, maxExtraCacheSize,
+			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), rowLength, maxExtraCacheSize, true,
 					logger);
 			extraFiles.put(fileId, extra);
 		}
@@ -217,11 +217,10 @@ public class FileManager {
 	 */
 	private ExtraRowStorage getExtraFile(long fileId) {
 		ExtraRowStorage extra = extraFiles.get(fileId);
-		if ((extra != null) && !extra.valid()) {
-			extra.open(false);
-		}
 		if (extra == null) {
 			throw new RuntimeException("File " + fileId + " does not exist");
+		} else if (!extra.valid()) {
+			extra.open(false);
 		}
 		return extra;
 	}
@@ -278,8 +277,8 @@ public class FileManager {
 					list[listIndex] = l;
 				} else {
 					// Reading one entry is done, store and reset everything for next one
-					extraFiles.put(fileId,
-							new ExtraStorageAccessor(storagePath + fileId, rowLength, maxExtraCacheSize, list, logger));
+					extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, rowLength, maxExtraCacheSize,
+							list, false, logger));
 					fileId = -1;
 					rowLength = -1;
 					dataLength = -1;
