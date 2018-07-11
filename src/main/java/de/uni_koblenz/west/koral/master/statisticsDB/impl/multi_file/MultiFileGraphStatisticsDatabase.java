@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -101,6 +102,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		if (!Files.exists(triplesPerChunkFile)) {
 			return triplesPerChunk;
 		}
+		System.out.println("Found existing triplesPerChunk file, reading it...");
 		if (logger != null) {
 			logger.finest("Found existing triplesPerChunk file, reading it...");
 		}
@@ -109,6 +111,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			for (int i = 0; i < (content.length / Long.BYTES); i++) {
 				triplesPerChunk[i] = NumberConversion.bytes2long(content, i * Long.BYTES);
 			}
+			System.out.println("Read triplesPerChunk: " + Arrays.toString(triplesPerChunk));
 			return triplesPerChunk;
 		} catch (IOException e) {
 			throw new RuntimeException("Could not read existing triplePerChunk file", e);
@@ -227,8 +230,13 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 *            Occurence values for each column, like the returned array of {@link #getStatisticsForResource(long)}.
 	 */
 	public void insertEntry(long resourceId, long[] occurences) {
-		// TODO: increment number of triples per chunk
 		dirty = true;
+		for (int c = 0; c < numberOfChunks; c++) {
+			// S,P,O
+			for (int i = 0; i < 3; i++) {
+				triplesPerChunk[c] += occurences[(i * numberOfChunks) + c];
+			}
+		}
 		try {
 			rowManager.loadFromOccurenceData(occurences);
 			if (rowManager.isTooLongForMain()) {
