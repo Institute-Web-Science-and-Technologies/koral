@@ -5,10 +5,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 
 import de.uni_koblenz.west.koral.common.io.EncodedFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
@@ -18,6 +22,8 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 
 public class StatisticsDBRead {
+
+	private static final boolean WRITE_STATISTICS_DATA = false;
 
 	private static void printUsage() {
 		System.out.println(
@@ -104,9 +110,8 @@ public class StatisticsDBRead {
 		System.out.println("Config string: " + configName);
 		System.out.println("Reading Statistics...");
 
-		// TODO: Infer data bytes
 		GraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(),
-				numberOfChunks, 8, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L, null);
+				numberOfChunks, -99, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L, null);
 
 		long optimizationPreventer = 0;
 		GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);
@@ -123,8 +128,14 @@ public class StatisticsDBRead {
 		long time = System.currentTimeMillis() - start;
 		System.out.println("Reading took " + (time / 1000) + " sec");
 		System.out.println(optimizationPreventer);
+		if (WRITE_STATISTICS_DATA) {
+			// Read statistics and write into csv
+			System.out.println("Writing statistics to file...");
+			writeStatisticsToCSV(encodedChunksDir, statisticsDB);
+		}
 
 		statistics.close();
+		System.out.println("Finished at " + new Date());
 	}
 
 	private static File[] getEncodedChunkFiles(File encodedChunksDir) {
@@ -147,6 +158,36 @@ public class StatisticsDBRead {
 			System.out.println(file);
 		}
 		return encodedFiles;
+	}
+
+	private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {
+		// There is currently no easy way to obtain the maxId on a db that was reopened
+		// This is the max id of the dataset hash_4C_6M
+		long maxId = 3625965;
+		try {
+			CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+			CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(outputDir.getCanonicalPath()
+					+ File.separator + statisticsDB.getClass().getSimpleName() + "-statistics.csv"), "UTF-8"),
+					csvFileFormat);
+			for (long l : statisticsDB.getChunkSizes()) {
+				printer.print(l);
+			}
+			printer.println();
+			for (int id = 1; id <= maxId; id++) {
+				for (long l : statisticsDB.getStatisticsForResource(id)) {
+					printer.print(l);
+				}
+				// SingleDB has another zero entry per column for total resources, add that one as well for easier
+				// diffing
+				if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
+					printer.print(0);
+				}
+				printer.println();
+			}
+			printer.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }
