@@ -31,11 +31,11 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	private final String statisticsDirPath;
 
-	private final short numberOfChunks;
+	private int numberOfChunks;
 
 	private long[] triplesPerChunk;
 
-	private final Path triplesPerChunkFile;
+	private final Path statisticsMetadataFile;
 
 	private final FileManager fileManager;
 
@@ -43,7 +43,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	private final int mainfileRowLength;
 
-	private final int rowDataLength;
+	private int rowDataLength;
 
 	private boolean dirty;
 
@@ -61,16 +61,11 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 	}
 
-	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, int rowDataLength,
+	public MultiFileGraphStatisticsDatabase(String statisticsDir, int numberOfChunks, int rowDataLength,
 			long indexCacheSize, long extraFilesCacheSize, Logger logger) {
-		this.numberOfChunks = numberOfChunks;
-		// TODO: rowDataLength should be inferred on loaded database
-		this.rowDataLength = rowDataLength;
 		this.logger = logger;
 
-		rowManager = new StatisticsRowManager(numberOfChunks, rowDataLength);
-		mainfileRowLength = rowManager.getMainFileRowLength();
-
+		// First, check if we have metadata for an existing database
 		File statisticsDirFile = new File(statisticsDir);
 		if (!statisticsDirFile.exists()) {
 			statisticsDirFile.mkdirs();
@@ -80,15 +75,33 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		statisticsMetadataFile = Paths.get(statisticsDirPath + "statisticsMetadata");
+		if (Files.exists(statisticsMetadataFile)) {
+			System.out.println("Found existing statisticsMetadata file, reading it...");
+			if (logger != null) {
+				logger.finest("Found existing statisticsMetadata file, reading it...");
+			}
+			loadStatisticsMetadata();
+		} else {
+			System.out.println("StatisticsMetadata file was not found.");
+			if (logger != null) {
+				logger.finest("StatisticsMetadata file was not found.");
+			}
+			this.numberOfChunks = numberOfChunks;
+			this.rowDataLength = rowDataLength;
+			triplesPerChunk = new long[numberOfChunks];
+		}
+
+		rowManager = new StatisticsRowManager(this.numberOfChunks, this.rowDataLength);
+		mainfileRowLength = rowManager.getMainFileRowLength();
+
 		// Calculate the theoretically maximal amount of extra files. Used for caching space distribution in the file
 		// manager
 		int maxValueBytesPerOccurenceValue = 1 << StatisticsRowManager.VALUE_LENGTH_COLUMN_BITLENGTH;
-		int maxExtraFilesAmount = 3 * numberOfChunks * maxValueBytesPerOccurenceValue;
+		int maxExtraFilesAmount = 3 * this.numberOfChunks * maxValueBytesPerOccurenceValue;
 		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, maxExtraFilesAmount,
 				FileManager.DEFAULT_MAX_OPEN_FILES, indexCacheSize, extraFilesCacheSize, logger);
 
-		triplesPerChunkFile = Paths.get(statisticsDirPath + "triplesPerChunk");
-		triplesPerChunk = loadTriplesPerChunk();
 		dirty = false;
 	}
 
@@ -97,25 +110,22 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, logger);
 	}
 
-	private long[] loadTriplesPerChunk() {
-		long[] triplesPerChunk = new long[numberOfChunks];
-		if (!Files.exists(triplesPerChunkFile)) {
-			return triplesPerChunk;
-		}
-		System.out.println("Found existing triplesPerChunk file, reading it...");
-		if (logger != null) {
-			logger.finest("Found existing triplesPerChunk file, reading it...");
-		}
+	private void loadStatisticsMetadata() {
+		byte[] content;
 		try {
-			byte[] content = Files.readAllBytes(triplesPerChunkFile);
-			for (int i = 0; i < (content.length / Long.BYTES); i++) {
-				triplesPerChunk[i] = NumberConversion.bytes2long(content, i * Long.BYTES);
-			}
-			System.out.println("Read triplesPerChunk: " + Arrays.toString(triplesPerChunk));
-			return triplesPerChunk;
+			content = Files.readAllBytes(statisticsMetadataFile);
 		} catch (IOException e) {
-			throw new RuntimeException("Could not read existing triplePerChunk file", e);
+			throw new RuntimeException("Error reading existing statisticsMetadata file: " + e);
 		}
+		rowDataLength = NumberConversion.bytes2int(content);
+		System.out.println("RowDataLength = " + rowDataLength);
+		numberOfChunks = (content.length - Integer.BYTES) / Long.BYTES;
+		System.out.println("NumberOfChunks = " + numberOfChunks);
+		triplesPerChunk = new long[numberOfChunks];
+		for (int i = 0; i < (content.length / Long.BYTES); i++) {
+			triplesPerChunk[i] = NumberConversion.bytes2long(content, Integer.BYTES + (i * Long.BYTES));
+		}
+		System.out.println("Read triplesPerChunk: " + Arrays.toString(triplesPerChunk));
 	}
 
 	@Override
@@ -331,12 +341,13 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 */
 	public void flush() {
 		// Always flush triplesPerChunk because low cost
-		byte[] bytes = new byte[Long.BYTES * triplesPerChunk.length];
+		byte[] bytes = new byte[Integer.BYTES + (Long.BYTES * triplesPerChunk.length)];
+		NumberConversion.int2bytes(rowDataLength, bytes, 0);
 		for (int i = 0; i < triplesPerChunk.length; i++) {
-			NumberConversion.long2bytes(triplesPerChunk[i], bytes, i * Long.BYTES);
+			NumberConversion.long2bytes(triplesPerChunk[i], bytes, Integer.BYTES + (i * Long.BYTES));
 		}
 		try {
-			Files.write(triplesPerChunkFile, bytes);
+			Files.write(statisticsMetadataFile, bytes);
 			// Flush heavy data only if dirty
 			if (!dirty) {
 				return;
@@ -367,7 +378,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	/**
-	 * Only works if the index file is flushed already
+	 * Only works if all entries were written in this session and the index file is flushed already
 	 *
 	 * @return
 	 */
