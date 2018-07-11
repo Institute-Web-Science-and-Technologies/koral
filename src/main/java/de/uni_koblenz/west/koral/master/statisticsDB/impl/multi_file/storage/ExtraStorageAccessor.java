@@ -9,13 +9,14 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 
 	private final ReusableIDGenerator freeSpaceIndex;
 
-	public ExtraStorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, Logger logger) {
-		this(storageFilePath, rowLength, maxCacheSize, null, logger);
+	public ExtraStorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, boolean createIfNotExisting,
+			Logger logger) {
+		this(storageFilePath, rowLength, maxCacheSize, null, createIfNotExisting, logger);
 	}
 
 	public ExtraStorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, long[] loadedFreeSpaceIndex,
-			Logger logger) {
-		super(storageFilePath, rowLength, maxCacheSize, logger);
+			boolean createIfNotExisting, Logger logger) {
+		super(storageFilePath, rowLength, maxCacheSize, createIfNotExisting, logger);
 		freeSpaceIndex = new ReusableIDGenerator(loadedFreeSpaceIndex);
 	}
 
