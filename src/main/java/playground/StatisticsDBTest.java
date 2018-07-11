@@ -192,7 +192,7 @@ public class StatisticsDBTest {
 				totalEntries = multiDB.getTotalEntries();
 				unusedBytes = multiDB.getUnusedBytes();
 			}
-			long dirSize = dirSize(conf.getStatisticsDir(true));
+			long dirSize = dirSize(storageDir.getCanonicalPath());
 			System.out.println("Dir Size: " + String.format("%,d", dirSize) + " Bytes");
 			System.out.println("Index File size: " + String.format("%,d", indexFileLength) + " Bytes");
 			if (WRITE_BENCHMARK_RESULTS) {
