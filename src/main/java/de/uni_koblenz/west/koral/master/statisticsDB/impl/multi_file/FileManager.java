@@ -262,28 +262,26 @@ public class FileManager {
 				long l = iterator.next();
 				if (fileId == -1) {
 					fileId = l;
-					continue;
-				}
-				if (rowLength == -1) {
+				} else if (rowLength == -1) {
 					rowLength = (int) l;
-					continue;
-				}
-				if (dataLength == -1) {
+				} else if (dataLength == -1) {
 					dataLength = (int) l;
 					list = new long[dataLength];
-					continue;
-				}
-				if (listIndex < dataLength) {
+				} else if (listIndex < dataLength) {
 					list[listIndex] = l;
+					listIndex++;
+					if (listIndex == dataLength) {
+						// Reading one entry is done, store and reset everything for next one
+						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, rowLength,
+								maxExtraCacheSize, list, false, logger));
+						fileId = -1;
+						rowLength = -1;
+						dataLength = -1;
+						list = null;
+						listIndex = 0;
+					}
 				} else {
-					// Reading one entry is done, store and reset everything for next one
-					extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, rowLength, maxExtraCacheSize,
-							list, false, logger));
-					fileId = -1;
-					rowLength = -1;
-					dataLength = -1;
-					list = null;
-					listIndex = 0;
+					throw new RuntimeException("Corrupt extra files metadata file");
 				}
 
 			}
@@ -297,7 +295,7 @@ public class FileManager {
 		for (ExtraRowStorage extraStorage : extraFiles.values()) {
 			extraStorage.flush();
 		}
-		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(extraFilesMetadataFile, true)) {
+		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(extraFilesMetadataFile, false)) {
 			for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
 				if (entry.getValue().isEmpty()) {
 					continue;
