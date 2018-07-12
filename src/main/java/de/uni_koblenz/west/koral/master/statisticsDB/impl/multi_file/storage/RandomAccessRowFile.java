@@ -24,9 +24,9 @@ public class RandomAccessRowFile implements RowStorage {
 	 * Refers to the size of a block that contains exactly how many rows would fit into a block with the size given in
 	 * the constructor, but without any padding/filled space in the end.
 	 */
-	final int dataBlockSize;
+	final int dataLength;
 
-	final int blockSizeWithPadding;
+	final int cacheBlockSize;
 
 	/**
 	 * Maps RowIds to their rows. Note: It should always be ensured that the values are not-null (on
@@ -45,18 +45,17 @@ public class RandomAccessRowFile implements RowStorage {
 		if ((blockSize - 1) >= rowLength) {
 			// Default case: At least one row fits into a block
 			rowsAsBlocks = false;
-			blockSizeWithPadding = blockSize;
 			// Leave 1 byte free for dirty flag
 			rowsPerBlock = (blockSize - 1) / rowLength;
 		} else {
 			System.err.println("Warning: cache block size (" + blockSize + ") is smaller than row length (" + rowLength
 					+ "). Resizing blocks to row length.");
 			rowsAsBlocks = true;
-			// 1 Byte for dirty flag
-			blockSizeWithPadding = rowLength + 1;
 			rowsPerBlock = 1;
 		}
-		dataBlockSize = rowsPerBlock * rowLength;
+		dataLength = rowsPerBlock * rowLength;
+		// 1 Byte for dirty flag
+		cacheBlockSize = dataLength + 1;
 		file = new File(storageFilePath);
 		open(true);
 
@@ -69,14 +68,14 @@ public class RandomAccessRowFile implements RowStorage {
 
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
-					if (block[dataBlockSize] == 1) {
+					if (block[dataLength] == 1) {
 						// Persist entry before removing
 						try {
 							writeBlockToFile(blockId, block);
 						} catch (IOException e) {
 							throw new RuntimeException(e);
 						}
-						block[dataBlockSize] = 0;
+						block[dataLength] = 0;
 					}
 					// Remove from cache
 					super.removeEldest(blockId, block);
@@ -144,14 +143,14 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private byte[] readBlockFromFile(long blockId) throws IOException {
-		long offset = blockId * dataBlockSize;
+		long offset = blockId * dataLength;
 		rowFile.seek(offset);
-		byte[] block = new byte[blockSizeWithPadding];
+		byte[] block = new byte[cacheBlockSize];
 		try {
-			rowFile.read(block, 0, dataBlockSize);
+			rowFile.read(block, 0, dataLength);
 		} catch (EOFException e) {
 			long fileLength = rowFile.length();
-			if ((fileLength > offset) && ((fileLength - offset) < dataBlockSize)) {
+			if ((fileLength > offset) && ((fileLength - offset) < dataLength)) {
 				throw new RuntimeException("Corrupted database: EOF before block end");
 			}
 			// Resource does not have an entry (yet)
@@ -202,15 +201,14 @@ public class RandomAccessRowFile implements RowStorage {
 			// we need to extend the row array for the dirty flag
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
-//			System.out.println("Writing at " + blockId + " / " + blockOffset);
 			byte[] block = readBlock(blockId);
 			if (block == null) {
-				block = new byte[blockSizeWithPadding];
+				block = new byte[cacheBlockSize];
 			}
 			System.arraycopy(row, 0, block, blockOffset, row.length);
 			fileCache.update(blockId, block);
 			// Set dirty flag (located right behind the data)
-			block[dataBlockSize] = 1;
+			block[dataLength] = 1;
 		} else {
 			writeRowToFile(rowId, row);
 		}
@@ -223,8 +221,8 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private void writeBlockToFile(long blockId, byte[] block) throws IOException {
-		rowFile.seek(blockId * dataBlockSize);
-		rowFile.write(block, 0, dataBlockSize);
+		rowFile.seek(blockId * dataLength);
+		rowFile.write(block, 0, dataLength);
 	}
 
 	@Override
@@ -237,7 +235,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 			@Override
 			public boolean hasNext() {
-				return ((blockId + 1) * dataBlockSize) <= rowFileLength;
+				return ((blockId + 1) * dataLength) <= rowFileLength;
 			}
 
 			@Override
@@ -282,7 +280,7 @@ public class RandomAccessRowFile implements RowStorage {
 				byte[] block = entry.getValue();
 				writeBlockToFile(entry.getKey(), block);
 				// Clear dirty flag
-				block[dataBlockSize] = 0;
+				block[dataLength] = 0;
 				// TODO: Necessary?
 				fileCache.update(entry.getKey(), block);
 			}
