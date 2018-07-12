@@ -82,6 +82,13 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				logger.finest("Found existing statisticsMetadata file, reading it...");
 			}
 			loadStatisticsMetadata();
+			System.out.println("Loaded existing statisticsMetadata. Found rowDataLength = " + rowDataLength
+					+ ", numberOfChunks = " + numberOfChunks);
+			if (logger != null) {
+				logger.finest(
+						"Loaded existing statisticsMetadata, numberOfChunks and rowDataLength parameters will be ignored. Found rowDataLength = "
+								+ rowDataLength + ", numberOfChunks = " + numberOfChunks);
+			}
 		} else {
 			System.out.println("StatisticsMetadata file was not found.");
 			if (logger != null) {
