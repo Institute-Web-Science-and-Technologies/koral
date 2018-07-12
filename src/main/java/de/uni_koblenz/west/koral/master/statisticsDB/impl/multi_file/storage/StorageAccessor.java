@@ -18,17 +18,20 @@ public class StorageAccessor implements RowStorage {
 
 	private final long maxCacheSize;
 
+	private final boolean resetRecycledBlocks;
+
 	private RowStorage cache;
 
 	private RowStorage file;
 
 	RowStorage currentStorage;
 
-	public StorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, boolean createIfNotExisting,
-			Logger logger) {
+	public StorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, boolean resetRecycledBlocks,
+			boolean createIfNotExisting, Logger logger) {
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
 		this.logger = logger;
+		this.resetRecycledBlocks = resetRecycledBlocks;
 
 		this.maxCacheSize = maxCacheSize;
 		open(createIfNotExisting);
@@ -40,7 +43,8 @@ public class StorageAccessor implements RowStorage {
 			throw new RuntimeException("File " + storageFilePath + " does not exist");
 		}
 		// TODO: Extract cache blocksize as own parameter to CLI/config
-		file = new RandomAccessRowFile(storageFilePath, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE);
+		file = new RandomAccessRowFile(storageFilePath, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE,
+				resetRecycledBlocks);
 		currentStorage = file;
 		long storageLength = file.length();
 		if (storageLength < maxCacheSize) {

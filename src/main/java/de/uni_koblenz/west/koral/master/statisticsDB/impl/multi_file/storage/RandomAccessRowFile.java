@@ -41,7 +41,10 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final boolean rowsAsBlocks;
 
-	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize) {
+	private final boolean resetRecycledBlocks;
+
+	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize,
+			boolean resetRecycledBlocks) {
 		this.rowLength = rowLength;
 		// 1 Byte for dirty flag
 		if ((blockSize - 1) >= rowLength) {
@@ -59,6 +62,7 @@ public class RandomAccessRowFile implements RowStorage {
 		// 1 Byte for dirty flag
 		cacheBlockSize = dataLength + 1;
 
+		this.resetRecycledBlocks = resetRecycledBlocks;
 		blockRecycler = new ObjectRecycler<>(1024);
 
 		file = new File(storageFilePath);
@@ -157,12 +161,12 @@ public class RandomAccessRowFile implements RowStorage {
 		long offset = blockId * dataLength;
 		rowFile.seek(offset);
 		byte[] block = blockRecycler.retrieve();
-		if (block != null) {
+		if ((block != null) && resetRecycledBlocks) {
 			// Reset recycled byte
 			for (int i = 0; i < block.length; i++) {
 				block[i] = 0;
 			}
-		} else {
+		} else if (block == null) {
 			block = new byte[cacheBlockSize];
 		}
 		try {
@@ -226,12 +230,12 @@ public class RandomAccessRowFile implements RowStorage {
 			byte[] block = readBlock(blockId);
 			if (block == null) {
 				block = blockRecycler.retrieve();
-				if (block != null) {
+				if ((block != null) && resetRecycledBlocks) {
 					// Reset recycled byte
 					for (int i = 0; i < block.length; i++) {
 						block[i] = 0;
 					}
-				} else {
+				} else if (block == null) {
 					block = new byte[cacheBlockSize];
 				}
 			}
