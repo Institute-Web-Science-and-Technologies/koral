@@ -26,9 +26,7 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	final int dataBlockSize;
 
-	final int fileBlockSize;
-
-	final int cacheBlockSize;
+	final int blockSizeWithPadding;
 
 	/**
 	 * Maps RowIds to their rows. Note: It should always be ensured that the values are not-null (on
@@ -44,24 +42,17 @@ public class RandomAccessRowFile implements RowStorage {
 	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize) {
 		this.rowLength = rowLength;
 		// 1 Byte for dirty flag
-		if (blockSize >= rowLength) {
+		if ((blockSize - 1) >= rowLength) {
 			// Default case: At least one row fits into a block
 			rowsAsBlocks = false;
-			fileBlockSize = blockSize;
-			rowsPerBlock = fileBlockSize / rowLength;
-			if ((rowsPerBlock * rowLength) < fileBlockSize) {
-				// Dirty flag fits into fileBlock
-				cacheBlockSize = fileBlockSize;
-			} else {
-				// We need one more byte in the cache blocks for the dirty flag
-				cacheBlockSize = fileBlockSize + 1;
-			}
+			blockSizeWithPadding = blockSize;
+			// Leave 1 byte free for dirty flag
+			rowsPerBlock = (blockSize - 1) / rowLength;
 		} else {
-			System.err.println("Warning: block size is smaller than row length. Resizing blocks to row length.");
+			System.err.println("Warning: cache block size is smaller than row length. Resizing blocks to row length.");
 			rowsAsBlocks = true;
-			fileBlockSize = rowLength;
 			// 1 Byte for dirty flag
-			cacheBlockSize = fileBlockSize + 1;
+			blockSizeWithPadding = rowLength + 1;
 			rowsPerBlock = 1;
 		}
 		dataBlockSize = rowsPerBlock * rowLength;
@@ -72,7 +63,7 @@ public class RandomAccessRowFile implements RowStorage {
 			// Capacity is calculated by dividing the available space by estimated space per
 			// entry, blockSize is the
 			// amount of bytes used for the values in the cache.
-			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + cacheBlockSize);
+			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + blockSize);
 			fileCache = new LRUCache<Long, byte[]>(maxCacheEntries) {
 
 				@Override
@@ -152,16 +143,14 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private byte[] readBlockFromFile(long blockId) throws IOException {
-		long offset = blockId * fileBlockSize;
+		long offset = blockId * dataBlockSize;
 		rowFile.seek(offset);
-		byte[] block = new byte[cacheBlockSize];
+		byte[] block = new byte[blockSizeWithPadding];
 		try {
-			rowFile.read(block, 0, fileBlockSize);
-			// The dirty flag might have been written into the file
-			block[dataBlockSize] = 0;
+			rowFile.read(block, 0, dataBlockSize);
 		} catch (EOFException e) {
 			long fileLength = rowFile.length();
-			if ((fileLength > offset) && ((fileLength - offset) < fileBlockSize)) {
+			if ((fileLength > offset) && ((fileLength - offset) < dataBlockSize)) {
 				throw new RuntimeException("Corrupted database: EOF before block end");
 			}
 			// Resource does not have an entry (yet)
@@ -212,9 +201,10 @@ public class RandomAccessRowFile implements RowStorage {
 			// we need to extend the row array for the dirty flag
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
+//			System.out.println("Writing at " + blockId + " / " + blockOffset);
 			byte[] block = readBlock(blockId);
 			if (block == null) {
-				block = new byte[cacheBlockSize];
+				block = new byte[blockSizeWithPadding];
 			}
 			System.arraycopy(row, 0, block, blockOffset, row.length);
 			fileCache.update(blockId, block);
@@ -232,13 +222,10 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private void writeBlockToFile(long blockId, byte[] block) throws IOException {
-		rowFile.seek(blockId * fileBlockSize);
-		rowFile.write(block, 0, fileBlockSize);
+		rowFile.seek(blockId * dataBlockSize);
+		rowFile.write(block, 0, dataBlockSize);
 	}
 
-	/**
-	 * Each returned block contains only the raw row data.
-	 */
 	@Override
 	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException {
 		flush();
@@ -265,10 +252,7 @@ public class RandomAccessRowFile implements RowStorage {
 						// This should never happen because hasNext() checks for this
 						throw new IOException("Invalid file length");
 					}
-					// Truncate possibly existing padding and dirty flag
-					byte[] truncatedBlock = new byte[dataBlockSize];
-					System.arraycopy(block, 0, truncatedBlock, 0, dataBlockSize);
-					return BlockEntry.getInstance(blockId++, truncatedBlock);
+					return BlockEntry.getInstance(blockId++, block);
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -278,17 +262,15 @@ public class RandomAccessRowFile implements RowStorage {
 
 	/**
 	 * The cache will be ignored/not filled. Note that the blocks are stored as is. Obviously they must have the same
-	 * length, which must be less or equal than {@link #fileBlockSize}.
+	 * length.
 	 */
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {
 		while (blocks.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
-			// Extend block to fileBlockSize
-			byte[] fileBlock = new byte[fileBlockSize];
-			System.arraycopy(block, 0, fileBlock, 0, block.length);
-			writeBlockToFile(blockEntry.getKey(), fileBlock);
+			rowFile.seek(blockEntry.getKey() * block.length);
+			rowFile.write(block);
 		}
 	}
 
