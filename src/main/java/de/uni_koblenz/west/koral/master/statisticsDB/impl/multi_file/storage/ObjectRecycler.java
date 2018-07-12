@@ -8,6 +8,8 @@ public class ObjectRecycler<T> {
 
 	private final int capacity;
 
+	int retrieved;
+
 	public ObjectRecycler(int capacity) {
 		this.capacity = capacity;
 		objects = new LinkedList<>();
@@ -21,6 +23,7 @@ public class ObjectRecycler<T> {
 
 	public T retrieve() {
 		if (objects.size() > 0) {
+			retrieved++;
 			return objects.removeFirst();
 		} else {
 			return null;
