@@ -72,7 +72,7 @@ public class StatisticsDBTest {
 		File storageDir = new File(args[2]);
 		if (!storageDir.exists() || !storageDir.isDirectory()) {
 			System.out.println("The path " + storageDir
-					+ " is not a valid, exisiting directory. Database will be stored in temp dir.");
+					+ " is not a valid, existing directory. Database will be stored in temp dir.");
 			storageDir = null;
 		} else if (storageDir.list().length > 0) {
 			// We don't want to be responsible for deleting directory content
