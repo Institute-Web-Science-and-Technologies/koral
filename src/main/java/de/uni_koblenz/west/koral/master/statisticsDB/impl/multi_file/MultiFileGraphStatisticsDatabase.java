@@ -321,6 +321,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 			}
 		}
+		fileManager.defragFreeSpaceIndexes();
 		// Close all StorageAccessors because we are deleting the files they have open.
 		// Also, closing clears all caches that are incoherent to the changed files now.
 		fileManager.close();
@@ -332,8 +333,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			newFile.renameTo(oldFile);
 			fileManager.deleteExtraFile(-fileId);
 		}
-		fileManager.defragFreeSpaceIndexes();
-		// TODO ensure flushing afterwards
+		// TODO: Is there a reason to ensure flushing afterwards?
 	}
 
 	/**
@@ -378,7 +378,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	/**
-	 * Only works if all entries were written in this session and the index file is flushed already
+	 * Only works if all entries were written in this session
 	 *
 	 * @return
 	 */
