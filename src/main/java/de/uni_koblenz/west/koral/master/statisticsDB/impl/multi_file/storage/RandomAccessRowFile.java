@@ -49,7 +49,8 @@ public class RandomAccessRowFile implements RowStorage {
 			// Leave 1 byte free for dirty flag
 			rowsPerBlock = (blockSize - 1) / rowLength;
 		} else {
-			System.err.println("Warning: cache block size is smaller than row length. Resizing blocks to row length.");
+			System.err.println("Warning: cache block size (" + blockSize + ") is smaller than row length (" + rowLength
+					+ "). Resizing blocks to row length.");
 			rowsAsBlocks = true;
 			// 1 Byte for dirty flag
 			blockSizeWithPadding = rowLength + 1;

@@ -29,7 +29,8 @@ class InMemoryRowStorage implements RowStorage {
 			// Fit size of block to row data
 			this.cacheBlockSize = rowsPerBlock * rowLength;
 		} else {
-			System.err.println("Warning: cache block size is smaller than row length. Resizing blocks to row length.");
+			System.err.println("Warning: cache block size (" + cacheBlockSize + ") is smaller than row length ("
+					+ rowLength + "). Resizing blocks to row length.");
 			rowsAsBlocks = true;
 			rowsPerBlock = 1;
 			this.cacheBlockSize = rowLength;
