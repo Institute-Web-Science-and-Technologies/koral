@@ -18,16 +18,23 @@ class InMemoryRowStorage implements RowStorage {
 
 	private final int rowsPerBlock;
 
+	private final boolean rowsAsBlocks;
+
 	public InMemoryRowStorage(int rowLength, long maxCacheSize, int cacheBlockSize) {
 		this.rowLength = rowLength;
-		this.cacheBlockSize = cacheBlockSize;
-		maxBlockCount = maxCacheSize / cacheBlockSize;
-		rowsPerBlock = cacheBlockSize / rowLength;
-		if (cacheBlockSize < rowLength) {
-			System.err.println(
-					"Warning: cache block size is smaller than row length. Falling back to single-block cache.");
-			cacheBlockSize = Integer.MAX_VALUE;
+		if (cacheBlockSize >= rowLength) {
+			// Default case: At least one row fits into a block
+			rowsAsBlocks = false;
+			rowsPerBlock = cacheBlockSize / rowLength;
+			// Fit size of block to row data
+			this.cacheBlockSize = rowsPerBlock * rowLength;
+		} else {
+			System.err.println("Warning: cache block size is smaller than row length. Resizing blocks to row length.");
+			rowsAsBlocks = true;
+			rowsPerBlock = 1;
+			this.cacheBlockSize = rowLength;
 		}
+		maxBlockCount = maxCacheSize / this.cacheBlockSize;
 		open(true);
 	}
 
@@ -40,6 +47,9 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
+		if (rowsAsBlocks) {
+			return blocks.get(rowId);
+		}
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
@@ -54,9 +64,15 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
+		if (rowsAsBlocks) {
+			if (blocks.size() >= maxBlockCount) {
+				return false;
+			}
+			blocks.put(rowId, row);
+			return true;
+		}
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
-//		System.out.println("Writing at " + blockId + " / " + blockOffset);
 		byte[] block = blocks.get(blockId);
 		if (block != null) {
 			System.arraycopy(row, 0, block, blockOffset, row.length);
@@ -67,7 +83,6 @@ class InMemoryRowStorage implements RowStorage {
 			if (blocks.size() >= maxBlockCount) {
 				return false;
 			} else {
-				// TODO: Allocate blocks of block size or only of used data size (i.e. rowsPerBlock * rowLength)?
 				block = new byte[cacheBlockSize];
 				System.arraycopy(row, 0, block, blockOffset, row.length);
 				blocks.put(blockId, block);

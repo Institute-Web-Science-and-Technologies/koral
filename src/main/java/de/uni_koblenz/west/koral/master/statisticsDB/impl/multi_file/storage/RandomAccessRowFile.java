@@ -21,8 +21,8 @@ public class RandomAccessRowFile implements RowStorage {
 	final int rowLength;
 
 	/**
-	 * Here, blockSize refers to the size of a block that contains exactly how many rows would fit into a block with the
-	 * size given in the constructor, but without any padding/filled space in the end.
+	 * Refers to the size of a block that contains exactly how many rows would fit into a block with the size given in
+	 * the constructor, but without any padding/filled space in the end.
 	 */
 	final int dataBlockSize;
 
@@ -37,11 +37,24 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final int rowsPerBlock;
 
+	private final boolean rowsAsBlocks;
+
 	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize) {
 		this.rowLength = rowLength;
-		blockSizeWithPadding = blockSize;
-		// Leave 1 byte free for dirty flag
-		rowsPerBlock = (blockSize - 1) / rowLength;
+		// 1 Byte for dirty flag
+		if ((blockSize - 1) >= rowLength) {
+			// Default case: At least one row fits into a block
+			rowsAsBlocks = false;
+			blockSizeWithPadding = blockSize;
+			// Leave 1 byte free for dirty flag
+			rowsPerBlock = (blockSize - 1) / rowLength;
+		} else {
+			System.err.println("Warning: cache block size is smaller than row length. Resizing blocks to row length.");
+			rowsAsBlocks = true;
+			// 1 Byte for dirty flag
+			blockSizeWithPadding = rowLength + 1;
+			rowsPerBlock = 1;
+		}
 		dataBlockSize = rowsPerBlock * rowLength;
 		file = new File(storageFilePath);
 		open(true);
@@ -100,6 +113,9 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
 		if (fileCache != null) {
+			if (rowsAsBlocks) {
+				return readBlock(rowId);
+			}
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
@@ -181,13 +197,13 @@ public class RandomAccessRowFile implements RowStorage {
 			throw new NullPointerException("Row can't be null");
 		}
 		if (fileCache != null) {
+			// We don't handle the rowsAsBlocks case separately because the procedure would be almost identical, because
+			// we need to extend the row array for the dirty flag
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 //			System.out.println("Writing at " + blockId + " / " + blockOffset);
 			byte[] block = readBlock(blockId);
 			if (block == null) {
-				// TODO: Allocate blocks of block size or only of used data size (i.e.
-				// rowsPerBlock * rowLength)?
 				block = new byte[blockSizeWithPadding];
 			}
 			System.arraycopy(row, 0, block, blockOffset, row.length);
@@ -245,16 +261,16 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * The cache will be ignored/not filled. Note than only the first {@link #dataBlockSize} bytes will be stored, the
-	 * rest of each block is assumed to be padding/metadata.
+	 * The cache will be ignored/not filled. Note that the blocks are stored as is. Obviously they must have the same
+	 * length.
 	 */
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {
 		while (blocks.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
-			rowFile.seek(blockEntry.getKey() * dataBlockSize);
-			rowFile.write(block, 0, dataBlockSize);
+			rowFile.seek(blockEntry.getKey() * block.length);
+			rowFile.write(block);
 		}
 	}
 
