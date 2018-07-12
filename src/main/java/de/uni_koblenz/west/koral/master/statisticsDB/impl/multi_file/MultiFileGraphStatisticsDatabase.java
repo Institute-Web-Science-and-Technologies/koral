@@ -77,18 +77,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 		statisticsMetadataFile = Paths.get(statisticsDirPath + "statisticsMetadata");
 		if (Files.exists(statisticsMetadataFile)) {
-			System.out.println("Found existing statisticsMetadata file, reading it...");
-			if (logger != null) {
-				logger.finest("Found existing statisticsMetadata file, reading it...");
-			}
 			loadStatisticsMetadata();
-			System.out.println("Loaded existing statisticsMetadata. Found rowDataLength = " + rowDataLength
-					+ ", numberOfChunks = " + numberOfChunks);
-			if (logger != null) {
-				logger.finest(
-						"Loaded existing statisticsMetadata, numberOfChunks and rowDataLength parameters will be ignored. Found rowDataLength = "
-								+ rowDataLength + ", numberOfChunks = " + numberOfChunks);
-			}
 		} else {
 			System.out.println("StatisticsMetadata file was not found.");
 			if (logger != null) {
@@ -118,6 +107,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	private void loadStatisticsMetadata() {
+		System.out.println("Found existing statisticsMetadata file, reading it...");
+		if (logger != null) {
+			logger.finest("Found existing statisticsMetadata file, reading it...");
+		}
 		byte[] content;
 		try {
 			content = Files.readAllBytes(statisticsMetadataFile);
@@ -133,6 +126,13 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			triplesPerChunk[i] = NumberConversion.bytes2long(content, Integer.BYTES + (i * Long.BYTES));
 		}
 		System.out.println("Read triplesPerChunk: " + Arrays.toString(triplesPerChunk));
+		System.out.println("Loaded existing statisticsMetadata. Found rowDataLength = " + rowDataLength
+				+ ", numberOfChunks = " + numberOfChunks);
+		if (logger != null) {
+			logger.finest(
+					"Loaded existing statisticsMetadata, numberOfChunks and rowDataLength parameters will be ignored. Found rowDataLength = "
+							+ rowDataLength + ", numberOfChunks = " + numberOfChunks);
+		}
 	}
 
 	@Override

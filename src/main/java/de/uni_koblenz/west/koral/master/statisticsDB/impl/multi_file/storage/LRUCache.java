@@ -173,6 +173,10 @@ public class LRUCache<K, V> implements Iterable<Entry<K, V>> {
 		removeEldest(eldest.key, eldest.value);
 	}
 
+	/**
+	 * @param value
+	 *            Might be used in subimplementations
+	 */
 	protected void removeEldest(K key, V value) {
 		index.remove(key);
 	}
