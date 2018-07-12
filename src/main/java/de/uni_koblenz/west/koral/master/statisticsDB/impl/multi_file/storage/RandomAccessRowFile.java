@@ -112,6 +112,9 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on a closed storage");
+		}
 		if (fileCache != null) {
 			if (rowsAsBlocks) {
 				return readBlock(rowId);
@@ -143,6 +146,9 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private byte[] readBlockFromFile(long blockId) throws IOException {
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on a closed storage");
+		}
 		long offset = blockId * dataLength;
 		rowFile.seek(offset);
 		byte[] block = new byte[cacheBlockSize];
@@ -160,6 +166,9 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private byte[] readRowFromFile(long rowId) throws IOException {
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on a closed storage");
+		}
 		long offset = rowId * rowLength;
 		rowFile.seek(offset);
 		byte[] row = new byte[rowLength];
@@ -190,8 +199,7 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
 		if (!valid()) {
-			// TODO: Ensure this everywhere
-			throw new RuntimeException("Open Storage before writing to it");
+			throw new IllegalStateException("Cannot operate on a closed storage");
 		}
 		if (row == null) {
 			throw new NullPointerException("Row can't be null");
@@ -227,6 +235,9 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException {
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on a closed storage");
+		}
 		flush();
 		long rowFileLength = rowFile.length();
 		return new Iterator<Entry<Long, byte[]>>() {
@@ -265,6 +276,9 @@ public class RandomAccessRowFile implements RowStorage {
 	 */
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on a closed storage");
+		}
 		while (blocks.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
@@ -275,7 +289,10 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public void flush() throws IOException {
-		if (fileCache != null) {
+		if ((fileCache != null) && (fileCache.size() > 0)) {
+			if (!valid()) {
+				throw new IllegalStateException("Cannot operate on a closed storage");
+			}
 			for (Entry<Long, byte[]> entry : fileCache) {
 				byte[] block = entry.getValue();
 				writeBlockToFile(entry.getKey(), block);
@@ -303,6 +320,9 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public long length() {
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on a closed storage");
+		}
 		return file.length();
 	}
 

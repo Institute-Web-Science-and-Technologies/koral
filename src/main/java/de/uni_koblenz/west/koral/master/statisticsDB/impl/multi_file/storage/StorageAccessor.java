@@ -162,7 +162,6 @@ public class StorageAccessor implements RowStorage {
 				cache.close();
 				cache = null;
 			}
-			currentStorage = null;
 			file.close();
 		}
 	}
