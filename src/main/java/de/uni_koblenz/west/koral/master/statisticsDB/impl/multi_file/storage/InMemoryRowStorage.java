@@ -113,6 +113,10 @@ class InMemoryRowStorage implements RowStorage {
 		}
 		while (rowIterator.hasNext()) {
 			Entry<Long, byte[]> rowEntry = rowIterator.next();
+			if (rowEntry.getValue().length < cacheBlockSize) {
+				throw new RuntimeException("Given block too short: " + rowEntry.getValue().length
+						+ " but cacheBlockSize is " + cacheBlockSize);
+			}
 			blocks.put(rowEntry.getKey(), rowEntry.getValue());
 		}
 	}

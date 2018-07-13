@@ -46,12 +46,10 @@ public class RandomAccessRowFile implements RowStorage {
 	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize,
 			boolean resetRecycledBlocks) {
 		this.rowLength = rowLength;
-		// 1 Byte for dirty flag
-		if ((blockSize - 1) >= rowLength) {
+		if (blockSize >= rowLength) {
 			// Default case: At least one row fits into a block
 			rowsAsBlocks = false;
-			// Leave 1 byte free for dirty flag
-			rowsPerBlock = (blockSize - 1) / rowLength;
+			rowsPerBlock = blockSize / rowLength;
 		} else {
 			System.err.println("Warning: cache block size (" + blockSize + ") is smaller than row length (" + rowLength
 					+ "). Resizing blocks to row length.");
@@ -259,6 +257,9 @@ public class RandomAccessRowFile implements RowStorage {
 		rowFile.write(block, 0, dataLength);
 	}
 
+	/**
+	 * Returned blocks have a length of {@link #cacheBlockSize}, that is the dataLength plus one byte for the dirty flag
+	 */
 	@Override
 	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException {
 		if (!valid()) {
@@ -287,6 +288,10 @@ public class RandomAccessRowFile implements RowStorage {
 					if (block == null) {
 						// This should never happen because hasNext() checks for this
 						throw new IOException("Invalid file length");
+					}
+					if (block.length < dataLength) {
+						throw new RuntimeException(
+								"Block read is too short: " + block.length + " but dataLength is " + dataLength);
 					}
 					return BlockEntry.getInstance(blockId++, block);
 				} catch (IOException e) {
