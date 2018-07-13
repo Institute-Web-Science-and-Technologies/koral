@@ -8,7 +8,7 @@ public class ObjectRecycler<T> {
 
 	private final int capacity;
 
-	int retrieved;
+	int retrieved, maxUsage;
 
 	public ObjectRecycler(int capacity) {
 		this.capacity = capacity;
@@ -18,6 +18,9 @@ public class ObjectRecycler<T> {
 	public void dump(T object) {
 		if (objects.size() < capacity) {
 			objects.add(object);
+		}
+		if (objects.size() > maxUsage) {
+			maxUsage = objects.size();
 		}
 	}
 

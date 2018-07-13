@@ -332,7 +332,12 @@ public class RandomAccessRowFile implements RowStorage {
 				// TODO: Necessary?
 				fileCache.update(entry.getKey(), block);
 			}
-			System.out.println(file + " recycled " + blockRecycler.retrieved);
+			if (blockRecycler.retrieved > 0) {
+				System.out.println(file + " recycled " + blockRecycler.retrieved + " and had a max usage of "
+						+ blockRecycler.maxUsage);
+				blockRecycler.retrieved = 0;
+				blockRecycler.maxUsage = 0;
+			}
 		}
 	}
 
