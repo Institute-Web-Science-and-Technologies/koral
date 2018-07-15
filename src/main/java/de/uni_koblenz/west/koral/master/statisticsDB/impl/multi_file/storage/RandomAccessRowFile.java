@@ -66,7 +66,7 @@ public class RandomAccessRowFile implements RowStorage {
 			// Capacity is calculated by dividing the available space by estimated space per
 			// entry, blockSize is the
 			// amount of bytes used for the values in the cache.
-			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + blockSize);
+			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + cacheBlockSize);
 			fileCache = new LRUCache<Long, byte[]>(maxCacheEntries) {
 
 				@Override
