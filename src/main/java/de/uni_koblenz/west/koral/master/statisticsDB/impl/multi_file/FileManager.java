@@ -82,7 +82,7 @@ public class FileManager {
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, indexFileCacheSize, true, true,
+		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, indexFileCacheSize, false, true,
 				logger);
 	}
 

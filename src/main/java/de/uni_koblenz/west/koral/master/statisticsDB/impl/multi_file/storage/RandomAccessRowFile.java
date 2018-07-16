@@ -41,10 +41,10 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final boolean rowsAsBlocks;
 
-	private final boolean resetRecycledBlocks;
+	private final boolean recycleBlocks;
 
 	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize,
-			boolean resetRecycledBlocks) {
+			boolean recycleBlocks) {
 		this.rowLength = rowLength;
 		if (blockSize >= rowLength) {
 			// Default case: At least one row fits into a block
@@ -60,8 +60,12 @@ public class RandomAccessRowFile implements RowStorage {
 		// 1 Byte for dirty flag
 		cacheBlockSize = dataLength + 1;
 
-		this.resetRecycledBlocks = resetRecycledBlocks;
-		blockRecycler = new ObjectRecycler<>(1024);
+		this.recycleBlocks = recycleBlocks;
+		if (recycleBlocks) {
+			blockRecycler = new ObjectRecycler<>(1024);
+		} else {
+			blockRecycler = null;
+		}
 
 		file = new File(storageFilePath);
 		open(true);
@@ -85,7 +89,9 @@ public class RandomAccessRowFile implements RowStorage {
 					}
 					// Remove from cache
 					super.removeEldest(blockId, block);
-					blockRecycler.dump(block);
+					if (RandomAccessRowFile.this.recycleBlocks) {
+						blockRecycler.dump(block);
+					}
 				}
 			};
 		} else {
@@ -158,13 +164,11 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 		long offset = blockId * dataLength;
 		rowFile.seek(offset);
-		byte[] block = blockRecycler.retrieve();
-		if ((block != null) && resetRecycledBlocks) {
-			// Reset recycled byte
-			for (int i = 0; i < block.length; i++) {
-				block[i] = 0;
-			}
-		} else if (block == null) {
+		byte[] block = null;
+		if (recycleBlocks) {
+			block = blockRecycler.retrieve();
+		}
+		if (block == null) {
 			block = new byte[cacheBlockSize];
 		}
 		try {
@@ -174,7 +178,9 @@ public class RandomAccessRowFile implements RowStorage {
 			if ((fileLength > offset) && ((fileLength - offset) < dataLength)) {
 				throw new RuntimeException("Corrupted database: EOF before block end");
 			}
-			blockRecycler.dump(block);
+			if (recycleBlocks) {
+				blockRecycler.dump(block);
+			}
 			// Resource does not have an entry (yet)
 			return null;
 		}
@@ -227,13 +233,10 @@ public class RandomAccessRowFile implements RowStorage {
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
 			if (block == null) {
-				block = blockRecycler.retrieve();
-				if ((block != null) && resetRecycledBlocks) {
-					// Reset recycled byte
-					for (int i = 0; i < block.length; i++) {
-						block[i] = 0;
-					}
-				} else if (block == null) {
+				if (recycleBlocks) {
+					block = blockRecycler.retrieve();
+				}
+				if (block == null) {
 					block = new byte[cacheBlockSize];
 				}
 			}
@@ -332,7 +335,7 @@ public class RandomAccessRowFile implements RowStorage {
 				// TODO: Necessary?
 				fileCache.update(entry.getKey(), block);
 			}
-			if (blockRecycler.retrieved > 0) {
+			if (recycleBlocks && (blockRecycler.retrieved > 0)) {
 				System.out.println(file + " recycled " + blockRecycler.retrieved + " and had a max usage of "
 						+ blockRecycler.maxUsage);
 				blockRecycler.retrieved = 0;
