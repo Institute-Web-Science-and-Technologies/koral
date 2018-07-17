@@ -107,17 +107,17 @@ class InMemoryRowStorage implements RowStorage {
 	}
 
 	@Override
-	public void storeBlocks(Iterator<Entry<Long, byte[]>> rowIterator) throws IOException {
+	public void storeBlocks(Iterator<Entry<Long, byte[]>> blockIterator) throws IOException {
 		if (!valid()) {
 			throw new IllegalStateException("Cannot operate on a closed storage");
 		}
-		while (rowIterator.hasNext()) {
-			Entry<Long, byte[]> rowEntry = rowIterator.next();
-			if (rowEntry.getValue().length < cacheBlockSize) {
-				throw new RuntimeException("Given block too short: " + rowEntry.getValue().length
+		while (blockIterator.hasNext()) {
+			Entry<Long, byte[]> blockEntry = blockIterator.next();
+			if (blockEntry.getValue().length < cacheBlockSize) {
+				throw new RuntimeException("Given block too short: " + blockEntry.getValue().length
 						+ " but cacheBlockSize is " + cacheBlockSize);
 			}
-			blocks.put(rowEntry.getKey(), rowEntry.getValue());
+			blocks.put(blockEntry.getKey(), blockEntry.getValue());
 		}
 	}
 
