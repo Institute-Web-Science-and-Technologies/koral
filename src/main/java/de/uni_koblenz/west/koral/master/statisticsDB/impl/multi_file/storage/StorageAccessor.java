@@ -62,7 +62,7 @@ public class StorageAccessor implements RowStorage {
 			}
 		} else {
 			// Extra storage
-			if (extraCacheSpaceManager.request(storageLength)) {
+			if (extraCacheSpaceManager.request(fileId, storageLength)) {
 				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, extraCacheSpaceManager);
 			}
 		}

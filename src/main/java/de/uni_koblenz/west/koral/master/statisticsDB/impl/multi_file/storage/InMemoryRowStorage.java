@@ -189,7 +189,7 @@ class InMemoryRowStorage implements RowStorage {
 		if (cacheSpaceManager == null) {
 			return blocks.size() < maxBlockCount;
 		} else {
-			return cacheSpaceManager.request(cacheBlockSize);
+			return cacheSpaceManager.request(fileId, cacheBlockSize);
 		}
 	}
 
