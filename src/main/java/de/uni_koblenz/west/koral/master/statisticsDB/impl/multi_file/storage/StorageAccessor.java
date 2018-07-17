@@ -20,6 +20,8 @@ public class StorageAccessor implements RowStorage {
 
 	private final long maxCacheSize;
 
+	private final SharedSpaceManager extraCacheSpaceManager;
+
 	private final boolean recycleBlocks;
 
 	private RowStorage cache;
@@ -28,12 +30,14 @@ public class StorageAccessor implements RowStorage {
 
 	RowStorage currentStorage;
 
-	public StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize, boolean recycleBlocks,
-			boolean createIfNotExisting, Logger logger) {
+	public StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
+			SharedSpaceManager extraCacheSpaceManager, boolean recycleBlocks, boolean createIfNotExisting,
+			Logger logger) {
 		this.fileId = fileId;
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
 		this.logger = logger;
+		this.extraCacheSpaceManager = extraCacheSpaceManager;
 		this.recycleBlocks = recycleBlocks;
 
 		this.maxCacheSize = maxCacheSize;
@@ -50,8 +54,20 @@ public class StorageAccessor implements RowStorage {
 				recycleBlocks);
 		currentStorage = file;
 		long storageLength = file.length();
-		if (storageLength < maxCacheSize) {
-			cache = new InMemoryRowStorage(fileId, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE);
+		// TODO: Add own flag for this condition or unify implementations
+		if (!recycleBlocks) {
+			// Index storage
+			if (storageLength < maxCacheSize) {
+				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, maxCacheSize);
+			}
+		} else {
+			// Extra storage
+			if (extraCacheSpaceManager.request(storageLength)) {
+				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, extraCacheSpaceManager);
+			}
+		}
+		// If the cache was created, fill it with the file contents
+		if (cache != null) {
 			if (storageLength > 0) {
 				if (logger != null) {
 					logger.finest("Loading existing storage with path " + storageFilePath);

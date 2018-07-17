@@ -13,6 +13,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.Ext
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraStorageAccessor;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.LRUCache;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RowStorage;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.SharedSpaceManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.StorageAccessor;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 
@@ -40,6 +41,8 @@ public class FileManager {
 
 	private final long maxExtraCacheSize;
 
+	private final SharedSpaceManager extraCacheSpaceManager;
+
 	private long maxResourceId;
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, int maxOpenFiles,
@@ -51,12 +54,16 @@ public class FileManager {
 		this.indexFileCacheSize = indexFileCacheSize;
 		this.mainFileRowLength = mainFileRowLength;
 		this.logger = logger;
+
+		// Split cache size in half for fixed size caches and dynamic shared cache
+		extraFilesCacheSize /= 2;
 		// We assume about a quarter of the possible amount of open extra files will be open and distribute each cache
 		// size equally.
 		maxExtraCacheSize = extraFilesCacheSize / (maxExtraFilesAmount / 4);
 		if (this.logger != null) {
 			this.logger.finest("Setting cache size per extra file to " + maxExtraCacheSize + " Bytes");
 		}
+		extraCacheSpaceManager = new SharedSpaceManager(extraFilesCacheSize);
 
 		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
 
@@ -82,8 +89,8 @@ public class FileManager {
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, false, true,
-				logger);
+		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, null, false,
+				true, logger);
 	}
 
 	/**
@@ -199,7 +206,7 @@ public class FileManager {
 		ExtraRowStorage extra = extraFiles.get(fileId);
 		if (extra == null) {
 			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), fileId, rowLength, maxExtraCacheSize,
-					null, true, logger);
+					extraCacheSpaceManager, null, true, logger);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
@@ -274,7 +281,7 @@ public class FileManager {
 					if (listIndex == dataLength) {
 						// Reading one entry is done, store and reset everything for next one
 						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength,
-								maxExtraCacheSize, list, false, logger));
+								maxExtraCacheSize, extraCacheSpaceManager, list, false, logger));
 						fileId = -1;
 						rowLength = -1;
 						dataLength = -1;

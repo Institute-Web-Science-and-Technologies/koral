@@ -16,13 +16,16 @@ class InMemoryRowStorage implements RowStorage {
 
 	private final long maxBlockCount;
 
+	private final SharedSpaceManager cacheSpaceManager;
+
 	private final int rowsPerBlock;
 
 	private final boolean rowsAsBlocks;
 
 	private final long fileId;
 
-	public InMemoryRowStorage(long fileId, int rowLength, long maxCacheSize, int cacheBlockSize) {
+	private InMemoryRowStorage(long fileId, int rowLength, int cacheBlockSize, long maxCacheSize,
+			SharedSpaceManager cacheSpaceManager) {
 		this.fileId = fileId;
 		this.rowLength = rowLength;
 		if (cacheBlockSize >= rowLength) {
@@ -40,7 +43,17 @@ class InMemoryRowStorage implements RowStorage {
 			this.cacheBlockSize = rowLength;
 		}
 		maxBlockCount = maxCacheSize / this.cacheBlockSize;
+		this.cacheSpaceManager = cacheSpaceManager;
+
 		open(true);
+	}
+
+	public InMemoryRowStorage(long fileId, int rowLength, int cacheBlockSize, long maxCacheSize) {
+		this(fileId, rowLength, cacheBlockSize, maxCacheSize, null);
+	}
+
+	public InMemoryRowStorage(long fileId, int rowLength, int cacheBlockSize, SharedSpaceManager cacheSpaceManager) {
+		this(fileId, rowLength, cacheBlockSize, -1, cacheSpaceManager);
 	}
 
 	@Override
@@ -76,7 +89,7 @@ class InMemoryRowStorage implements RowStorage {
 			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		if (rowsAsBlocks) {
-			if (blocks.size() >= maxBlockCount) {
+			if (!spaceForOneBlockAvailable()) {
 				return false;
 			}
 			blocks.put(rowId, row);
@@ -91,7 +104,7 @@ class InMemoryRowStorage implements RowStorage {
 			blocks.put(blockId, block);
 			return true;
 		} else {
-			if (blocks.size() >= maxBlockCount) {
+			if (!spaceForOneBlockAvailable()) {
 				return false;
 			} else {
 				block = new byte[cacheBlockSize];
@@ -110,6 +123,9 @@ class InMemoryRowStorage implements RowStorage {
 		return blocks.entrySet().iterator();
 	}
 
+	/**
+	 * Reserving of shared cache space must be ensured before calling this method.
+	 */
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blockIterator) throws IOException {
 		if (!valid()) {
@@ -132,9 +148,9 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public boolean isEmpty() {
-//		if (!valid()) {
-//			throw new IllegalStateException("Cannot operate on a closed storage");
-//		}
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on a closed storage");
+		}
 		return blocks.isEmpty();
 	}
 
@@ -167,6 +183,14 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void close() {
 		delete();
+	}
+
+	private boolean spaceForOneBlockAvailable() {
+		if (cacheSpaceManager == null) {
+			return blocks.size() < maxBlockCount;
+		} else {
+			return cacheSpaceManager.request(cacheBlockSize);
+		}
 	}
 
 }
