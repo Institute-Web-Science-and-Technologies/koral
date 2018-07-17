@@ -20,7 +20,10 @@ class InMemoryRowStorage implements RowStorage {
 
 	private final boolean rowsAsBlocks;
 
-	public InMemoryRowStorage(int rowLength, long maxCacheSize, int cacheBlockSize) {
+	private final long fileId;
+
+	public InMemoryRowStorage(long fileId, int rowLength, long maxCacheSize, int cacheBlockSize) {
+		this.fileId = fileId;
 		this.rowLength = rowLength;
 		if (cacheBlockSize >= rowLength) {
 			// Default case: At least one row fits into a block
@@ -29,8 +32,9 @@ class InMemoryRowStorage implements RowStorage {
 			// Fit size of block to row data
 			this.cacheBlockSize = rowsPerBlock * rowLength;
 		} else {
-			System.err.println("Warning: cache block size (" + cacheBlockSize + ") is smaller than row length ("
-					+ rowLength + "). Resizing blocks to row length.");
+			System.err
+					.println("Warning: In InMemoryRowStorage ID " + fileId + " the cache block size (" + cacheBlockSize
+							+ ") is smaller than row length (" + rowLength + "). Resizing blocks to row length.");
 			rowsAsBlocks = true;
 			rowsPerBlock = 1;
 			this.cacheBlockSize = rowLength;
@@ -49,7 +53,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		if (rowsAsBlocks) {
 			return blocks.get(rowId);
@@ -69,7 +73,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		if (rowsAsBlocks) {
 			if (blocks.size() >= maxBlockCount) {
@@ -101,7 +105,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public Iterator<Entry<Long, byte[]>> getBlockIterator() {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		return blocks.entrySet().iterator();
 	}
@@ -109,13 +113,13 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blockIterator) throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		while (blockIterator.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blockIterator.next();
 			if (blockEntry.getValue().length < cacheBlockSize) {
-				throw new RuntimeException("Given block too short: " + blockEntry.getValue().length
-						+ " but cacheBlockSize is " + cacheBlockSize);
+				throw new RuntimeException("FileId " + fileId + ": Given block too short: "
+						+ blockEntry.getValue().length + " but cacheBlockSize is " + cacheBlockSize);
 			}
 			blocks.put(blockEntry.getKey(), blockEntry.getValue());
 		}
@@ -137,7 +141,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public long length() {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		return blocks.size() * rowsPerBlock * rowLength;
 	}

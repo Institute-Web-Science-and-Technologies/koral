@@ -82,7 +82,7 @@ public class FileManager {
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", mainFileRowLength, indexFileCacheSize, false, true,
+		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, false, true,
 				logger);
 	}
 
@@ -198,8 +198,8 @@ public class FileManager {
 	private ExtraRowStorage getOrCreateExtraFile(long fileId, int rowLength) {
 		ExtraRowStorage extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), rowLength, maxExtraCacheSize, true,
-					logger);
+			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), fileId, rowLength, maxExtraCacheSize,
+					null, true, logger);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
@@ -273,7 +273,7 @@ public class FileManager {
 					listIndex++;
 					if (listIndex == dataLength) {
 						// Reading one entry is done, store and reset everything for next one
-						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, rowLength,
+						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength,
 								maxExtraCacheSize, list, false, logger));
 						fileId = -1;
 						rowLength = -1;

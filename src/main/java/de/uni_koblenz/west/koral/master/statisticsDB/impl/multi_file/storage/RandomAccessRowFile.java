@@ -43,16 +43,19 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final boolean recycleBlocks;
 
-	public RandomAccessRowFile(String storageFilePath, int rowLength, long maxCacheSize, int blockSize,
+	private final long fileId;
+
+	public RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize, int blockSize,
 			boolean recycleBlocks) {
+		this.fileId = fileId;
 		this.rowLength = rowLength;
 		if (blockSize >= rowLength) {
 			// Default case: At least one row fits into a block
 			rowsAsBlocks = false;
 			rowsPerBlock = blockSize / rowLength;
 		} else {
-			System.err.println("Warning: cache block size (" + blockSize + ") is smaller than row length (" + rowLength
-					+ "). Resizing blocks to row length.");
+			System.err.println("Warning: In RandomAccessRowFile ID " + fileId + " the cache block size (" + blockSize
+					+ ") is smaller than row length (" + rowLength + "). Resizing blocks to row length.");
 			rowsAsBlocks = true;
 			rowsPerBlock = 1;
 		}
@@ -102,12 +105,12 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public void open(boolean createIfNotExists) {
 		if (!createIfNotExists && !file.exists()) {
-			throw new RuntimeException("Could not find file " + file);
+			throw new RuntimeException("FileId " + fileId + ": Could not find file " + file);
 		}
 		try {
 			rowFile = new RandomAccessFile(file, "rw");
 		} catch (FileNotFoundException e) {
-			throw new RuntimeException("Could not find file " + file, e);
+			throw new RuntimeException("FileId " + fileId + ": Could not find file " + file, e);
 		}
 	}
 
@@ -126,7 +129,7 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		if (fileCache != null) {
 			if (rowsAsBlocks) {
@@ -160,7 +163,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private byte[] readBlockFromFile(long blockId) throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		long offset = blockId * dataLength;
 		rowFile.seek(offset);
@@ -176,7 +179,7 @@ public class RandomAccessRowFile implements RowStorage {
 		} catch (EOFException e) {
 			long fileLength = rowFile.length();
 			if ((fileLength > offset) && ((fileLength - offset) < dataLength)) {
-				throw new RuntimeException("Corrupted database: EOF before block end");
+				throw new RuntimeException("FileId " + fileId + ": Corrupted database: EOF before block end");
 			}
 			if (recycleBlocks) {
 				blockRecycler.dump(block);
@@ -189,7 +192,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private byte[] readRowFromFile(long rowId) throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		long offset = rowId * rowLength;
 		rowFile.seek(offset);
@@ -199,7 +202,7 @@ public class RandomAccessRowFile implements RowStorage {
 		} catch (EOFException e) {
 			long fileLength = rowFile.length();
 			if ((fileLength > offset) && ((fileLength - offset) < rowLength)) {
-				throw new RuntimeException("Corrupted database: EOF before row end");
+				throw new RuntimeException("FileId " + fileId + ": Corrupted database: EOF before row end");
 			}
 			// Resource does not have an entry (yet)
 			return null;
@@ -221,10 +224,10 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public boolean writeRow(long rowId, byte[] row) throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		if (row == null) {
-			throw new NullPointerException("Row can't be null");
+			throw new NullPointerException("FileId " + fileId + ": Row can't be null");
 		}
 		if (fileCache != null) {
 			// We don't handle the rowsAsBlocks case separately because the procedure would be almost identical, because
@@ -266,7 +269,7 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		flush();
 		long rowFileLength = rowFile.length();
@@ -282,7 +285,7 @@ public class RandomAccessRowFile implements RowStorage {
 			@Override
 			public Entry<Long, byte[]> next() {
 				if (!hasNext()) {
-					throw new NoSuchElementException("Use hasNext() before calling next()");
+					throw new NoSuchElementException("FileId " + fileId + ": Use hasNext() before calling next()");
 				}
 				try {
 					// We ignore the cache to prevent lots of cache updates (one per read) and a not optimal cache
@@ -290,11 +293,11 @@ public class RandomAccessRowFile implements RowStorage {
 					byte[] block = readBlockFromFile(blockId);
 					if (block == null) {
 						// This should never happen because hasNext() checks for this
-						throw new IOException("Invalid file length");
+						throw new IOException("FileId " + fileId + ": Invalid file length");
 					}
 					if (block.length < dataLength) {
 						throw new RuntimeException(
-								"Block read is too short: " + block.length + " but dataLength is " + dataLength);
+								"FileId " + fileId + ": Block read is too short: " + block.length + " but dataLength is " + dataLength);
 					}
 					return BlockEntry.getInstance(blockId++, block);
 				} catch (IOException e) {
@@ -311,7 +314,7 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		while (blocks.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blocks.next();
@@ -325,7 +328,7 @@ public class RandomAccessRowFile implements RowStorage {
 	public void flush() throws IOException {
 		if ((fileCache != null) && (fileCache.size() > 0)) {
 			if (!valid()) {
-				throw new IllegalStateException("Cannot operate on a closed storage");
+				throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 			}
 			for (Entry<Long, byte[]> entry : fileCache) {
 				byte[] block = entry.getValue();
@@ -336,7 +339,7 @@ public class RandomAccessRowFile implements RowStorage {
 				fileCache.update(entry.getKey(), block);
 			}
 			if (recycleBlocks && (blockRecycler.retrieved > 0)) {
-				System.out.println(file + " recycled " + blockRecycler.retrieved + " and had a max usage of "
+				System.out.println("FileId " + fileId + " recycled " + blockRecycler.retrieved + " and had a max usage of "
 						+ blockRecycler.maxUsage);
 				blockRecycler.retrieved = 0;
 				blockRecycler.maxUsage = 0;
@@ -361,7 +364,7 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public long length() {
 		if (!valid()) {
-			throw new IllegalStateException("Cannot operate on a closed storage");
+			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		return file.length();
 	}

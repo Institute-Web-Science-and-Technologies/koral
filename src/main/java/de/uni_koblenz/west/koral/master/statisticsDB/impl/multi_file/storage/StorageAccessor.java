@@ -10,6 +10,8 @@ public class StorageAccessor implements RowStorage {
 
 	private static final int DEFAULT_CACHE_BLOCKSIZE = 4096;
 
+	private final long fileId;
+
 	private final Logger logger;
 
 	private final String storageFilePath;
@@ -26,8 +28,9 @@ public class StorageAccessor implements RowStorage {
 
 	RowStorage currentStorage;
 
-	public StorageAccessor(String storageFilePath, int rowLength, long maxCacheSize, boolean recycleBlocks,
+	public StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize, boolean recycleBlocks,
 			boolean createIfNotExisting, Logger logger) {
+		this.fileId = fileId;
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
 		this.logger = logger;
@@ -43,12 +46,12 @@ public class StorageAccessor implements RowStorage {
 			throw new RuntimeException("File " + storageFilePath + " does not exist");
 		}
 		// TODO: Extract cache blocksize as own parameter to CLI/config
-		file = new RandomAccessRowFile(storageFilePath, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE,
+		file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE,
 				recycleBlocks);
 		currentStorage = file;
 		long storageLength = file.length();
 		if (storageLength < maxCacheSize) {
-			cache = new InMemoryRowStorage(rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE);
+			cache = new InMemoryRowStorage(fileId, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE);
 			if (storageLength > 0) {
 				if (logger != null) {
 					logger.finest("Loading existing storage with path " + storageFilePath);
@@ -85,8 +88,6 @@ public class StorageAccessor implements RowStorage {
 	}
 
 	private void switchToFile() {
-		String[] pathElements = storageFilePath.split("/");
-		String fileId = pathElements[pathElements.length - 1];
 		System.out.println("Switching storage " + fileId + " to file");
 		if (logger != null) {
 			logger.finest("Switching storage " + fileId + " to file");

@@ -83,6 +83,9 @@ public class StatisticsRowManager {
 	 * How many bytes are used for the data in the main/index file. This space is used for either file offset or
 	 * occurences values.
 	 */
+	// Implementation note: If the database is ever adapted to store every row data in an extra file, there would be a
+	// possibility to reference an extra file with the id 0. This is a problem, because in the FileManager and the
+	// StorageAccessors, the zero id is used as id for the index storage.
 	private final int rowDataLength;
 
 	/**
