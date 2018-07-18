@@ -182,6 +182,9 @@ class InMemoryRowStorage implements RowStorage {
 	 */
 	@Override
 	public void close() {
+		if (cacheSpaceManager != null) {
+			cacheSpaceManager.releaseAll(fileId);
+		}
 		delete();
 	}
 
