@@ -31,7 +31,7 @@ public class SharedSpaceManager {
 		if (userUsed == null) {
 			userUsed = 0L;
 		}
-		userUsed += used;
+		userUsed += amount;
 		users.put(userId, userUsed);
 
 		return true;
@@ -57,6 +57,7 @@ public class SharedSpaceManager {
 			throw new IllegalArgumentException("User " + userId + " has no allocated space to release");
 		}
 		used -= userUsed;
+//		System.out.println("Used after releaseAll: " + used);
 	}
 
 }
