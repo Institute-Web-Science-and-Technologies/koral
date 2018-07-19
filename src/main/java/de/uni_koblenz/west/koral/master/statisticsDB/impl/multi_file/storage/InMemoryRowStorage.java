@@ -183,7 +183,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void close() {
 		if (cacheSpaceManager != null) {
-			cacheSpaceManager.releaseAll(fileId);
+			cacheSpaceManager.releaseAll(this);
 		}
 		delete();
 	}
@@ -192,8 +192,14 @@ class InMemoryRowStorage implements RowStorage {
 		if (cacheSpaceManager == null) {
 			return blocks.size() < maxBlockCount;
 		} else {
-			return cacheSpaceManager.request(fileId, cacheBlockSize);
+			return cacheSpaceManager.request(this, cacheBlockSize);
 		}
+	}
+
+	@Override
+	public boolean makeRoom() {
+		// Can't make room in an in-memory-only implementation
+		return false;
 	}
 
 }

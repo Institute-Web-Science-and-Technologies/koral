@@ -296,8 +296,8 @@ public class RandomAccessRowFile implements RowStorage {
 						throw new IOException("FileId " + fileId + ": Invalid file length");
 					}
 					if (block.length < dataLength) {
-						throw new RuntimeException(
-								"FileId " + fileId + ": Block read is too short: " + block.length + " but dataLength is " + dataLength);
+						throw new RuntimeException("FileId " + fileId + ": Block read is too short: " + block.length
+								+ " but dataLength is " + dataLength);
 					}
 					return BlockEntry.getInstance(blockId++, block);
 				} catch (IOException e) {
@@ -339,8 +339,8 @@ public class RandomAccessRowFile implements RowStorage {
 				fileCache.update(entry.getKey(), block);
 			}
 			if (recycleBlocks && (blockRecycler.retrieved > 0)) {
-				System.out.println("FileId " + fileId + " recycled " + blockRecycler.retrieved + " and had a max usage of "
-						+ blockRecycler.maxUsage);
+				System.out.println("FileId " + fileId + " recycled " + blockRecycler.retrieved
+						+ " and had a max usage of " + blockRecycler.maxUsage);
 				blockRecycler.retrieved = 0;
 				blockRecycler.maxUsage = 0;
 			}
@@ -395,6 +395,16 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	public boolean makeRoom() {
+		if (fileCache.size() > 0) {
+			fileCache.removeEldest();
+			return true;
+		} else {
+			return false;
 		}
 	}
 

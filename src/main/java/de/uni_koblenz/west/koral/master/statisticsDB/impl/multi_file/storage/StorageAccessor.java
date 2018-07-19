@@ -55,15 +55,16 @@ public class StorageAccessor implements RowStorage {
 		currentStorage = file;
 		long storageLength = file.length();
 		// TODO: Add own flag for this condition or unify implementations
-		if (!recycleBlocks) {
+		if (fileId == 0) {
 			// Index storage
 			if (storageLength < maxCacheSize) {
 				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, maxCacheSize);
 			}
 		} else {
 			// Extra storage
-			if (extraCacheSpaceManager.request(fileId, storageLength)) {
+			if (extraCacheSpaceManager.isAvailable(storageLength)) {
 				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, extraCacheSpaceManager);
+				extraCacheSpaceManager.request(cache, storageLength);
 			}
 		}
 		// If the cache was created, fill it with the file contents
@@ -185,5 +186,10 @@ public class StorageAccessor implements RowStorage {
 			}
 			file.close();
 		}
+	}
+
+	@Override
+	public boolean makeRoom() {
+		return currentStorage.makeRoom();
 	}
 }
