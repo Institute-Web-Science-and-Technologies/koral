@@ -9,7 +9,7 @@ public class SharedSpaceManager {
 
 	private long used;
 
-	private final Map<Long, Long> users;
+	private final Map<SharedSpaceUser, Long> users;
 
 	public SharedSpaceManager(long maxSize) {
 		this.maxSize = maxSize;
@@ -17,7 +17,11 @@ public class SharedSpaceManager {
 		users = new HashMap<>();
 	}
 
-	public boolean request(long userId, long amount) {
+	public boolean isAvailable(long amount) {
+		return amount < (maxSize - used);
+	}
+
+	public boolean request(SharedSpaceUser user, long amount) {
 		long available = maxSize - used;
 		if (available < 0) {
 			throw new IllegalStateException("Too many resources in use");
@@ -27,34 +31,34 @@ public class SharedSpaceManager {
 		}
 		used += amount;
 
-		Long userUsed = users.get(userId);
+		Long userUsed = users.get(user);
 		if (userUsed == null) {
 			userUsed = 0L;
 		}
 		userUsed += amount;
-		users.put(userId, userUsed);
+		users.put(user, userUsed);
 
 		return true;
 	}
 
-	public void release(long userId, long amount) {
+	public void release(SharedSpaceUser user, long amount) {
 		used -= amount;
 		if (used < 0) {
 			throw new IllegalStateException("Too many resources released");
 		}
 
-		Long userUsed = users.get(userId);
+		Long userUsed = users.get(user);
 		if (userUsed == null) {
-			throw new IllegalArgumentException("User " + userId + " has no allocated space to release");
+			throw new IllegalArgumentException("User " + user + " has no allocated space to release");
 		}
 		userUsed -= amount;
-		users.put(userId, userUsed);
+		users.put(user, userUsed);
 	}
 
-	public void releaseAll(long userId) {
-		Long userUsed = users.remove(userId);
+	public void releaseAll(SharedSpaceUser user) {
+		Long userUsed = users.remove(user);
 		if (userUsed == null) {
-			throw new IllegalArgumentException("User " + userId + " has no allocated space to release");
+			throw new IllegalArgumentException("User " + user + " has no allocated space to release");
 		}
 		used -= userUsed;
 //		System.out.println("Used after releaseAll: " + used);
