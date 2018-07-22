@@ -118,9 +118,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			throw new RuntimeException("Error reading existing statisticsMetadata file: " + e);
 		}
 		rowDataLength = NumberConversion.bytes2int(content);
-		System.out.println("RowDataLength = " + rowDataLength);
 		numberOfChunks = (content.length - Integer.BYTES) / Long.BYTES;
-		System.out.println("NumberOfChunks = " + numberOfChunks);
 		triplesPerChunk = new long[numberOfChunks];
 		for (int i = 0; i < (content.length / Long.BYTES); i++) {
 			triplesPerChunk[i] = NumberConversion.bytes2long(content, Integer.BYTES + (i * Long.BYTES));
