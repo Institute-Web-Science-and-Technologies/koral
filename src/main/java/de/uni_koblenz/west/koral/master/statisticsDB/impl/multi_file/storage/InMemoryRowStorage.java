@@ -132,9 +132,9 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public boolean isEmpty() {
-//		if (!valid()) {
-//			throw new IllegalStateException("Cannot operate on a closed storage");
-//		}
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on a closed storage");
+		}
 		return blocks.isEmpty();
 	}
 
