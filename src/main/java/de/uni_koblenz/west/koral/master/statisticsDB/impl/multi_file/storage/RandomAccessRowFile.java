@@ -45,6 +45,9 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final long fileId;
 
+	// Metastatistics for analysis
+	private long cacheHits, cacheMisses, notExisting;
+
 	public RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize, int blockSize,
 			boolean recycleBlocks) {
 		this.fileId = fileId;
@@ -155,8 +158,13 @@ public class RandomAccessRowFile implements RowStorage {
 		if (block == null) {
 			block = readBlockFromFile(blockId);
 			if (block != null) {
+				cacheMisses++;
 				fileCache.put(blockId, block);
+			} else {
+				notExisting++;
 			}
+		} else {
+			cacheHits++;
 		}
 		return block;
 	}
@@ -296,8 +304,8 @@ public class RandomAccessRowFile implements RowStorage {
 						throw new IOException("FileId " + fileId + ": Invalid file length");
 					}
 					if (block.length < dataLength) {
-						throw new RuntimeException(
-								"FileId " + fileId + ": Block read is too short: " + block.length + " but dataLength is " + dataLength);
+						throw new RuntimeException("FileId " + fileId + ": Block read is too short: " + block.length
+								+ " but dataLength is " + dataLength);
 					}
 					return BlockEntry.getInstance(blockId++, block);
 				} catch (IOException e) {
@@ -337,8 +345,8 @@ public class RandomAccessRowFile implements RowStorage {
 				fileCache.update(entry.getKey(), block);
 			}
 			if (recycleBlocks && (blockRecycler.retrieved > 0)) {
-				System.out.println("FileId " + fileId + " recycled " + blockRecycler.retrieved + " and had a max usage of "
-						+ blockRecycler.maxUsage);
+				System.out.println("FileId " + fileId + " recycled " + blockRecycler.retrieved
+						+ " and had a max usage of " + blockRecycler.maxUsage);
 				blockRecycler.retrieved = 0;
 				blockRecycler.maxUsage = 0;
 			}
@@ -370,6 +378,10 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public int getRowLength() {
 		return rowLength;
+	}
+
+	public long[] getStorageStatistics() {
+		return new long[] { cacheHits, cacheMisses, notExisting };
 	}
 
 	/**

@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -331,6 +332,16 @@ public class FileManager {
 			lengths.put(entry.getKey(), (long) entry.getValue().getFreeSpaceIndexData().length);
 		}
 		return lengths;
+	}
+
+	Map<Long, long[]> getStorageStatistics() {
+		Map<Long, long[]> statistics = new HashMap<>();
+		statistics.put(0L, ((StorageAccessor) index).getStorageStatistics());
+		for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
+			StorageAccessor storageAccessor = (StorageAccessor) entry.getValue();
+			statistics.put(entry.getKey(), storageAccessor.getStorageStatistics());
+		}
+		return statistics;
 	}
 
 	void close() {

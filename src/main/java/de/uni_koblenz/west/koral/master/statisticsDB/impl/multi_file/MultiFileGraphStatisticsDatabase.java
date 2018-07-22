@@ -431,6 +431,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		return rowManager.getStatistics();
 	}
 
+	public Map<Long, long[]> getStorageStatistics() {
+		return fileManager.getStorageStatistics();
+	}
+
 	public long getTotalEntries() {
 		return rowManager.getTotalEntries();
 	}

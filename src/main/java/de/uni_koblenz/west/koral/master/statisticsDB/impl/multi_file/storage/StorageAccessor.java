@@ -148,6 +148,10 @@ public class StorageAccessor implements RowStorage {
 		return rowLength;
 	}
 
+	public long[] getStorageStatistics() {
+		return ((RandomAccessRowFile) file).getStorageStatistics();
+	}
+
 	@Override
 	public void delete() {
 		if (cache != null) {
