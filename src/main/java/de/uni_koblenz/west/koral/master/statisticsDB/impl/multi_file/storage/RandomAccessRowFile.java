@@ -308,8 +308,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * The cache will be ignored/not filled. Note that the blocks are stored as is. Obviously they must have the same
-	 * length.
+	 * The cache will be ignored/not filled.
 	 */
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {
@@ -319,8 +318,7 @@ public class RandomAccessRowFile implements RowStorage {
 		while (blocks.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
-			rowFile.seek(blockEntry.getKey() * block.length);
-			rowFile.write(block);
+			writeBlockToFile(blockEntry.getKey(), block);
 		}
 	}
 
