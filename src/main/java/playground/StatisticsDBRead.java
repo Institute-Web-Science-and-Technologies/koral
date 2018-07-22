@@ -129,6 +129,7 @@ public class StatisticsDBRead {
 				optimizationPreventer += statistics.getTotalObjectFrequency(statement.getObjectAsLong());
 			}
 			in.close();
+			System.out.println("Chunk " + i + " done.");
 		}
 		long time = System.currentTimeMillis() - start;
 		System.out.println("Reading took " + (time / 1000) + " sec");
