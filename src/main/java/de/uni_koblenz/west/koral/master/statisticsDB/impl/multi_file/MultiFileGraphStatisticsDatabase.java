@@ -418,7 +418,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @return
 	 * @throws IOException
 	 */
-	public String getStatistics() throws IOException {
+	public String getDataStatistics() throws IOException {
 		long maxId = getMaxId();
 		for (long id = 1; id <= maxId; id++) {
 			boolean rowFound = loadRow(id);

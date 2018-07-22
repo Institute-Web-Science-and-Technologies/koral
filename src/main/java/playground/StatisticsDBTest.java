@@ -185,7 +185,7 @@ public class StatisticsDBTest {
 				System.out.println("Flushing took " + formatTime(System.currentTimeMillis() - start));
 				if (COLLECT_META_STATISTICS) {
 					System.out.println("Collecting meta statistics...");
-					writeMetaStatisticsToFile(configNameWithoutCaches, multiDB.getStatistics());
+					writeDataStatisticsToFile(configNameWithoutCaches, multiDB.getDataStatistics());
 				}
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				indexFileLength = multiDB.getIndexFileLength();
@@ -258,7 +258,7 @@ public class StatisticsDBTest {
 		printer.close();
 	}
 
-	private static void writeMetaStatisticsToFile(String configNameWithoutCaches, String statistics)
+	private static void writeDataStatisticsToFile(String configNameWithoutCaches, String statistics)
 			throws FileNotFoundException {
 		System.out.println("Writing meta statistics to file...");
 		try (PrintWriter writer = new PrintWriter("metastatistics-" + configNameWithoutCaches + ".txt")) {
