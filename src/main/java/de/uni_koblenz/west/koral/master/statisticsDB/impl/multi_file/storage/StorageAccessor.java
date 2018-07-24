@@ -58,12 +58,15 @@ public class StorageAccessor implements RowStorage {
 				}
 				try {
 					cache.storeBlocks(file.getBlockIterator());
+//					System.out.println("File " + fileId + ": Using IMRS");
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
 			}
 			currentStorage = cache;
 			file.close();
+		} else {
+//			System.out.println("File " + fileId + ": Using RARF");
 		}
 	}
 
