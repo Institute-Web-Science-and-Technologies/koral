@@ -131,8 +131,8 @@ public class StatisticsDBRead {
 			in.close();
 			System.out.println("Chunk " + i + " done.");
 		}
-		long time = System.currentTimeMillis() - start;
-		System.out.println("Reading took " + (time / 1000) + " sec");
+		long durationSec = (System.currentTimeMillis() - start) / 1000;
+		System.out.println("Reading took " + durationSec + " sec");
 		System.out.println(optimizationPreventer);
 		System.out.println("Writing benchmark results to CSV...");
 
@@ -149,8 +149,8 @@ public class StatisticsDBRead {
 				totalCacheMisses, totalNotExisting, totalHitrate);
 
 		writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, statisticsDB.getRowDataLength(), indexCacheSize,
-				extraFilesCacheSize, coveringAlgorithm, implementationNote, time, totalCacheHits, totalCacheMisses,
-				totalHitrate);
+				extraFilesCacheSize, coveringAlgorithm, implementationNote, durationSec, totalCacheHits,
+				totalCacheMisses, totalHitrate);
 
 		if (WRITE_STATISTICS_DATA) {
 			// Read statistics and write into csv
@@ -186,17 +186,17 @@ public class StatisticsDBRead {
 
 	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, int numberOfChunks, int dataBytes,
 			long indexCacheSize, long extraFilesCacheSize, String coveringAlgorithm, String implementationNote,
-			long durationMs, long totalCacheHits, long totalCacheMisses, double totalHitrate)
+			long durationSec, long totalCacheHits, long totalCacheMisses, double totalHitrate)
 			throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
 				csvFileFormat);
 		if (resultFile.length() == 0) {
 			printer.printRecord("TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB", "EXTRAFILES_CACHE_MB",
-					"COV_ALG", "NOTE", "DURATION_MS", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE");
+					"COV_ALG", "NOTE", "DURATION_SEC", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE");
 		}
 		printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
-				coveringAlgorithm, implementationNote, durationMs, totalCacheHits, totalCacheMisses, totalHitrate);
+				coveringAlgorithm, implementationNote, durationSec, totalCacheHits, totalCacheMisses, totalHitrate);
 		printer.close();
 	}
 
