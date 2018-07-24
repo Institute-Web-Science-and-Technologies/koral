@@ -209,7 +209,7 @@ public class StatisticsRowManager {
 	}
 
 	long getFileId() {
-		return metadataBits;
+		return dataLength;
 	}
 
 	byte[] getRow() {
