@@ -50,8 +50,8 @@ public class StorageAccessor implements RowStorage {
 			throw new RuntimeException("File " + storageFilePath + " does not exist");
 		}
 		// TODO: Extract cache blocksize as own parameter to CLI/config
-		file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE,
-				recycleBlocks);
+		file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, extraCacheSpaceManager,
+				DEFAULT_CACHE_BLOCKSIZE, recycleBlocks);
 		currentStorage = file;
 		long storageLength = file.length();
 		// TODO: Add own flag for this condition or unify implementations

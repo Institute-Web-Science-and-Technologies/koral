@@ -1,6 +1,6 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
-public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceUser, AutoCloseable {
+public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceConsumer, AutoCloseable {
 
 	private final SharedSpaceManager sharedSpaceManager;
 	private final int entrySize;
