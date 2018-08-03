@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-public interface RowStorage extends AutoCloseable, SharedSpaceUser {
+public interface RowStorage extends AutoCloseable, SharedSpaceConsumer {
 
 	/**
 	 * TODO: What does this do? Should it be idempotent? - Can be called after close() to reopen - Throws exception if

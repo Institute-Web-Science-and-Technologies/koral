@@ -9,19 +9,19 @@ public class SharedSpaceManager {
 
 	private long used;
 
-	private final Map<SharedSpaceUser, Long> users;
+	private final Map<SharedSpaceConsumer, Long> consumers;
 
 	public SharedSpaceManager(long maxSize) {
 		this.maxSize = maxSize;
 
-		users = new HashMap<>();
+		consumers = new HashMap<>();
 	}
 
 	public boolean isAvailable(long amount) {
 		return amount < (maxSize - used);
 	}
 
-	public boolean request(SharedSpaceUser user, long amount) {
+	public boolean request(SharedSpaceConsumer consumer, long amount) {
 		long available = maxSize - used;
 		if (available < 0) {
 			throw new IllegalStateException("Too many resources in use");
@@ -31,36 +31,36 @@ public class SharedSpaceManager {
 		}
 		used += amount;
 
-		Long userUsed = users.get(user);
-		if (userUsed == null) {
-			userUsed = 0L;
+		Long consumerUsed = consumers.get(consumer);
+		if (consumerUsed == null) {
+			consumerUsed = 0L;
 		}
-		userUsed += amount;
-		users.put(user, userUsed);
+		consumerUsed += amount;
+		consumers.put(consumer, consumerUsed);
 
 		return true;
 	}
 
-	public void release(SharedSpaceUser user, long amount) {
+	public void release(SharedSpaceConsumer consumer, long amount) {
 		used -= amount;
 		if (used < 0) {
 			throw new IllegalStateException("Too many resources released");
 		}
 
-		Long userUsed = users.get(user);
-		if (userUsed == null) {
-			throw new IllegalArgumentException("User " + user + " has no allocated space to release");
+		Long consumerUsed = consumers.get(consumer);
+		if (consumerUsed == null) {
+			throw new IllegalArgumentException("Consumer " + consumer + " has no allocated space to release");
 		}
-		userUsed -= amount;
-		users.put(user, userUsed);
+		consumerUsed -= amount;
+		consumers.put(consumer, consumerUsed);
 	}
 
-	public void releaseAll(SharedSpaceUser user) {
-		Long userUsed = users.remove(user);
-		if (userUsed == null) {
-			throw new IllegalArgumentException("User " + user + " has no allocated space to release");
+	public void releaseAll(SharedSpaceConsumer consumer) {
+		Long consumerUsed = consumers.remove(consumer);
+		if (consumerUsed == null) {
+			throw new IllegalArgumentException("Consumer " + consumer + " has no allocated space to release");
 		}
-		used -= userUsed;
+		used -= consumerUsed;
 //		System.out.println("Used after releaseAll: " + used);
 	}
 
