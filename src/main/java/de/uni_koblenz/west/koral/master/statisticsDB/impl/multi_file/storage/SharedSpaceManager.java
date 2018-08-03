@@ -57,7 +57,9 @@ public class SharedSpaceManager {
 
 	public void releaseAll(SharedSpaceConsumer consumer) {
 		Long consumerUsed = consumers.remove(consumer);
-		used -= consumerUsed;
+		if (consumerUsed != null) {
+			used -= consumerUsed;
+		}
 //		System.out.println("Used after releaseAll: " + used);
 	}
 
