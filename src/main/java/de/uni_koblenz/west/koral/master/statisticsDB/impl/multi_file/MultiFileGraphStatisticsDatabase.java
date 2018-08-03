@@ -91,12 +91,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		rowManager = new StatisticsRowManager(this.numberOfChunks, this.rowDataLength);
 		mainfileRowLength = rowManager.getMainFileRowLength();
 
-		// Calculate the theoretically maximal amount of extra files. Used for caching space distribution in the file
-		// manager
-		int maxValueBytesPerOccurenceValue = 1 << StatisticsRowManager.VALUE_LENGTH_COLUMN_BITLENGTH;
-		int maxExtraFilesAmount = 3 * this.numberOfChunks * maxValueBytesPerOccurenceValue;
-		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, maxExtraFilesAmount,
-				FileManager.DEFAULT_MAX_OPEN_FILES, indexCacheSize, extraFilesCacheSize, logger);
+		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, FileManager.DEFAULT_MAX_OPEN_FILES,
+				indexCacheSize, extraFilesCacheSize, logger);
 
 		dirty = false;
 	}

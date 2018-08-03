@@ -39,14 +39,12 @@ public class FileManager {
 
 	private RowStorage index;
 
-	private final long maxExtraCacheSize;
-
 	private final SharedSpaceManager extraCacheSpaceManager;
 
 	private long maxResourceId;
 
-	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, int maxOpenFiles,
-			long indexFileCacheSize, long extraFilesCacheSize, Logger logger) {
+	public FileManager(String storagePath, int mainFileRowLength, int maxOpenFiles, long indexFileCacheSize,
+			long extraFilesCacheSize, Logger logger) {
 		this.storagePath = storagePath;
 		if (!this.storagePath.endsWith(File.separator)) {
 			storagePath += File.separator;
@@ -55,14 +53,6 @@ public class FileManager {
 		this.mainFileRowLength = mainFileRowLength;
 		this.logger = logger;
 
-		// Split cache size in half for fixed size caches and dynamic shared cache
-		extraFilesCacheSize /= 2;
-		// We assume about a quarter of the possible amount of open extra files will be open and distribute each cache
-		// size equally.
-		maxExtraCacheSize = extraFilesCacheSize / (maxExtraFilesAmount / 4);
-		if (this.logger != null) {
-			this.logger.finest("Setting cache size per extra file to " + maxExtraCacheSize + " Bytes");
-		}
 		extraCacheSpaceManager = new SharedSpaceManager(extraFilesCacheSize);
 
 		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
@@ -84,13 +74,13 @@ public class FileManager {
 	}
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, Logger logger) {
-		this(storagePath, mainFileRowLength, maxExtraFilesAmount, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE,
+		this(storagePath, mainFileRowLength, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE,
 				DEFAULT_EXTRAFILES_CACHE_SIZE, logger);
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, null, false,
-				true, logger);
+		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, false, true,
+				logger);
 	}
 
 	/**
@@ -205,7 +195,7 @@ public class FileManager {
 	private ExtraRowStorage getOrCreateExtraFile(long fileId, int rowLength) {
 		ExtraRowStorage extra = extraFiles.get(fileId);
 		if (extra == null) {
-			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), fileId, rowLength, maxExtraCacheSize,
+			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), fileId, rowLength,
 					extraCacheSpaceManager, null, true, logger);
 			extraFiles.put(fileId, extra);
 		}
@@ -281,7 +271,7 @@ public class FileManager {
 					if (listIndex == dataLength) {
 						// Reading one entry is done, store and reset everything for next one
 						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength,
-								maxExtraCacheSize, extraCacheSpaceManager, list, false, logger));
+								extraCacheSpaceManager, list, false, logger));
 						fileId = -1;
 						rowLength = -1;
 						dataLength = -1;

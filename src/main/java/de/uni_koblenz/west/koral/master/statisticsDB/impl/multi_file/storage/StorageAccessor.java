@@ -20,7 +20,7 @@ public class StorageAccessor implements RowStorage {
 
 	private final long maxCacheSize;
 
-	private final SharedSpaceManager extraCacheSpaceManager;
+	private final SharedSpaceManager cacheSpaceManager;
 
 	private final boolean recycleBlocks;
 
@@ -30,18 +30,27 @@ public class StorageAccessor implements RowStorage {
 
 	RowStorage currentStorage;
 
-	public StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
-			SharedSpaceManager extraCacheSpaceManager, boolean recycleBlocks, boolean createIfNotExisting,
-			Logger logger) {
+	private StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
+			SharedSpaceManager cacheSpaceManager, boolean recycleBlocks, boolean createIfNotExisting, Logger logger) {
 		this.fileId = fileId;
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
 		this.logger = logger;
-		this.extraCacheSpaceManager = extraCacheSpaceManager;
+		this.cacheSpaceManager = cacheSpaceManager;
 		this.recycleBlocks = recycleBlocks;
 
 		this.maxCacheSize = maxCacheSize;
 		open(createIfNotExisting);
+	}
+
+	public StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize, boolean recycleBlocks,
+			boolean createIfNotExisting, Logger logger) {
+		this(storageFilePath, fileId, rowLength, maxCacheSize, null, recycleBlocks, createIfNotExisting, logger);
+	}
+
+	public StorageAccessor(String storageFilePath, long fileId, int rowLength, SharedSpaceManager cacheSpaceManager,
+			boolean recycleBlocks, boolean createIfNotExisting, Logger logger) {
+		this(storageFilePath, fileId, rowLength, -1, cacheSpaceManager, recycleBlocks, createIfNotExisting, logger);
 	}
 
 	@Override
@@ -50,21 +59,20 @@ public class StorageAccessor implements RowStorage {
 			throw new RuntimeException("File " + storageFilePath + " does not exist");
 		}
 		// TODO: Extract cache blocksize as own parameter to CLI/config
-		file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, extraCacheSpaceManager, this,
+		file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, cacheSpaceManager, this,
 				DEFAULT_CACHE_BLOCKSIZE, recycleBlocks);
 		currentStorage = file;
 		long storageLength = file.length();
-		// TODO: Add own flag for this condition or unify implementations
-		if (fileId == 0) {
-			// Index storage
+		if (cacheSpaceManager == null) {
+			// Use fixed parameter as cache size limit
 			if (storageLength < maxCacheSize) {
-				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, maxCacheSize);
+				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, maxCacheSize, this);
 			}
 		} else {
-			// Extra storage
-			if (extraCacheSpaceManager.isAvailable(storageLength)) {
-				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, extraCacheSpaceManager);
-				extraCacheSpaceManager.request(cache, storageLength);
+			// Use the SharedSpaceManaer as cache size limit manager
+			if (cacheSpaceManager.isAvailable(storageLength)) {
+				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, cacheSpaceManager, this);
+				cacheSpaceManager.request(this, storageLength);
 			}
 		}
 		// If the cache was created, fill it with the file contents
