@@ -21,19 +21,17 @@ public class RandomAccessRowFile implements RowStorage {
 	final int rowLength;
 
 	/**
-	 * Refers to the size of a block that contains exactly how many rows would fit
-	 * into a block with the size given in the constructor, but without any
-	 * padding/filled space in the end.
+	 * Refers to the size of a block that contains exactly how many rows would fit into a block with the size given in
+	 * the constructor, but without any padding/filled space in the end.
 	 */
 	final int dataLength;
 
 	final int cacheBlockSize;
 
 	/**
-	 * Maps RowIds to their rows. Note: It should always be ensured that the values
-	 * are not-null (on inserting/updating), because the LRUCache doesn't care and
-	 * NullPointerExceptions are not thrown before actually writing to file, when it
-	 * is too late to find out where the null came from, in the case of a bug.
+	 * Maps RowIds to their rows. Note: It should always be ensured that the values are not-null (on
+	 * inserting/updating), because the LRUCache doesn't care and NullPointerExceptions are not thrown before actually
+	 * writing to file, when it is too late to find out where the null came from, in the case of a bug.
 	 */
 	private final LRUSharedCache<Long, byte[]> fileCache;
 
@@ -49,11 +47,14 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final SharedSpaceManager cacheSpaceManager;
 
+	private final SharedSpaceConsumer cacheSpaceConsumer;
+
 	public RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, SharedSpaceManager cacheSpaceManager,
-			int blockSize, boolean recycleBlocks) {
+			SharedSpaceConsumer cacheSpaceConsumer, int blockSize, boolean recycleBlocks) {
 		this.fileId = fileId;
 		this.rowLength = rowLength;
 		this.cacheSpaceManager = cacheSpaceManager;
+		this.cacheSpaceConsumer = cacheSpaceConsumer;
 		if (blockSize >= rowLength) {
 			// Default case: At least one row fits into a block
 			rowsAsBlocks = false;
@@ -83,7 +84,7 @@ public class RandomAccessRowFile implements RowStorage {
 			// amount of bytes used for the values in the cache.
 //			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + cacheBlockSize);
 			int entrySize = Long.BYTES + cacheBlockSize;
-			fileCache = new LRUSharedCache<Long, byte[]>(cacheSpaceManager, entrySize) {
+			fileCache = new LRUSharedCache<Long, byte[]>(cacheSpaceManager, cacheSpaceConsumer, entrySize) {
 
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
@@ -121,8 +122,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Retrieves a row from <code>file</code>. The offset is calculated by
-	 * <code>rowId * row.length</code>.
+	 * Retrieves a row from <code>file</code>. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            The RandomAccessFile that will be read
@@ -130,8 +130,7 @@ public class RandomAccessRowFile implements RowStorage {
 	 *            The row number in the file
 	 * @param rowLength
 	 *            The length of a row in the specified file
-	 * @return The row as a byte array. The returned array has the length of
-	 *         rowLength.
+	 * @return The row as a byte array. The returned array has the length of rowLength.
 	 * @throws IOException
 	 */
 	@Override
@@ -219,8 +218,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by
-	 * <code>rowId * row.length</code>.
+	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            A RandomAccessFile that will be updated
@@ -274,8 +272,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Returned blocks have a length of {@link #cacheBlockSize}, that is the
-	 * dataLength plus one byte for the dirty flag
+	 * Returned blocks have a length of {@link #cacheBlockSize}, that is the dataLength plus one byte for the dirty flag
 	 */
 	@Override
 	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException {
@@ -321,8 +318,8 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * The cache will be ignored/not filled. Note that the blocks are stored as is.
-	 * Obviously they must have the same length.
+	 * The cache will be ignored/not filled. Note that the blocks are stored as is. Obviously they must have the same
+	 * length.
 	 */
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {

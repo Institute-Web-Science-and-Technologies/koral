@@ -4,9 +4,12 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceCo
 
 	private final SharedSpaceManager sharedSpaceManager;
 	private final int entrySize;
+	private final SharedSpaceConsumer sharedSpaceConsumer;
 
-	public LRUSharedCache(SharedSpaceManager sharedSpaceManager, int entrySize) {
+	public LRUSharedCache(SharedSpaceManager sharedSpaceManager, SharedSpaceConsumer sharedSpaceConsumer,
+			int entrySize) {
 		this.sharedSpaceManager = sharedSpaceManager;
+		this.sharedSpaceConsumer = sharedSpaceConsumer;
 		this.entrySize = entrySize;
 	}
 
@@ -17,14 +20,14 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceCo
 				// Request space from sharedSpaceManager with force
 			}
 		}
-		sharedSpaceManager.request(this, entrySize);
+		sharedSpaceManager.request(sharedSpaceConsumer, entrySize);
 		super.put(key, value);
 	}
 
 	@Override
 	public void remove(K key) {
 		super.remove(key);
-		sharedSpaceManager.release(this, entrySize);
+		sharedSpaceManager.release(sharedSpaceConsumer, entrySize);
 	}
 
 	@Override
@@ -39,7 +42,7 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceCo
 	@Override
 	public void clear() {
 		super.clear();
-		sharedSpaceManager.releaseAll(this);
+		sharedSpaceManager.releaseAll(sharedSpaceConsumer);
 	}
 
 	public boolean isEmpty() {
@@ -48,6 +51,6 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceCo
 
 	@Override
 	public void close() {
-		sharedSpaceManager.releaseAll(this);
+		sharedSpaceManager.releaseAll(sharedSpaceConsumer);
 	}
 }

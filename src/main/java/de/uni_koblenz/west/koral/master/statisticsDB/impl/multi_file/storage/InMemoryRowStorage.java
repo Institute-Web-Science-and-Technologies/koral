@@ -24,8 +24,10 @@ class InMemoryRowStorage implements RowStorage {
 
 	private final long fileId;
 
+	private final SharedSpaceConsumer cacheSpaceConsumer;
+
 	private InMemoryRowStorage(long fileId, int rowLength, int cacheBlockSize, long maxCacheSize,
-			SharedSpaceManager cacheSpaceManager) {
+			SharedSpaceManager cacheSpaceManager, SharedSpaceConsumer cacheSpaceConsumer) {
 		this.fileId = fileId;
 		this.rowLength = rowLength;
 		if (cacheBlockSize >= rowLength) {
@@ -44,16 +46,19 @@ class InMemoryRowStorage implements RowStorage {
 		}
 		maxBlockCount = maxCacheSize / this.cacheBlockSize;
 		this.cacheSpaceManager = cacheSpaceManager;
+		this.cacheSpaceConsumer = cacheSpaceConsumer;
 
 		open(true);
 	}
 
-	public InMemoryRowStorage(long fileId, int rowLength, int cacheBlockSize, long maxCacheSize) {
-		this(fileId, rowLength, cacheBlockSize, maxCacheSize, null);
+	public InMemoryRowStorage(long fileId, int rowLength, int cacheBlockSize, long maxCacheSize,
+			SharedSpaceConsumer cacheSpaceConsumer) {
+		this(fileId, rowLength, cacheBlockSize, maxCacheSize, null, cacheSpaceConsumer);
 	}
 
-	public InMemoryRowStorage(long fileId, int rowLength, int cacheBlockSize, SharedSpaceManager cacheSpaceManager) {
-		this(fileId, rowLength, cacheBlockSize, -1, cacheSpaceManager);
+	public InMemoryRowStorage(long fileId, int rowLength, int cacheBlockSize, SharedSpaceManager cacheSpaceManager,
+			SharedSpaceConsumer cacheSpaceConsumer) {
+		this(fileId, rowLength, cacheBlockSize, -1, cacheSpaceManager, cacheSpaceConsumer);
 	}
 
 	@Override
@@ -183,7 +188,7 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void close() {
 		if (cacheSpaceManager != null) {
-			cacheSpaceManager.releaseAll(this);
+			cacheSpaceManager.releaseAll(cacheSpaceConsumer);
 		}
 		delete();
 	}
@@ -192,7 +197,7 @@ class InMemoryRowStorage implements RowStorage {
 		if (cacheSpaceManager == null) {
 			return blocks.size() < maxBlockCount;
 		} else {
-			return cacheSpaceManager.request(this, cacheBlockSize);
+			return cacheSpaceManager.request(cacheSpaceConsumer, cacheBlockSize);
 		}
 	}
 
