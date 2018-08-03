@@ -1,7 +1,11 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 
 public class SharedSpaceManager {
 
@@ -11,7 +15,10 @@ public class SharedSpaceManager {
 
 	private final Map<SharedSpaceConsumer, Long> consumers;
 
-	public SharedSpaceManager(long maxSize) {
+	private final FileManager fileManager;
+
+	public SharedSpaceManager(FileManager fileManager, long maxSize) {
+		this.fileManager = fileManager;
 		this.maxSize = maxSize;
 
 		consumers = new HashMap<>();
@@ -27,6 +34,19 @@ public class SharedSpaceManager {
 			throw new IllegalStateException("Too many resources in use");
 		}
 		if (available < amount) {
+			Iterator<Entry<Long, ExtraRowStorage>> extraFiles = fileManager.getLRUExtraFiles();
+			fileLoop: while (extraFiles.hasNext()) {
+				ExtraRowStorage extraFile = extraFiles.next().getValue();
+				while (extraFile.makeRoom()) {
+					// Free up space until either enough is available or is nothing left to free up
+					if (available >= amount) {
+						break fileLoop;
+					}
+				}
+			}
+		}
+		if (available < amount) {
+			// Could not free up enough space
 			return false;
 		}
 		used += amount;
@@ -60,7 +80,7 @@ public class SharedSpaceManager {
 		if (consumerUsed != null) {
 			used -= consumerUsed;
 		}
-//		System.out.println("Used after releaseAll: " + used);
+		System.out.println("Used after releaseAll: " + used);
 	}
 
 }

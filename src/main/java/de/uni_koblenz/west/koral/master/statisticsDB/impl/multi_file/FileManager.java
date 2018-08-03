@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -53,7 +54,7 @@ public class FileManager {
 		this.mainFileRowLength = mainFileRowLength;
 		this.logger = logger;
 
-		extraCacheSpaceManager = new SharedSpaceManager(extraFilesCacheSize);
+		extraCacheSpaceManager = new SharedSpaceManager(this, extraFilesCacheSize);
 
 		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
 
@@ -181,6 +182,10 @@ public class FileManager {
 	 */
 	void deleteExternalRow(long fileId, long rowId) {
 		getExtraFile(fileId).deleteRow(rowId);
+	}
+
+	public Iterator<Entry<Long, ExtraRowStorage>> getLRUExtraFiles() {
+		return extraFiles.iteratorFromLast();
 	}
 
 	/**

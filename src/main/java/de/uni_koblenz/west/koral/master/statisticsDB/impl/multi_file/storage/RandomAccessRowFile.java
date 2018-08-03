@@ -418,6 +418,7 @@ public class RandomAccessRowFile implements RowStorage {
 			flush();
 			rowFile.close();
 			if (fileCache != null) {
+				// Clearing also ensures releasing of shared cache space
 				fileCache.clear();
 			}
 		} catch (IOException e) {

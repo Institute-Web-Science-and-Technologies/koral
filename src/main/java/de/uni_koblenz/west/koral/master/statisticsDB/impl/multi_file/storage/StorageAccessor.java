@@ -201,6 +201,11 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public boolean makeRoom() {
-		return currentStorage.makeRoom();
+		if (cache != null) {
+			switchToFile();
+			return true;
+		} else {
+			return file.makeRoom();
+		}
 	}
 }
