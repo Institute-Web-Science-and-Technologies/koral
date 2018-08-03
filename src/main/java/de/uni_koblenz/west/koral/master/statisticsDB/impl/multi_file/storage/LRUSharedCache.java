@@ -1,6 +1,6 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
-public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceConsumer, AutoCloseable {
+public class LRUSharedCache<K, V> extends LRUList<K, V> implements AutoCloseable {
 
 	private final SharedSpaceManager sharedSpaceManager;
 	private final int entrySize;
@@ -16,9 +16,8 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceCo
 	@Override
 	public void put(K key, V value) {
 		if (!sharedSpaceManager.isAvailable(entrySize)) {
-			if (!makeRoom()) {
-				// Request space from sharedSpaceManager with force
-			}
+			removeEldest();
+			// TODO: Request (with force?)
 		}
 		sharedSpaceManager.request(sharedSpaceConsumer, entrySize);
 		super.put(key, value);
@@ -31,22 +30,9 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements SharedSpaceCo
 	}
 
 	@Override
-	public boolean makeRoom() {
-		if (tail == null) {
-			return false;
-		}
-		removeEldest();
-		return true;
-	}
-
-	@Override
 	public void clear() {
 		super.clear();
 		sharedSpaceManager.releaseAll(sharedSpaceConsumer);
-	}
-
-	public boolean isEmpty() {
-		return tail == null;
 	}
 
 	@Override

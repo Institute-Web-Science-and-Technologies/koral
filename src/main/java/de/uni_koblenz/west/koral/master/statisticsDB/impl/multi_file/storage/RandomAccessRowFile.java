@@ -33,7 +33,7 @@ public class RandomAccessRowFile implements RowStorage {
 	 * inserting/updating), because the LRUCache doesn't care and NullPointerExceptions are not thrown before actually
 	 * writing to file, when it is too late to find out where the null came from, in the case of a bug.
 	 */
-	private final LRUSharedCache<Long, byte[]> fileCache;
+	private final LRUList<Long, byte[]> fileCache;
 
 	private final ObjectRecycler<byte[]> blockRecycler;
 
@@ -45,16 +45,11 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final long fileId;
 
-	private final SharedSpaceManager cacheSpaceManager;
-
-	private final SharedSpaceConsumer cacheSpaceConsumer;
-
-	public RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, SharedSpaceManager cacheSpaceManager,
-			SharedSpaceConsumer cacheSpaceConsumer, int blockSize, boolean recycleBlocks) {
+	private RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
+			SharedSpaceManager cacheSpaceManager, SharedSpaceConsumer cacheSpaceConsumer, int blockSize,
+			boolean recycleBlocks) {
 		this.fileId = fileId;
 		this.rowLength = rowLength;
-		this.cacheSpaceManager = cacheSpaceManager;
-		this.cacheSpaceConsumer = cacheSpaceConsumer;
 		if (blockSize >= rowLength) {
 			// Default case: At least one row fits into a block
 			rowsAsBlocks = false;
@@ -79,33 +74,55 @@ public class RandomAccessRowFile implements RowStorage {
 		file = new File(storageFilePath);
 		open(true);
 		if (cacheSpaceManager != null) {
+			fileCache = new LRUSharedCache<Long, byte[]>(cacheSpaceManager, cacheSpaceConsumer,
+					(ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + cacheBlockSize)) {
+				@Override
+				protected void removeEldest(Long blockId, byte[] block) {
+					onRemoveEldest(blockId, block);
+					// Remove from cache
+					super.removeEldest(blockId, block);
+				}
+			};
+		} else if (maxCacheSize > 0) {
 			// Capacity is calcuated by dividing the available space by estimated space per
 			// entry, blockSize is the
 			// amount of bytes used for the values in the cache.
-//			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + cacheBlockSize);
-			int entrySize = Long.BYTES + cacheBlockSize;
-			fileCache = new LRUSharedCache<Long, byte[]>(cacheSpaceManager, cacheSpaceConsumer, entrySize) {
-
+			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + cacheBlockSize);
+			fileCache = new LRUCache<Long, byte[]>(maxCacheEntries) {
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
-					if (block[dataLength] == 1) {
-						// Persist entry before removing
-						try {
-							writeBlockToFile(blockId, block);
-						} catch (IOException e) {
-							throw new RuntimeException(e);
-						}
-						block[dataLength] = 0;
-					}
+					onRemoveEldest(blockId, block);
 					// Remove from cache
 					super.removeEldest(blockId, block);
-					if (RandomAccessRowFile.this.recycleBlocks) {
-						blockRecycler.dump(block);
-					}
 				}
 			};
 		} else {
 			fileCache = null;
+		}
+	}
+
+	public RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize, int blockSize,
+			boolean recycleBlocks) {
+		this(storageFilePath, fileId, rowLength, maxCacheSize, null, null, blockSize, recycleBlocks);
+	}
+
+	public RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, SharedSpaceManager cacheSpaceManager,
+			SharedSpaceConsumer cacheSpaceConsumer, int blockSize, boolean recycleBlocks) {
+		this(storageFilePath, fileId, rowLength, -1, cacheSpaceManager, cacheSpaceConsumer, blockSize, recycleBlocks);
+	}
+
+	private void onRemoveEldest(Long blockId, byte[] block) {
+		if (block[dataLength] == 1) {
+			// Persist entry before removing
+			try {
+				writeBlockToFile(blockId, block);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			block[dataLength] = 0;
+		}
+		if (RandomAccessRowFile.this.recycleBlocks) {
+			blockRecycler.dump(block);
 		}
 	}
 
@@ -410,10 +427,11 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public boolean makeRoom() {
-		if (fileCache == null) {
+		if ((fileCache == null) || fileCache.isEmpty()) {
 			return false;
 		}
-		return fileCache.makeRoom();
+		fileCache.removeEldest();
+		return true;
 	}
 
 }

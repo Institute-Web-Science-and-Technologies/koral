@@ -59,17 +59,20 @@ public class StorageAccessor implements RowStorage {
 			throw new RuntimeException("File " + storageFilePath + " does not exist");
 		}
 		// TODO: Extract cache blocksize as own parameter to CLI/config
-		file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, cacheSpaceManager, this,
-				DEFAULT_CACHE_BLOCKSIZE, recycleBlocks);
-		currentStorage = file;
-		long storageLength = file.length();
 		if (cacheSpaceManager == null) {
 			// Use fixed parameter as cache size limit
-			if (storageLength < maxCacheSize) {
+			file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE,
+					recycleBlocks);
+			currentStorage = file;
+			if (file.length() < maxCacheSize) {
 				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, maxCacheSize, this);
 			}
 		} else {
-			// Use the SharedSpaceManaer as cache size limit manager
+			// Use the SharedSpaceManager as cache size limit manager
+			file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, cacheSpaceManager, this,
+					DEFAULT_CACHE_BLOCKSIZE, recycleBlocks);
+			currentStorage = file;
+			long storageLength = file.length();
 			if (cacheSpaceManager.isAvailable(storageLength)) {
 				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, cacheSpaceManager, this);
 				cacheSpaceManager.request(this, storageLength);
@@ -77,7 +80,7 @@ public class StorageAccessor implements RowStorage {
 		}
 		// If the cache was created, fill it with the file contents
 		if (cache != null) {
-			if (storageLength > 0) {
+			if (file.length() > 0) {
 				if (logger != null) {
 					logger.finest("Loading existing storage with path " + storageFilePath);
 				}

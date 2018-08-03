@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * A generic LRU list with O(1) operations and no capacity limits. Uses a
- * doubly-linked-list for access order plus an index (Map) for O(1) access.
+ * A generic LRU list with O(1) operations and no capacity limits. Uses a doubly-linked-list for access order plus an
+ * index (Map) for O(1) access.
  *
  * @author philipp
  *
@@ -94,7 +94,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 
 	/**
 	 * Removes a node from the DoublyLinkedList only.
-	 * 
+	 *
 	 * @param node
 	 */
 	void remove(DoublyLinkedNode node) {
@@ -116,7 +116,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 
 	/**
 	 * Removes an entry by key from the DoublyLinkedList and the index.
-	 * 
+	 *
 	 * @param key
 	 */
 	public void remove(K key) {
@@ -180,6 +180,10 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 	 */
 	protected void removeEldest(K key, V value) {
 		index.remove(key);
+	}
+
+	public boolean isEmpty() {
+		return tail == null;
 	}
 
 	public void clear() {
