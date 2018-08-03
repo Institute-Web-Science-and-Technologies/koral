@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -80,8 +81,14 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		}
 		// Move to tail by removing from current position (if appearing in linked list)
 		// and reinserting at the end
-		if ((node.before != null) || (node.after != null)) {
-			remove(node);
+		if (head == node) {
+			head = node.after;
+		}
+		if (node.after != null) {
+			node.after.before = node.before;
+		}
+		if (node.before != null) {
+			node.before.after = node.after;
 		}
 		// (Re)insert node
 		node.before = tail;
@@ -165,6 +172,34 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 				Entry<K, V> result = new AbstractMap.SimpleImmutableEntry<>(next.getKey(), next.getValue().value);
 				return result;
 			}
+		};
+	}
+
+	/**
+	 * Returns an iterator on the entries sorted by access order, starting from the last / the least recently used
+	 * entry.
+	 *
+	 * @return
+	 */
+	public Iterator<Entry<K, V>> iteratorFromLast() {
+		return new Iterator<Entry<K, V>>() {
+			DoublyLinkedNode nextNode = tail;
+
+			@Override
+			public boolean hasNext() {
+				return nextNode != null;
+			}
+
+			@Override
+			public Entry<K, V> next() {
+				if (!hasNext()) {
+					throw new NoSuchElementException("Call hasNext() before next()");
+				}
+				DoublyLinkedNode returnNode = nextNode;
+				nextNode = nextNode.after;
+				return new AbstractMap.SimpleImmutableEntry<>(returnNode.key, returnNode.value);
+			}
+
 		};
 	}
 

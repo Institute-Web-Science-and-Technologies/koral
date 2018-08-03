@@ -15,10 +15,11 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements AutoCloseable
 
 	@Override
 	public void put(K key, V value) {
-		if (!sharedSpaceManager.isAvailable(entrySize)) {
+		while (!sharedSpaceManager.isAvailable(entrySize) && !isEmpty()) {
 			removeEldest();
-			// TODO: Request (with force?)
 		}
+		// At this point, either we made enough space by removing the eldest or this cache is empty and the manager has
+		// to free up space now.
 		sharedSpaceManager.request(sharedSpaceConsumer, entrySize);
 		super.put(key, value);
 	}
