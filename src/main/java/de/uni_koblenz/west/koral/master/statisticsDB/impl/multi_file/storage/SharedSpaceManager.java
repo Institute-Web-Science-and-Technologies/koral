@@ -57,9 +57,6 @@ public class SharedSpaceManager {
 
 	public void releaseAll(SharedSpaceConsumer consumer) {
 		Long consumerUsed = consumers.remove(consumer);
-		if (consumerUsed == null) {
-			throw new IllegalArgumentException("Consumer " + consumer + " has no allocated space to release");
-		}
 		used -= consumerUsed;
 //		System.out.println("Used after releaseAll: " + used);
 	}
