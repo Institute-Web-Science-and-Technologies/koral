@@ -1,8 +1,8 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 /**
- * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
- * access.
+ * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for
+ * access order plus an index (Map) for O(1) access.
  *
  * @author philipp
  *
@@ -36,8 +36,9 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 	}
 
 	/**
-	 * @return The amount of elements in the cache, that is the doubly linked list. There may be more in the index map,
-	 *         depending on sub-implementations of {@link #removeEldest(DoublyLinkedNode)}.
+	 * @return The amount of elements in the cache, that is the doubly linked list.
+	 *         There may be more in the index map, depending on sub-implementations
+	 *         of {@link #removeEldest(DoublyLinkedNode)}.
 	 */
 	public long size() {
 		return size;

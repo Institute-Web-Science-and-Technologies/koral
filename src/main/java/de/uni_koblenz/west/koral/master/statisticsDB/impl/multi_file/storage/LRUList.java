@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
- * access.
+ * A generic LRU list with O(1) operations and no capacity limits. Uses a
+ * doubly-linked-list for access order plus an index (Map) for O(1) access.
  *
  * @author philipp
  *
@@ -41,7 +41,8 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		}
 		DoublyLinkedNode oldValue = index.put(key, node);
 		if (oldValue != null) {
-			// Using put as update would result in memory leaks because the old value would stay in the
+			// Using put as update would result in memory leaks because the old value would
+			// stay in the
 			// doubly-linked list
 			throw new IllegalArgumentException(
 					"Key " + key + " already exists. Use update() to change existing entries");
@@ -91,6 +92,11 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		tail = node;
 	}
 
+	/**
+	 * Removes a node from the DoublyLinkedList only.
+	 * 
+	 * @param node
+	 */
 	void remove(DoublyLinkedNode node) {
 		if (head == node) {
 			head = node.after;
@@ -108,6 +114,11 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		node.after = null;
 	}
 
+	/**
+	 * Removes an entry by key from the DoublyLinkedList and the index.
+	 * 
+	 * @param key
+	 */
 	public void remove(K key) {
 		DoublyLinkedNode node = index.get(key);
 		index.remove(key);
