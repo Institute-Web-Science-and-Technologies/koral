@@ -39,13 +39,13 @@ public class SharedSpaceManager {
 				ExtraRowStorage extraFile = extraFiles.next().getValue();
 				while (extraFile.makeRoom()) {
 					// Free up space until either enough is available or is nothing left to free up
-					if (available >= amount) {
+					if ((maxSize - used) >= amount) {
 						break fileLoop;
 					}
 				}
 			}
 		}
-		if (available < amount) {
+		if ((maxSize - used) < amount) {
 			// Could not free up enough space
 			return false;
 		}
