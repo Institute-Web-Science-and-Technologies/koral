@@ -51,9 +51,4 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 		return freeSpaceIndex.isEmpty();
 	}
 
-	@Override
-	public String toString() {
-		return getClass().getSimpleName() + '@' + Integer.toHexString(hashCode());
-	}
-
 }

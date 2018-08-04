@@ -208,4 +208,9 @@ public class StorageAccessor implements RowStorage {
 			return file.makeRoom();
 		}
 	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "(ID=" + fileId + ")";
+	}
 }
