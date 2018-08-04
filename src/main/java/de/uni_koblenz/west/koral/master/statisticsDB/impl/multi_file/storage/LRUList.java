@@ -23,7 +23,7 @@ import java.util.Set;
 public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 
 	final Map<K, DoublyLinkedNode> index;
-
+	// TODO: head should be the most recently used node
 	DoublyLinkedNode head;
 
 	DoublyLinkedNode tail;
@@ -183,7 +183,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 	 */
 	public Iterator<Entry<K, V>> iteratorFromLast() {
 		return new Iterator<Entry<K, V>>() {
-			DoublyLinkedNode nextNode = tail;
+			DoublyLinkedNode nextNode = head;
 
 			@Override
 			public boolean hasNext() {
