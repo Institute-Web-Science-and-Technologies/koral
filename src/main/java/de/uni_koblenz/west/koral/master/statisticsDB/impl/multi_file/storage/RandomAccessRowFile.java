@@ -255,7 +255,7 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 		if (fileCache != null) {
 			// We don't handle the rowsAsBlocks case separately because the procedure would
-			// be almost identical, because
+			// be almost identical, since
 			// we need to extend the row array for the dirty flag
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;

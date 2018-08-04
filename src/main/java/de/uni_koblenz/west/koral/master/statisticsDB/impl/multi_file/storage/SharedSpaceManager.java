@@ -46,8 +46,7 @@ public class SharedSpaceManager {
 			}
 		}
 		if ((maxSize - used) < amount) {
-			// Could not free up enough space
-			return false;
+			throw new OutOfMemoryError("Could not free up enough space. In use: " + used + ", requested: " + amount);
 		}
 		used += amount;
 
