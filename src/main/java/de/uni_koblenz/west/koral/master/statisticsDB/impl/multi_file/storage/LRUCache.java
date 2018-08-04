@@ -26,6 +26,7 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 			removeEldest();
 		}
 		super.put(key, value);
+		size++;
 	}
 
 	@Override
