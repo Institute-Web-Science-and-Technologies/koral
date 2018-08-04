@@ -45,6 +45,9 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final long fileId;
 
+	// Metastatistics for analysis
+	private long cacheHits, cacheMisses, notExisting;
+	
 	private RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
 			SharedSpaceManager cacheSpaceManager, SharedSpaceConsumer cacheSpaceConsumer, int blockSize,
 			boolean recycleBlocks) {
@@ -179,8 +182,13 @@ public class RandomAccessRowFile implements RowStorage {
 		if (block == null) {
 			block = readBlockFromFile(blockId);
 			if (block != null) {
+				cacheMisses++;
 				fileCache.put(blockId, block);
+			} else {
+				notExisting++;
 			}
+		} else {
+			cacheHits++;
 		}
 		return block;
 	}
@@ -254,8 +262,7 @@ public class RandomAccessRowFile implements RowStorage {
 			throw new NullPointerException("FileId " + fileId + ": Row can't be null");
 		}
 		if (fileCache != null) {
-			// We don't handle the rowsAsBlocks case separately because the procedure would
-			// be almost identical, since
+			// We don't handle the rowsAsBlocks case separately because the procedure would be almost identical, because
 			// we need to extend the row array for the dirty flag
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
@@ -313,10 +320,8 @@ public class RandomAccessRowFile implements RowStorage {
 					throw new NoSuchElementException("FileId " + fileId + ": Use hasNext() before calling next()");
 				}
 				try {
-					// We ignore the cache to prevent lots of cache updates (one per read) and a not
-					// optimal cache
-					// content afterwards (the last few blocks would be stored, and not the most
-					// frequent used ones).
+					// We ignore the cache to prevent lots of cache updates (one per read) and a not optimal cache
+					// content afterwards (the last few blocks would be stored, and not the most frequent used ones).
 					byte[] block = readBlockFromFile(blockId);
 					if (block == null) {
 						// This should never happen because hasNext() checks for this
@@ -335,8 +340,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * The cache will be ignored/not filled. Note that the blocks are stored as is. Obviously they must have the same
-	 * length.
+	 * The cache will be ignored/not filled.
 	 */
 	@Override
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException {
@@ -346,8 +350,7 @@ public class RandomAccessRowFile implements RowStorage {
 		while (blocks.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
-			rowFile.seek(blockEntry.getKey() * block.length);
-			rowFile.write(block);
+			writeBlockToFile(blockEntry.getKey(), block);
 		}
 	}
 
@@ -399,6 +402,10 @@ public class RandomAccessRowFile implements RowStorage {
 	@Override
 	public int getRowLength() {
 		return rowLength;
+	}
+
+	public long[] getStorageStatistics() {
+		return new long[] { cacheHits, cacheMisses, notExisting };
 	}
 
 	/**

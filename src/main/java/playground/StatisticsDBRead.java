@@ -12,6 +12,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -127,13 +129,29 @@ public class StatisticsDBRead {
 				optimizationPreventer += statistics.getTotalObjectFrequency(statement.getObjectAsLong());
 			}
 			in.close();
+			System.out.println("Chunk " + i + " done.");
 		}
-		long time = System.currentTimeMillis() - start;
-		System.out.println("Reading took " + (time / 1000) + " sec");
+		long durationSec = (System.currentTimeMillis() - start) / 1000;
+		System.out.println("Reading took " + durationSec + " sec");
 		System.out.println(optimizationPreventer);
 		System.out.println("Writing benchmark results to CSV...");
+
+		Map<Long, long[]> storageStatistics = statisticsDB.getStorageStatistics();
+		long totalCacheHits = 0, totalCacheMisses = 0, totalNotExisting = 0;
+		for (Entry<Long, long[]> entry : storageStatistics.entrySet()) {
+			long[] values = entry.getValue();
+			totalCacheHits += values[0];
+			totalCacheMisses += values[1];
+			totalNotExisting += values[2];
+		}
+		double totalHitrate = totalCacheHits / (double) (totalCacheHits + totalCacheMisses);
+		writeStorageStatisticsToCSV(configName, storageDir.getCanonicalPath(), storageStatistics, totalCacheHits,
+				totalCacheMisses, totalNotExisting, totalHitrate);
+
 		writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, statisticsDB.getRowDataLength(), indexCacheSize,
-				extraFilesCacheSize, coveringAlgorithm, implementationNote, time);
+				extraFilesCacheSize, coveringAlgorithm, implementationNote, durationSec, totalCacheHits,
+				totalCacheMisses, totalHitrate);
+
 		if (WRITE_STATISTICS_DATA) {
 			// Read statistics and write into csv
 			System.out.println("Writing statistics to file...");
@@ -168,17 +186,44 @@ public class StatisticsDBRead {
 
 	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, int numberOfChunks, int dataBytes,
 			long indexCacheSize, long extraFilesCacheSize, String coveringAlgorithm, String implementationNote,
-			long durationMs) throws UnsupportedEncodingException, FileNotFoundException, IOException {
+			long durationSec, long totalCacheHits, long totalCacheMisses, double totalHitrate)
+			throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
 				csvFileFormat);
 		if (resultFile.length() == 0) {
 			printer.printRecord("TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB", "EXTRAFILES_CACHE_MB",
-					"COV_ALG", "NOTE", "DURATION_MS");
+					"COV_ALG", "NOTE", "DURATION_SEC", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE");
 		}
 		printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
-				coveringAlgorithm, implementationNote, durationMs);
+				coveringAlgorithm, implementationNote, durationSec, totalCacheHits, totalCacheMisses, totalHitrate);
 		printer.close();
+	}
+
+	private static void writeStorageStatisticsToCSV(String configName, String storageDir,
+			Map<Long, long[]> storageStatistics, long totalCacheHits, long totalCacheMisses, long totalNotExisting,
+			double totalHitrate) throws IOException {
+		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(
+				new FileOutputStream("storageStatistics-" + configName + ".csv", false), "UTF-8"), csvFileFormat);
+		printer.printRecord("FILE_ID", "FILE_SIZE", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE", "NOT_EXISTING");
+		for (Entry<Long, long[]> entry : storageStatistics.entrySet()) {
+			long fileId = entry.getKey();
+			long[] values = entry.getValue();
+			File file;
+			if (fileId == 0) {
+				file = new File(storageDir, "statistics");
+			} else {
+				file = new File(storageDir, String.valueOf(fileId));
+			}
+			double hitrate = values[0] / (double) (values[0] + values[1]);
+			printer.printRecord(fileId, file.length(), values[0], values[1], String.format("%.3f", hitrate), values[2]);
+		}
+		printer.println();
+		printer.printRecord("TOTAL", "", totalCacheHits, totalCacheMisses, String.format("%.3f", totalHitrate),
+				totalNotExisting);
+		printer.close();
+
 	}
 
 	private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {

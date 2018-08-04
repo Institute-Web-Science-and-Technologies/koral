@@ -27,6 +27,8 @@
 /koralConfig.xml
 /build/
 /target/
+
+# Output files of StatisticsDB
 /bigone_*_chunks.csv
 /SingleFileGraphStatisticsDatabase-statistics.csv
 /MultiFileGraphStatisticsDatabase-statistics.csv

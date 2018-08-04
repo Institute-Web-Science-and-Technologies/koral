@@ -2,6 +2,12 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.util.Map;
 
+/**
+ * Used for transferring pairs of block id and block data between storage implementations.
+ * 
+ * @author philipp
+ *
+ */
 class BlockEntry implements Map.Entry<Long, byte[]> {
 
 	private long blockId;
