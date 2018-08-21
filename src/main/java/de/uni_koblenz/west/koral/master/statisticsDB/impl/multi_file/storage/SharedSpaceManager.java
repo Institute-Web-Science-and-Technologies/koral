@@ -60,6 +60,15 @@ public class SharedSpaceManager {
 		return true;
 	}
 
+	public long getSpaceUsed(SharedSpaceConsumer consumer) {
+		Long spaceUsed = consumers.get(consumer);
+		if (spaceUsed == null) {
+			return 0;
+		} else {
+			return spaceUsed;
+		}
+	}
+
 	public void release(SharedSpaceConsumer consumer, long amount) {
 		used -= amount;
 		if (used < 0) {
