@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLog;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraStorageAccessor;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.LRUCache;
@@ -48,9 +49,6 @@ public class FileManager {
 	public FileManager(String storagePath, int mainFileRowLength, int maxOpenFiles, long indexFileCacheSize,
 			long extraFilesCacheSize, Logger logger) {
 		this.storagePath = storagePath;
-		if (!this.storagePath.endsWith(File.separator)) {
-			storagePath += File.separator;
-		}
 		this.indexFileCacheSize = indexFileCacheSize;
 		this.mainFileRowLength = mainFileRowLength;
 		this.logger = logger;
@@ -60,6 +58,8 @@ public class FileManager {
 		} else {
 			extraCacheSpaceManager = null;
 		}
+
+		StorageLog.createInstance(storagePath);
 
 		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
 
@@ -71,7 +71,7 @@ public class FileManager {
 			}
 		};
 
-		extraFilesMetadataFile = new File(storagePath + "extraFilesMetadata");
+		extraFilesMetadataFile = new File(storagePath, "extraFilesMetadata");
 		if (extraFilesMetadataFile.exists()) {
 			loadExtraFiles();
 		}
@@ -85,6 +85,7 @@ public class FileManager {
 	}
 
 	void setup() {
+		StorageLog.getInstance().open();
 		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, false, true,
 				logger);
 	}
@@ -359,6 +360,7 @@ public class FileManager {
 			index.close();
 			extraFiles.values().forEach(extraRowStorage -> extraRowStorage.close());
 			deleteEmptyFiles();
+			StorageLog.getInstance().close();
 		}
 	}
 

@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLog;
+
 public class RandomAccessRowFile implements RowStorage {
 
 	private static final int ESTIMATED_SPACE_PER_LRUCACHE_ENTRY = 128 /* index entry */ + 24 /* Long value */
@@ -47,7 +49,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 	// Metastatistics for analysis
 	private long cacheHits, cacheMisses, notExisting;
-	
+
 	private RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
 			SharedSpaceManager cacheSpaceManager, SharedSpaceConsumer cacheSpaceConsumer, int blockSize,
 			boolean recycleBlocks) {
@@ -165,6 +167,8 @@ public class RandomAccessRowFile implements RowStorage {
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
+			// TODO: size
+			StorageLog.getInstance().log(fileId, false, true, fileCache.size(), block != null);
 			if (block == null) {
 				return null;
 			}
@@ -172,6 +176,7 @@ public class RandomAccessRowFile implements RowStorage {
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
 			return row;
 		} else {
+			StorageLog.getInstance().log(fileId, false, true, fileCache.size(), false);
 			return readRowFromFile(rowId);
 		}
 
@@ -267,6 +272,8 @@ public class RandomAccessRowFile implements RowStorage {
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
+			// TODO: size
+			StorageLog.getInstance().log(fileId, true, true, fileCache.size(), block != null);
 			if (block == null) {
 				if (recycleBlocks) {
 					block = blockRecycler.retrieve();
@@ -281,6 +288,7 @@ public class RandomAccessRowFile implements RowStorage {
 			block[dataLength] = 1;
 		} else {
 			writeRowToFile(rowId, row);
+			StorageLog.getInstance().log(fileId, true, true, 0, false);
 		}
 		return true;
 	}
