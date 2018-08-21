@@ -79,7 +79,7 @@ public class SharedSpaceManager {
 		if (consumerUsed != null) {
 			used -= consumerUsed;
 		}
-		System.out.println("Used after releaseAll: " + used);
+//		System.out.println("Used after releaseAll: " + used);
 	}
 
 }
