@@ -39,6 +39,7 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 	 * @return The amount of elements in the cache, that is the doubly linked list. There may be more in the index map,
 	 *         depending on sub-implementations of {@link #removeEldest(DoublyLinkedNode)}.
 	 */
+	@Override
 	public long size() {
 		return size;
 	}

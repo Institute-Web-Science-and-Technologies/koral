@@ -25,6 +25,11 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements AutoCloseable
 	}
 
 	@Override
+	public long size() {
+		return sharedSpaceManager.getSpaceUsed(sharedSpaceConsumer);
+	}
+
+	@Override
 	public void remove(DoublyLinkedNode node) {
 		super.remove(node);
 		sharedSpaceManager.release(sharedSpaceConsumer, entrySize);

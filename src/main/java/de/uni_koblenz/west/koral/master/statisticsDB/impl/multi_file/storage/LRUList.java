@@ -253,4 +253,8 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		}
 	}
 
+	public long size() {
+		return index.size();
+	}
+
 }
