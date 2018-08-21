@@ -203,6 +203,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				} else {
 					rowManager.mergeDataBytesIntoRow();
 				}
+				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 			} else {
 				long fileIdWrite = rowManager.getFileId();
 				long extraFileRowId = rowManager.getExternalFileRowId();
@@ -212,17 +213,17 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					fileManager.deleteExternalRow(fileIdRead, extraFileRowId);
 					newExtraFileRowID = fileManager.writeExternalRow(fileIdWrite, rowManager.getDataBytes());
 					checkIfDataBytesLengthIsEnough(newExtraFileRowID);
+					// Write new offset into index row
+					rowManager.updateExtraRowId(newExtraFileRowID);
+					fileManager.writeIndexRow(resourceId, rowManager.getRow());
 				} else {
 					// Overwrite old extra file entry
 					fileManager.writeExternalRow(fileIdWrite, extraFileRowId, rowManager.getDataBytes());
 				}
 //				SimpleLogger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
 //						+ Arrays.toString(rowManager.getDataBytes()));
-				// Write new offset into index row
-				rowManager.updateExtraRowId(newExtraFileRowID);
 			}
 //			SimpleLogger.log("New Row: " + Arrays.toString(rowManager.getRow()));
-			fileManager.writeIndexRow(resourceId, rowManager.getRow());
 
 		} catch (IOException e) {
 			close();
