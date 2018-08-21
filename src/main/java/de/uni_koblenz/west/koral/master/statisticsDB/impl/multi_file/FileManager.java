@@ -55,7 +55,11 @@ public class FileManager {
 		this.mainFileRowLength = mainFileRowLength;
 		this.logger = logger;
 
-		extraCacheSpaceManager = new SharedSpaceManager(this, extraFilesCacheSize);
+		if (extraFilesCacheSize > 0) {
+			extraCacheSpaceManager = new SharedSpaceManager(this, extraFilesCacheSize);
+		} else {
+			extraCacheSpaceManager = null;
+		}
 
 		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
 

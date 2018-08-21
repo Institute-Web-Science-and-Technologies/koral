@@ -50,7 +50,8 @@ public class StorageAccessor implements RowStorage {
 
 	public StorageAccessor(String storageFilePath, long fileId, int rowLength, SharedSpaceManager cacheSpaceManager,
 			boolean recycleBlocks, boolean createIfNotExisting, Logger logger) {
-		this(storageFilePath, fileId, rowLength, -1, cacheSpaceManager, recycleBlocks, createIfNotExisting, logger);
+		// maxCacheSize is set to zero, because this parameter is only relevant if cacheSpaceManager == null
+		this(storageFilePath, fileId, rowLength, 0, cacheSpaceManager, recycleBlocks, createIfNotExisting, logger);
 	}
 
 	@Override
