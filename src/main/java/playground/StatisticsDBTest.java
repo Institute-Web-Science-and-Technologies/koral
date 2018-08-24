@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -197,9 +198,11 @@ public class StatisticsDBTest {
 			System.out.println("Index File size: " + String.format("%,d", indexFileLength) + " Bytes");
 			if (WRITE_BENCHMARK_RESULTS) {
 				System.out.println("Writing benchmarks to CSV...");
+				SimpleDateFormat dateFormatter = new SimpleDateFormat("dd.MM.yy HH:mm");
+				String date = dateFormatter.format(new Date());
 				// For the extra file size the difference of dir and index size is calculated. For
 				// 1000M dataset, deviation is less than 0.001%
-				writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
+				writeBenchmarkToCSV(resultCSV, date, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, implementationNote, durationSec,
 						dirSize, indexFileLength, dirSize - indexFileLength, totalEntries, unusedBytes);
 				System.out.println("Writing file distribution to CSV...");
@@ -237,10 +240,10 @@ public class StatisticsDBTest {
 		return encodedFiles;
 	}
 
-	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, short numberOfChunks, int dataBytes,
-			long indexCacheSize, long extraFilesCacheSize, String dbImplementation, String coveringAlgorithm,
-			String implementationNote, long durationSec, long dirSizeBytes, long indexSizeBytes,
-			long extraFilesSizeBytes, long totalEntries, long unusedBytes)
+	private static void writeBenchmarkToCSV(File resultFile, String date, int tripleCount, short numberOfChunks,
+			int dataBytes, long indexCacheSize, long extraFilesCacheSize, String dbImplementation,
+			String coveringAlgorithm, String implementationNote, long durationSec, long dirSizeBytes,
+			long indexSizeBytes, long extraFilesSizeBytes, long totalEntries, long unusedBytes)
 			throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
@@ -248,11 +251,11 @@ public class StatisticsDBTest {
 		if (resultFile.length() == 0) {
 			// The extra file size is only approximate, because only the difference of dir and index size is calculated.
 			// For 1000M dataset, deviation is less than 0.001%
-			printer.printRecord("TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB", "EXTRAFILES_CACHE_MB",
-					"DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "DIR_SIZE_BYTES", "INDEX_SIZE_BYTES",
-					"APPROX_EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
+			printer.printRecord("DATE_FINISHED", "TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB",
+					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "DIR_SIZE_BYTES",
+					"INDEX_SIZE_BYTES", "APPROX_EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
 		}
-		printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
+		printer.printRecord(date, tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
 				dbImplementation, coveringAlgorithm, implementationNote, durationSec, dirSizeBytes, indexSizeBytes,
 				extraFilesSizeBytes, totalEntries, unusedBytes);
 		printer.close();
