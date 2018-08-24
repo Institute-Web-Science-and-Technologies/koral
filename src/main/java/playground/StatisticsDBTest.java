@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
@@ -200,11 +201,10 @@ public class StatisticsDBTest {
 				System.out.println("Writing benchmarks to CSV...");
 				SimpleDateFormat dateFormatter = new SimpleDateFormat("dd.MM.yy HH:mm");
 				String date = dateFormatter.format(new Date());
-				// For the extra file size the difference of dir and index size is calculated. For
-				// 1000M dataset, deviation is less than 0.001%
+				long extraFilesSize = getExtraFilesSize(storageDir);
 				writeBenchmarkToCSV(resultCSV, date, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, implementationNote, durationSec,
-						dirSize, indexFileLength, dirSize - indexFileLength, totalEntries, unusedBytes);
+						dirSize, indexFileLength, extraFilesSize, totalEntries, unusedBytes);
 				System.out.println("Writing file distribution to CSV...");
 				writeFileDistributionToCSV(configNameWithoutCaches, conf.getStatisticsDir(true), freeSpaceIndexLengths);
 			}
@@ -249,8 +249,6 @@ public class StatisticsDBTest {
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
 				csvFileFormat);
 		if (resultFile.length() == 0) {
-			// The extra file size is only approximate, because only the difference of dir and index size is calculated.
-			// For 1000M dataset, deviation is less than 0.001%
 			printer.printRecord("DATE_FINISHED", "TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB",
 					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "DIR_SIZE_BYTES",
 					"INDEX_SIZE_BYTES", "APPROX_EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
@@ -323,6 +321,20 @@ public class StatisticsDBTest {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static long getExtraFilesSize(File storageDir) {
+		long totalSize = 0;
+		FilenameFilter fileNameNumberFilter = new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return StringUtils.isNumeric(name);
+			}
+		};
+		for (File extraFile : storageDir.listFiles(fileNameNumberFilter)) {
+			totalSize += extraFile.length();
+		}
+		return totalSize;
 	}
 
 	/**
