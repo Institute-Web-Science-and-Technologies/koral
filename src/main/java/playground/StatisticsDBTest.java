@@ -46,6 +46,8 @@ public class StatisticsDBTest {
 
 	private static final boolean COLLECT_META_STATISTICS = true;
 
+	public static final boolean ENABLE_STORAGE_LOGGING = false;
+
 	private static final boolean WRITE_STATISTICS_DATA = false;
 
 	private static void printUsage() {

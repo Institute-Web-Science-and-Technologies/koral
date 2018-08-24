@@ -19,6 +19,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.Row
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.SharedSpaceManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.StorageAccessor;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
+import playground.StatisticsDBTest;
 
 public class FileManager {
 
@@ -59,7 +60,9 @@ public class FileManager {
 			extraCacheSpaceManager = null;
 		}
 
-		StorageLog.createInstance(storagePath);
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLog.createInstance(storagePath);
+		}
 
 		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
 
@@ -85,7 +88,9 @@ public class FileManager {
 	}
 
 	void setup() {
-		StorageLog.getInstance().open();
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLog.getInstance().open();
+		}
 		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, false, true,
 				logger);
 	}
@@ -360,7 +365,9 @@ public class FileManager {
 			index.close();
 			extraFiles.values().forEach(extraRowStorage -> extraRowStorage.close());
 			deleteEmptyFiles();
-			StorageLog.getInstance().close();
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				StorageLog.getInstance().close();
+			}
 		}
 	}
 

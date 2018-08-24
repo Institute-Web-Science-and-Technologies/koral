@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLog;
+import playground.StatisticsDBTest;
 
 public class RandomAccessRowFile implements RowStorage {
 
@@ -168,7 +169,9 @@ public class RandomAccessRowFile implements RowStorage {
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
 			// TODO: size
-			StorageLog.getInstance().log(fileId, false, true, fileCache.size(), block != null);
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				StorageLog.getInstance().log(fileId, false, true, fileCache.size(), block != null);
+			}
 			if (block == null) {
 				return null;
 			}
@@ -176,7 +179,9 @@ public class RandomAccessRowFile implements RowStorage {
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
 			return row;
 		} else {
-			StorageLog.getInstance().log(fileId, false, true, fileCache.size(), false);
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				StorageLog.getInstance().log(fileId, false, true, fileCache.size(), false);
+			}
 			return readRowFromFile(rowId);
 		}
 
@@ -273,7 +278,9 @@ public class RandomAccessRowFile implements RowStorage {
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
 			// TODO: size
-			StorageLog.getInstance().log(fileId, true, true, fileCache.size(), block != null);
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				StorageLog.getInstance().log(fileId, true, true, fileCache.size(), block != null);
+			}
 			if (block == null) {
 				if (recycleBlocks) {
 					block = blockRecycler.retrieve();
@@ -288,7 +295,9 @@ public class RandomAccessRowFile implements RowStorage {
 			block[dataLength] = 1;
 		} else {
 			writeRowToFile(rowId, row);
-			StorageLog.getInstance().log(fileId, true, true, 0, false);
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				StorageLog.getInstance().log(fileId, true, true, 0, false);
+			}
 		}
 		return true;
 	}

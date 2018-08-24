@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLog;
+import playground.StatisticsDBTest;
 
 class InMemoryRowStorage implements RowStorage {
 
@@ -75,7 +76,9 @@ class InMemoryRowStorage implements RowStorage {
 		if (!valid()) {
 			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
-		StorageLog.getInstance().log(fileId, false, false, blocks.size() * cacheBlockSize, true);
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLog.getInstance().log(fileId, false, false, blocks.size() * cacheBlockSize, true);
+		}
 		if (rowsAsBlocks) {
 			return blocks.get(rowId);
 		}
@@ -96,7 +99,9 @@ class InMemoryRowStorage implements RowStorage {
 		if (!valid()) {
 			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
-		StorageLog.getInstance().log(fileId, true, false, blocks.size() * cacheBlockSize, true);
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLog.getInstance().log(fileId, true, false, blocks.size() * cacheBlockSize, true);
+		}
 		if (rowsAsBlocks) {
 			if (!spaceForOneBlockAvailable()) {
 				return false;
