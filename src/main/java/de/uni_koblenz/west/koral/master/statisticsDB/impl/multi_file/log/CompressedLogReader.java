@@ -57,6 +57,9 @@ public class CompressedLogReader {
 				String elementName = new String(elementNameBytes, StandardCharsets.UTF_8);
 				int elementTypeOrdinal = readInt();
 				ElementType elementType = ElementType.values()[elementTypeOrdinal];
+				// TODO: rowLayout elements should be sorted like the header data
+				// Using a TreeMap on strings sorts by the string key, it should be sorted by insertion order
+				// to guarantee correct interpretation of the raw body data
 				rowLayout.put(elementName, elementType);
 			}
 			rowLayouts.put(rowType, rowLayout);
@@ -113,7 +116,9 @@ public class CompressedLogReader {
 		}
 		for (; cursor < row.length; cursor++) {
 			for (int bitCursor = 0; (bitCursor < Byte.SIZE) && !elementNamesOfBits.isEmpty(); bitCursor++) {
-				byte value = (byte) (row[cursor] & (1 << (Byte.SIZE - bitCursor)));
+				byte filteredBitGroup = (byte) (row[cursor] & (1 << (Byte.SIZE - bitCursor - 1)));
+				// Move the bit to the last position
+				byte value = (byte) ((0xFF & filteredBitGroup) >>> (Byte.SIZE - bitCursor - 1));
 				data.put(elementNamesOfBits.removeFirst(), value);
 			}
 		}

@@ -32,6 +32,7 @@ public class CompressedLogTest {
 		layout2.put("2byte2", ElementType.BYTE);
 		layout2.put("2bit", ElementType.BIT);
 		layout2.put("2int", ElementType.INTEGER);
+		layout2.put("2bit2", ElementType.BIT);
 		rowLayouts.put(1, layout2);
 
 		CompressedLogWriter writer = new CompressedLogWriter(storageFile, rowLayouts);
@@ -48,6 +49,7 @@ public class CompressedLogTest {
 		data.put("2byte2", (byte) 112);
 		data.put("2bit", (byte) 1);
 		data.put("2int", 1056);
+		data.put("2bit2", (byte) 1);
 		writer.log(1, data);
 		writer.close();
 

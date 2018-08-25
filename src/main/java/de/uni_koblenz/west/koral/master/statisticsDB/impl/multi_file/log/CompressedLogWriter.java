@@ -90,8 +90,8 @@ public class CompressedLogWriter {
 
 		while (bitIterator.hasNext()) {
 			byte bitGroup = 0;
-			for (int bitCursor = 0; (bitCursor < 8) && bitIterator.hasNext(); bitCursor++) {
-				bitGroup |= bitIterator.next() << bitCursor;
+			for (int bitCursor = 0; (bitCursor < Byte.SIZE) && bitIterator.hasNext(); bitCursor++) {
+				bitGroup |= bitIterator.next() << (Byte.SIZE - bitCursor - 1);
 			}
 			row[cursor] = bitGroup;
 			cursor++;
