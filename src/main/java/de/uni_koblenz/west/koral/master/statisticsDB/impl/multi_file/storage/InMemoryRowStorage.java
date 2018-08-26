@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import playground.StatisticsDBTest;
 
@@ -82,16 +83,17 @@ class InMemoryRowStorage implements RowStorage {
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
-		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize, true);
-		}
+		byte[] row = null;
 		if (block != null) {
-			byte[] row = new byte[rowLength];
+			row = new byte[rowLength];
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
-			return row;
-		} else {
-			return null;
 		}
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			boolean found = (row != null) && !Utils.isArrayZero(row);
+			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize,
+					block != null, found);
+		}
+		return row;
 	}
 
 	@Override
@@ -110,7 +112,14 @@ class InMemoryRowStorage implements RowStorage {
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize, true);
+			boolean found = false;
+			if (block != null) {
+				byte[] readRow = new byte[rowLength];
+				System.arraycopy(block, blockOffset, readRow, 0, rowLength);
+				found = !Utils.isArrayZero(readRow);
+			}
+			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize,
+					block != null, found);
 		}
 		if (block != null) {
 			System.arraycopy(row, 0, block, blockOffset, row.length);

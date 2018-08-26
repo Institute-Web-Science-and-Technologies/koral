@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import playground.StatisticsDBTest;
 
@@ -171,21 +172,43 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
-			byte[] block = readBlock(blockId);
-			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
-						fileCache.size() * estimatedSpacePerCacheEntry, block != null);
-			}
+
+//			byte[] block = readBlock(blockId);
+			boolean cacheHit, blockFound;
+			byte[] block = fileCache.get(blockId);
 			if (block == null) {
+				cacheHit = false;
+				block = readBlockFromFile(blockId);
+				if (block != null) {
+					blockFound = true;
+					cacheMisses++;
+					fileCache.put(blockId, block);
+				} else {
+					blockFound = false;
+					notExisting++;
+				}
+			} else {
+				cacheHit = true;
+				blockFound = true;
+				cacheHits++;
+			}
+
+			if (block == null) {
+				if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+					StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
+							fileCache.size() * estimatedSpacePerCacheEntry, block != null, false);
+				}
 				return null;
 			}
 			byte[] row = new byte[rowLength];
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
+						fileCache.size() * estimatedSpacePerCacheEntry, cacheHit,
+						blockFound && !Utils.isArrayZero(row));
+			}
 			return row;
 		} else {
-			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLogWriter.getInstance().logAccessEvent(fileId, rowId, false, true, 0, false);
-			}
 			return readRowFromFile(rowId);
 		}
 
@@ -280,10 +303,33 @@ public class RandomAccessRowFile implements RowStorage {
 			// we need to extend the row array for the dirty flag
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
-			byte[] block = readBlock(blockId);
+
+//			byte[] block = readBlock(blockId);
+			boolean cacheHit, blockFound;
+			byte[] block = fileCache.get(blockId);
+			if (block == null) {
+				cacheHit = false;
+				block = readBlockFromFile(blockId);
+				if (block != null) {
+					blockFound = true;
+					cacheMisses++;
+					fileCache.put(blockId, block);
+				} else {
+					blockFound = false;
+					notExisting++;
+				}
+			} else {
+				cacheHit = true;
+				blockFound = true;
+				cacheHits++;
+			}
+
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				byte[] readRow = new byte[cacheBlockSize];
+				System.arraycopy(block, blockOffset, row, 0, rowLength);
 				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
-						fileCache.size() * estimatedSpacePerCacheEntry, block != null);
+						fileCache.size() * estimatedSpacePerCacheEntry, cacheHit,
+						blockFound && !Utils.isArrayZero(readRow));
 			}
 			if (block == null) {
 				if (recycleBlocks) {
@@ -299,9 +345,6 @@ public class RandomAccessRowFile implements RowStorage {
 			block[dataLength] = 1;
 		} else {
 			writeRowToFile(rowId, row);
-			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLogWriter.getInstance().logAccessEvent(fileId, rowId, true, true, 0, false);
-			}
 		}
 		return true;
 	}
