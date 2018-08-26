@@ -15,10 +15,8 @@ import playground.StatisticsDBTest;
 
 public class RandomAccessRowFile implements RowStorage {
 
-	private static final int ESTIMATED_SPACE_PER_LRUCACHE_ENTRY_WITHOUT_DATA = 128 /* index entry */ + 24 /*
-																											 * Long
-																											 * value
-																											 */
+	private static final int ESTIMATED_SPACE_PER_LRUCACHE_ENTRY_WITHOUT_DATA = 128 /* index entry */
+			+ 24 /* Long value */
 			+ 64 /* DoublyLinkedNode */;
 
 	final File file;
