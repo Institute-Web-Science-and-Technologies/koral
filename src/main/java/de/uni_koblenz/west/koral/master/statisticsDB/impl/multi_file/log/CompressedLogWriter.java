@@ -82,7 +82,7 @@ public class CompressedLogWriter {
 			Object value = data.get(elementName);
 			ElementType elementType = rowLayout.get(elementName);
 			if (elementType == ElementType.BIT) {
-				bits.add((Byte) value);
+				bits.add(object2byte(value));
 			} else {
 				cursor = addElement(row, cursor, elementType, value);
 			}
@@ -109,7 +109,7 @@ public class CompressedLogWriter {
 			throw new AssertionError("Bits are supposed to be added separately");
 		}
 		if (elementType == ElementType.BYTE) {
-			row[cursor] = (byte) value;
+			row[cursor] = object2byte(value);
 			return cursor + 1;
 		}
 		if (elementType == ElementType.INTEGER) {
@@ -164,7 +164,6 @@ public class CompressedLogWriter {
 				out.close();
 				closed = true;
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -176,5 +175,15 @@ public class CompressedLogWriter {
 			array[i] = (byte) (number >>> ((Integer.BYTES - i - 1) * Byte.SIZE));
 		}
 		return array;
+	}
+
+	private static byte object2byte(Object value) {
+		if (value instanceof Boolean) {
+			return (byte) (((boolean) value) ? 1 : 0);
+		} else if (value instanceof Integer) {
+			return ((Integer) value).byteValue();
+		} else {
+			return (Byte) value;
+		}
 	}
 }
