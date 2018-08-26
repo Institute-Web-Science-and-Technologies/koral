@@ -14,7 +14,10 @@ import playground.StatisticsDBTest;
 
 public class RandomAccessRowFile implements RowStorage {
 
-	private static final int ESTIMATED_SPACE_PER_LRUCACHE_ENTRY = 128 /* index entry */ + 24 /* Long value */
+	private static final int ESTIMATED_SPACE_PER_LRUCACHE_ENTRY_WITHOUT_DATA = 128 /* index entry */ + 24 /*
+																											 * Long
+																											 * value
+																											 */
 			+ 64 /* DoublyLinkedNode */;
 
 	final File file;
@@ -39,6 +42,8 @@ public class RandomAccessRowFile implements RowStorage {
 	private final LRUList<Long, byte[]> fileCache;
 
 	private final ObjectRecycler<byte[]> blockRecycler;
+
+	private final int estimatedSpacePerCacheEntry;
 
 	private final int rowsPerBlock;
 
@@ -69,6 +74,7 @@ public class RandomAccessRowFile implements RowStorage {
 		dataLength = rowsPerBlock * rowLength;
 		// 1 Byte for dirty flag
 		cacheBlockSize = dataLength + 1;
+		estimatedSpacePerCacheEntry = ESTIMATED_SPACE_PER_LRUCACHE_ENTRY_WITHOUT_DATA + cacheBlockSize;
 
 		this.recycleBlocks = recycleBlocks;
 		if (recycleBlocks) {
@@ -81,7 +87,7 @@ public class RandomAccessRowFile implements RowStorage {
 		open(true);
 		if (cacheSpaceManager != null) {
 			fileCache = new LRUSharedCache<Long, byte[]>(cacheSpaceManager, cacheSpaceConsumer,
-					(ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + cacheBlockSize)) {
+					estimatedSpacePerCacheEntry) {
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
 					onRemoveEldest(blockId, block);
@@ -90,10 +96,8 @@ public class RandomAccessRowFile implements RowStorage {
 				}
 			};
 		} else if (maxCacheSize > 0) {
-			// Capacity is calcuated by dividing the available space by estimated space per
-			// entry, blockSize is the
-			// amount of bytes used for the values in the cache.
-			long maxCacheEntries = maxCacheSize / (ESTIMATED_SPACE_PER_LRUCACHE_ENTRY + cacheBlockSize);
+			// Capacity is calcuated by dividing the available space by estimated space per entry
+			long maxCacheEntries = maxCacheSize / estimatedSpacePerCacheEntry;
 			fileCache = new LRUCache<Long, byte[]>(maxCacheEntries) {
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
@@ -168,9 +172,9 @@ public class RandomAccessRowFile implements RowStorage {
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
-			// TODO: size
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLog.getInstance().log(fileId, false, true, fileCache.size(), block != null);
+				StorageLog.getInstance().logAcessEvent(fileId, blockId, false, true,
+						fileCache.size() * estimatedSpacePerCacheEntry, block != null);
 			}
 			if (block == null) {
 				return null;
@@ -180,7 +184,7 @@ public class RandomAccessRowFile implements RowStorage {
 			return row;
 		} else {
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLog.getInstance().log(fileId, false, true, fileCache.size(), false);
+				StorageLog.getInstance().logAcessEvent(fileId, rowId, false, true, 0, false);
 			}
 			return readRowFromFile(rowId);
 		}
@@ -277,9 +281,9 @@ public class RandomAccessRowFile implements RowStorage {
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
-			// TODO: size
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLog.getInstance().log(fileId, true, true, fileCache.size(), block != null);
+				StorageLog.getInstance().logAcessEvent(fileId, blockId, true, true,
+						fileCache.size() * estimatedSpacePerCacheEntry, block != null);
 			}
 			if (block == null) {
 				if (recycleBlocks) {
@@ -296,7 +300,7 @@ public class RandomAccessRowFile implements RowStorage {
 		} else {
 			writeRowToFile(rowId, row);
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLog.getInstance().log(fileId, true, true, 0, false);
+				StorageLog.getInstance().logAcessEvent(fileId, rowId, true, true, 0, false);
 			}
 		}
 		return true;

@@ -88,9 +88,6 @@ public class FileManager {
 	}
 
 	void setup() {
-		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			StorageLog.getInstance().open();
-		}
 		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, false, true,
 				logger);
 	}

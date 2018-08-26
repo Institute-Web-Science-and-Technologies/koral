@@ -76,15 +76,15 @@ class InMemoryRowStorage implements RowStorage {
 		if (!valid()) {
 			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
-		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			StorageLog.getInstance().log(fileId, false, false, blocks.size() * cacheBlockSize, true);
-		}
 		if (rowsAsBlocks) {
 			return blocks.get(rowId);
 		}
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLog.getInstance().logAcessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize, true);
+		}
 		if (block != null) {
 			byte[] row = new byte[rowLength];
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
@@ -99,9 +99,6 @@ class InMemoryRowStorage implements RowStorage {
 		if (!valid()) {
 			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
-		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			StorageLog.getInstance().log(fileId, true, false, blocks.size() * cacheBlockSize, true);
-		}
 		if (rowsAsBlocks) {
 			if (!spaceForOneBlockAvailable()) {
 				return false;
@@ -112,6 +109,9 @@ class InMemoryRowStorage implements RowStorage {
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLog.getInstance().logAcessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize, true);
+		}
 		if (block != null) {
 			System.arraycopy(row, 0, block, blockOffset, row.length);
 			// TODO: Necessary?
