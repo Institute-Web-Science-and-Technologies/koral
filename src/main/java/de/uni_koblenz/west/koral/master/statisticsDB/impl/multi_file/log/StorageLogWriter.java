@@ -97,7 +97,7 @@ public class StorageLogWriter {
 		}
 		event.clear();
 		event.put(KEY_FILEID, (int) fileId);
-		event.put(KEY_POSITION, blockId);
+		event.put(KEY_POSITION, (int) blockId);
 		event.put(KEY_BLOCKFLUSH_DIRTY, dirty);
 		logWriter.log(StorageLogEvent.BLOCKFLUSH.ordinal(), event);
 	}
