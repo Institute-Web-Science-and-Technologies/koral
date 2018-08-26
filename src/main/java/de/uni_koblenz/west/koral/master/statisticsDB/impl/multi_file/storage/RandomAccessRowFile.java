@@ -324,7 +324,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 				byte[] readRow = new byte[cacheBlockSize];
-				System.arraycopy(block, blockOffset, row, 0, rowLength);
+				System.arraycopy(block, blockOffset, readRow, 0, rowLength);
 				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
 						fileCache.size() * estimatedSpacePerCacheEntry, cacheHit,
 						blockFound && !Utils.isArrayZero(readRow));
