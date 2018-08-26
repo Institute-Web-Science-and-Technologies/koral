@@ -61,12 +61,19 @@ public class StorageLogWriter {
 	 *
 	 * @param fileId
 	 * @param position
-	 *            Which part of the file was accessed. For cached access, this could be the blockId, for file access the
-	 *            rowId.
+	 *            Which part of the file was accessed. For cache-enabled access, this would be the block id, while for
+	 *            cache-disabled access it would the rowId. Is used to check how often each chunk is used.
 	 * @param write
+	 *            Wether this access is a writer or read access.
 	 * @param fileStorage
+	 *            True if a file-based implementation (cached or uncached) is accessed, False for in-memory-only
+	 *            implementations.
 	 * @param cacheUsage
+	 *            Current size of this file only in bytes.
 	 * @param cacheHit
+	 *            Wether the chunk that contains the row was found in the cache.
+	 * @param found
+	 *            Wether the requested row was found, either in cache or in file. False means it is a new row.
 	 */
 	public void logAccessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
 			boolean cacheHit, boolean found) {
