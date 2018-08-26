@@ -91,7 +91,7 @@ public class StorageLogWriter {
 		logWriter.log(StorageLogEvent.READWRITE.ordinal(), event);
 	}
 
-	public void logBlockFlushEvent(long fileId, int blockId, boolean dirty) {
+	public void logBlockFlushEvent(long fileId, long blockId, boolean dirty) {
 		if ((fileId > Integer.MAX_VALUE) || (blockId > Integer.MAX_VALUE)) {
 			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
 		}
