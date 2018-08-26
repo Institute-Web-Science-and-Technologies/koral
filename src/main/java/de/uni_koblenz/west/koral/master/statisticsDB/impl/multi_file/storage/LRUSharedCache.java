@@ -24,8 +24,10 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements AutoCloseable
 		super.put(key, value);
 	}
 
-	@Override
-	public long size() {
+	/**
+	 * The space used in bytes needed for storing all entries.
+	 */
+	public long spaceUsed() {
 		return sharedSpaceManager.getSpaceUsed(sharedSpaceConsumer);
 	}
 

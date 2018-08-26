@@ -13,6 +13,10 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 
 	private final long capacity;
 
+	/**
+	 * Amount of elements in the cache, that is the doubly linked list. There may be more in the index map, depending on
+	 * sub-implementations of {@link #removeEldest(DoublyLinkedNode)}.
+	 */
 	long size;
 
 	public LRUCache(long capacity) {

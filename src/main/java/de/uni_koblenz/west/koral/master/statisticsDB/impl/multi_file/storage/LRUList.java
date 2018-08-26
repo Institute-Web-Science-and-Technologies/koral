@@ -43,8 +43,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		DoublyLinkedNode oldValue = index.put(key, node);
 		if (oldValue != null) {
 			// Using put as update would result in memory leaks because the old value would
-			// stay in the
-			// doubly-linked list
+			// stay in the doubly-linked list
 			throw new IllegalArgumentException(
 					"Key " + key + " already exists. Use update() to change existing entries");
 		}
@@ -217,6 +216,10 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		index.remove(key);
 	}
 
+	public long size() {
+		return index.size();
+	}
+
 	public boolean isEmpty() {
 		return tail == null;
 	}
@@ -251,10 +254,6 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		public String toString() {
 			return getClass().getSimpleName() + '@' + Integer.toHexString(hashCode());
 		}
-	}
-
-	public long size() {
-		return index.size();
 	}
 
 }
