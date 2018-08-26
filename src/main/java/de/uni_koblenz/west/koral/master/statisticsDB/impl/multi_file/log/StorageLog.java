@@ -1,25 +1,49 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.zip.GZIPOutputStream;
-
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class StorageLog {
 
+	public static final String KEY_FILEID = "fileId";
+	public static final String KEY_POSITION = "position";
+
+	public static final String KEY_ACCESS_WRITE = "write";
+	public static final String KEY_ACCESS_FILESTORAGE = "fileStorage";
+	public static final String KEY_ACCESS_CACHEUSAGE = "cacheUsage";
+	public static final String KEY_ACCESS_CACHEHIT = "cacheHit";
+
+	public static final String KEY_BLOCKFLUSH_DIRTY = "dirty";
+
 	private static StorageLog storageLog;
 
-	private final String storagePath;
+	private final CompressedLogWriter logWriter;
 
-	private OutputStream out;
-
-	private boolean closed;
+	private final Map<String, Object> event;
 
 	private StorageLog(String storagePath) {
-		this.storagePath = storagePath;
+		Map<Integer, Map<String, ElementType>> rowLayouts = new HashMap<>();
+
+		Map<String, ElementType> accessEventLayout = new TreeMap<>();
+		accessEventLayout.put(KEY_FILEID, ElementType.BYTE);
+		accessEventLayout.put(KEY_POSITION, ElementType.INTEGER);
+		accessEventLayout.put(KEY_ACCESS_WRITE, ElementType.BIT);
+		accessEventLayout.put(KEY_ACCESS_FILESTORAGE, ElementType.BIT);
+		accessEventLayout.put(KEY_ACCESS_CACHEUSAGE, ElementType.INTEGER);
+		accessEventLayout.put(KEY_ACCESS_CACHEHIT, ElementType.BIT);
+		rowLayouts.put(StorageLogEvent.READWRITE.ordinal(), accessEventLayout);
+
+		Map<String, ElementType> blockFlushEventLayout = new TreeMap<>();
+		blockFlushEventLayout.put(KEY_FILEID, ElementType.BYTE);
+		blockFlushEventLayout.put(KEY_POSITION, ElementType.INTEGER);
+		blockFlushEventLayout.put(KEY_BLOCKFLUSH_DIRTY, ElementType.BIT);
+		rowLayouts.put(StorageLogEvent.BLOCKFLUSH.ordinal(), blockFlushEventLayout);
+
+		logWriter = new CompressedLogWriter(new File(storagePath, "storageLog.gz"), rowLayouts);
+
+		event = new TreeMap<>();
 	}
 
 	public static StorageLog createInstance(String storagePath) {
@@ -31,88 +55,44 @@ public class StorageLog {
 		return storageLog;
 	}
 
-	public void open() {
-		try {
-			out = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(storagePath + "storagelog")));
-			closed = false;
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public void logAcessEvent(long fileId, int blockId, boolean write, boolean fileStorage, long cacheUsage,
+	/**
+	 *
+	 * @param fileId
+	 * @param position
+	 *            Which part of the file was accessed. For cached access, this could be the blockId, for file access the
+	 *            rowId.
+	 * @param write
+	 * @param fileStorage
+	 * @param cacheUsage
+	 * @param cacheHit
+	 */
+	public void logAcessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
 			boolean cacheHit) {
-		int cursor = 0;
-		int bytesForCacheData = Integer.BYTES;
-		byte[] row = new byte[2 + Integer.BYTES + bytesForCacheData + 1];
-
-		row[cursor] = (byte) StorageLogEvent.READWRITE.ordinal();
-		cursor += 1;
-
-		// One byte is used for the fileId
-		// TODO: Infer bytes needed
-		if (fileId > 127) {
-			throw new IllegalArgumentException("FileId is too large. Compaction strategy must be adjusted");
+		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)) {
+			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
 		}
-		row[cursor] = (byte) fileId;
-		cursor += 1;
-
-		Utils.writeLongIntoBytes(blockId, row, cursor, Integer.BYTES);
-		cursor += Integer.BYTES;
-
-		Utils.writeLongIntoBytes(cacheUsage, row, cursor, bytesForCacheData);
-		cursor += bytesForCacheData;
-
-		// Store boolean as bits in one byte
-		row[cursor] = (byte) ((write ? 1 : 0) | (fileStorage ? 1 << 1 : 0) | (cacheHit ? 1 << 2 : 0));
-
-		write(row);
+		event.clear();
+		event.put(KEY_FILEID, (int) fileId);
+		event.put(KEY_POSITION, (int) position);
+		event.put(KEY_ACCESS_WRITE, write);
+		event.put(KEY_ACCESS_FILESTORAGE, fileStorage);
+		event.put(KEY_ACCESS_CACHEUSAGE, (int) cacheUsage);
+		event.put(KEY_ACCESS_CACHEHIT, cacheHit ? 1 : 0);
+		logWriter.log(StorageLogEvent.READWRITE.ordinal(), event);
 	}
 
 	public void logBlockFlushEvent(long fileId, int blockId, boolean dirty) {
-		int cursor = 0;
-		byte[] row = new byte[2 + Integer.BYTES + 1];
-
-		row[cursor] = (byte) StorageLogEvent.BLOCKFLUSH.ordinal();
-		cursor += 1;
-
-		// One byte is used for the fileId
-		// TODO: Infer bytes needed
-		if (fileId > 127) {
-			throw new IllegalArgumentException("FileId is too large. Compaction strategy must be adjusted");
+		if ((fileId > Integer.MAX_VALUE) || (blockId > Integer.MAX_VALUE)) {
+			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
 		}
-		row[cursor] = (byte) fileId;
-		cursor += 1;
-
-		Utils.writeLongIntoBytes(blockId, row, cursor, Integer.BYTES);
-		cursor += Integer.BYTES;
-
-		row[cursor] = (byte) (dirty ? 1 : 0);
-
-		write(row);
-	}
-
-	private void write(byte[] row) {
-		if (closed) {
-			open();
-		}
-		try {
-			out.write(row);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		event.clear();
+		event.put(KEY_FILEID, (int) fileId);
+		event.put(KEY_POSITION, blockId);
+		event.put(KEY_BLOCKFLUSH_DIRTY, dirty);
+		logWriter.log(StorageLogEvent.BLOCKFLUSH.ordinal(), event);
 	}
 
 	public void close() {
-		if (!closed) {
-			try {
-				out.flush();
-				out.close();
-				closed = true;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+		logWriter.close();
 	}
 }
