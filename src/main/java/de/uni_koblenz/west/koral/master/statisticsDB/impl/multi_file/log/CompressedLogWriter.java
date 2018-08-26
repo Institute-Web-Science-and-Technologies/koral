@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.zip.GZIPOutputStream;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 

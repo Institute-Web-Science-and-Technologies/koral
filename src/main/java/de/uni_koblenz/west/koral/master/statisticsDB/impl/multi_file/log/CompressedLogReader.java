@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.zip.GZIPInputStream;
 
 public class CompressedLogReader {
 
@@ -37,8 +38,7 @@ public class CompressedLogReader {
 
 	public void open() {
 		try {
-//			input = new BufferedInputStream(new GZIPInputStream(new FileInputStream(storageFile)));
-			input = new BufferedInputStream(new FileInputStream(storageFile));
+			input = new BufferedInputStream(new GZIPInputStream(new FileInputStream(storageFile)));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
