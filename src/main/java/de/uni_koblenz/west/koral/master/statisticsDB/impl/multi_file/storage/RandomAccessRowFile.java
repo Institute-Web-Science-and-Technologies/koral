@@ -130,6 +130,7 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 			block[dataLength] = 0;
 		}
+		StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId, block[dataLength] == 1);
 		if (RandomAccessRowFile.this.recycleBlocks) {
 			blockRecycler.dump(block);
 		}
