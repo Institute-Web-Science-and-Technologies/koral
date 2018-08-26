@@ -44,7 +44,9 @@ public class CompressedLogTest {
 		data.put("bit2", (byte) 0);
 		writer.log(0, data);
 		data.clear();
+		writer.close();
 
+		writer.open();
 		data.put("2byte1", (byte) 46);
 		data.put("2byte2", (byte) 112);
 		data.put("2bit", (byte) 1);
