@@ -1,5 +1,6 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,18 +34,18 @@ public class CompressedLogWriter {
 			rowLengths.put(entry.getKey(), calculateLayoutLength(entry.getValue()));
 		}
 		open();
-		try {
-			writeHeader();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	public void open() {
+		boolean fileExists = storageFile.exists();
 		try {
-//			out = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(storageFile)));
-			out = new FileOutputStream(storageFile);
+			out = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(storageFile, true)));
+//			out = new BufferedOutputStream(new FileOutputStream(storageFile, true));
+//			out = new FileOutputStream(storageFile, true);
 			closed = false;
+			if (!fileExists) {
+				writeHeader();
+			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
