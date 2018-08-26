@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class StorageLog {
+public class StorageLogWriter {
 
 	public static final String KEY_FILEID = "fileId";
 	public static final String KEY_POSITION = "position";
@@ -17,13 +17,13 @@ public class StorageLog {
 
 	public static final String KEY_BLOCKFLUSH_DIRTY = "dirty";
 
-	private static StorageLog storageLog;
+	private static StorageLogWriter storageLogWriter;
 
 	private final CompressedLogWriter logWriter;
 
 	private final Map<String, Object> event;
 
-	private StorageLog(String storagePath) {
+	private StorageLogWriter(String storagePath) {
 		Map<Integer, Map<String, ElementType>> rowLayouts = new HashMap<>();
 
 		Map<String, ElementType> accessEventLayout = new TreeMap<>();
@@ -46,13 +46,13 @@ public class StorageLog {
 		event = new TreeMap<>();
 	}
 
-	public static StorageLog createInstance(String storagePath) {
-		storageLog = new StorageLog(storagePath);
-		return storageLog;
+	public static StorageLogWriter createInstance(String storagePath) {
+		storageLogWriter = new StorageLogWriter(storagePath);
+		return storageLogWriter;
 	}
 
-	public static StorageLog getInstance() {
-		return storageLog;
+	public static StorageLogWriter getInstance() {
+		return storageLogWriter;
 	}
 
 	/**
