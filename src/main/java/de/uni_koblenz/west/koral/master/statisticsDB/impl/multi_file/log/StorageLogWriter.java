@@ -14,6 +14,7 @@ public class StorageLogWriter {
 	public static final String KEY_ACCESS_FILESTORAGE = "fileStorage";
 	public static final String KEY_ACCESS_CACHEUSAGE = "cacheUsage";
 	public static final String KEY_ACCESS_CACHEHIT = "cacheHit";
+	public static final String KEY_ACCESS_FOUND = "found";
 
 	public static final String KEY_BLOCKFLUSH_DIRTY = "dirty";
 
@@ -33,6 +34,7 @@ public class StorageLogWriter {
 		accessEventLayout.put(KEY_ACCESS_FILESTORAGE, ElementType.BIT);
 		accessEventLayout.put(KEY_ACCESS_CACHEUSAGE, ElementType.INTEGER);
 		accessEventLayout.put(KEY_ACCESS_CACHEHIT, ElementType.BIT);
+		accessEventLayout.put(KEY_ACCESS_FOUND, ElementType.BIT);
 		rowLayouts.put(StorageLogEvent.READWRITE.ordinal(), accessEventLayout);
 
 		Map<String, ElementType> blockFlushEventLayout = new TreeMap<>();
@@ -67,7 +69,7 @@ public class StorageLogWriter {
 	 * @param cacheHit
 	 */
 	public void logAccessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
-			boolean cacheHit) {
+			boolean cacheHit, boolean found) {
 		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)) {
 			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
 		}
@@ -77,7 +79,8 @@ public class StorageLogWriter {
 		event.put(KEY_ACCESS_WRITE, write);
 		event.put(KEY_ACCESS_FILESTORAGE, fileStorage);
 		event.put(KEY_ACCESS_CACHEUSAGE, (int) cacheUsage);
-		event.put(KEY_ACCESS_CACHEHIT, cacheHit ? 1 : 0);
+		event.put(KEY_ACCESS_CACHEHIT, cacheHit);
+		event.put(KEY_ACCESS_FOUND, found);
 		logWriter.log(StorageLogEvent.READWRITE.ordinal(), event);
 	}
 
