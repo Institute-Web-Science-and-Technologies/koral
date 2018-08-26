@@ -66,7 +66,7 @@ public class StorageLogWriter {
 	 * @param cacheUsage
 	 * @param cacheHit
 	 */
-	public void logAcessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
+	public void logAccessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
 			boolean cacheHit) {
 		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)) {
 			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");

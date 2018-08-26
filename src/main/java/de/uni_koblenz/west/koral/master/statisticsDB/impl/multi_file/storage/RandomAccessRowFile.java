@@ -173,7 +173,7 @@ public class RandomAccessRowFile implements RowStorage {
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLogWriter.getInstance().logAcessEvent(fileId, blockId, false, true,
+				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
 						fileCache.size() * estimatedSpacePerCacheEntry, block != null);
 			}
 			if (block == null) {
@@ -184,7 +184,7 @@ public class RandomAccessRowFile implements RowStorage {
 			return row;
 		} else {
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLogWriter.getInstance().logAcessEvent(fileId, rowId, false, true, 0, false);
+				StorageLogWriter.getInstance().logAccessEvent(fileId, rowId, false, true, 0, false);
 			}
 			return readRowFromFile(rowId);
 		}
@@ -282,7 +282,7 @@ public class RandomAccessRowFile implements RowStorage {
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 			byte[] block = readBlock(blockId);
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLogWriter.getInstance().logAcessEvent(fileId, blockId, true, true,
+				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
 						fileCache.size() * estimatedSpacePerCacheEntry, block != null);
 			}
 			if (block == null) {
@@ -300,7 +300,7 @@ public class RandomAccessRowFile implements RowStorage {
 		} else {
 			writeRowToFile(rowId, row);
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				StorageLogWriter.getInstance().logAcessEvent(fileId, rowId, true, true, 0, false);
+				StorageLogWriter.getInstance().logAccessEvent(fileId, rowId, true, true, 0, false);
 			}
 		}
 		return true;

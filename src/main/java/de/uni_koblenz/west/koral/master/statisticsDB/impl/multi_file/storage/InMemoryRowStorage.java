@@ -83,7 +83,7 @@ class InMemoryRowStorage implements RowStorage {
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			StorageLogWriter.getInstance().logAcessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize, true);
+			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize, true);
 		}
 		if (block != null) {
 			byte[] row = new byte[rowLength];
@@ -110,7 +110,7 @@ class InMemoryRowStorage implements RowStorage {
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			StorageLogWriter.getInstance().logAcessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize, true);
+			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize, true);
 		}
 		if (block != null) {
 			System.arraycopy(row, 0, block, blockOffset, row.length);
