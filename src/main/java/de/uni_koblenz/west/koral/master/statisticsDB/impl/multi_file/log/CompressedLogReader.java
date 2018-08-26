@@ -140,7 +140,7 @@ public class CompressedLogReader {
 	private static int byteArray2Int(byte[] array, int offset) {
 		int number = 0;
 		for (int i = 0; i < Integer.BYTES; i++) {
-			number |= array[offset + i] << ((Integer.BYTES - i - 1) * Byte.SIZE);
+			number |= (0xFF & array[offset + i]) << ((Integer.BYTES - i - 1) * Byte.SIZE);
 		}
 		return number;
 	}
@@ -148,7 +148,7 @@ public class CompressedLogReader {
 	private static short byteArray2Short(byte[] array, int offset) {
 		short number = 0;
 		for (int i = 0; i < Short.BYTES; i++) {
-			number |= array[offset + i] << ((Short.BYTES - i) * Byte.SIZE);
+			number |= (0xFF & array[offset + i]) << ((Short.BYTES - i) * Byte.SIZE);
 		}
 		return number;
 	}
