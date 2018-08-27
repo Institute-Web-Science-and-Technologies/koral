@@ -27,12 +27,16 @@ public class CompressedLogWriter {
 
 	private boolean closed;
 
+	private final Map<Integer, Long> rowTypeOccurences;
+
 	public CompressedLogWriter(File storageFile, Map<Integer, Map<String, ElementType>> rowLayouts) {
 		this.storageFile = storageFile;
 		this.rowLayouts = rowLayouts;
+		rowTypeOccurences = new HashMap<>();
 		rowLengths = new HashMap<>();
 		for (Entry<Integer, Map<String, ElementType>> entry : rowLayouts.entrySet()) {
 			rowLengths.put(entry.getKey(), calculateLayoutLength(entry.getValue()));
+			rowTypeOccurences.put(entry.getKey(), 0L);
 		}
 		open();
 	}
@@ -74,6 +78,9 @@ public class CompressedLogWriter {
 	}
 
 	public void log(int rowType, Map<String, Object> data) {
+		long occurences = rowTypeOccurences.get(rowType);
+		rowTypeOccurences.put(rowType, occurences + 1);
+
 		write(int2byteArray(rowType));
 		Map<String, ElementType> rowLayout = rowLayouts.get(rowType);
 		byte[] row = new byte[rowLengths.get(rowType)];
@@ -166,6 +173,13 @@ public class CompressedLogWriter {
 				closed = true;
 			} catch (IOException e) {
 				e.printStackTrace();
+			}
+			if (rowTypeOccurences.values().stream().anyMatch(occ -> occ > 0)) {
+				System.out.println("Row Type Occurences:");
+				for (Entry<Integer, Long> entry : rowTypeOccurences.entrySet()) {
+					System.out.println("Type " + entry.getKey() + ": " + String.format("%,d", entry.getValue()));
+					rowTypeOccurences.put(entry.getKey(), 0L);
+				}
 			}
 		}
 	}
