@@ -456,9 +456,6 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public long length() {
-		if (!valid()) {
-			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
-		}
 		return file.length();
 	}
 
