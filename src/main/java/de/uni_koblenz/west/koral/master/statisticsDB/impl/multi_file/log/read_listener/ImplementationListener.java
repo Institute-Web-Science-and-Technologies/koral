@@ -16,6 +16,10 @@ public class ImplementationListener implements StorageLogReadListener {
 	 */
 	private final HashMap<Byte, Byte> implementations;
 
+	private long fileImplementations;
+
+	private long inMemoryImplementations;
+
 	private final CompressedCSVWriter csvWriter;
 
 	public ImplementationListener(String outputPath) {
@@ -27,11 +31,28 @@ public class ImplementationListener implements StorageLogReadListener {
 	@Override
 	public void onLogRowRead(int rowType, Map<String, Object> data) {
 		if (rowType == StorageLogEvent.READWRITE.ordinal()) {
-			implementations.put((byte) data.get(StorageLogWriter.KEY_FILEID),
-					(byte) data.get(StorageLogWriter.KEY_ACCESS_FILESTORAGE));
-			long fileImplementations = implementations.values().stream().mapToInt(Byte::intValue).sum();
-			long inMemoryImplementations = implementations.size() - fileImplementations;
-			csvWriter.print(fileImplementations, inMemoryImplementations);
+			byte newImpl = (byte) data.get(StorageLogWriter.KEY_ACCESS_FILESTORAGE);
+			Byte oldImpl = implementations.put((byte) data.get(StorageLogWriter.KEY_FILEID), newImpl);
+
+			// Check if this file appears for the first time (about x10 performance increase)
+			if (oldImpl == null) {
+				if (newImpl == 0) {
+					inMemoryImplementations++;
+				} else {
+					fileImplementations++;
+				}
+				csvWriter.print(fileImplementations, inMemoryImplementations);
+			} else if (newImpl != oldImpl) {
+				// Only update values if the implementation changed (about x10 performance increase)
+				if (newImpl == 0) {
+					fileImplementations--;
+					inMemoryImplementations++;
+				} else {
+					inMemoryImplementations--;
+					fileImplementations++;
+				}
+				csvWriter.print(fileImplementations, inMemoryImplementations);
+			}
 		}
 	}
 
