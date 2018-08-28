@@ -77,6 +77,7 @@ public class StorageLogWriter {
 	 */
 	public void logAccessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
 			boolean cacheHit, boolean found) {
+		// TODO: These checks would fit better into the CompressedLogWriter class
 		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)) {
 			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
 		}

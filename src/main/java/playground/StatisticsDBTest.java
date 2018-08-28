@@ -44,7 +44,7 @@ public class StatisticsDBTest {
 
 	private static final boolean WRITE_BENCHMARK_RESULTS = true;
 
-	private static final boolean COLLECT_META_STATISTICS = true;
+	private static final boolean COLLECT_META_STATISTICS = false;
 
 	public static final boolean ENABLE_STORAGE_LOGGING = true;
 
@@ -253,7 +253,7 @@ public class StatisticsDBTest {
 		if (resultFile.length() == 0) {
 			printer.printRecord("DATE_FINISHED", "TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB",
 					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "DIR_SIZE_BYTES",
-					"INDEX_SIZE_BYTES", "APPROX_EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
+					"INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
 		}
 		printer.printRecord(date, tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
 				dbImplementation, coveringAlgorithm, implementationNote, durationSec, dirSizeBytes, indexSizeBytes,

@@ -155,6 +155,7 @@ public class CompressedLogWriter {
 	}
 
 	private void write(byte[] row) {
+		// TODO: Is it okay to reopen every time although it was closed?
 		if (closed) {
 			open();
 		}
