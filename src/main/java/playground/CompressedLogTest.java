@@ -57,7 +57,7 @@ public class CompressedLogTest {
 
 		CompressedLogReader reader = new CompressedLogReader(storageFile);
 		LogRow logRow;
-		while ((logRow = reader.read()) != null) {
+		while ((logRow = reader.readRow()) != null) {
 			System.out.println(logRow.getRowType());
 			for (Entry<String, Object> entry : logRow.getData().entrySet()) {
 				System.out.println(entry.getKey() + " : " + entry.getValue());

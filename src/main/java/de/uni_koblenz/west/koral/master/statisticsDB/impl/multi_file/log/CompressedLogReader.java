@@ -24,10 +24,16 @@ public class CompressedLogReader {
 
 	private final Map<Integer, Integer> rowLengths;
 
+	private final LinkedList<StorageLogReadListener> listeners;
+
+	private final HashMap<StorageLogReadListener, Long> listenerComputationTimes;
+
 	public CompressedLogReader(File storageFile) {
 		this.storageFile = storageFile;
 		rowLayouts = new HashMap<>();
 		rowLengths = new HashMap<>();
+		listeners = new LinkedList<>();
+		listenerComputationTimes = new HashMap<>();
 		open();
 		try {
 			readHeader();
@@ -41,6 +47,30 @@ public class CompressedLogReader {
 			input = new BufferedInputStream(new GZIPInputStream(new FileInputStream(storageFile)));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	public void registerListener(StorageLogReadListener listener) {
+		listeners.add(listener);
+	}
+
+	/**
+	 * Reads the whole log while notifying all registered listeners ({@link #registerListener(StorageLogReadListener)})
+	 * about the current row, after each row read.
+	 */
+	public void readAll() {
+		LogRow logRow;
+		while ((logRow = readRow()) != null) {
+			for (StorageLogReadListener listener : listeners) {
+				long start = System.nanoTime();
+				listener.onLogRowRead(logRow.getRowType(), logRow.getData());
+				long time = System.nanoTime() - start;
+				Long currentComputationTime = listenerComputationTimes.get(listener);
+				if (currentComputationTime == null) {
+					currentComputationTime = 0L;
+				}
+				listenerComputationTimes.put(listener, currentComputationTime + time);
+			}
 		}
 	}
 
@@ -68,10 +98,11 @@ public class CompressedLogReader {
 	}
 
 	/**
+	 * Returns a singleton instance of {@link LogRow} that contains the information of the next row in the log.
 	 *
 	 * @return null if no row is left
 	 */
-	public LogRow read() {
+	public LogRow readRow() {
 		try {
 			int rowType = readInt();
 			int rowLength = rowLengths.get(rowType);
@@ -131,6 +162,10 @@ public class CompressedLogReader {
 			throw new EOFException();
 		}
 		return byteArray2Int(array);
+	}
+
+	public Map<StorageLogReadListener, Long> getListenerComputationTimes() {
+		return listenerComputationTimes;
 	}
 
 	private int byteArray2Int(byte[] array) {
