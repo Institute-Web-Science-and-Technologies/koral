@@ -52,7 +52,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final long fileId;
 
-	// Metastatistics for analysis
+	// Metastatistics for read benchmarks
 	private long cacheHits, cacheMisses, notExisting;
 
 	private RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize,

@@ -87,10 +87,11 @@ public class StorageAccessor implements RowStorage {
 				}
 				try {
 					cache.storeBlocks(file.getBlockIterator());
-//					System.out.println("File " + fileId + ": Using IMRS");
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
+			} else {
+//				System.out.println("File " + fileId + ": Using IMRS");
 			}
 			currentStorage = cache;
 			file.close();
