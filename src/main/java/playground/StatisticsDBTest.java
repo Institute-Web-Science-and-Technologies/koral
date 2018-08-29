@@ -35,6 +35,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
 /**
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
@@ -182,6 +183,9 @@ public class StatisticsDBTest {
 			long unusedBytes = -1;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
+				if (ENABLE_STORAGE_LOGGING) {
+					StorageLogWriter.getInstance().finish();
+				}
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
 				multiDB.defrag();
