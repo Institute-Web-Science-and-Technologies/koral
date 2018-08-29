@@ -24,6 +24,8 @@ public class StorageLogWriter {
 
 	private final Map<String, Object> event;
 
+	private boolean finished;
+
 	private StorageLogWriter(String storagePath) {
 		Map<Integer, Map<String, ElementType>> rowLayouts = new HashMap<>();
 
@@ -46,6 +48,7 @@ public class StorageLogWriter {
 		logWriter = new CompressedLogWriter(new File(storagePath, "storageLog.gz"), rowLayouts);
 
 		event = new TreeMap<>();
+		finished = false;
 	}
 
 	public static StorageLogWriter createInstance(String storagePath) {
@@ -77,6 +80,9 @@ public class StorageLogWriter {
 	 */
 	public void logAccessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
 			boolean cacheHit, boolean found) {
+		if (finished) {
+			return;
+		}
 		// TODO: These checks would fit better into the CompressedLogWriter class
 		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)) {
 			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
@@ -93,6 +99,9 @@ public class StorageLogWriter {
 	}
 
 	public void logBlockFlushEvent(long fileId, long blockId, boolean dirty) {
+		if (finished) {
+			return;
+		}
 		if ((fileId > Integer.MAX_VALUE) || (blockId > Integer.MAX_VALUE)) {
 			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
 		}
@@ -101,6 +110,11 @@ public class StorageLogWriter {
 		event.put(KEY_POSITION, (int) blockId);
 		event.put(KEY_BLOCKFLUSH_DIRTY, dirty);
 		logWriter.log(StorageLogEvent.BLOCKFLUSH.ordinal(), event);
+	}
+
+	public void finish() {
+		close();
+		finished = true;
 	}
 
 	public void close() {
