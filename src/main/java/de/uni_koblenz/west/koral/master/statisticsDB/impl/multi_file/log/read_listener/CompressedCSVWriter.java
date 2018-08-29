@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.csv.CSVFormat;
@@ -12,6 +13,10 @@ import org.apache.commons.csv.CSVPrinter;
 public class CompressedCSVWriter {
 
 	private final CSVPrinter csvPrinter;
+
+	private Object[] currentValues;
+
+	private long rowCounter;
 
 	public CompressedCSVWriter(File csvFile) {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
@@ -22,11 +27,43 @@ public class CompressedCSVWriter {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+
+		rowCounter = 0;
 	}
 
-	public void print(Object... values) {
+	public void printHeader(Object... values) {
+		printRecord(values);
+	}
+
+	public void addRecord(Object... values) {
+		if (!Arrays.equals(currentValues, values)) {
+			if (currentValues != null) {
+				printValue(rowCounter - 1);
+				printRecord(currentValues);
+			}
+			printValue(rowCounter);
+			printRecord(values);
+			currentValues = values;
+		}
+		rowCounter++;
+	}
+
+	private void printRecord(Object... values) {
+		// The csvPrinter.printRecord() method is not used, because it doesn't prepend value separators in case single
+		// values were already printed for this record
+		for (Object value : values) {
+			printValue(value);
+		}
 		try {
-			csvPrinter.printRecord(values);
+			csvPrinter.println();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void printValue(Object value) {
+		try {
+			csvPrinter.print(value);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

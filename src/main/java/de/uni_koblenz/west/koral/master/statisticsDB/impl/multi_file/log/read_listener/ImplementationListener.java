@@ -25,7 +25,7 @@ public class ImplementationListener implements StorageLogReadListener {
 	public ImplementationListener(String outputPath) {
 		implementations = new HashMap<>();
 		csvWriter = new CompressedCSVWriter(new File(outputPath, "implementations.csv.gz"));
-		csvWriter.print("FILE_IMPLEMENTATIONS", "INMEMORY_IMPLEMENTATIONS");
+		csvWriter.printHeader("FILE_IMPLEMENTATIONS", "INMEMORY_IMPLEMENTATIONS");
 	}
 
 	@Override
@@ -34,16 +34,15 @@ public class ImplementationListener implements StorageLogReadListener {
 			byte newImpl = (byte) data.get(StorageLogWriter.KEY_ACCESS_FILESTORAGE);
 			Byte oldImpl = implementations.put((byte) data.get(StorageLogWriter.KEY_FILEID), newImpl);
 
-			// Check if this file appears for the first time (about x10 performance increase)
+			// Check if this file appears for the first time
 			if (oldImpl == null) {
 				if (newImpl == 0) {
 					inMemoryImplementations++;
 				} else {
 					fileImplementations++;
 				}
-				csvWriter.print(fileImplementations, inMemoryImplementations);
 			} else if (newImpl != oldImpl) {
-				// Only update values if the implementation changed (about x10 performance increase)
+				// Only update values if the implementation changed
 				if (newImpl == 0) {
 					fileImplementations--;
 					inMemoryImplementations++;
@@ -51,8 +50,8 @@ public class ImplementationListener implements StorageLogReadListener {
 					inMemoryImplementations--;
 					fileImplementations++;
 				}
-				csvWriter.print(fileImplementations, inMemoryImplementations);
 			}
+			csvWriter.addRecord(fileImplementations, inMemoryImplementations);
 		}
 	}
 

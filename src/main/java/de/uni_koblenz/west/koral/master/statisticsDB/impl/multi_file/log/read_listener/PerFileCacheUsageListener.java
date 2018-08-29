@@ -22,7 +22,7 @@ public class PerFileCacheUsageListener implements StorageLogReadListener {
 	public void onLogRowRead(int rowType, Map<String, Object> data) {
 		if (rowType == StorageLogEvent.READWRITE.ordinal()) {
 			if ((Byte) data.get(StorageLogWriter.KEY_FILEID) == fileId) {
-				csvWriter.print(data.get(StorageLogWriter.KEY_ACCESS_CACHEUSAGE));
+				csvWriter.addRecord(data.get(StorageLogWriter.KEY_ACCESS_CACHEUSAGE));
 			}
 		}
 	}
