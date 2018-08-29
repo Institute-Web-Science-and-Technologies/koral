@@ -70,6 +70,9 @@ public class CompressedCSVWriter {
 	}
 
 	public void close() {
+		// Add last record that wasn't printed yet
+		printValue(rowCounter);
+		printRecord(currentValues);
 		try {
 			csvPrinter.close();
 		} catch (IOException e) {
