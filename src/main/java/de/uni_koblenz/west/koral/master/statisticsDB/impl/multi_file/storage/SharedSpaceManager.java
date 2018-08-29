@@ -25,7 +25,7 @@ public class SharedSpaceManager {
 	}
 
 	public boolean isAvailable(long amount) {
-		return amount < (maxSize - used);
+		return amount <= (maxSize - used);
 	}
 
 	public boolean request(SharedSpaceConsumer consumer, long amount) {
