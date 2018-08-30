@@ -482,7 +482,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private byte getPercentageCached() {
-		double percentage = fileCache.size() / (double) (fileCache.size() + uncachedBlocks.size());
+		double percentage = (fileCache.size() / (double) (fileCache.size() + uncachedBlocks.size())) * 100;
 		return (byte) Math.round(percentage);
 	}
 
