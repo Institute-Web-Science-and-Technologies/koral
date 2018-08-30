@@ -32,6 +32,7 @@ public class CompressedCSVWriter {
 	}
 
 	public void printHeader(Object... values) {
+		printValue("LOG_ROW");
 		printRecord(values);
 	}
 
