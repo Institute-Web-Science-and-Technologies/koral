@@ -5,9 +5,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
@@ -52,6 +54,8 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final long fileId;
 
+	private final Set<Long> uncachedBlocks;
+
 	// Metastatistics for read benchmarks
 	private long cacheHits, cacheMisses, notExisting;
 
@@ -81,6 +85,7 @@ public class RandomAccessRowFile implements RowStorage {
 		} else {
 			blockRecycler = null;
 		}
+		uncachedBlocks = new HashSet<>();
 
 		file = new File(storageFilePath);
 		open(true);
@@ -130,6 +135,7 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 			block[dataLength] = 0;
 		}
+		uncachedBlocks.add(blockId);
 		StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId, block[dataLength] == 1);
 		if (RandomAccessRowFile.this.recycleBlocks) {
 			blockRecycler.dump(block);
@@ -181,6 +187,7 @@ public class RandomAccessRowFile implements RowStorage {
 			if (block == null) {
 				cacheHit = false;
 				block = readBlockFromFile(blockId);
+				uncachedBlocks.remove(blockId);
 				if (block != null) {
 					blockFound = true;
 					cacheMisses++;
@@ -316,6 +323,7 @@ public class RandomAccessRowFile implements RowStorage {
 					blockFound = true;
 					cacheMisses++;
 					fileCache.put(blockId, block);
+					uncachedBlocks.remove(blockId);
 				} else {
 					blockFound = false;
 					notExisting++;
@@ -417,6 +425,7 @@ public class RandomAccessRowFile implements RowStorage {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
 			writeBlockToFile(blockEntry.getKey(), block);
+			uncachedBlocks.add(blockEntry.getKey());
 		}
 	}
 
