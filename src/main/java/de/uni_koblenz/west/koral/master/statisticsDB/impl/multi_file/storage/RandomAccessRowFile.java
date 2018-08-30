@@ -167,6 +167,9 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 		if (fileCache != null) {
 			if (rowsAsBlocks) {
+				if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+					throw new UnsupportedOperationException("Storage logging is not yet implemented for rowsAsBlocks");
+				}
 				return readBlock(rowId);
 			}
 			long blockId = rowId / rowsPerBlock;
