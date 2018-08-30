@@ -205,8 +205,7 @@ public class RandomAccessRowFile implements RowStorage {
 			if (block == null) {
 				if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 					StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
-							fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), block != null,
-							false);
+							fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), false, false);
 				}
 				return null;
 			}
