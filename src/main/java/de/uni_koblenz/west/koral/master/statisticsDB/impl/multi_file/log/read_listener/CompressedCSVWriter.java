@@ -16,7 +16,14 @@ public class CompressedCSVWriter {
 
 	private Object[] currentValues;
 
+	/**
+	 * Is of wrapper type to allow polymorphing into Object[] type
+	 */
+	private Long[] aggregatedBinaries;
+
 	private long rowCounter;
+
+	private long aggregationCounter;
 
 	public CompressedCSVWriter(File csvFile) {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
@@ -32,33 +39,79 @@ public class CompressedCSVWriter {
 	}
 
 	public void printHeader(Object... values) {
-		printValue("LOG_ROW");
+		printValue("ROW");
 		printRecord(values);
 	}
 
 	public void addRecord(Object... values) {
+		addRecordWithBinaries(values, null);
+	}
+
+	public void addRecordWithBinaries(Object[] values, byte[] binaryValues) {
+		if (binaryValues != null) {
+			if (aggregatedBinaries == null) {
+				aggregatedBinaries = new Long[binaryValues.length];
+				Arrays.fill(aggregatedBinaries, 0L);
+			}
+			for (int i = 0; i < binaryValues.length; i++) {
+				aggregatedBinaries[i] += binaryValues[i];
+			}
+			aggregationCounter++;
+		}
 		if (!Arrays.equals(currentValues, values)) {
+			Object[] aggregatedValues = aggregateBinaries();
 			if (currentValues != null) {
 				printValue(rowCounter - 1);
-				printRecord(currentValues);
+				printValues(currentValues);
+				if (aggregatedValues != null) {
+					printValues(aggregatedValues);
+				}
+				println();
 			}
 			printValue(rowCounter);
-			printRecord(values);
-			currentValues = values;
+			printValues(values);
+			if (aggregatedValues != null) {
+				printValues(aggregatedValues);
+			}
+			println();
+			currentValues = values.clone();
 		}
 		rowCounter++;
+	}
+
+	private Object[] aggregateBinaries() {
+		Object[] aggregatedValues = null;
+		if (aggregatedBinaries != null) {
+			// Do the aggregation by dividing by the amount of collected values
+			for (int i = 0; i < aggregatedBinaries.length; i++) {
+				aggregatedBinaries[i] = Math.round((aggregatedBinaries[i] / (double) aggregationCounter) * 100);
+			}
+			aggregatedValues = aggregatedBinaries.clone();
+			// Reset array for next aggregation interval
+			Arrays.fill(aggregatedBinaries, 0L);
+			aggregationCounter = 0;
+		}
+		return aggregatedValues;
 	}
 
 	private void printRecord(Object... values) {
 		// The csvPrinter.printRecord() method is not used, because it doesn't prepend value separators in case single
 		// values were already printed for this record
-		for (Object value : values) {
-			printValue(value);
-		}
+		printValues(values);
+		println();
+	}
+
+	private void println() {
 		try {
 			csvPrinter.println();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	private void printValues(Object... values) {
+		for (Object value : values) {
+			printValue(value);
 		}
 	}
 
@@ -73,7 +126,12 @@ public class CompressedCSVWriter {
 	public void close() {
 		// Add last record that wasn't printed yet
 		printValue(rowCounter);
-		printRecord(currentValues);
+		printValues(currentValues);
+		Object[] aggregatedValues = aggregateBinaries();
+		if (aggregatedValues != null) {
+			printValues(aggregatedValues);
+		}
+		println();
 		try {
 			csvPrinter.close();
 		} catch (IOException e) {
