@@ -20,13 +20,20 @@ public class PerFileListener implements StorageLogReadListener {
 
 	private final byte[] binaryValues;
 
-	public PerFileListener(int fileId, String outputPath) {
+	private long rowCounter;
+
+	private final boolean alignToGlobal;
+
+	public PerFileListener(int fileId, boolean alignToGlobal, String outputPath) {
 		this.fileId = fileId;
-		csvWriter = new CompressedCSVWriter(new File(outputPath, "cacheUsage_fileId" + fileId + ".csv.gz"));
+		this.alignToGlobal = alignToGlobal;
+		csvWriter = new CompressedCSVWriter(new File(outputPath,
+				"cacheUsage_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz"));
 		csvWriter.printHeader("CACHE_USAGE", "PERCENTAGE_CACHED", "CACHE_HITRATE", "FOUND_RATE");
 
 		values = new Object[2];
 		binaryValues = new byte[2];
+		rowCounter = 0;
 	}
 
 	@Override
@@ -37,13 +44,22 @@ public class PerFileListener implements StorageLogReadListener {
 				values[1] = data.get(StorageLogWriter.KEY_ACCESS_PERCENTAGECACHED);
 				binaryValues[0] = (byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT);
 				binaryValues[1] = (byte) data.get(StorageLogWriter.KEY_ACCESS_FOUND);
-				csvWriter.addRecordWithBinaries(values, binaryValues);
+				if (alignToGlobal) {
+					csvWriter.addRecordWithBinaries(rowCounter, values, binaryValues);
+				} else {
+					csvWriter.addRecordWithBinaries(values, binaryValues);
+				}
 			}
+			// Count each read/write row/event for aligning to global x axis
+			rowCounter++;
 		}
 	}
 
 	@Override
 	public void close() {
+		if (alignToGlobal) {
+			csvWriter.finish(rowCounter);
+		}
 		csvWriter.close();
 	}
 

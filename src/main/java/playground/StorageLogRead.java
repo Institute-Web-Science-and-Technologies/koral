@@ -7,8 +7,6 @@ import java.util.Map.Entry;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.CompressedLogReader;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ExtraCacheUsageListener;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ImplementationListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.PerFileListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ReadProgressionListener;
 
@@ -25,13 +23,14 @@ public class StorageLogRead {
 
 		List<StorageLogReadListener> listeners = new LinkedList<>();
 
-		listeners.add(new PerFileListener(0, outputPath));
-		listeners.add(new PerFileListener(5, outputPath));
-		listeners.add(new PerFileListener(6, outputPath));
-		listeners.add(new PerFileListener(7, outputPath));
-		listeners.add(new PerFileListener(8, outputPath));
-		listeners.add(new ExtraCacheUsageListener(outputPath));
-		listeners.add(new ImplementationListener(outputPath));
+		listeners.add(new PerFileListener(0, true, outputPath));
+//		listeners.add(new PerFileListener(5, false, outputPath));
+		listeners.add(new PerFileListener(5, true, outputPath));
+		listeners.add(new PerFileListener(6, true, outputPath));
+		listeners.add(new PerFileListener(7, true, outputPath));
+		listeners.add(new PerFileListener(8, true, outputPath));
+//		listeners.add(new ExtraCacheUsageListener(outputPath));
+//		listeners.add(new ImplementationListener(outputPath));
 		listeners.add(progressionListener);
 
 		for (StorageLogReadListener listener : listeners) {
