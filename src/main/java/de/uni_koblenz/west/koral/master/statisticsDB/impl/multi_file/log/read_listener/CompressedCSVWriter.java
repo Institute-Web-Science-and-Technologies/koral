@@ -21,6 +21,8 @@ public class CompressedCSVWriter {
 	 */
 	private Long[] aggregatedBinaries;
 
+	private Long[] accumulatedNumbers;
+
 	private long rowCounter;
 
 	private long aggregationCounter;
@@ -50,22 +52,34 @@ public class CompressedCSVWriter {
 		addRecord(values, null);
 	}
 
-	public void addRecord(Object[] values, byte[] binaryValues) {
+	public void addRecord(Object[] values, Byte[] binaryValues) {
 		addRecord(rowCounter, values, binaryValues);
 		rowCounter++;
 	}
 
-	public void addRecord(long recordId, Object[] values, byte[] binaryValues) {
+	public void addRecord(long recordId, Object[] values, Byte[] binaryValues) {
+		addRecord(rowCounter, values, binaryValues, null);
+	}
+
+	/**
+	 *
+	 * @param recordId
+	 *            Custom id that is prepended to the record. Can be used to align to a different x axis
+	 * @param values
+	 *            The plain values that will be included. Changes in this array cause a new record with all contents
+	 * @param binaryValues
+	 *            Values that are of binary type and will be aggregated as percentage over each interval
+	 * @param accNumbers
+	 *            Values that are of numeric type and will be aggregated as a simple sum over each interval
+	 */
+	public void addRecord(long recordId, Object[] values, Byte[] binaryValues, Long[] accNumbers) {
 //		System.out.println(recordId);
 		if (binaryValues != null) {
-			if (aggregatedBinaries == null) {
-				aggregatedBinaries = new Long[binaryValues.length];
-				Arrays.fill(aggregatedBinaries, 0L);
-			}
-			for (int i = 0; i < binaryValues.length; i++) {
-				aggregatedBinaries[i] += binaryValues[i];
-			}
+			accumulateValues(aggregatedBinaries, binaryValues);
 			aggregationCounter++;
+		}
+		if (accNumbers != null) {
+			accumulateValues(accumulatedNumbers, accNumbers);
 		}
 		if (!Arrays.equals(currentValues, values)) {
 			Object[] aggregatedValues = aggregateBinaries();
@@ -75,6 +89,9 @@ public class CompressedCSVWriter {
 				if (aggregatedValues != null) {
 					printValues(aggregatedValues);
 				}
+				if (accumulatedNumbers != null) {
+					printValues((Object[]) accumulatedNumbers);
+				}
 				println();
 			}
 			printValue(recordId);
@@ -82,8 +99,28 @@ public class CompressedCSVWriter {
 			if (aggregatedValues != null) {
 				printValues(aggregatedValues);
 			}
+			if (accumulatedNumbers != null) {
+				printValues((Object[]) accumulatedNumbers);
+				Arrays.fill(accumulatedNumbers, 0L);
+			}
 			println();
 			currentValues = values.clone();
+		}
+	}
+
+	private void accumulateValues(Long[] accumulationArray, Object[] newValues) {
+		if (aggregatedBinaries == null) {
+			aggregatedBinaries = new Long[newValues.length];
+			Arrays.fill(aggregatedBinaries, 0L);
+		}
+		Long[] longNewValues;
+		try {
+			longNewValues = (Long[]) newValues;
+		} catch (ClassCastException e) {
+			throw new IllegalArgumentException("Argument newValues must be of numeric type/castable to Long");
+		}
+		for (int i = 0; i < newValues.length; i++) {
+			aggregatedBinaries[i] += longNewValues[i];
 		}
 	}
 
