@@ -19,7 +19,7 @@ public class CompressedCSVWriter {
 	/**
 	 * Is of wrapper type to allow polymorphing into Object[] type
 	 */
-	private Long[] aggregatedBinaries;
+	private Long[] accumulatedBinaries;
 
 	private Long[] accumulatedNumbers;
 
@@ -69,39 +69,52 @@ public class CompressedCSVWriter {
 	 *            Values that are of numeric type and will be aggregated as a simple sum over each interval
 	 */
 	public void addRecord(long recordId, Object[] values, Byte[] binaryValues, Long[] accNumbers) {
-//		System.out.println(recordId);
+		if (!Arrays.equals(currentValues, values)) {
+			if (currentValues != null) {
+				// At least one record exists
+				finishPreviousInterval(recordId - 1);
+			}
+			// Start printing (right) interval record
+			printValue(recordId);
+			printValues(values);
+			// Clone the parameter because the caller might recycle the array
+			currentValues = values.clone();
+		}
 		if (binaryValues != null) {
-			aggregatedBinaries = accumulateValues(aggregatedBinaries, binaryValues);
+			accumulatedBinaries = accumulateValues(accumulatedBinaries, binaryValues);
 			aggregationCounter++;
 		}
 		if (accNumbers != null) {
 			accumulatedNumbers = accumulateValues(accumulatedNumbers, accNumbers);
 		}
-		if (!Arrays.equals(currentValues, values)) {
-			Object[] aggregatedBinaries = aggregateBinaries();
-			if (currentValues != null) {
-				printValue(recordId - 1);
-				printValues(currentValues);
-				if (aggregatedBinaries != null) {
-					printValues(aggregatedBinaries);
-				}
-				if (accumulatedNumbers != null) {
-					printValues((Object[]) accumulatedNumbers);
-				}
-				println();
-			}
-			printValue(recordId);
-			printValues(values);
-			if (aggregatedBinaries != null) {
-				printValues(aggregatedBinaries);
-			}
-			if (accumulatedNumbers != null) {
-				printValues((Object[]) accumulatedNumbers);
-				Arrays.fill(accumulatedNumbers, 0L);
-			}
-			println();
-			currentValues = values.clone();
+	}
+
+	/**
+	 * Finishes the two records of the previous interval with the data that was aggregated over this interval
+	 *
+	 * @param recordId
+	 *            The record id of the right record of the previous interval
+	 */
+	private void finishPreviousInterval(long recordId) {
+		Object[] aggregatedBinaries = aggregateBinaries();
+		if (aggregatedBinaries != null) {
+			printValues(aggregatedBinaries);
 		}
+		if (accumulatedNumbers != null) {
+			printValues((Object[]) accumulatedNumbers);
+		}
+		println();
+		// Print right interval record for previous interval
+		printValue(recordId - 1);
+		printValues(currentValues);
+		if (aggregatedBinaries != null) {
+			printValues(aggregatedBinaries);
+		}
+		if (accumulatedNumbers != null) {
+			printValues((Object[]) accumulatedNumbers);
+			Arrays.fill(accumulatedNumbers, 0L);
+		}
+		println();
 	}
 
 	private <T extends Number> Long[] accumulateValues(Long[] accumulationArray, T[] newValues) {
@@ -119,14 +132,14 @@ public class CompressedCSVWriter {
 
 	private Object[] aggregateBinaries() {
 		Object[] aggregatedValues = null;
-		if (aggregatedBinaries != null) {
+		if (accumulatedBinaries != null) {
 			// Do the aggregation by dividing by the amount of collected values
-			for (int i = 0; i < aggregatedBinaries.length; i++) {
-				aggregatedBinaries[i] = Math.round((aggregatedBinaries[i] / (double) aggregationCounter) * 100);
+			for (int i = 0; i < accumulatedBinaries.length; i++) {
+				accumulatedBinaries[i] = Math.round((accumulatedBinaries[i] / (double) aggregationCounter) * 100);
 			}
-			aggregatedValues = aggregatedBinaries.clone();
+			aggregatedValues = accumulatedBinaries.clone();
 			// Reset array for next aggregation interval
-			Arrays.fill(aggregatedBinaries, 0L);
+			Arrays.fill(accumulatedBinaries, 0L);
 			aggregationCounter = 0;
 		}
 		return aggregatedValues;
@@ -163,13 +176,14 @@ public class CompressedCSVWriter {
 
 	public void finish(long recordId) {
 		// Add last record that wasn't printed yet
-		printValue(recordId);
-		printValues(currentValues);
-		Object[] aggregatedValues = aggregateBinaries();
-		if (aggregatedValues != null) {
-			printValues(aggregatedValues);
-		}
-		println();
+//		printValue(recordId);
+//		printValues(currentValues);
+//		Object[] aggregatedValues = aggregateBinaries();
+//		if (aggregatedValues != null) {
+//			printValues(aggregatedValues);
+//		}
+//		println();
+		finishPreviousInterval(recordId);
 		finished = true;
 	}
 
