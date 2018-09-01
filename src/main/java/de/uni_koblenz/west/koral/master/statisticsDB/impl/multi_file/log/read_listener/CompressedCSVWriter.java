@@ -25,6 +25,8 @@ public class CompressedCSVWriter {
 
 	private long aggregationCounter;
 
+	private boolean finished;
+
 	public CompressedCSVWriter(File csvFile) {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		try {
@@ -36,6 +38,7 @@ public class CompressedCSVWriter {
 		}
 
 		rowCounter = 0;
+		finished = false;
 	}
 
 	public void printHeader(Object... values) {
@@ -48,6 +51,12 @@ public class CompressedCSVWriter {
 	}
 
 	public void addRecordWithBinaries(Object[] values, byte[] binaryValues) {
+		addRecordWithBinaries(rowCounter, values, binaryValues);
+		rowCounter++;
+	}
+
+	public void addRecordWithBinaries(long recordId, Object[] values, byte[] binaryValues) {
+//		System.out.println(recordId);
 		if (binaryValues != null) {
 			if (aggregatedBinaries == null) {
 				aggregatedBinaries = new Long[binaryValues.length];
@@ -61,14 +70,14 @@ public class CompressedCSVWriter {
 		if (!Arrays.equals(currentValues, values)) {
 			Object[] aggregatedValues = aggregateBinaries();
 			if (currentValues != null) {
-				printValue(rowCounter - 1);
+				printValue(recordId - 1);
 				printValues(currentValues);
 				if (aggregatedValues != null) {
 					printValues(aggregatedValues);
 				}
 				println();
 			}
-			printValue(rowCounter);
+			printValue(recordId);
 			printValues(values);
 			if (aggregatedValues != null) {
 				printValues(aggregatedValues);
@@ -76,7 +85,6 @@ public class CompressedCSVWriter {
 			println();
 			currentValues = values.clone();
 		}
-		rowCounter++;
 	}
 
 	private Object[] aggregateBinaries() {
@@ -123,15 +131,22 @@ public class CompressedCSVWriter {
 		}
 	}
 
-	public void close() {
+	public void finish(long recordId) {
 		// Add last record that wasn't printed yet
-		printValue(rowCounter);
+		printValue(recordId);
 		printValues(currentValues);
 		Object[] aggregatedValues = aggregateBinaries();
 		if (aggregatedValues != null) {
 			printValues(aggregatedValues);
 		}
 		println();
+		finished = true;
+	}
+
+	public void close() {
+		if (!finished) {
+			finish(rowCounter);
+		}
 		try {
 			csvPrinter.close();
 		} catch (IOException e) {
