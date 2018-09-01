@@ -46,9 +46,9 @@ public class PerFileListener implements StorageLogReadListener {
 				binaryValues[1] = (byte) data.get(StorageLogWriter.KEY_ACCESS_FOUND);
 				binaryValues[2] = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE);
 				if (alignToGlobal) {
-					csvWriter.addRecordWithBinaries(rowCounter, values, binaryValues);
+					csvWriter.addRecord(rowCounter, values, binaryValues);
 				} else {
-					csvWriter.addRecordWithBinaries(values, binaryValues);
+					csvWriter.addRecord(values, binaryValues);
 				}
 			}
 			// Count each read/write row/event for aligning to global x axis

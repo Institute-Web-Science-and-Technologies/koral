@@ -47,15 +47,15 @@ public class CompressedCSVWriter {
 	}
 
 	public void addRecord(Object... values) {
-		addRecordWithBinaries(values, null);
+		addRecord(values, null);
 	}
 
-	public void addRecordWithBinaries(Object[] values, byte[] binaryValues) {
-		addRecordWithBinaries(rowCounter, values, binaryValues);
+	public void addRecord(Object[] values, byte[] binaryValues) {
+		addRecord(rowCounter, values, binaryValues);
 		rowCounter++;
 	}
 
-	public void addRecordWithBinaries(long recordId, Object[] values, byte[] binaryValues) {
+	public void addRecord(long recordId, Object[] values, byte[] binaryValues) {
 //		System.out.println(recordId);
 		if (binaryValues != null) {
 			if (aggregatedBinaries == null) {
