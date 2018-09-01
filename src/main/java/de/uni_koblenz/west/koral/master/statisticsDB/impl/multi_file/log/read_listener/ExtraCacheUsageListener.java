@@ -26,7 +26,7 @@ public class ExtraCacheUsageListener implements StorageLogReadListener {
 				cacheUsages.put((byte) data.get(StorageLogWriter.KEY_FILEID),
 						(int) data.get(StorageLogWriter.KEY_ACCESS_CACHEUSAGE));
 				long totalCacheUsage = cacheUsages.values().stream().reduce(0, (sum, size) -> sum + size);
-				csvWriter.addRecord(totalCacheUsage);
+				csvWriter.addSimpleRecord(totalCacheUsage);
 			}
 		}
 	}

@@ -18,7 +18,9 @@ public class PerFileListener implements StorageLogReadListener {
 	 */
 	private final Object[] values;
 
-	private final byte[] binaryValues;
+	private final Byte[] binaryValues;
+
+	private final Long[] accValues;
 
 	private long rowCounter;
 
@@ -32,7 +34,8 @@ public class PerFileListener implements StorageLogReadListener {
 		csvWriter.printHeader("CACHE_USAGE", "PERCENTAGE_CACHED", "CACHE_HITRATE", "FOUND_RATE", "WRITE_RATE");
 
 		values = new Object[2];
-		binaryValues = new byte[3];
+		binaryValues = new Byte[3];
+		accValues = new Long[1];
 		rowCounter = 0;
 	}
 
@@ -45,10 +48,11 @@ public class PerFileListener implements StorageLogReadListener {
 				binaryValues[0] = (byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT);
 				binaryValues[1] = (byte) data.get(StorageLogWriter.KEY_ACCESS_FOUND);
 				binaryValues[2] = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE);
+				accValues[0] = 1L;
 				if (alignToGlobal) {
-					csvWriter.addRecord(rowCounter, values, binaryValues);
+					csvWriter.addRecord(rowCounter, values, binaryValues, accValues);
 				} else {
-					csvWriter.addRecord(values, binaryValues);
+					csvWriter.addRecord(values, binaryValues, accValues);
 				}
 			}
 			// Count each read/write row/event for aligning to global x axis

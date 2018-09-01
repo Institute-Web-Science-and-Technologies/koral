@@ -48,17 +48,13 @@ public class CompressedCSVWriter {
 		printRecord(values);
 	}
 
-	public void addRecord(Object... values) {
-		addRecord(values, null);
+	public void addSimpleRecord(Object... values) {
+		addRecord(values, null, null);
 	}
 
-	public void addRecord(Object[] values, Byte[] binaryValues) {
-		addRecord(rowCounter, values, binaryValues);
+	public void addRecord(Object[] values, Byte[] binaryValues, Long[] accNumbers) {
+		addRecord(rowCounter, values, binaryValues, accNumbers);
 		rowCounter++;
-	}
-
-	public void addRecord(long recordId, Object[] values, Byte[] binaryValues) {
-		addRecord(rowCounter, values, binaryValues, null);
 	}
 
 	/**
@@ -75,11 +71,11 @@ public class CompressedCSVWriter {
 	public void addRecord(long recordId, Object[] values, Byte[] binaryValues, Long[] accNumbers) {
 //		System.out.println(recordId);
 		if (binaryValues != null) {
-			accumulateValues(aggregatedBinaries, binaryValues);
+			aggregatedBinaries = accumulateValues(aggregatedBinaries, binaryValues);
 			aggregationCounter++;
 		}
 		if (accNumbers != null) {
-			accumulateValues(accumulatedNumbers, accNumbers);
+			accumulatedNumbers = accumulateValues(accumulatedNumbers, accNumbers);
 		}
 		if (!Arrays.equals(currentValues, values)) {
 			Object[] aggregatedValues = aggregateBinaries();
@@ -108,20 +104,17 @@ public class CompressedCSVWriter {
 		}
 	}
 
-	private void accumulateValues(Long[] accumulationArray, Object[] newValues) {
-		if (aggregatedBinaries == null) {
-			aggregatedBinaries = new Long[newValues.length];
-			Arrays.fill(aggregatedBinaries, 0L);
-		}
-		Long[] longNewValues;
-		try {
-			longNewValues = (Long[]) newValues;
-		} catch (ClassCastException e) {
-			throw new IllegalArgumentException("Argument newValues must be of numeric type/castable to Long");
+	private <T extends Number> Long[] accumulateValues(Long[] accumulationArray, T[] newValues) {
+		if (accumulationArray == null) {
+			accumulationArray = new Long[newValues.length];
+			Arrays.fill(accumulationArray, 0L);
 		}
 		for (int i = 0; i < newValues.length; i++) {
-			aggregatedBinaries[i] += longNewValues[i];
+			accumulationArray[i] += newValues[i].longValue();
 		}
+		// The array is returned because the argument might have been null which prevents call-by-reference
+		// modifications
+		return accumulationArray;
 	}
 
 	private Object[] aggregateBinaries() {

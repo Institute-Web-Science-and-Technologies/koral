@@ -51,7 +51,7 @@ public class ImplementationListener implements StorageLogReadListener {
 					fileImplementations++;
 				}
 			}
-			csvWriter.addRecord(fileImplementations, inMemoryImplementations);
+			csvWriter.addSimpleRecord(fileImplementations, inMemoryImplementations);
 		}
 	}
 
