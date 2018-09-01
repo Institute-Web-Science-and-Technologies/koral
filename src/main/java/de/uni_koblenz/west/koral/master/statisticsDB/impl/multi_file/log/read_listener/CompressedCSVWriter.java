@@ -23,13 +23,20 @@ public class CompressedCSVWriter {
 
 	private Long[] accumulatedNumbers;
 
-	private long rowCounter;
+	private final long rowCounter;
 
-	private long aggregationCounter;
+	private long accumulationCounterBinaries;
 
 	private boolean finished;
 
-	public CompressedCSVWriter(File csvFile) {
+	private long lastAccNumber;
+
+	private final long maxIntervalLength;
+
+	private long lastRecordId;
+
+	public CompressedCSVWriter(File csvFile, long maxIntervalLength) {
+		this.maxIntervalLength = maxIntervalLength;
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		try {
 			csvPrinter = new CSVPrinter(
@@ -40,7 +47,13 @@ public class CompressedCSVWriter {
 		}
 
 		rowCounter = 0;
+		// Set to -1 to fake a right record id of a previous interval
+		lastAccNumber = -1;
 		finished = false;
+	}
+
+	public CompressedCSVWriter(File csvFile) {
+		this(csvFile, Long.MAX_VALUE);
 	}
 
 	public void printHeader(Object... values) {
@@ -54,7 +67,6 @@ public class CompressedCSVWriter {
 
 	public void addRecord(Object[] values, Byte[] binaryValues, Long[] accNumbers) {
 		addRecord(rowCounter, values, binaryValues, accNumbers);
-		rowCounter++;
 	}
 
 	/**
@@ -69,7 +81,7 @@ public class CompressedCSVWriter {
 	 *            Values that are of numeric type and will be aggregated as a simple sum over each interval
 	 */
 	public void addRecord(long recordId, Object[] values, Byte[] binaryValues, Long[] accNumbers) {
-		if (!Arrays.equals(currentValues, values)) {
+		if (!Arrays.equals(currentValues, values) || ((recordId - lastRecordId) >= maxIntervalLength)) {
 			if (currentValues != null) {
 				// At least one record exists
 				finishPreviousInterval(recordId - 1);
@@ -82,11 +94,12 @@ public class CompressedCSVWriter {
 		}
 		if (binaryValues != null) {
 			accumulatedBinaries = accumulateValues(accumulatedBinaries, binaryValues);
-			aggregationCounter++;
+			accumulationCounterBinaries++;
 		}
 		if (accNumbers != null) {
 			accumulatedNumbers = accumulateValues(accumulatedNumbers, accNumbers);
 		}
+		lastRecordId = recordId;
 	}
 
 	/**
@@ -96,12 +109,13 @@ public class CompressedCSVWriter {
 	 *            The record id of the right record of the previous interval
 	 */
 	private void finishPreviousInterval(long recordId) {
-		Object[] aggregatedBinaries = aggregateBinaries();
+		Object[] aggregatedBinaries = aggregateValues(accumulatedBinaries, accumulationCounterBinaries);
 		if (aggregatedBinaries != null) {
 			printValues(aggregatedBinaries);
 		}
-		if (accumulatedNumbers != null) {
-			printValues((Object[]) accumulatedNumbers);
+		Object[] aggregatedNumbers = aggregateValues(accumulatedNumbers, recordId - lastAccNumber);
+		if (aggregatedNumbers != null) {
+			printValues(aggregatedNumbers);
 		}
 		println();
 		// Print right interval record for previous interval
@@ -109,10 +123,12 @@ public class CompressedCSVWriter {
 		printValues(currentValues);
 		if (aggregatedBinaries != null) {
 			printValues(aggregatedBinaries);
+			resetBinariesAccumulation();
 		}
-		if (accumulatedNumbers != null) {
-			printValues((Object[]) accumulatedNumbers);
-			Arrays.fill(accumulatedNumbers, 0L);
+		if (aggregatedNumbers != null) {
+			printValues(aggregatedNumbers);
+			resetNumbersAccumulation();
+			lastAccNumber = recordId;
 		}
 		println();
 	}
@@ -130,19 +146,25 @@ public class CompressedCSVWriter {
 		return accumulationArray;
 	}
 
-	private Object[] aggregateBinaries() {
+	private Object[] aggregateValues(Long[] accumulatedValues, long accumulationCounter) {
 		Object[] aggregatedValues = null;
-		if (accumulatedBinaries != null) {
+		if (accumulatedValues != null) {
+			aggregatedValues = new Object[accumulatedValues.length];
 			// Do the aggregation by dividing by the amount of collected values
-			for (int i = 0; i < accumulatedBinaries.length; i++) {
-				accumulatedBinaries[i] = Math.round((accumulatedBinaries[i] / (double) aggregationCounter) * 100);
+			for (int i = 0; i < accumulatedValues.length; i++) {
+				aggregatedValues[i] = Math.round((accumulatedValues[i] / (double) accumulationCounter) * 100);
 			}
-			aggregatedValues = accumulatedBinaries.clone();
-			// Reset array for next aggregation interval
-			Arrays.fill(accumulatedBinaries, 0L);
-			aggregationCounter = 0;
 		}
 		return aggregatedValues;
+	}
+
+	private void resetBinariesAccumulation() {
+		Arrays.fill(accumulatedBinaries, 0L);
+		accumulationCounterBinaries = 0;
+	}
+
+	private void resetNumbersAccumulation() {
+		Arrays.fill(accumulatedNumbers, 0L);
 	}
 
 	private void printRecord(Object... values) {
