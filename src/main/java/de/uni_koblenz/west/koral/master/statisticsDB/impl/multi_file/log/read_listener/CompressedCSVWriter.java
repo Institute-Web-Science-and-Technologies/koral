@@ -78,12 +78,12 @@ public class CompressedCSVWriter {
 			accumulatedNumbers = accumulateValues(accumulatedNumbers, accNumbers);
 		}
 		if (!Arrays.equals(currentValues, values)) {
-			Object[] aggregatedValues = aggregateBinaries();
+			Object[] aggregatedBinaries = aggregateBinaries();
 			if (currentValues != null) {
 				printValue(recordId - 1);
 				printValues(currentValues);
-				if (aggregatedValues != null) {
-					printValues(aggregatedValues);
+				if (aggregatedBinaries != null) {
+					printValues(aggregatedBinaries);
 				}
 				if (accumulatedNumbers != null) {
 					printValues((Object[]) accumulatedNumbers);
@@ -92,8 +92,8 @@ public class CompressedCSVWriter {
 			}
 			printValue(recordId);
 			printValues(values);
-			if (aggregatedValues != null) {
-				printValues(aggregatedValues);
+			if (aggregatedBinaries != null) {
+				printValues(aggregatedBinaries);
 			}
 			if (accumulatedNumbers != null) {
 				printValues((Object[]) accumulatedNumbers);
