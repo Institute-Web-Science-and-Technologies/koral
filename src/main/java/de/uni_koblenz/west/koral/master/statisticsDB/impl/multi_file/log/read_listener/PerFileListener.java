@@ -29,10 +29,10 @@ public class PerFileListener implements StorageLogReadListener {
 		this.alignToGlobal = alignToGlobal;
 		csvWriter = new CompressedCSVWriter(new File(outputPath,
 				"cacheUsage_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz"));
-		csvWriter.printHeader("CACHE_USAGE", "PERCENTAGE_CACHED", "CACHE_HITRATE", "FOUND_RATE");
+		csvWriter.printHeader("CACHE_USAGE", "PERCENTAGE_CACHED", "CACHE_HITRATE", "FOUND_RATE", "WRITE_RATE");
 
 		values = new Object[2];
-		binaryValues = new byte[2];
+		binaryValues = new byte[3];
 		rowCounter = 0;
 	}
 
@@ -44,6 +44,7 @@ public class PerFileListener implements StorageLogReadListener {
 				values[1] = data.get(StorageLogWriter.KEY_ACCESS_PERCENTAGECACHED);
 				binaryValues[0] = (byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT);
 				binaryValues[1] = (byte) data.get(StorageLogWriter.KEY_ACCESS_FOUND);
+				binaryValues[2] = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE);
 				if (alignToGlobal) {
 					csvWriter.addRecordWithBinaries(rowCounter, values, binaryValues);
 				} else {
