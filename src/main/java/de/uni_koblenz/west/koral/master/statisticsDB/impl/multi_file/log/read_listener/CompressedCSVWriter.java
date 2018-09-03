@@ -23,7 +23,7 @@ public class CompressedCSVWriter {
 
 	private Long[] accumulatedNumbers;
 
-	private final long rowCounter;
+	private long rowCounter;
 
 	private long accumulationCounterBinaries;
 
@@ -100,6 +100,7 @@ public class CompressedCSVWriter {
 			accumulatedNumbers = accumulateValues(accumulatedNumbers, accNumbers);
 		}
 		lastRecordId = recordId;
+		rowCounter++;
 	}
 
 	/**
