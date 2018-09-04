@@ -86,7 +86,7 @@ public class CompressedCSVWriter {
 				// At least one record exists
 				finishPreviousInterval(recordId - 1);
 			}
-			// Start printing (right) interval record
+			// Start printing (left) interval record
 			printValue(recordId);
 			printValues(values);
 			// Clone the parameter because the caller might recycle the array
@@ -120,7 +120,7 @@ public class CompressedCSVWriter {
 		}
 		println();
 		// Print right interval record for previous interval
-		printValue(recordId - 1);
+		printValue(recordId);
 		printValues(currentValues);
 		if (aggregatedBinaries != null) {
 			printValues(aggregatedBinaries);
