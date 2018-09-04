@@ -10,7 +10,7 @@ public class StorageAccessor implements RowStorage {
 
 	private static final int DEFAULT_CACHE_BLOCKSIZE = 4096;
 
-	private final long fileId;
+	protected final long fileId;
 
 	private final Logger logger;
 
