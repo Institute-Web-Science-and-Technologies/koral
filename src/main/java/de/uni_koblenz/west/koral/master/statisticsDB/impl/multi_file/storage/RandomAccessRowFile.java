@@ -135,8 +135,10 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 			block[dataLength] = 0;
 		}
-		uncachedBlocks.add(blockId);
-		StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId, block[dataLength] == 1);
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			uncachedBlocks.add(blockId);
+			StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId, block[dataLength] == 1);
+		}
 		if (RandomAccessRowFile.this.recycleBlocks) {
 			blockRecycler.dump(block);
 		}
@@ -187,7 +189,9 @@ public class RandomAccessRowFile implements RowStorage {
 			if (block == null) {
 				cacheHit = false;
 				block = readBlockFromFile(blockId);
-				uncachedBlocks.remove(blockId);
+				if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+					uncachedBlocks.remove(blockId);
+				}
 				if (block != null) {
 					blockFound = true;
 					cacheMisses++;
@@ -324,7 +328,9 @@ public class RandomAccessRowFile implements RowStorage {
 					blockFound = true;
 					cacheMisses++;
 					fileCache.put(blockId, block);
-					uncachedBlocks.remove(blockId);
+					if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+						uncachedBlocks.remove(blockId);
+					}
 				} else {
 					blockFound = false;
 					notExisting++;
@@ -426,7 +432,9 @@ public class RandomAccessRowFile implements RowStorage {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
 			writeBlockToFile(blockEntry.getKey(), block);
-			uncachedBlocks.add(blockEntry.getKey());
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				uncachedBlocks.add(blockEntry.getKey());
+			}
 		}
 	}
 
