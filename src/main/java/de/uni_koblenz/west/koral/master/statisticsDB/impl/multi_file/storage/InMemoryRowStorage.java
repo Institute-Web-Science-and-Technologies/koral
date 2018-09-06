@@ -123,8 +123,6 @@ class InMemoryRowStorage implements RowStorage {
 		}
 		if (block != null) {
 			System.arraycopy(row, 0, block, blockOffset, row.length);
-			// TODO: Necessary?
-			blocks.put(blockId, block);
 			return true;
 		} else {
 			if (!spaceForOneBlockAvailable()) {

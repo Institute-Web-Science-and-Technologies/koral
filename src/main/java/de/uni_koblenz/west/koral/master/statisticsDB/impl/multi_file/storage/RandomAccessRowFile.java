@@ -449,8 +449,6 @@ public class RandomAccessRowFile implements RowStorage {
 				writeBlockToFile(entry.getKey(), block);
 				// Clear dirty flag
 				block[dataLength] = 0;
-				// TODO: Necessary?
-				fileCache.update(entry.getKey(), block);
 			}
 			if (recycleBlocks && (blockRecycler.retrieved > 0)) {
 				System.out.println("FileId " + fileId + " recycled " + blockRecycler.retrieved
