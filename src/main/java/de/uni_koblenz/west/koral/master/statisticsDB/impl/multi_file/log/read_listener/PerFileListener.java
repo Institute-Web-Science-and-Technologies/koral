@@ -39,8 +39,8 @@ public class PerFileListener implements StorageLogReadListener {
 		if (rowType == StorageLogEvent.READWRITE.ordinal()) {
 			if ((Byte) data.get(StorageLogWriter.KEY_FILEID) == fileId) {
 				values[0] = data.get(StorageLogWriter.KEY_ACCESS_CACHEUSAGE);
-				values[1] = data.get(StorageLogWriter.KEY_ACCESS_PERCENTAGECACHED);
-				values[2] = data.get(StorageLogWriter.KEY_ACCESS_FILESIZE);
+				values[1] = data.get(StorageLogWriter.KEY_ACCESS_FILESIZE);
+				values[2] = data.get(StorageLogWriter.KEY_ACCESS_PERCENTAGECACHED);
 				if (alignToGlobal) {
 					csvWriter.addRecord(rowCounter, values, null, null);
 				} else {
