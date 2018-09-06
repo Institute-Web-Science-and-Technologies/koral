@@ -55,8 +55,8 @@ public class StorageLogRead {
 		long time = System.currentTimeMillis() - start;
 		System.out.println("Listener Computation Times:");
 		for (Entry<StorageLogReadListener, Long> entry : logReader.getListenerComputationTimes().entrySet()) {
-			System.out.println(
-					entry.getKey().getClass().getSimpleName() + ": \t\t" + String.format("%,d", entry.getValue()));
+			System.out.println(String.format("%-32s", entry.getKey().getClass().getSimpleName()) + ": "
+					+ String.format("%,d", entry.getValue()));
 		}
 		System.out
 				.println("Read a total of " + String.format("%,d", progressionListener.getCurrentRowCount()) + " rows");
