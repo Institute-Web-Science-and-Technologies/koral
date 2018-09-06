@@ -28,8 +28,7 @@ public class PerFileListener implements StorageLogReadListener {
 		File outputFile = new File(outputPath,
 				"cacheUsage_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz");
 		csvWriter = new CompressedCSVWriter(outputFile, 1_000_000);
-		csvWriter.printHeader("CACHE_USAGE", "PERCENTAGE_CACHED", "FILE_SIZE", "CACHE_HITRATE", "FOUND_RATE",
-				"WRITE_RATE", "ACCESS_COUNT");
+		csvWriter.printHeader("CACHE_USAGE", "PERCENTAGE_CACHED", "FILE_SIZE");
 
 		values = new Object[3];
 		rowCounter = 0;
