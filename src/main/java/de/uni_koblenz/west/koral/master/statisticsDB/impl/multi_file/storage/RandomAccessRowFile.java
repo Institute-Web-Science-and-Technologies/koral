@@ -205,7 +205,8 @@ public class RandomAccessRowFile implements RowStorage {
 			if (block == null) {
 				if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 					StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
-							fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), false, false);
+							fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), false,
+							false);
 				}
 				return null;
 			}
@@ -213,7 +214,7 @@ public class RandomAccessRowFile implements RowStorage {
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
-						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), cacheHit,
+						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 						blockFound && !Utils.isArrayZero(row));
 			}
 			return row;
@@ -338,7 +339,7 @@ public class RandomAccessRowFile implements RowStorage {
 				byte[] readRow = new byte[cacheBlockSize];
 				System.arraycopy(block, blockOffset, readRow, 0, rowLength);
 				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
-						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), cacheHit,
+						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 						blockFound && !Utils.isArrayZero(readRow));
 			}
 			if (block == null) {
@@ -483,6 +484,11 @@ public class RandomAccessRowFile implements RowStorage {
 	private byte getPercentageCached() {
 		double percentage = (fileCache.size() / (double) (fileCache.size() + uncachedBlocks.size())) * 100;
 		return (byte) Math.round(percentage);
+	}
+
+	private long getFileSize() {
+		long fileSize = ((fileCache.size() * cacheBlockSize) + (uncachedBlocks.size() * dataLength));
+		return fileSize;
 	}
 
 	/**

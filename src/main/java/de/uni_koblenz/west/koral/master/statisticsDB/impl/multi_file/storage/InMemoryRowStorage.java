@@ -91,7 +91,7 @@ class InMemoryRowStorage implements RowStorage {
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 			boolean found = (row != null) && !Utils.isArrayZero(row);
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize,
-					(byte) 100, true, found);
+					(byte) 100, blocks.size() * cacheBlockSize, true, found);
 		}
 		return row;
 	}
@@ -119,7 +119,7 @@ class InMemoryRowStorage implements RowStorage {
 				found = !Utils.isArrayZero(readRow);
 			}
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize,
-					(byte) 100, true, found);
+					(byte) 100, blocks.size() * cacheBlockSize, true, found);
 		}
 		if (block != null) {
 			System.arraycopy(row, 0, block, blockOffset, row.length);

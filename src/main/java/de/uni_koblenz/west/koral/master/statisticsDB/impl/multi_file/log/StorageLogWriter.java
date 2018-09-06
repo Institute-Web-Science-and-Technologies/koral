@@ -14,6 +14,7 @@ public class StorageLogWriter {
 	public static final String KEY_ACCESS_FILESTORAGE = "fileStorage";
 	public static final String KEY_ACCESS_CACHEUSAGE = "cacheUsage";
 	public static final String KEY_ACCESS_PERCENTAGECACHED = "percentageCached";
+	public static final String KEY_ACCESS_FILESIZE = "fileSize";
 	public static final String KEY_ACCESS_CACHEHIT = "cacheHit";
 	public static final String KEY_ACCESS_FOUND = "found";
 
@@ -37,6 +38,7 @@ public class StorageLogWriter {
 		accessEventLayout.put(KEY_ACCESS_FILESTORAGE, ElementType.BIT);
 		accessEventLayout.put(KEY_ACCESS_CACHEUSAGE, ElementType.INTEGER);
 		accessEventLayout.put(KEY_ACCESS_PERCENTAGECACHED, ElementType.BYTE);
+		accessEventLayout.put(KEY_ACCESS_FILESIZE, ElementType.INTEGER);
 		accessEventLayout.put(KEY_ACCESS_CACHEHIT, ElementType.BIT);
 		accessEventLayout.put(KEY_ACCESS_FOUND, ElementType.BIT);
 		rowLayouts.put(StorageLogEvent.READWRITE.ordinal(), accessEventLayout);
@@ -81,12 +83,13 @@ public class StorageLogWriter {
 	 *            Wether the requested row was found, either in cache or in file. False means it is a new row.
 	 */
 	public void logAccessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
-			byte percentageCached, boolean cacheHit, boolean found) {
+			byte percentageCached, long fileSize, boolean cacheHit, boolean found) {
 		if (finished) {
 			return;
 		}
 		// TODO: These checks would fit better into the CompressedLogWriter class
-		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)) {
+		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)
+				|| (fileSize > Integer.MAX_VALUE)) {
 			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
 		}
 		event.clear();
@@ -96,6 +99,7 @@ public class StorageLogWriter {
 		event.put(KEY_ACCESS_FILESTORAGE, fileStorage);
 		event.put(KEY_ACCESS_CACHEUSAGE, (int) cacheUsage);
 		event.put(KEY_ACCESS_PERCENTAGECACHED, percentageCached);
+		event.put(KEY_ACCESS_FILESIZE, (int) fileSize);
 		event.put(KEY_ACCESS_CACHEHIT, cacheHit);
 		event.put(KEY_ACCESS_FOUND, found);
 		logWriter.log(StorageLogEvent.READWRITE.ordinal(), event);
