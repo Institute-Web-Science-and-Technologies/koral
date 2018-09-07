@@ -256,6 +256,7 @@ public class RandomAccessRowFile implements RowStorage {
 		byte[] block = null;
 		if (recycleBlocks) {
 			block = blockRecycler.retrieve();
+			// TODO: Set dirty = 0?
 		}
 		if (block == null) {
 			block = new byte[cacheBlockSize];
@@ -344,9 +345,11 @@ public class RandomAccessRowFile implements RowStorage {
 				blockFound = true;
 				cacheHits++;
 			}
-			byte[] readBlock;
+			byte[] readBlock = null;
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				readBlock = block.clone();
+				if (block != null) {
+					readBlock = block.clone();
+				}
 			}
 
 			if (block == null) {
@@ -366,7 +369,9 @@ public class RandomAccessRowFile implements RowStorage {
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 				long time = System.nanoTime() - start;
 				byte[] readRow = new byte[cacheBlockSize];
-				System.arraycopy(readBlock, blockOffset, readRow, 0, rowLength);
+				if (readBlock != null) {
+					System.arraycopy(readBlock, blockOffset, readRow, 0, rowLength);
+				}
 				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
 						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 						blockFound && !Utils.isArrayZero(readRow), time);
