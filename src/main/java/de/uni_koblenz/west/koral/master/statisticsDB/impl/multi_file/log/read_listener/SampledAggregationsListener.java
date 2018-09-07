@@ -39,7 +39,7 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 				files.get(fileId).accumulate(data);
 				globalAccumulationCounter++;
 			}
-			if ((globalRowCounter % samplingInterval) == 0) {
+			if (((globalRowCounter % samplingInterval) == 0) && (globalRowCounter > 0)) {
 				for (FileAggregator file : files.values()) {
 					file.printAggregations(globalRowCounter, globalAccumulationCounter);
 				}
