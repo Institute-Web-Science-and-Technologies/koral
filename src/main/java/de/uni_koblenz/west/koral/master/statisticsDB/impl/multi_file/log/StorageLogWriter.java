@@ -17,6 +17,7 @@ public class StorageLogWriter {
 	public static final String KEY_ACCESS_FILESIZE = "fileSize";
 	public static final String KEY_ACCESS_CACHEHIT = "cacheHit";
 	public static final String KEY_ACCESS_FOUND = "found";
+	public static final String KEY_ACCESS_TIME = "time";
 
 	public static final String KEY_BLOCKFLUSH_DIRTY = "dirty";
 
@@ -41,6 +42,7 @@ public class StorageLogWriter {
 		accessEventLayout.put(KEY_ACCESS_FILESIZE, ElementType.INTEGER);
 		accessEventLayout.put(KEY_ACCESS_CACHEHIT, ElementType.BIT);
 		accessEventLayout.put(KEY_ACCESS_FOUND, ElementType.BIT);
+		accessEventLayout.put(KEY_ACCESS_TIME, ElementType.INTEGER);
 		rowLayouts.put(StorageLogEvent.READWRITE.ordinal(), accessEventLayout);
 
 		Map<String, ElementType> blockFlushEventLayout = new TreeMap<>();
@@ -83,13 +85,13 @@ public class StorageLogWriter {
 	 *            Wether the requested row was found, either in cache or in file. False means it is a new row.
 	 */
 	public void logAccessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
-			byte percentageCached, long fileSize, boolean cacheHit, boolean found) {
+			byte percentageCached, long fileSize, boolean cacheHit, boolean found, long time) {
 		if (finished) {
 			return;
 		}
 		// TODO: These checks would fit better into the CompressedLogWriter class
 		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)
-				|| (fileSize > Integer.MAX_VALUE)) {
+				|| (fileSize > Integer.MAX_VALUE) || (time > Integer.MAX_VALUE)) {
 			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
 		}
 		event.clear();
@@ -102,6 +104,7 @@ public class StorageLogWriter {
 		event.put(KEY_ACCESS_FILESIZE, (int) fileSize);
 		event.put(KEY_ACCESS_CACHEHIT, cacheHit);
 		event.put(KEY_ACCESS_FOUND, found);
+		event.put(KEY_ACCESS_TIME, (int) time);
 		logWriter.log(StorageLogEvent.READWRITE.ordinal(), event);
 	}
 

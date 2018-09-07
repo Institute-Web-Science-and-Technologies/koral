@@ -80,6 +80,7 @@ class InMemoryRowStorage implements RowStorage {
 		if (rowsAsBlocks) {
 			return blocks.get(rowId);
 		}
+		long start = System.nanoTime();
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
@@ -89,9 +90,10 @@ class InMemoryRowStorage implements RowStorage {
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
 		}
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			long time = System.nanoTime() - start;
 			boolean found = (row != null) && !Utils.isArrayZero(row);
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize,
-					(byte) 100, blocks.size() * cacheBlockSize, true, found);
+					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
 		return row;
 	}
@@ -108,32 +110,37 @@ class InMemoryRowStorage implements RowStorage {
 			blocks.put(rowId, row);
 			return true;
 		}
+		long start = System.nanoTime();
 		long blockId = rowId / rowsPerBlock;
 		int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 		byte[] block = blocks.get(blockId);
-		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			boolean found = false;
-			if (block != null) {
-				byte[] readRow = new byte[rowLength];
-				System.arraycopy(block, blockOffset, readRow, 0, rowLength);
-				found = !Utils.isArrayZero(readRow);
-			}
-			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize,
-					(byte) 100, blocks.size() * cacheBlockSize, true, found);
-		}
+		byte[] readBlock = block;
+		boolean result;
 		if (block != null) {
 			System.arraycopy(row, 0, block, blockOffset, row.length);
-			return true;
+			result = true;
 		} else {
 			if (!spaceForOneBlockAvailable()) {
-				return false;
+				result = false;
 			} else {
 				block = new byte[cacheBlockSize];
 				System.arraycopy(row, 0, block, blockOffset, row.length);
 				blocks.put(blockId, block);
-				return true;
+				result = true;
 			}
 		}
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			long time = System.nanoTime() - start;
+			boolean found = false;
+			if (readBlock != null) {
+				byte[] readRow = new byte[rowLength];
+				System.arraycopy(readBlock, blockOffset, readRow, 0, rowLength);
+				found = !Utils.isArrayZero(readRow);
+			}
+			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize,
+					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
+		}
+		return result;
 	}
 
 	@Override

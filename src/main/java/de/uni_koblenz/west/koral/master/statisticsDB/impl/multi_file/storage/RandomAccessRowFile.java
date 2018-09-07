@@ -180,6 +180,7 @@ public class RandomAccessRowFile implements RowStorage {
 				}
 				return readBlock(rowId);
 			}
+			long start = System.nanoTime();
 			long blockId = rowId / rowsPerBlock;
 			int blockOffset = (int) (rowId % rowsPerBlock) * rowLength;
 
@@ -208,18 +209,20 @@ public class RandomAccessRowFile implements RowStorage {
 
 			if (block == null) {
 				if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+					long time = System.nanoTime() - start;
 					StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
 							fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), false,
-							false);
+							false, time);
 				}
 				return null;
 			}
 			byte[] row = new byte[rowLength];
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				long time = System.nanoTime() - start;
 				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
 						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
-						blockFound && !Utils.isArrayZero(row));
+						blockFound && !Utils.isArrayZero(row), time);
 			}
 			return row;
 		} else {
@@ -313,6 +316,7 @@ public class RandomAccessRowFile implements RowStorage {
 			throw new NullPointerException("FileId " + fileId + ": Row can't be null");
 		}
 		if (fileCache != null) {
+			long start = System.nanoTime();
 			// We don't handle the rowsAsBlocks case separately because the procedure would be almost identical, because
 			// we need to extend the row array for the dirty flag
 			long blockId = rowId / rowsPerBlock;
@@ -340,14 +344,11 @@ public class RandomAccessRowFile implements RowStorage {
 				blockFound = true;
 				cacheHits++;
 			}
-
+			byte[] readBlock;
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				byte[] readRow = new byte[cacheBlockSize];
-				System.arraycopy(block, blockOffset, readRow, 0, rowLength);
-				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
-						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
-						blockFound && !Utils.isArrayZero(readRow));
+				readBlock = block.clone();
 			}
+
 			if (block == null) {
 				if (recycleBlocks) {
 					block = blockRecycler.retrieve();
@@ -357,9 +358,19 @@ public class RandomAccessRowFile implements RowStorage {
 				}
 			}
 			System.arraycopy(row, 0, block, blockOffset, row.length);
+			// TODO: Not always necessary
 			fileCache.update(blockId, block);
 			// Set dirty flag (located right behind the data)
 			block[dataLength] = 1;
+
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				long time = System.nanoTime() - start;
+				byte[] readRow = new byte[cacheBlockSize];
+				System.arraycopy(readBlock, blockOffset, readRow, 0, rowLength);
+				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
+						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
+						blockFound && !Utils.isArrayZero(readRow), time);
+			}
 		} else {
 			writeRowToFile(rowId, row);
 		}
