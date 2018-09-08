@@ -34,7 +34,7 @@ public abstract class Aggregator {
 	 * @return An array of the same length as the accumulation array, containg the aggregated values. If no values were
 	 *         accumulated since the last aggregation, the array contains only zeroes.
 	 */
-	public float[] aggregate() {
+	public Float[] aggregate() {
 		return aggregate(0);
 	}
 
@@ -49,8 +49,8 @@ public abstract class Aggregator {
 	 * @return An array of the same length as the accumulation array, containg the aggregated value. If no values were
 	 *         accumulated since the last aggregation, the array contains only zeroes.
 	 */
-	public float[] aggregate(long extraValue) {
-		float[] aggregations = new float[valueCount];
+	public Float[] aggregate(long extraValue) {
+		Float[] aggregations = new Float[valueCount];
 		if (accumulationCounter == 0) {
 			// No data was accumulated for this file
 			return aggregations;

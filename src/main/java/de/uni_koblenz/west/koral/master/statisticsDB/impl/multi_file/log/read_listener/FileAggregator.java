@@ -6,8 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
 public class FileAggregator {
@@ -77,7 +75,7 @@ public class FileAggregator {
 	}
 
 	public void printAggregations(long globalRowCounter, long globalAccumulationCounter) {
-		Float[] aggregations = ArrayUtils.toObject(aggregate(globalAccumulationCounter));
+		Float[] aggregations = aggregate(globalAccumulationCounter);
 		if (alignToGlobal) {
 			csvWriter.addRecord(globalRowCounter, aggregations, null, null);
 		} else {
@@ -85,18 +83,18 @@ public class FileAggregator {
 		}
 	}
 
-	private float[] aggregate(long globalAccumulationCounter) {
-		List<float[]> aggregatedArrays = new LinkedList<>();
+	private Float[] aggregate(long globalAccumulationCounter) {
+		List<Float[]> aggregatedArrays = new LinkedList<>();
 		for (AggregatorType aggType : aggregatorOrder) {
 			aggregatedArrays.add(aggregators.get(aggType).aggregate(globalAccumulationCounter));
 		}
 		int arraySize = 0;
-		for (float[] array : aggregatedArrays) {
+		for (Float[] array : aggregatedArrays) {
 			arraySize += array.length;
 		}
-		float[] allAggregations = new float[arraySize];
+		Float[] allAggregations = new Float[arraySize];
 		int arrayIndex = 0;
-		for (float[] array : aggregatedArrays) {
+		for (Float[] array : aggregatedArrays) {
 			System.arraycopy(array, 0, allAggregations, arrayIndex, array.length);
 			arrayIndex += array.length;
 		}
