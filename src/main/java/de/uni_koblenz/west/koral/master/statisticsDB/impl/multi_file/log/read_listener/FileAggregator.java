@@ -43,21 +43,21 @@ public class FileAggregator {
 				AggregatorType.FILE_LOCAL_AVERAGE };
 		aggregators.put(AggregatorType.FILE_LOCAL_PERCENTAGE, new Aggregator(2) {
 			@Override
-			protected float aggregate(long accumulatedValue, long extraValue) {
+			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
 				return (accumulatedValue / (float) accumulationCounter) * 100;
 			}
 		});
 
 		aggregators.put(AggregatorType.GLOBAL_PERCENTAGE, new Aggregator(1) {
 			@Override
-			protected float aggregate(long accumulatedValue, long extraValue) {
+			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
 				return (accumulatedValue / (float) extraValue) * 100;
 			}
 		});
 
 		aggregators.put(AggregatorType.FILE_LOCAL_AVERAGE, new Aggregator(1) {
 			@Override
-			protected float aggregate(long accumulatedValue, long extraValue) {
+			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
 				return accumulatedValue / (float) accumulationCounter;
 			}
 		});

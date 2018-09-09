@@ -4,15 +4,16 @@ import java.util.Arrays;
 
 public abstract class Aggregator {
 
-	protected long[] accumulations;
+	protected final long[] accumulations;
 
-	protected long accumulationCounter;
+	protected final long[] accumulationCounter;
 
 	private final int valueCount;
 
 	public Aggregator(int valueCount) {
 		this.valueCount = valueCount;
-		accumulationCounter = 0;
+		accumulationCounter = new long[valueCount];
+		Arrays.fill(accumulationCounter, 0L);
 		accumulations = new long[valueCount];
 	}
 
@@ -21,9 +22,11 @@ public abstract class Aggregator {
 			throw new IllegalArgumentException("Values argument must have the length that was given on construction.");
 		}
 		for (int i = 0; i < values.length; i++) {
-			accumulations[i] += values[i].longValue();
+			if (values[i] != null) {
+				accumulations[i] += values[i].longValue();
+				accumulationCounter[i]++;
+			}
 		}
-		accumulationCounter++;
 	}
 
 	/**
@@ -46,25 +49,24 @@ public abstract class Aggregator {
 	 *            Can be provided to be an available value for the overridden {@link #aggregate(long, long)}. If this is
 	 *            not necessary, use {@link #aggregate()}. This value might be used to aggregate the values from a
 	 *            global perspective, by using e.g. a global value counter instead of one for this series only.
-	 * @return An array of the same length as the accumulation array, containg the aggregated value. If no values were
-	 *         accumulated since the last aggregation, the array contains only zeroes.
+	 * @return An array of the same length as the accumulation array, containg the aggregated value. For each metric
+	 *         that didn't accumulate any values, the array contains a null.
 	 */
 	public Float[] aggregate(long extraValue) {
 		Float[] aggregations = new Float[valueCount];
-		if (accumulationCounter == 0) {
-			// No data was accumulated for this file
-			return aggregations;
-		}
 		for (int i = 0; i < accumulations.length; i++) {
-			aggregations[i] = aggregate(accumulations[i], extraValue);
+			// Only aggregate metrics where values were accumulated
+			if (accumulationCounter[i] > 0) {
+				aggregations[i] = aggregate(accumulations[i], accumulationCounter[i], extraValue);
+			}
 		}
 		return aggregations;
 	}
 
-	protected abstract float aggregate(long accumulatedValue, long extraValue);
+	protected abstract float aggregate(long accumulatedValue, long accumulationCounter, long extraValue);
 
 	public void reset() {
-		accumulationCounter = 0;
+		Arrays.fill(accumulationCounter, 0L);
 		Arrays.fill(accumulations, 0L);
 	}
 
