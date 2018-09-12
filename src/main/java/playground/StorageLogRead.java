@@ -11,7 +11,7 @@ import java.util.Set;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.CompressedLogReader;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ImplementationListener;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.PerFileListener;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.PerFileCacheListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ReadProgressionListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.SampledAggregationsListener;
 
@@ -32,8 +32,8 @@ public class StorageLogRead {
 		List<StorageLogReadListener> listeners = new LinkedList<>();
 
 		for (int fileId : fileIds) {
-			listeners.add(new PerFileListener(fileId, true, outputPath));
-			listeners.add(new PerFileListener(fileId, false, outputPath));
+			listeners.add(new PerFileCacheListener(fileId, true, outputPath));
+			listeners.add(new PerFileCacheListener(fileId, false, outputPath));
 		}
 		listeners.add(new SampledAggregationsListener(fileIds, samplingInterval, true, outputPath));
 		listeners.add(new SampledAggregationsListener(fileIds, samplingInterval, false, outputPath));

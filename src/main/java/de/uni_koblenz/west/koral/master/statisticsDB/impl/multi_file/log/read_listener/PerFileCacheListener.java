@@ -7,7 +7,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
-public class PerFileListener implements StorageLogReadListener {
+public class PerFileCacheListener implements StorageLogReadListener {
 
 	private final CompressedCSVWriter csvWriter;
 
@@ -22,7 +22,7 @@ public class PerFileListener implements StorageLogReadListener {
 
 	private final boolean alignToGlobal;
 
-	public PerFileListener(int fileId, boolean alignToGlobal, String outputPath) {
+	public PerFileCacheListener(int fileId, boolean alignToGlobal, String outputPath) {
 		this.fileId = fileId;
 		this.alignToGlobal = alignToGlobal;
 		File outputFile = new File(outputPath,
