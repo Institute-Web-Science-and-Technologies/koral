@@ -15,7 +15,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_li
 public class StorageLogRead {
 
 	public static void main(String[] args) {
-		String outputPath = "/home/philipp/Development/koral_benchmark/statistics_benchmark/storageLogAnalysis";
+		String outputPath = "/home/philipp/Development/koral_benchmark/statistics_benchmark/storageLogAnalysis/data";
 		File storageFile = new File("/tmp/master/statistics/storageLog.gz");
 
 		long samplingInterval = 100_000;

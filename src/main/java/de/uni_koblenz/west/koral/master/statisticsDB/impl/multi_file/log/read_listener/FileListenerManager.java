@@ -10,13 +10,19 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 public class FileListenerManager implements StorageLogReadListener {
 
 	private final Map<Byte, PerFileCacheListener> fileListener;
+
 	private final boolean alignToGlobal;
+
 	private final String outputPath;
+
+	private long globalRowCounter;
 
 	public FileListenerManager(boolean alignToGlobal, String outputPath) {
 		this.alignToGlobal = alignToGlobal;
 		this.outputPath = outputPath;
 		fileListener = new HashMap<>();
+
+		globalRowCounter = 0;
 	}
 
 	@Override
@@ -26,13 +32,14 @@ public class FileListenerManager implements StorageLogReadListener {
 			if (!fileListener.containsKey(fileId)) {
 				fileListener.put(fileId, new PerFileCacheListener(fileId, alignToGlobal, outputPath));
 			}
-			fileListener.get(fileId).onLogRowRead(rowType, data);
+			fileListener.get(fileId).onLogRowRead(data, globalRowCounter);
+			globalRowCounter++;
 		}
 	}
 
 	@Override
 	public void close() {
-		fileListener.values().forEach(l -> l.close());
+		fileListener.values().forEach(l -> l.close(globalRowCounter));
 	}
 
 }
