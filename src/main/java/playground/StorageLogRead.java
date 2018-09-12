@@ -35,8 +35,8 @@ public class StorageLogRead {
 			listeners.add(new PerFileCacheListener(fileId, true, outputPath));
 			listeners.add(new PerFileCacheListener(fileId, false, outputPath));
 		}
-		listeners.add(new SampledAggregationsListener(fileIds, samplingInterval, true, outputPath));
-		listeners.add(new SampledAggregationsListener(fileIds, samplingInterval, false, outputPath));
+		listeners.add(new SampledAggregationsListener(samplingInterval, true, outputPath));
+		listeners.add(new SampledAggregationsListener(samplingInterval, false, outputPath));
 		// Not necessary because the total cache usage is calculated by the stacked area cache usage plot
 //		listeners.add(new ExtraCacheUsageListener(outputPath));
 		listeners.add(new ImplementationListener(outputPath));
