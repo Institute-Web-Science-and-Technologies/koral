@@ -122,6 +122,10 @@ public class CompressedLogWriter {
 
 	}
 
+	public Map<Integer, Integer> getRowLayoutLengths() {
+		return rowLengths;
+	}
+
 	private int addElement(byte[] row, int cursor, ElementType elementType, Object value) {
 		if (elementType == null) {
 			throw new NullPointerException();

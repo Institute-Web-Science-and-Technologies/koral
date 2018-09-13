@@ -3,6 +3,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 public class StorageLogWriter {
@@ -52,6 +53,12 @@ public class StorageLogWriter {
 		rowLayouts.put(StorageLogEvent.BLOCKFLUSH.ordinal(), blockFlushEventLayout);
 
 		logWriter = new CompressedLogWriter(new File(storagePath, "storageLog.gz"), rowLayouts);
+
+		for (Entry<Integer, Integer> entry : logWriter.getRowLayoutLengths().entrySet()) {
+			int rowLayout = entry.getKey();
+			System.out.println("Row Layout \"" + StorageLogEvent.values()[rowLayout] + "\" will use " + entry.getValue()
+					+ " bytes.");
+		}
 
 		event = new TreeMap<>();
 		finished = false;
