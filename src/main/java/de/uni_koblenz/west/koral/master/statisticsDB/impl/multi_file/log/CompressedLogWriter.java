@@ -97,7 +97,8 @@ public class CompressedLogWriter {
 				number = (Number) value;
 			}
 			if (number.longValue() > elementType.getMaxValue()) {
-				throw new IllegalArgumentException("Given element " + elementName + " is too large for element type "
+				throw new IllegalArgumentException("Given element \"" + elementName
+						+ "\" is too large for element type "
 						+ elementType.toString() + ". Value: " + number + ", Max value: " + elementType.getMaxValue()
 						+ ". Consider adapting the element type for this layout.");
 			}
