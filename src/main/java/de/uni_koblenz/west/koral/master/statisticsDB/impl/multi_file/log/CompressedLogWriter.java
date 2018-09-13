@@ -197,8 +197,8 @@ public class CompressedLogWriter {
 	private static byte object2byte(Object value) {
 		if (value instanceof Boolean) {
 			return (byte) (((boolean) value) ? 1 : 0);
-		} else if (value instanceof Integer) {
-			return ((Integer) value).byteValue();
+		} else if (value instanceof Number) {
+			return ((Number) value).byteValue();
 		} else {
 			return (Byte) value;
 		}
