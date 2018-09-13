@@ -89,22 +89,17 @@ public class StorageLogWriter {
 		if (finished) {
 			return;
 		}
-		// TODO: These checks would fit better into the CompressedLogWriter class
-		if ((fileId > Integer.MAX_VALUE) || (position > Integer.MAX_VALUE) || (cacheUsage > Integer.MAX_VALUE)
-				|| (fileSize > Integer.MAX_VALUE) || (time > Integer.MAX_VALUE)) {
-			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
-		}
 		event.clear();
-		event.put(KEY_FILEID, (int) fileId);
-		event.put(KEY_POSITION, (int) position);
+		event.put(KEY_FILEID, fileId);
+		event.put(KEY_POSITION, position);
 		event.put(KEY_ACCESS_WRITE, write);
 		event.put(KEY_ACCESS_FILESTORAGE, fileStorage);
-		event.put(KEY_ACCESS_CACHEUSAGE, (int) cacheUsage);
+		event.put(KEY_ACCESS_CACHEUSAGE, cacheUsage);
 		event.put(KEY_ACCESS_PERCENTAGECACHED, percentageCached);
-		event.put(KEY_ACCESS_FILESIZE, (int) fileSize);
+		event.put(KEY_ACCESS_FILESIZE, fileSize);
 		event.put(KEY_ACCESS_CACHEHIT, cacheHit);
 		event.put(KEY_ACCESS_FOUND, found);
-		event.put(KEY_ACCESS_TIME, (int) time);
+		event.put(KEY_ACCESS_TIME, time);
 		logWriter.log(StorageLogEvent.READWRITE.ordinal(), event);
 	}
 
@@ -112,12 +107,9 @@ public class StorageLogWriter {
 		if (finished) {
 			return;
 		}
-		if ((fileId > Integer.MAX_VALUE) || (blockId > Integer.MAX_VALUE)) {
-			throw new RuntimeException("Parameters too large for int conversion. Please adjust storage layout");
-		}
 		event.clear();
-		event.put(KEY_FILEID, (int) fileId);
-		event.put(KEY_POSITION, (int) blockId);
+		event.put(KEY_FILEID, fileId);
+		event.put(KEY_POSITION, blockId);
 		event.put(KEY_BLOCKFLUSH_DIRTY, dirty);
 		logWriter.log(StorageLogEvent.BLOCKFLUSH.ordinal(), event);
 	}

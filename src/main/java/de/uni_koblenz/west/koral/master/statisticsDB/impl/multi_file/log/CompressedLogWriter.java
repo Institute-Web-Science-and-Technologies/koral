@@ -89,10 +89,22 @@ public class CompressedLogWriter {
 		for (String elementName : rowLayout.keySet()) {
 			Object value = data.get(elementName);
 			ElementType elementType = rowLayout.get(elementName);
+			Number number;
+			// Bit elements might be boolean
 			if (elementType == ElementType.BIT) {
-				bits.add(object2byte(value));
+				number = object2byte(value);
 			} else {
-				cursor = addElement(row, cursor, elementType, value);
+				number = (Number) value;
+			}
+			if (number.longValue() > elementType.getMaxValue()) {
+				throw new IllegalArgumentException("Given element " + elementName + " is too large for element type "
+						+ elementType.toString() + ". Value: " + number + ", Max value: " + elementType.getMaxValue()
+						+ ". Consider adapting the element type for this layout.");
+			}
+			if (elementType == ElementType.BIT) {
+				bits.add(number.byteValue());
+			} else {
+				cursor = addElement(row, cursor, elementType, number);
 			}
 		}
 		Iterator<Byte> bitIterator = bits.iterator();
@@ -112,25 +124,18 @@ public class CompressedLogWriter {
 	private int addElement(byte[] row, int cursor, ElementType elementType, Object value) {
 		if (elementType == null) {
 			throw new NullPointerException();
-		}
-		if (elementType == ElementType.BIT) {
+		} else if (elementType == ElementType.BIT) {
 			throw new AssertionError("Bits are supposed to be added separately");
-		}
-		if (elementType == ElementType.BYTE) {
+		} else if (elementType == ElementType.BYTE) {
 			row[cursor] = object2byte(value);
 			return cursor + 1;
+		} else if (value instanceof Number) {
+			Number number = (Number) value;
+			Utils.writeLongIntoBytes(number.longValue(), row, cursor, elementType.getLayoutLength());
+			return cursor + elementType.getLayoutLength();
+		} else {
+			throw new IllegalArgumentException("Unknown value for elementType: " + elementType);
 		}
-		if (elementType == ElementType.INTEGER) {
-			int integer = (int) value;
-			Utils.writeLongIntoBytes(integer, row, cursor, Integer.BYTES);
-			return cursor + Integer.BYTES;
-		}
-		if (elementType == ElementType.SHORT) {
-			int shortValue = (short) value;
-			Utils.writeLongIntoBytes(shortValue, row, cursor, Short.BYTES);
-			return cursor + Short.BYTES;
-		}
-		throw new IllegalArgumentException("Unknown value for elementType: " + elementType);
 	}
 
 	static Integer calculateLayoutLength(Map<String, ElementType> layout) {
@@ -139,12 +144,8 @@ public class CompressedLogWriter {
 		for (ElementType elementType : layout.values()) {
 			if (elementType == ElementType.BIT) {
 				bitCount++;
-			} else if (elementType == ElementType.BYTE) {
-				layoutLength += 1;
-			} else if (elementType == ElementType.INTEGER) {
-				layoutLength += Integer.BYTES;
-			} else if (elementType == ElementType.SHORT) {
-				layoutLength += Short.BYTES;
+			} else {
+				layoutLength += elementType.getLayoutLength();
 			}
 		}
 		layoutLength += bitCount / 8;
