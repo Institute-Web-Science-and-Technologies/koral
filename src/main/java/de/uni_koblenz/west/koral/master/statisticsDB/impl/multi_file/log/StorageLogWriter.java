@@ -43,7 +43,7 @@ public class StorageLogWriter {
 		accessEventLayout.put(KEY_ACCESS_FILESIZE, ElementType.INTEGER);
 		accessEventLayout.put(KEY_ACCESS_CACHEHIT, ElementType.BIT);
 		accessEventLayout.put(KEY_ACCESS_FOUND, ElementType.BIT);
-		accessEventLayout.put(KEY_ACCESS_TIME, ElementType.INTEGER);
+		accessEventLayout.put(KEY_ACCESS_TIME, ElementType.LONG);
 		rowLayouts.put(StorageLogEvent.READWRITE.ordinal(), accessEventLayout);
 
 		Map<String, ElementType> blockFlushEventLayout = new TreeMap<>();
