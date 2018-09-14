@@ -7,9 +7,9 @@ public enum ElementType {
 	INTEGER(Integer.MAX_VALUE, Integer.BYTES),
 	LONG(Long.MAX_VALUE, Long.BYTES);
 
-	private boolean noLayoutLength;
+	private boolean hasMaxValue;
 
-	private boolean noMaxValue;
+	private boolean hasLayoutLength;
 
 	private long maxValue;
 
@@ -22,28 +22,38 @@ public enum ElementType {
 
 	private ElementType(long maxValue) {
 		this.maxValue = maxValue;
-		noLayoutLength = true;
+		hasMaxValue = true;
+		hasLayoutLength = false;
 	}
 
 	private ElementType(int layoutLength) {
 		this.layoutLength = layoutLength;
-		noMaxValue = true;
+		hasLayoutLength = true;
+		hasMaxValue = false;
 	}
 
 	private ElementType() {
-		noLayoutLength = true;
-		noMaxValue = true;
+		hasMaxValue = false;
+		hasLayoutLength = false;
+	}
+
+	public boolean hasMaxValue() {
+		return hasMaxValue;
+	}
+
+	public boolean hasLayoutLength() {
+		return hasLayoutLength;
 	}
 
 	public long getMaxValue() {
-		if (noMaxValue) {
+		if (!hasMaxValue) {
 			throw new UnsupportedOperationException("Element type " + toString() + " does not support a value limit");
 		}
 		return maxValue;
 	}
 
 	public int getLayoutLength() {
-		if (noLayoutLength) {
+		if (!hasLayoutLength) {
 			throw new UnsupportedOperationException(
 					"Element type " + toString() + " does not support a fixed layout length");
 		}
