@@ -14,16 +14,35 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_li
 
 public class StorageLogRead {
 
-	public static void main(String[] args) {
-		String outputPath = "/home/philipp/Development/koral_benchmark/statistics_benchmark/storageLogAnalysis/data";
-		File storageFile = new File("/tmp/master/statistics/storageLog.gz");
+	private static void printUsage() {
+		System.out.println("Usage: java -jar StorageLogReader.jar <storage file> <output dir> <sampling interval>");
+	}
 
-		long samplingInterval = 100_000;
+	public static void main(String[] args) {
+		File storageFile = new File(args[0]);
+		if (!storageFile.exists() || !storageFile.isFile()) {
+			System.err.println("Invalid storage file: " + storageFile);
+			printUsage();
+			return;
+		}
+		String outputPath = args[1];
+		File outputDir = new File(outputPath);
+		if (!outputDir.exists() || !outputDir.isDirectory()) {
+			outputDir.mkdirs();
+		}
+		long samplingInterval;
+		try {
+			samplingInterval = Long.parseLong(args[2]);
+		} catch (NumberFormatException e) {
+			printUsage();
+			System.err.println("Invalid argument for sampling interval: " + args[2]);
+			return;
+		}
 
 		long start = System.currentTimeMillis();
 
 		CompressedLogReader logReader = new CompressedLogReader(storageFile);
-		ReadProgressionListener progressionListener = new ReadProgressionListener(10_000_000);
+		ReadProgressionListener progressionListener = new ReadProgressionListener(100 * samplingInterval);
 
 		List<StorageLogReadListener> listeners = new LinkedList<>();
 

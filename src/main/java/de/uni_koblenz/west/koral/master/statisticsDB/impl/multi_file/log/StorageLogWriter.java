@@ -56,7 +56,7 @@ public class StorageLogWriter {
 
 		for (Entry<Integer, Integer> entry : logWriter.getRowLayoutLengths().entrySet()) {
 			int rowLayout = entry.getKey();
-			System.out.println("Row Layout \"" + StorageLogEvent.values()[rowLayout] + "\" will use " + entry.getValue()
+			System.out.println("Row Layout " + StorageLogEvent.values()[rowLayout] + " will use " + entry.getValue()
 					+ " bytes.");
 		}
 
