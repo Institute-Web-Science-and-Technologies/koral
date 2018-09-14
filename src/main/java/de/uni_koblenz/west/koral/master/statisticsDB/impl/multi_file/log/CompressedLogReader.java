@@ -145,7 +145,7 @@ public class CompressedLogReader {
 				cursor += Short.BYTES;
 			} else if (elementType == ElementType.LONG) {
 				data.put(elementName, NumberConversion.bytes2long(row, cursor));
-				cursor += Short.BYTES;
+				cursor += Long.BYTES;
 			} else {
 				throw new IllegalArgumentException("Unkown element type: " + elementType);
 			}
