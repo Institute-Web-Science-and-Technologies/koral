@@ -18,6 +18,8 @@ public enum ElementType {
 	ElementType(long maxValue, int layoutLength) {
 		this.maxValue = maxValue;
 		this.layoutLength = layoutLength;
+		hasLayoutLength = true;
+		hasMaxValue = true;
 	}
 
 	private ElementType(long maxValue) {
