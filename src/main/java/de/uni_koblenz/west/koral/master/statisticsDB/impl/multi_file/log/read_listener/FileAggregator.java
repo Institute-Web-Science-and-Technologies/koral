@@ -37,7 +37,7 @@ public class FileAggregator {
 
 		// If any of the following three structures is changed, the others most probably have to be updated as well
 		csvWriter.printHeader("CACHE_HITRATE", "WRITE_RATE", "ACCESS_RATE", "TIME_AVG_CACHE_READ",
-				"TIME_AVG_CACHE_WRITE", "TIME_AVG_FILE_READ", "TIME_AVG_FILE_WRITE");
+				"TIME_AVG_CACHE_WRITE", "TIME_AVG_FILE_READ", "TIME_AVG_FILE_WRITE", "TIME_AVG_TOTAL");
 		aggregatorOrder = new AggregatorType[] {
 				AggregatorType.FILE_LOCAL_PERCENTAGE,
 				AggregatorType.GLOBAL_PERCENTAGE,
@@ -56,7 +56,7 @@ public class FileAggregator {
 			}
 		});
 
-		aggregators.put(AggregatorType.FILE_LOCAL_AVERAGE, new Aggregator(4) {
+		aggregators.put(AggregatorType.FILE_LOCAL_AVERAGE, new Aggregator(5) {
 			@Override
 			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
 				return accumulatedValue / (float) accumulationCounter;
@@ -70,7 +70,7 @@ public class FileAggregator {
 				(byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE));
 		// Accumulate one per file access for access metric
 		aggregators.get(AggregatorType.GLOBAL_PERCENTAGE).accumulate(1);
-		Integer[] timeColumns = new Integer[4];
+		Long[] timeColumns = new Long[5];
 		boolean cacheAccess = (byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT) > 0;
 		boolean write = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE) > 0;
 		// Choose column based on header order
@@ -84,7 +84,8 @@ public class FileAggregator {
 		} else if (!cacheAccess && write) {
 			column = 3;
 		}
-		timeColumns[column] = (Integer) data.get(StorageLogWriter.KEY_ACCESS_TIME);
+		timeColumns[column] = (Long) data.get(StorageLogWriter.KEY_ACCESS_TIME);
+		timeColumns[4] = (Long) data.get(StorageLogWriter.KEY_ACCESS_TIME);
 		aggregators.get(AggregatorType.FILE_LOCAL_AVERAGE).accumulate(timeColumns);
 		rowCounter++;
 	}
