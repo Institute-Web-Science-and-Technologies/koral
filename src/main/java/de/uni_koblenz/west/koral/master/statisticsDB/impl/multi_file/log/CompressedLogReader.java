@@ -14,6 +14,8 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 
+import de.uni_koblenz.west.koral.common.utils.NumberConversion;
+
 public class CompressedLogReader {
 
 	private final File storageFile;
@@ -136,10 +138,13 @@ public class CompressedLogReader {
 				data.put(elementName, row[cursor]);
 				cursor++;
 			} else if (elementType == ElementType.INTEGER) {
-				data.put(elementName, byteArray2Int(row, cursor));
+				data.put(elementName, NumberConversion.bytes2int(row, cursor));
 				cursor += Integer.BYTES;
 			} else if (elementType == ElementType.SHORT) {
-				data.put(elementName, byteArray2Short(row, cursor));
+				data.put(elementName, NumberConversion.bytes2short(row, cursor));
+				cursor += Short.BYTES;
+			} else if (elementType == ElementType.LONG) {
+				data.put(elementName, NumberConversion.bytes2long(row, cursor));
 				cursor += Short.BYTES;
 			} else {
 				throw new IllegalArgumentException("Unkown element type: " + elementType);
@@ -161,31 +166,11 @@ public class CompressedLogReader {
 		if (input.read(array) == -1) {
 			throw new EOFException();
 		}
-		return byteArray2Int(array);
+		return NumberConversion.bytes2int(array);
 	}
 
 	public Map<StorageLogReadListener, Long> getListenerComputationTimes() {
 		return listenerComputationTimes;
-	}
-
-	private int byteArray2Int(byte[] array) {
-		return byteArray2Int(array, 0);
-	}
-
-	private static int byteArray2Int(byte[] array, int offset) {
-		int number = 0;
-		for (int i = 0; i < Integer.BYTES; i++) {
-			number |= (0xFF & array[offset + i]) << ((Integer.BYTES - i - 1) * Byte.SIZE);
-		}
-		return number;
-	}
-
-	private static short byteArray2Short(byte[] array, int offset) {
-		short number = 0;
-		for (int i = 0; i < Short.BYTES; i++) {
-			number |= (0xFF & array[offset + i]) << ((Short.BYTES - i) * Byte.SIZE);
-		}
-		return number;
 	}
 
 	public void close() {

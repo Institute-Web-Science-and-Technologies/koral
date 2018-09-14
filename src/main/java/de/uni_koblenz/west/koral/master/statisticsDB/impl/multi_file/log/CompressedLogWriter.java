@@ -93,10 +93,12 @@ public class CompressedLogWriter {
 			// Bit elements might be boolean
 			if (elementType == ElementType.BIT) {
 				number = object2byte(value);
-			} else {
+			} else if (value instanceof Number) {
 				number = (Number) value;
+			} else {
+				throw new IllegalArgumentException("Unknown value object: " + value.getClass().getSimpleName());
 			}
-			if (number.longValue() > elementType.getMaxValue()) {
+			if (elementType.hasMaxValue() && (number.longValue() > elementType.getMaxValue())) {
 				throw new IllegalArgumentException("Given element \"" + elementName
 						+ "\" is too large for element type "
 						+ elementType.toString() + ". Value: " + number + ", Max value: " + elementType.getMaxValue()
@@ -134,7 +136,7 @@ public class CompressedLogWriter {
 		} else if (elementType == ElementType.BYTE) {
 			row[cursor] = object2byte(value);
 			return cursor + 1;
-		} else if (value instanceof Number) {
+		} else if ((value instanceof Number) && elementType.hasLayoutLength()) {
 			Number number = (Number) value;
 			Utils.writeLongIntoBytes(number.longValue(), row, cursor, elementType.getLayoutLength());
 			return cursor + elementType.getLayoutLength();
@@ -149,8 +151,10 @@ public class CompressedLogWriter {
 		for (ElementType elementType : layout.values()) {
 			if (elementType == ElementType.BIT) {
 				bitCount++;
-			} else {
+			} else if (elementType.hasLayoutLength()) {
 				layoutLength += elementType.getLayoutLength();
+			} else {
+				throw new IllegalArgumentException("Unknown value for elementType: " + elementType);
 			}
 		}
 		layoutLength += bitCount / 8;
