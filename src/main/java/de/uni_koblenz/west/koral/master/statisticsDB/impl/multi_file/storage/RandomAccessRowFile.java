@@ -81,6 +81,8 @@ public class RandomAccessRowFile implements RowStorage {
 
 		this.recycleBlocks = recycleBlocks;
 		if (recycleBlocks) {
+			// TODO: Size should be considered for cache usage (i.e. if we want to recycle 1000 blocks, we have
+			// 1000*cacheBlockSize less space for the actual cache)
 			blockRecycler = new ObjectRecycler<>(1024);
 		} else {
 			blockRecycler = null;
@@ -261,9 +263,8 @@ public class RandomAccessRowFile implements RowStorage {
 		if (block == null) {
 			block = new byte[cacheBlockSize];
 		}
-		try {
-			rowFile.read(block, 0, dataLength);
-		} catch (EOFException e) {
+		int bytesRead = rowFile.read(block, 0, dataLength);
+		if (bytesRead < 0) {
 			long fileLength = rowFile.length();
 			if ((fileLength > offset) && ((fileLength - offset) < dataLength)) {
 				throw new RuntimeException("FileId " + fileId + ": Corrupted database: EOF before block end");
