@@ -47,9 +47,9 @@ public class StatisticsDBTest {
 
 	private static final boolean COLLECT_META_STATISTICS = false;
 
-	public static final boolean ENABLE_STORAGE_LOGGING = true;
+	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	private static final boolean WRITE_STATISTICS_DATA = false;
+	private static final boolean WRITE_STATISTICS_DATA = true;
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
