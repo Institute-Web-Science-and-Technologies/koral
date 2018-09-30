@@ -254,7 +254,15 @@ public class RandomAccessRowFile implements RowStorage {
 			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		long offset = blockId * dataLength;
+		// TODO: Store length as variable to prevent IO
+		long fileLength = rowFile.length();
+		if (offset >= fileLength) {
+			// Resource doesn't have an entry
+			return null;
+		}
 		rowFile.seek(offset);
+
+		// Initialize block array
 		byte[] block = null;
 		if (recycleBlocks) {
 			block = blockRecycler.retrieve();
@@ -263,17 +271,10 @@ public class RandomAccessRowFile implements RowStorage {
 		if (block == null) {
 			block = new byte[cacheBlockSize];
 		}
+
 		int bytesRead = rowFile.read(block, 0, dataLength);
-		if (bytesRead < 0) {
-			long fileLength = rowFile.length();
-			if ((fileLength > offset) && ((fileLength - offset) < dataLength)) {
-				throw new RuntimeException("FileId " + fileId + ": Corrupted database: EOF before block end");
-			}
-			if (recycleBlocks) {
-				blockRecycler.dump(block);
-			}
-			// Resource does not have an entry (yet)
-			return null;
+		if (bytesRead != dataLength) {
+			throw new RuntimeException("FileId " + fileId + ": Corrupted database: EOF before block end");
 		}
 		return block;
 	}
@@ -283,17 +284,18 @@ public class RandomAccessRowFile implements RowStorage {
 			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
 		long offset = rowId * rowLength;
+		// TODO: Store length as variable to prevent IO
+		long fileLength = rowFile.length();
+		if (offset >= fileLength) {
+			// Resource doesn't have an entry
+			return null;
+		}
 		rowFile.seek(offset);
 		byte[] row = new byte[rowLength];
 		try {
 			rowFile.readFully(row);
 		} catch (EOFException e) {
-			long fileLength = rowFile.length();
-			if ((fileLength > offset) && ((fileLength - offset) < rowLength)) {
-				throw new RuntimeException("FileId " + fileId + ": Corrupted database: EOF before row end");
-			}
-			// Resource does not have an entry (yet)
-			return null;
+			throw new RuntimeException("FileId " + fileId + ": Corrupted database: EOF before row end");
 		}
 		return row;
 	}
