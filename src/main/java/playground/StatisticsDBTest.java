@@ -49,7 +49,7 @@ public class StatisticsDBTest {
 
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	private static final boolean WRITE_STATISTICS_DATA = true;
+	private static final boolean WRITE_STATISTICS_DATA = false;
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
