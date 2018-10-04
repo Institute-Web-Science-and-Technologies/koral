@@ -212,7 +212,7 @@ public class CompressedCSVWriter {
 
 	public void close() {
 		if (!finished) {
-			finish(rowCounter);
+			finish(rowCounter - 1);
 		}
 		try {
 			csvPrinter.close();
