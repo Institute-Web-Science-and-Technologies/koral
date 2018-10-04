@@ -30,6 +30,8 @@ import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
+import playground.StatisticsDBTest;
 
 /**
  * Stores statistical information about the occurrence of resources in the different graph chunks. It receives its data
@@ -82,7 +84,9 @@ public class GraphStatistics implements Closeable {
 			throw new RuntimeException(e);
 		}
 		System.out.println("Chunk " + chunkIndex + " done.");
-
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLogWriter.getInstance().logChunkSwitchEvent();
+		}
 	}
 
 	public void count(long subject, long property, long object, int chunk) {
