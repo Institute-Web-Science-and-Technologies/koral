@@ -52,6 +52,9 @@ public class StorageLogWriter {
 		blockFlushEventLayout.put(KEY_BLOCKFLUSH_DIRTY, ElementType.BIT);
 		rowLayouts.put(StorageLogEvent.BLOCKFLUSH.ordinal(), blockFlushEventLayout);
 
+		Map<String, ElementType> chunkSwitchEventLayout = new TreeMap<>();
+		rowLayouts.put(StorageLogEvent.CHUNKSWITCH.ordinal(), chunkSwitchEventLayout);
+
 		logWriter = new CompressedLogWriter(new File(storagePath, "storageLog.gz"), rowLayouts);
 
 		for (Entry<Integer, Integer> entry : logWriter.getRowLayoutLengths().entrySet()) {
@@ -119,6 +122,14 @@ public class StorageLogWriter {
 		event.put(KEY_POSITION, blockId);
 		event.put(KEY_BLOCKFLUSH_DIRTY, dirty);
 		logWriter.log(StorageLogEvent.BLOCKFLUSH.ordinal(), event);
+	}
+
+	public void logChunkSwitchEvent() {
+		if (finished) {
+			return;
+		}
+		event.clear();
+		logWriter.log(StorageLogEvent.CHUNKSWITCH.ordinal(), event);
 	}
 
 	public void finish() {
