@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.CompressedLogReader;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ChunkSwitchListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.FileListenerManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ImplementationListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ReadProgressionListener;
@@ -50,6 +51,7 @@ public class StorageLogRead {
 		listeners.add(new FileListenerManager(false, outputPath));
 		listeners.add(new SampledAggregationsListener(samplingInterval, true, outputPath));
 		listeners.add(new SampledAggregationsListener(samplingInterval, false, outputPath));
+		listeners.add(new ChunkSwitchListener(outputPath));
 		// Not necessary because the total cache usage is calculated by the stacked area cache usage plot
 //		listeners.add(new ExtraCacheUsageListener(outputPath));
 		listeners.add(new ImplementationListener(outputPath));
