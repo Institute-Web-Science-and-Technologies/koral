@@ -197,15 +197,13 @@ public class CompressedCSVWriter {
 		}
 	}
 
+	/**
+	 * Finishes the last interval and sets the finished flag to prevent another finish at close().
+	 *
+	 * @param recordId
+	 *            The record id of the last record
+	 */
 	public void finish(long recordId) {
-		// Add last record that wasn't printed yet
-//		printValue(recordId);
-//		printValues(currentValues);
-//		Object[] aggregatedValues = aggregateBinaries();
-//		if (aggregatedValues != null) {
-//			printValues(aggregatedValues);
-//		}
-//		println();
 		finishPreviousInterval(recordId);
 		finished = true;
 	}

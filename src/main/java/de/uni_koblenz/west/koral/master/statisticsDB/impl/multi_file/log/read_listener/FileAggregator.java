@@ -121,9 +121,9 @@ public class FileAggregator {
 	public void close(long globalRowCounter) {
 		long lastRecordId;
 		if (alignToGlobal) {
-			lastRecordId = globalRowCounter;
+			lastRecordId = globalRowCounter - 1;
 		} else {
-			lastRecordId = rowCounter;
+			lastRecordId = rowCounter - 1;
 		}
 		csvWriter.finish(lastRecordId);
 		csvWriter.close();
