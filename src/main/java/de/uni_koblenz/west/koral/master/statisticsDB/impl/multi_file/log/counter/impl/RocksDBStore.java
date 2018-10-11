@@ -1,6 +1,9 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.impl;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Iterator;
 
 import org.rocksdb.FlushOptions;
@@ -13,12 +16,20 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter
 public class RocksDBStore implements PersistantStore {
 
 	private RocksDB counter;
+	private final String storageDir;
+	private final int maxOpenFiles;
 
 	public RocksDBStore(String storageDir) {
 		this(storageDir, 400);
 	}
 
 	public RocksDBStore(String storageDir, int maxOpenFiles) {
+		this.storageDir = storageDir;
+		this.maxOpenFiles = maxOpenFiles;
+		initializeDB();
+	}
+
+	private void initializeDB() {
 		File dictionaryDir = new File(storageDir);
 		if (!dictionaryDir.exists()) {
 			dictionaryDir.mkdirs();
@@ -73,6 +84,17 @@ public class RocksDBStore implements PersistantStore {
 		} catch (RocksDBException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public void reset() {
+		close();
+		try {
+			Files.delete(Paths.get(storageDir));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		initializeDB();
 	}
 
 	@Override
