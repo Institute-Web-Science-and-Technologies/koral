@@ -89,12 +89,17 @@ public class RocksDBStore implements PersistantStore {
 	@Override
 	public void reset() {
 		close();
+		delete();
+		initializeDB();
+	}
+
+	@Override
+	public void delete() {
 		try {
 			Files.delete(Paths.get(storageDir));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		initializeDB();
 	}
 
 	@Override

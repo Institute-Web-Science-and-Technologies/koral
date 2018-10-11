@@ -45,6 +45,10 @@ public class PersistantCounter implements Iterable<byte[]> {
 		store.reset();
 	}
 
+	public void delete() {
+		store.delete();
+	}
+
 	public void close() {
 		store.close();
 	}

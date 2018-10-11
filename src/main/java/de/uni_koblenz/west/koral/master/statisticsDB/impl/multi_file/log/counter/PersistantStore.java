@@ -22,6 +22,8 @@ public interface PersistantStore extends Closeable, Iterable<byte[]> {
 
 	public void reset();
 
+	public void delete();
+
 	@Override
 	public void close();
 }
