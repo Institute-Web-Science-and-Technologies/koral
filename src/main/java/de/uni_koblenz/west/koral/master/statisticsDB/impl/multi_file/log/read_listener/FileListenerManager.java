@@ -58,6 +58,7 @@ public class FileListenerManager implements StorageLogReadListener {
 	@Override
 	public void close() {
 		cacheListener.values().forEach(l -> l.close(globalRowCounter));
+		blockListener.values().forEach(l -> l.close(globalRowCounter));
 	}
 
 }

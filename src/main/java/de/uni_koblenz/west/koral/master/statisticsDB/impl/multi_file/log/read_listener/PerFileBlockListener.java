@@ -62,7 +62,7 @@ public class PerFileBlockListener {
 		}
 		counter.countFor(NumberConversion.long2bytes(blockId));
 		// Choose relevant row counter
-		long relevantRowCounter = alignToGlobal ? globalRowCounter : rowCounter;
+		long relevantRowCounter = getRelevantRowCounter(globalRowCounter);
 		if (((relevantRowCounter % intervalLength) == 0) && (relevantRowCounter > 0)) {
 			writeInterval(relevantRowCounter);
 			newCounter();
@@ -107,8 +107,13 @@ public class PerFileBlockListener {
 		}
 	}
 
-	public void close() {
-		writeInterval(rowCounter - 1);
+	private long getRelevantRowCounter(long globalRowCounter) {
+		return alignToGlobal ? globalRowCounter : rowCounter;
+	}
+
+	public void close(long globalRowCounter) {
+		long relevantRowCounter = getRelevantRowCounter(globalRowCounter);
+		writeInterval(relevantRowCounter - 1);
 		counter.delete();
 		try {
 			csvWriter.close();
