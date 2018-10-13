@@ -11,10 +11,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
 
-import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.PersistantCounter;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.impl.HashMapStore;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.Counter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.HashMapCounter;
 
 public class PerFileBlockListener {
 
@@ -28,7 +27,7 @@ public class PerFileBlockListener {
 	/**
 	 * Counts block accesses for each interval. Is cleared after each interval and reused.
 	 */
-	private PersistantCounter counter;
+	private Counter counter;
 	private final int maxOpenFiles;
 
 	private final CSVPrinter csvWriter;
@@ -60,7 +59,7 @@ public class PerFileBlockListener {
 		if (blockId > maxBlockId) {
 			maxBlockId = blockId;
 		}
-		counter.countFor(NumberConversion.long2bytes(blockId));
+		counter.countFor(blockId);
 		// Choose relevant row counter
 		long relevantRowCounter = getRelevantRowCounter(globalRowCounter);
 		if (((relevantRowCounter % intervalLength) == 0) && (relevantRowCounter > 0)) {
@@ -75,8 +74,8 @@ public class PerFileBlockListener {
 			throw new RuntimeException("PerFileBlockListener does not work for more than Integer.MAX blocks.");
 		}
 		Long[] intervalValues = new Long[(int) maxBlockId + 1];
-		for (byte[] key : counter) {
-			int blockId = (int) NumberConversion.bytes2long(key);
+		for (long key : counter) {
+			int blockId = (int) key;
 			long value = counter.getFrequency(key);
 			intervalValues[blockId] = value;
 		}
@@ -101,9 +100,11 @@ public class PerFileBlockListener {
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
+			// Depending on the amount of blocks/data points a persistant counter is recommended to use
 //			RocksDBStore store = new RocksDBStore(storeDir.getAbsolutePath(), maxOpenFiles);
-			HashMapStore store = new HashMapStore();
-			counter = new PersistantCounter(store);
+//			counter = new PersistantCounter(store);
+			counter = new HashMapCounter();
+
 		} else {
 			counter.reset();
 		}
@@ -116,7 +117,7 @@ public class PerFileBlockListener {
 	public void close(long globalRowCounter) {
 		long relevantRowCounter = getRelevantRowCounter(globalRowCounter);
 		writeInterval(relevantRowCounter - 1);
-		counter.delete();
+		counter.close();
 		try {
 			csvWriter.close();
 		} catch (IOException e) {

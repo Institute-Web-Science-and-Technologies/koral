@@ -4,7 +4,7 @@ import java.util.Iterator;
 
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 
-public class PersistantCounter implements Counter<byte[]> {
+public class PersistantCounter implements Counter {
 
 	private final PersistantStore store;
 
@@ -13,20 +13,22 @@ public class PersistantCounter implements Counter<byte[]> {
 	}
 
 	@Override
-	public void countFor(byte[] element) {
-		byte[] frequencyArray = store.get(element);
+	public void countFor(long element) {
+		byte[] elementBytes = NumberConversion.long2bytes(element);
+		byte[] frequencyArray = store.get(elementBytes);
 		if (frequencyArray == null) {
 			frequencyArray = NumberConversion.long2bytes(1L);
 		} else {
 			frequencyArray = NumberConversion
 					.long2bytes(NumberConversion.bytes2long(frequencyArray) + 1);
 		}
-		store.put(element, frequencyArray);
+		store.put(elementBytes, frequencyArray);
 	}
 
 	@Override
-	public long getFrequency(byte[] element) {
-		byte[] frequencyArray = store.get(element);
+	public long getFrequency(long element) {
+		byte[] elementBytes = NumberConversion.long2bytes(element);
+		byte[] frequencyArray = store.get(elementBytes);
 		if (frequencyArray == null) {
 			return 0;
 		} else {
@@ -35,8 +37,21 @@ public class PersistantCounter implements Counter<byte[]> {
 	}
 
 	@Override
-	public Iterator<byte[]> iterator() {
-		return store.iterator();
+	public Iterator<Long> iterator() {
+		Iterator<byte[]> iterator = store.iterator();
+		return new Iterator<Long>() {
+
+			@Override
+			public boolean hasNext() {
+				return iterator.hasNext();
+			}
+
+			@Override
+			public Long next() {
+				return NumberConversion.bytes2long(iterator.next());
+			}
+
+		};
 	}
 
 	public void flush() {
@@ -52,6 +67,7 @@ public class PersistantCounter implements Counter<byte[]> {
 		store.delete();
 	}
 
+	@Override
 	public void close() {
 		store.close();
 	}

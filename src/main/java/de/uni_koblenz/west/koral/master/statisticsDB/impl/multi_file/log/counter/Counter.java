@@ -1,10 +1,10 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter;
 
-public interface Counter<T> extends AutoCloseable, Iterable<T> {
+public interface Counter extends AutoCloseable, Iterable<Long> {
 
-	public void countFor(T element);
+	public void countFor(long element);
 
-	public long getFrequency(T element);
+	public long getFrequency(long element);
 
 	public void reset();
 

@@ -3,7 +3,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counte
 import java.util.HashMap;
 import java.util.Iterator;
 
-public class HashMapCounter implements Counter<Long> {
+public class HashMapCounter implements Counter {
 
 	private final HashMap<Long, Long> store;
 
@@ -17,7 +17,7 @@ public class HashMapCounter implements Counter<Long> {
 	}
 
 	@Override
-	public void countFor(Long element) {
+	public void countFor(long element) {
 		Long frequency = store.get(element);
 		if (frequency == null) {
 			frequency = 1L;
@@ -28,7 +28,7 @@ public class HashMapCounter implements Counter<Long> {
 	}
 
 	@Override
-	public long getFrequency(Long element) {
+	public long getFrequency(long element) {
 		return store.get(element);
 	}
 
