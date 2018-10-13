@@ -86,6 +86,7 @@ public class PerFileBlockListener {
 			for (Long value : intervalValues) {
 				csvWriter.print(value);
 			}
+			csvWriter.println();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
