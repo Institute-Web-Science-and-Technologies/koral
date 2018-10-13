@@ -4,7 +4,7 @@ import java.util.Iterator;
 
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 
-public class PersistantCounter implements Iterable<byte[]> {
+public class PersistantCounter implements Counter<byte[]> {
 
 	private final PersistantStore store;
 
@@ -12,6 +12,7 @@ public class PersistantCounter implements Iterable<byte[]> {
 		this.store = store;
 	}
 
+	@Override
 	public void countFor(byte[] element) {
 		byte[] frequencyArray = store.get(element);
 		if (frequencyArray == null) {
@@ -23,6 +24,7 @@ public class PersistantCounter implements Iterable<byte[]> {
 		store.put(element, frequencyArray);
 	}
 
+	@Override
 	public long getFrequency(byte[] element) {
 		byte[] frequencyArray = store.get(element);
 		if (frequencyArray == null) {
@@ -41,6 +43,7 @@ public class PersistantCounter implements Iterable<byte[]> {
 		store.flush();
 	}
 
+	@Override
 	public void reset() {
 		store.reset();
 	}
