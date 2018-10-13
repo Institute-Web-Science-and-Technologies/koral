@@ -2,10 +2,9 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counte
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Iterator;
 
+import org.apache.commons.io.FileUtils;
 import org.rocksdb.FlushOptions;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
@@ -96,7 +95,7 @@ public class RocksDBStore implements PersistantStore {
 	@Override
 	public void delete() {
 		try {
-			Files.delete(Paths.get(storageDir));
+			FileUtils.deleteDirectory(new File(storageDir));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
