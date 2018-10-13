@@ -16,7 +16,8 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_li
 public class StorageLogRead {
 
 	private static void printUsage() {
-		System.out.println("Usage: java -jar StorageLogReader.jar <storage file> <output dir> <sampling interval>");
+		System.out.println(
+				"Usage: java -jar StorageLogReader.jar <storage file> <output dir> <sampling interval> <maxOpenFilesPerFileId>");
 	}
 
 	public static void main(String[] args) {
@@ -39,6 +40,14 @@ public class StorageLogRead {
 			System.err.println("Invalid argument for sampling interval: " + args[2]);
 			return;
 		}
+		int maxOpenFilesPerFileId;
+		try {
+			maxOpenFilesPerFileId = Integer.parseInt(args[3]);
+		} catch (NumberFormatException e) {
+			printUsage();
+			System.err.println("Invalid argument for maxOpenFilesPerFileId: " + args[3]);
+			return;
+		}
 
 		long start = System.currentTimeMillis();
 
@@ -47,8 +56,8 @@ public class StorageLogRead {
 
 		List<StorageLogReadListener> listeners = new LinkedList<>();
 
-		listeners.add(new FileListenerManager(true, outputPath));
-		listeners.add(new FileListenerManager(false, outputPath));
+//		listeners.add(new FileListenerManager(true, samplingInterval, maxOpenFilesPerFileId, outputPath));
+		listeners.add(new FileListenerManager(false, samplingInterval, maxOpenFilesPerFileId, outputPath));
 		listeners.add(new SampledAggregationsListener(samplingInterval, true, outputPath));
 		listeners.add(new SampledAggregationsListener(samplingInterval, false, outputPath));
 		listeners.add(new ChunkSwitchListener(outputPath));
