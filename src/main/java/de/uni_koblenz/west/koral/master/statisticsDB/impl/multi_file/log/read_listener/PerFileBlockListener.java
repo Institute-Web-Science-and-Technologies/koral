@@ -63,7 +63,7 @@ public class PerFileBlockListener {
 		counter.countFor(NumberConversion.long2bytes(blockId));
 		// Choose relevant row counter
 		long relevantRowCounter = alignToGlobal ? globalRowCounter : rowCounter;
-		if ((relevantRowCounter % intervalLength) == 0) {
+		if (((relevantRowCounter % intervalLength) == 0) && (relevantRowCounter > 0)) {
 			writeInterval(relevantRowCounter);
 			newCounter();
 		}
