@@ -14,7 +14,7 @@ import org.apache.commons.io.FileUtils;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.PersistantCounter;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.impl.RocksDBStore;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.impl.HashMapStore;
 
 public class PerFileBlockListener {
 
@@ -100,7 +100,8 @@ public class PerFileBlockListener {
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-			RocksDBStore store = new RocksDBStore(storeDir.getAbsolutePath(), maxOpenFiles);
+//			RocksDBStore store = new RocksDBStore(storeDir.getAbsolutePath(), maxOpenFiles);
+			HashMapStore store = new HashMapStore();
 			counter = new PersistantCounter(store);
 		} else {
 			counter.reset();
