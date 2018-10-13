@@ -37,4 +37,9 @@ public class HashMapCounter implements Counter<Long> {
 		store.clear();
 	}
 
+	@Override
+	public void close() {
+		store.clear();
+	}
+
 }
