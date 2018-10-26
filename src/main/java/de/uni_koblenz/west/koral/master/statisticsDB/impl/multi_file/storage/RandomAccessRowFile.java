@@ -267,7 +267,6 @@ public class RandomAccessRowFile implements RowStorage {
 		byte[] block = null;
 		if (recycleBlocks) {
 			block = blockRecycler.retrieve();
-			// TODO: Set dirty = 0?
 		}
 		if (block == null) {
 			block = new byte[cacheBlockSize];
