@@ -19,13 +19,15 @@ public class FileListenerManager implements StorageLogReadListener {
 
 	private final String outputPath;
 
-	private long globalRowCounter;
+	private long globalReadWriteRowCounter;
 
 	private final int maxOpenFilesPerFileId;
 
 	private final long blockAccessIntervalLength;
 
 	private final long blockFlushIntervalLength;
+
+	private long globalBlockFlushRowCounter;
 
 	/**
 	 *
@@ -47,7 +49,8 @@ public class FileListenerManager implements StorageLogReadListener {
 		blockAccessListener = new HashMap<>();
 		blockFlushListener = new HashMap<>();
 
-		globalRowCounter = 0;
+		globalReadWriteRowCounter = 0;
+		globalBlockFlushRowCounter = 0;
 	}
 
 	@Override
@@ -60,24 +63,25 @@ public class FileListenerManager implements StorageLogReadListener {
 						new PerFileBlockAccessListener(fileId, blockAccessIntervalLength, maxOpenFilesPerFileId,
 								alignToGlobal, outputPath));
 			}
-			cacheListener.get(fileId).onLogRowRead(data, globalRowCounter);
-			blockAccessListener.get(fileId).onLogRowRead(data, globalRowCounter);
-			globalRowCounter++;
+			cacheListener.get(fileId).onLogRowRead(data, globalReadWriteRowCounter);
+			blockAccessListener.get(fileId).onLogRowRead(data, globalReadWriteRowCounter);
+			globalReadWriteRowCounter++;
 		} else if (rowType == StorageLogEvent.BLOCKFLUSH.ordinal()) {
 			byte fileId = (byte) data.get(StorageLogWriter.KEY_FILEID);
 			if (!blockFlushListener.containsKey(fileId)) {
 				blockFlushListener.put(fileId,
 						new PerFileBlockFlushListener(fileId, blockFlushIntervalLength, alignToGlobal, outputPath));
 			}
-			blockFlushListener.get(fileId).onLogRowRead(data, globalRowCounter);
+			blockFlushListener.get(fileId).onLogRowRead(data, globalBlockFlushRowCounter);
+			globalBlockFlushRowCounter++;
 		}
 	}
 
 	@Override
 	public void close() {
-		cacheListener.values().forEach(l -> l.close(globalRowCounter));
-		blockAccessListener.values().forEach(l -> l.close(globalRowCounter));
-		blockFlushListener.values().forEach(l -> l.close(globalRowCounter));
+		cacheListener.values().forEach(l -> l.close(globalReadWriteRowCounter));
+		blockAccessListener.values().forEach(l -> l.close(globalReadWriteRowCounter));
+		blockFlushListener.values().forEach(l -> l.close(globalBlockFlushRowCounter));
 	}
 
 }
