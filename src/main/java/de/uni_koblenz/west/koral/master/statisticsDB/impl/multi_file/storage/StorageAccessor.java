@@ -211,6 +211,7 @@ public class StorageAccessor implements RowStorage {
 	@Override
 	public boolean makeRoom() {
 		if (cache != null) {
+			System.out.println(fileId + " making room by switching to file");
 			switchToFile();
 			return true;
 		} else {
