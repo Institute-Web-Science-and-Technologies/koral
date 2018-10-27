@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +11,7 @@ public class FileListenerManager implements StorageLogReadListener {
 
 	private final Map<Byte, PerFileCacheListener> cacheListener;
 
-	private final Map<Byte, PerFileBlockListener> blockListener;
+	private final Map<Byte, PerFileBlockAccessListener> blockAccessListener;
 
 	private final boolean alignToGlobal;
 
@@ -30,7 +30,7 @@ public class FileListenerManager implements StorageLogReadListener {
 		this.maxOpenFilesPerFileId = maxOpenFilesPerFileId;
 		this.outputPath = outputPath;
 		cacheListener = new HashMap<>();
-		blockListener = new HashMap<>();
+		blockAccessListener = new HashMap<>();
 
 		globalRowCounter = 0;
 	}
@@ -41,11 +41,11 @@ public class FileListenerManager implements StorageLogReadListener {
 			byte fileId = (byte) data.get(StorageLogWriter.KEY_FILEID);
 			if (!cacheListener.containsKey(fileId)) {
 				cacheListener.put(fileId, new PerFileCacheListener(fileId, alignToGlobal, outputPath));
-				blockListener.put(fileId, new PerFileBlockListener(fileId, intervalLength, maxOpenFilesPerFileId,
+				blockAccessListener.put(fileId, new PerFileBlockAccessListener(fileId, intervalLength, maxOpenFilesPerFileId,
 						alignToGlobal, outputPath));
 			}
 			cacheListener.get(fileId).onLogRowRead(data, globalRowCounter);
-			blockListener.get(fileId).onLogRowRead(data, globalRowCounter);
+			blockAccessListener.get(fileId).onLogRowRead(data, globalRowCounter);
 			globalRowCounter++;
 		} else if (rowType == StorageLogEvent.BLOCKFLUSH.ordinal()) {
 			byte fileId = (byte) data.get(StorageLogWriter.KEY_FILEID);
@@ -58,7 +58,7 @@ public class FileListenerManager implements StorageLogReadListener {
 	@Override
 	public void close() {
 		cacheListener.values().forEach(l -> l.close(globalRowCounter));
-		blockListener.values().forEach(l -> l.close(globalRowCounter));
+		blockAccessListener.values().forEach(l -> l.close(globalRowCounter));
 	}
 
 }

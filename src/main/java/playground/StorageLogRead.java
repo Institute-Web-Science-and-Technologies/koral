@@ -8,10 +8,10 @@ import java.util.Map.Entry;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.CompressedLogReader;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ChunkSwitchListener;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.FileListenerManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ImplementationListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ReadProgressionListener;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.SampledAggregationsListener;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file.FileListenerManager;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.SampledAggregationsListener;
 
 public class StorageLogRead {
 

@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,7 +15,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.Counter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.HashMapCounter;
 
-public class PerFileBlockListener {
+public class PerFileBlockAccessListener {
 
 	private final boolean alignToGlobal;
 	private final String outputPath;
@@ -33,7 +33,7 @@ public class PerFileBlockListener {
 	private final CSVPrinter csvWriter;
 	private final byte fileId;
 
-	public PerFileBlockListener(byte fileId, long intervalLength, int maxOpenFiles, boolean alignToGlobal,
+	public PerFileBlockAccessListener(byte fileId, long intervalLength, int maxOpenFiles, boolean alignToGlobal,
 			String outputPath) {
 		this.fileId = fileId;
 		this.intervalLength = intervalLength;
