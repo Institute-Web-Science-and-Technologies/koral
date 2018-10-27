@@ -1,0 +1,74 @@
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file;
+
+import java.io.File;
+import java.util.Map;
+
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.CompressedCSVWriter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.Aggregator;
+
+public class PerFileBlockFlushListener {
+
+	private final boolean alignToGlobal;
+	private final String outputPath;
+	private final byte fileId;
+	private final long intervalLength;
+
+	private final Aggregator aggregator;
+
+	private final CompressedCSVWriter csvWriter;
+
+	private long rowCounter;
+	private long logs;
+
+	public PerFileBlockFlushListener(byte fileId, long intervalLength, boolean alignToGlobal, String outputPath) {
+		this.fileId = fileId;
+		this.intervalLength = intervalLength;
+		this.alignToGlobal = alignToGlobal;
+		this.outputPath = outputPath;
+
+		File csvFile = new File(outputPath,
+				"blockFlushes_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz");
+		csvWriter = new CompressedCSVWriter(csvFile);
+
+		if (!alignToGlobal) {
+			aggregator = new Aggregator(1) {
+				@Override
+				protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
+					return (accumulatedValue / (float) accumulationCounter) * 100;
+				}
+			};
+		} else {
+			aggregator = new Aggregator(1) {
+				@Override
+				protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
+					// extraValue is supposed to be globalRowCounter
+					return (accumulatedValue / (float) extraValue) * 100;
+				}
+			};
+		}
+	}
+
+	public void onLogRowRead(Map<String, Object> data, long globalRowCounter) {
+		logs++;
+		byte dirty = (byte) data.get(StorageLogWriter.KEY_BLOCKFLUSH_DIRTY);
+		aggregator.accumulate(dirty);
+		if ((rowCounter > 0) && ((rowCounter % intervalLength) == 0)) {
+			writeInterval(globalRowCounter);
+		}
+		rowCounter++;
+	}
+
+	private void writeInterval(long globalRowCounter) {
+		float dirtyRate = aggregator.aggregate(globalRowCounter)[0];
+		aggregator.reset();
+		csvWriter.addSimpleRecord(dirtyRate);
+	}
+
+	public void close(long globalRowCounter) {
+		writeInterval(globalRowCounter);
+		csvWriter.close();
+		System.out.println("Logs: " + logs);
+	}
+
+}

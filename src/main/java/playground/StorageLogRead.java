@@ -56,8 +56,10 @@ public class StorageLogRead {
 
 		List<StorageLogReadListener> listeners = new LinkedList<>();
 
-		listeners.add(new FileListenerManager(true, samplingInterval, maxOpenFilesPerFileId, outputPath));
-		listeners.add(new FileListenerManager(false, samplingInterval, maxOpenFilesPerFileId, outputPath));
+		listeners.add(new FileListenerManager(true, samplingInterval, samplingInterval / 1000, maxOpenFilesPerFileId,
+				outputPath));
+		listeners.add(new FileListenerManager(false, samplingInterval, samplingInterval / 1000, maxOpenFilesPerFileId,
+				outputPath));
 		listeners.add(new SampledAggregationsListener(samplingInterval, true, outputPath));
 		listeners.add(new SampledAggregationsListener(samplingInterval, false, outputPath));
 		listeners.add(new ChunkSwitchListener(outputPath));

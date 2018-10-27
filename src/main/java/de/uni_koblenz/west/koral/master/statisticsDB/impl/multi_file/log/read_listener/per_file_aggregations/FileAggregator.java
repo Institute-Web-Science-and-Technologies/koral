@@ -53,6 +53,7 @@ public class FileAggregator {
 		aggregators.put(AggregatorType.GLOBAL_PERCENTAGE, new Aggregator(1) {
 			@Override
 			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
+				// extraValue is supposed to be globalRowCounter
 				return (accumulatedValue / (float) extraValue) * 100;
 			}
 		});

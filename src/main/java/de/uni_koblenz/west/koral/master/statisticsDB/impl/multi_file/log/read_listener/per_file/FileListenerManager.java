@@ -13,6 +13,8 @@ public class FileListenerManager implements StorageLogReadListener {
 
 	private final Map<Byte, PerFileBlockAccessListener> blockAccessListener;
 
+	private final Map<Byte, PerFileBlockFlushListener> blockFlushListener;
+
 	private final boolean alignToGlobal;
 
 	private final String outputPath;
@@ -21,16 +23,29 @@ public class FileListenerManager implements StorageLogReadListener {
 
 	private final int maxOpenFilesPerFileId;
 
-	private final long intervalLength;
+	private final long blockAccessIntervalLength;
 
-	public FileListenerManager(boolean alignToGlobal, long intervalLength, int maxOpenFilesPerFileId,
+	private final long blockFlushIntervalLength;
+
+	/**
+	 *
+	 * @param alignToGlobal
+	 * @param intervalLength
+	 *            The length of the intervals that are aggregated for block access and flush metrics
+	 * @param maxOpenFilesPerFileId
+	 * @param outputPath
+	 */
+	public FileListenerManager(boolean alignToGlobal, long blockAccessIntervalLength, long blockFlushIntervalLength,
+			int maxOpenFilesPerFileId,
 			String outputPath) {
 		this.alignToGlobal = alignToGlobal;
-		this.intervalLength = intervalLength;
+		this.blockAccessIntervalLength = blockAccessIntervalLength;
+		this.blockFlushIntervalLength = blockFlushIntervalLength;
 		this.maxOpenFilesPerFileId = maxOpenFilesPerFileId;
 		this.outputPath = outputPath;
 		cacheListener = new HashMap<>();
 		blockAccessListener = new HashMap<>();
+		blockFlushListener = new HashMap<>();
 
 		globalRowCounter = 0;
 	}
@@ -41,17 +56,20 @@ public class FileListenerManager implements StorageLogReadListener {
 			byte fileId = (byte) data.get(StorageLogWriter.KEY_FILEID);
 			if (!cacheListener.containsKey(fileId)) {
 				cacheListener.put(fileId, new PerFileCacheListener(fileId, alignToGlobal, outputPath));
-				blockAccessListener.put(fileId, new PerFileBlockAccessListener(fileId, intervalLength, maxOpenFilesPerFileId,
-						alignToGlobal, outputPath));
+				blockAccessListener.put(fileId,
+						new PerFileBlockAccessListener(fileId, blockAccessIntervalLength, maxOpenFilesPerFileId,
+								alignToGlobal, outputPath));
 			}
 			cacheListener.get(fileId).onLogRowRead(data, globalRowCounter);
 			blockAccessListener.get(fileId).onLogRowRead(data, globalRowCounter);
 			globalRowCounter++;
 		} else if (rowType == StorageLogEvent.BLOCKFLUSH.ordinal()) {
 			byte fileId = (byte) data.get(StorageLogWriter.KEY_FILEID);
-			if (!cacheListener.containsKey(fileId)) {
-				// TODO
+			if (!blockFlushListener.containsKey(fileId)) {
+				blockFlushListener.put(fileId,
+						new PerFileBlockFlushListener(fileId, blockFlushIntervalLength, alignToGlobal, outputPath));
 			}
+			blockFlushListener.get(fileId).onLogRowRead(data, globalRowCounter);
 		}
 	}
 
@@ -59,6 +77,7 @@ public class FileListenerManager implements StorageLogReadListener {
 	public void close() {
 		cacheListener.values().forEach(l -> l.close(globalRowCounter));
 		blockAccessListener.values().forEach(l -> l.close(globalRowCounter));
+		blockFlushListener.values().forEach(l -> l.close(globalRowCounter));
 	}
 
 }
