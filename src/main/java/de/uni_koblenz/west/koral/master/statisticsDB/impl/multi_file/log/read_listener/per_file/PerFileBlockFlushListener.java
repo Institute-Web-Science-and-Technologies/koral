@@ -33,22 +33,12 @@ public class PerFileBlockFlushListener {
 		csvWriter = new CompressedCSVWriter(csvFile);
 		csvWriter.printHeader(alignToGlobal ? "GLOBAL_ROW" : "LOCAL_ROW", "PERCENTAGE_DIRTY");
 
-		if (!alignToGlobal) {
-			aggregator = new Aggregator(1) {
-				@Override
-				protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
-					return (accumulatedValue / (float) accumulationCounter) * 100;
-				}
-			};
-		} else {
-			aggregator = new Aggregator(1) {
-				@Override
-				protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
-					// extraValue is supposed to be globalRowCounter
-					return (accumulatedValue / (float) extraValue) * 100;
-				}
-			};
-		}
+		aggregator = new Aggregator(1) {
+			@Override
+			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
+				return (accumulatedValue / (float) accumulationCounter) * 100;
+			}
+		};
 	}
 
 	public void onLogRowRead(Map<String, Object> data, long globalRowCounter) {
@@ -69,7 +59,7 @@ public class PerFileBlockFlushListener {
 	}
 
 	private void writeInterval(long globalRowCounter) {
-		float dirtyRate = aggregator.aggregate(globalRowCounter)[0];
+		float dirtyRate = aggregator.aggregate()[0];
 		aggregator.reset();
 		csvWriter.addSimpleRecord(dirtyRate);
 	}
