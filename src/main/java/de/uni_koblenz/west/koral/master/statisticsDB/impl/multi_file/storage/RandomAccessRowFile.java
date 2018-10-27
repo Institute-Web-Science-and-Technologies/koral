@@ -131,7 +131,8 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	private void onRemoveEldest(Long blockId, byte[] block) {
-		if (block[dataLength] == 1) {
+		boolean dirty = block[dataLength] == 1;
+		if (dirty) {
 			// Persist entry before removing
 			try {
 				writeBlockToFile(blockId, block);
@@ -142,7 +143,7 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 			uncachedBlocks.add(blockId);
-			StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId, block[dataLength] == 1);
+			StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId, dirty);
 		}
 		if (RandomAccessRowFile.this.recycleBlocks) {
 			blockRecycler.dump(block);
