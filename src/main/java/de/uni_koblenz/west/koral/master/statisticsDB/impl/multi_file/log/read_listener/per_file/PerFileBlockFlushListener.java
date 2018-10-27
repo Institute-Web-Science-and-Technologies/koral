@@ -19,6 +19,7 @@ public class PerFileBlockFlushListener {
 	private final CompressedCSVWriter csvWriter;
 
 	private long rowCounter;
+	private long lastGlobalRowCount;
 	private long logs;
 
 	public PerFileBlockFlushListener(byte fileId, long intervalLength, boolean alignToGlobal, String outputPath) {
@@ -30,6 +31,7 @@ public class PerFileBlockFlushListener {
 		File csvFile = new File(outputPath,
 				"blockFlushes_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz");
 		csvWriter = new CompressedCSVWriter(csvFile);
+		csvWriter.printHeader(alignToGlobal ? "GLOBAL_ROW" : "LOCAL_ROW", "PERCENTAGE_DIRTY");
 
 		if (!alignToGlobal) {
 			aggregator = new Aggregator(1) {
@@ -53,8 +55,15 @@ public class PerFileBlockFlushListener {
 		logs++;
 		byte dirty = (byte) data.get(StorageLogWriter.KEY_BLOCKFLUSH_DIRTY);
 		aggregator.accumulate(dirty);
-		if ((rowCounter > 0) && ((rowCounter % intervalLength) == 0)) {
-			writeInterval(globalRowCounter);
+		if (!alignToGlobal) {
+			if ((rowCounter > 0) && ((rowCounter % intervalLength) == 0)) {
+				writeInterval(globalRowCounter);
+			}
+		} else {
+			if ((globalRowCounter - lastGlobalRowCount) > intervalLength) {
+				writeInterval(globalRowCounter);
+				lastGlobalRowCount = globalRowCounter;
+			}
 		}
 		rowCounter++;
 	}
