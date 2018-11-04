@@ -59,9 +59,10 @@ public class PerFileBlockFlushListener {
 	}
 
 	private void writeInterval(long globalRowCounter) {
-		float dirtyRate = aggregator.aggregate()[0];
+		Float dirtyRate = aggregator.aggregate()[0];
 		aggregator.reset();
-		csvWriter.addSimpleRecord(dirtyRate);
+		// Wrap in array for var args handling
+		csvWriter.addSimpleRecord(new Object[] { dirtyRate });
 	}
 
 	public void close(long globalRowCounter) {
