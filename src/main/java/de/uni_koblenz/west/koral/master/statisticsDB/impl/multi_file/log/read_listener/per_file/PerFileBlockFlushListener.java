@@ -20,7 +20,6 @@ public class PerFileBlockFlushListener {
 
 	private long rowCounter;
 	private long lastGlobalRowCount;
-	private long logs;
 
 	public PerFileBlockFlushListener(byte fileId, long intervalLength, boolean alignToGlobal, String outputPath) {
 		this.fileId = fileId;
@@ -42,7 +41,6 @@ public class PerFileBlockFlushListener {
 	}
 
 	public void onLogRowRead(Map<String, Object> data, long globalRowCounter) {
-		logs++;
 		byte dirty = (byte) data.get(StorageLogWriter.KEY_BLOCKFLUSH_DIRTY);
 		aggregator.accumulate(dirty);
 		if (!alignToGlobal) {
@@ -68,7 +66,6 @@ public class PerFileBlockFlushListener {
 	public void close(long globalRowCounter) {
 		writeInterval(globalRowCounter);
 		csvWriter.close();
-		System.out.println("Logs: " + logs);
 	}
 
 }
