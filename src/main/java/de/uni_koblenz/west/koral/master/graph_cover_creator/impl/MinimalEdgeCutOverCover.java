@@ -680,6 +680,7 @@ public class MinimalEdgeCutOverCover extends GraphCoverCreatorBase {
         public void loadNextChunk() throws IOException {
           if (graphInput == null) {
             nextIndex = 0;
+            return;
           }
           if (elements == null) {
             elements = new long[(int) (maxCashSize / Long.BYTES / 5)][5];
