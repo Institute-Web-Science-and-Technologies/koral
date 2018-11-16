@@ -779,6 +779,7 @@ public class MinimalEdgeCutOverCover extends GraphCoverCreatorBase {
               output.writeLong(elements[nextIndexToWrite][4]);
               nextIndexToWrite++;
             }
+            nextIndexToWrite--;
           }
         }
 
