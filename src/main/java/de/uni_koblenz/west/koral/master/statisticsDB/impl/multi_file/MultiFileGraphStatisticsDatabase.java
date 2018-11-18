@@ -15,6 +15,8 @@ import org.apache.commons.io.FileUtils;
 
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.FileFlowWatcher;
+import playground.StatisticsDBTest;
 
 /**
  * The main class of this implementation, manages the {@link StatisticsRowManager} and persistence through
@@ -48,7 +50,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private boolean dirty;
 
 	static enum ResourceType {
-		SUBJECT(0), PROPERTY(1), OBJECT(2);
+		SUBJECT(0),
+		PROPERTY(1),
+		OBJECT(2);
 
 		private final int position;
 
@@ -198,13 +202,24 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			long fileIdRead = rowManager.getFileId();
 			rowManager.incrementOccurence(resourceType, chunk);
 			if (!rowManager.isDataExternal()) {
+				// Row is in Index
 				if (rowManager.isTooLongForMain()) {
+					// Move from index to extra file
 					insertEntryInExtraFile();
+					if (StatisticsDBTest.WATCH_FILE_FLOW) {
+						long newFileId = rowManager.getFileId();
+						if (newFileId > Integer.MAX_VALUE) {
+							throw new RuntimeException("File ID too large for FileFlowWatcher: " + newFileId);
+						}
+						FileFlowWatcher.getInstance().notify(0, (int) newFileId, rowManager.getSwitchReason());
+					}
 				} else {
+					// Update index row
 					rowManager.mergeDataBytesIntoRow();
 				}
 				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 			} else {
+				// Row is in extra file
 				long fileIdWrite = rowManager.getFileId();
 				long extraFileRowId = rowManager.getExternalFileRowId();
 				long newExtraFileRowID = extraFileRowId;
@@ -216,6 +231,16 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					// Write new offset into index row
 					rowManager.updateExtraRowId(newExtraFileRowID);
 					fileManager.writeIndexRow(resourceId, rowManager.getRow());
+					if (StatisticsDBTest.WATCH_FILE_FLOW) {
+						if (fileIdRead > Integer.MAX_VALUE) {
+							throw new RuntimeException("File ID too large for FileFlowWatcher: " + fileIdRead);
+						}
+						if (fileIdWrite > Integer.MAX_VALUE) {
+							throw new RuntimeException("File ID too large for FileFlowWatcher: " + fileIdWrite);
+						}
+						FileFlowWatcher.getInstance().notify((int) fileIdRead, (int) fileIdWrite,
+								rowManager.getSwitchReason());
+					}
 				} else {
 					// Overwrite old extra file entry
 					fileManager.writeExternalRow(fileIdWrite, extraFileRowId, rowManager.getDataBytes());

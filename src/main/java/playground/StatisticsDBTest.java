@@ -51,6 +51,8 @@ public class StatisticsDBTest {
 
 	private static final boolean WRITE_STATISTICS_DATA = false;
 
+	public static final boolean WATCH_FILE_FLOW = true;
+
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
 				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");

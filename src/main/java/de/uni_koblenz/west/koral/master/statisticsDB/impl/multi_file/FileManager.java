@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.FileFlowWatcher;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraStorageAccessor;
@@ -62,6 +63,9 @@ public class FileManager {
 
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 			StorageLogWriter.createInstance(storagePath);
+		}
+		if (StatisticsDBTest.WATCH_FILE_FLOW) {
+			FileFlowWatcher.createInstance(storagePath);
 		}
 
 		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
@@ -364,6 +368,9 @@ public class FileManager {
 			deleteEmptyFiles();
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 				StorageLogWriter.getInstance().close();
+			}
+			if (StatisticsDBTest.WATCH_FILE_FLOW) {
+				FileFlowWatcher.getInstance().close();
 			}
 		}
 	}

@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase.ResourceType;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.FileFlowWatcher.SwitchReason;
+import playground.StatisticsDBTest;
 
 /**
  * Handles the raw bytes of each row, interprets and updates them.
@@ -113,6 +115,14 @@ public class StatisticsRowManager {
 	private boolean dataExternal;
 
 	/**
+	 * Is set to show which event is the reason for a possible file switch of the current row. Note that the variable
+	 * being set does not guarantee that a switch will happen, it is only retrieved if a switch is known to happen. If
+	 * the size of the row does not change (i.e. there can't be a file switch), the variable is not set and its value is
+	 * undefined.
+	 */
+	private SwitchReason switchReason;
+
+	/**
 	 * The extracted metadata bits containing left-aligned position count, a fill gap of zeroes and the right-aligned
 	 * value of the bytes-per-value column. It is ensured that this value always represents the current state of the
 	 * {@link #row}, and vice versa. The included position count and bytes per value numbers still have the -1 offset
@@ -218,6 +228,10 @@ public class StatisticsRowManager {
 
 	byte[] getDataBytes() {
 		return dataBytes;
+	}
+
+	SwitchReason getSwitchReason() {
+		return switchReason;
 	}
 
 	boolean isTooLongForMain() {
@@ -385,6 +399,9 @@ public class StatisticsRowManager {
 //		Logger.log("Col: " + columnNumber + "; OVI: " + currentOccurenceValueIndex);
 		if (currentOccurenceValueIndex < 0) {
 			// Resource never occured at this column position yet
+			if (StatisticsDBTest.WATCH_FILE_FLOW) {
+				switchReason = SwitchReason.NEW_COLUMN;
+			}
 			if (optimalPositionEncoding(positionCount + 1) != positionEncoding) {
 				// Data bytes have to be completely rewritten with new encoding
 				long[] oldOccurences = decodeOccurenceData();
@@ -455,6 +472,9 @@ public class StatisticsRowManager {
 			occurences++;
 			// Check if more bytes are needed now for values
 			if (occurences >= (1L << (bytesPerValue * Byte.SIZE))) {
+				if (StatisticsDBTest.WATCH_FILE_FLOW) {
+					switchReason = SwitchReason.VALUE_SIZE_INCREASE;
+				}
 				// Extract old occurence values
 				long[] oldOccurences = decodeOccurenceData();
 				// Update current occurence
@@ -482,11 +502,6 @@ public class StatisticsRowManager {
 
 		}
 		updateDataLength();
-//		long[] occ = decodeOccurenceData();
-//		System.out.println(Arrays.toString(occ));
-//		if (occ[1] > 31) {
-//			System.out.println();
-//		}
 	}
 
 	/**
