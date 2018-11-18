@@ -63,6 +63,7 @@ public class FileFlowWatcher {
 			try (CSVPrinter csvPrinter = new CSVPrinter(
 					new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(csvFile, false)), "UTF-8"),
 					csvFileFormat)) {
+				csvPrinter.printRecord("FILE_FROM", "FILE_TO", "COUNT");
 				for (Entry<DirectedEdge, Long> entry : switchMap.entrySet()) {
 					csvPrinter.printRecord(entry.getKey().nodeFrom, entry.getKey().nodeTo, entry.getValue());
 				}
