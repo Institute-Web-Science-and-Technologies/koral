@@ -206,6 +206,8 @@ public class StorageAccessor implements RowStorage {
 				cache.close();
 				cache = null;
 			}
+			// Set to file to allow meaningful length() calls
+			currentStorage = file;
 			file.close();
 		}
 	}
