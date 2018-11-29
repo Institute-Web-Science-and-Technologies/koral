@@ -51,7 +51,7 @@ public class StatisticsDBTest {
 
 	private static final boolean WRITE_STATISTICS_DATA = false;
 
-	public static final boolean WATCH_FILE_FLOW = true;
+	public static final boolean WATCH_FILE_FLOW = false;
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()

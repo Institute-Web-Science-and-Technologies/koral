@@ -10,11 +10,14 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.Ext
 
 public class SharedSpaceManager {
 
-	private final long maxSize;
+	protected final long maxSize;
 
-	private long used;
+	protected long used;
 
-	private final Map<SharedSpaceConsumer, Long> consumers;
+	/**
+	 * Maps from consumers to their used space.
+	 */
+	protected final Map<SharedSpaceConsumer, Long> consumers;
 
 	private final FileManager fileManager;
 
@@ -32,19 +35,10 @@ public class SharedSpaceManager {
 	public boolean request(SharedSpaceConsumer consumer, long amount) {
 		long available = maxSize - used;
 		if (available < 0) {
-			throw new IllegalStateException("Too many resources in use");
+			throw new IllegalStateException("Max size limit is violated");
 		}
 		if (available < amount) {
-			Iterator<Entry<Long, ExtraRowStorage>> extraFiles = fileManager.getLRUExtraFiles();
-			fileLoop: while (extraFiles.hasNext()) {
-				ExtraRowStorage extraFile = extraFiles.next().getValue();
-				while (extraFile.makeRoom()) {
-					// Free up space until either enough is available or is nothing left to free up
-					if ((maxSize - used) >= amount) {
-						break fileLoop;
-					}
-				}
-			}
+			makeRoom(amount);
 		}
 		if ((maxSize - used) < amount) {
 			throw new OutOfMemoryError("Could not free up enough space. In use: " + used + ", requested: " + amount);
@@ -59,6 +53,29 @@ public class SharedSpaceManager {
 		consumers.put(consumer, consumerUsed);
 
 		return true;
+	}
+
+	/**
+	 * Attempt to make room to allow a new entry in the cache. If there is still not enough memory after this method
+	 * returned, {@link #request(SharedSpaceConsumer, long)} will throw an OOM exception.
+	 *
+	 * Default implementation asks each extra file, starting from the least recently used, to make room until the
+	 * requested amount is free.
+	 *
+	 * @param amount
+	 *            The requested amount of bytes
+	 */
+	protected void makeRoom(long amount) {
+		Iterator<Entry<Long, ExtraRowStorage>> extraFiles = fileManager.getLRUExtraFiles();
+		fileLoop: while (extraFiles.hasNext()) {
+			ExtraRowStorage extraFile = extraFiles.next().getValue();
+			while (extraFile.makeRoom()) {
+				// Free up space until either enough is available or is nothing left to free up
+				if ((maxSize - used) >= amount) {
+					break fileLoop;
+				}
+			}
+		}
 	}
 
 	public long getSpaceUsed(SharedSpaceConsumer consumer) {

@@ -351,6 +351,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		fileManager.defragFreeSpaceIndexes();
 		// Close all StorageAccessors because we are deleting the files they have open.
 		// Also, closing clears all caches that are incoherent to the changed files now.
+		// These are written to the old files which will be deleted in the next step.
 		fileManager.close();
 		dirty = false;
 		for (Long fileId : defraggedFiles) {
@@ -360,7 +361,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			newFile.renameTo(oldFile);
 			fileManager.deleteExtraFile(-fileId);
 		}
-		// TODO: Is there a reason to ensure flushing afterwards?
 	}
 
 	/**

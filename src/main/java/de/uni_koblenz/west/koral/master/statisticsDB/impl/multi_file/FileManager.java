@@ -18,7 +18,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.Ext
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RowStorage;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.StorageAccessor;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceManager;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 import playground.StatisticsDBTest;
 
@@ -44,7 +44,7 @@ public class FileManager {
 
 	private RowStorage index;
 
-	private final SharedSpaceManager extraCacheSpaceManager;
+	private final HABSESharedSpaceManager extraCacheSpaceManager;
 
 	private long maxResourceId;
 
@@ -56,7 +56,7 @@ public class FileManager {
 		this.logger = logger;
 
 		if (extraFilesCacheSize > 0) {
-			extraCacheSpaceManager = new SharedSpaceManager(this, extraFilesCacheSize);
+			extraCacheSpaceManager = new HABSESharedSpaceManager(this, extraFilesCacheSize, 1000);
 		} else {
 			extraCacheSpaceManager = null;
 		}

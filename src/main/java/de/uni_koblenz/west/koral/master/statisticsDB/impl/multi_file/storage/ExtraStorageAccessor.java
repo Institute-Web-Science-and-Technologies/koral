@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceManager;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 
 public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowStorage {
 
 	private final ReusableIDGenerator freeSpaceIndex;
 
 	public ExtraStorageAccessor(String storageFilePath, long fileId, int rowLength,
-			SharedSpaceManager extraCacheSpaceManager, long[] loadedFreeSpaceIndex, boolean createIfNotExisting,
+			HABSESharedSpaceManager extraCacheSpaceManager, long[] loadedFreeSpaceIndex, boolean createIfNotExisting,
 			Logger logger) {
 		super(storageFilePath, fileId, rowLength, extraCacheSpaceManager, true, createIfNotExisting, logger);
 		freeSpaceIndex = new ReusableIDGenerator(loadedFreeSpaceIndex);

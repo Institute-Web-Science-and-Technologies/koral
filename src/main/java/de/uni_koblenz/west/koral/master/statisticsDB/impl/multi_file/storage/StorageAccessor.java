@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceManager;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 
 public class StorageAccessor implements RowStorage {
 
@@ -22,7 +22,7 @@ public class StorageAccessor implements RowStorage {
 
 	private final long maxCacheSize;
 
-	private final SharedSpaceManager cacheSpaceManager;
+	private final HABSESharedSpaceManager cacheSpaceManager;
 
 	private final boolean recycleBlocks;
 
@@ -33,7 +33,8 @@ public class StorageAccessor implements RowStorage {
 	RowStorage currentStorage;
 
 	private StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
-			SharedSpaceManager cacheSpaceManager, boolean recycleBlocks, boolean createIfNotExisting, Logger logger) {
+			HABSESharedSpaceManager cacheSpaceManager, boolean recycleBlocks, boolean createIfNotExisting,
+			Logger logger) {
 		this.fileId = fileId;
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
@@ -50,7 +51,8 @@ public class StorageAccessor implements RowStorage {
 		this(storageFilePath, fileId, rowLength, maxCacheSize, null, recycleBlocks, createIfNotExisting, logger);
 	}
 
-	public StorageAccessor(String storageFilePath, long fileId, int rowLength, SharedSpaceManager cacheSpaceManager,
+	public StorageAccessor(String storageFilePath, long fileId, int rowLength,
+			HABSESharedSpaceManager cacheSpaceManager,
 			boolean recycleBlocks, boolean createIfNotExisting, Logger logger) {
 		// maxCacheSize is set to zero, because this parameter is only relevant if cacheSpaceManager == null
 		this(storageFilePath, fileId, rowLength, 0, cacheSpaceManager, recycleBlocks, createIfNotExisting, logger);
@@ -113,12 +115,18 @@ public class StorageAccessor implements RowStorage {
 		} else {
 			file.writeRow(rowId, row);
 		}
+		if (cacheSpaceManager != null) {
+			cacheSpaceManager.notifyAccess(this);
+		}
 		return true;
 	}
 
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
 		byte[] result = currentStorage.readRow(rowId);
+		if (cacheSpaceManager != null) {
+			cacheSpaceManager.notifyAccess(this);
+		}
 		return result;
 	}
 
