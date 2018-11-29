@@ -13,6 +13,12 @@ import java.util.Set;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUList;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.ObjectRecycler;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.LRUSharedCache;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceConsumer;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceManager;
 import playground.StatisticsDBTest;
 
 public class RandomAccessRowFile implements RowStorage {
@@ -475,11 +481,8 @@ public class RandomAccessRowFile implements RowStorage {
 				// Clear dirty flag
 				block[dataLength] = 0;
 			}
-			if (recycleBlocks && (blockRecycler.retrieved > 0)) {
-				System.out.println("FileId " + fileId + " recycled " + blockRecycler.retrieved
-						+ " and had a max usage of " + blockRecycler.maxUsage);
-				blockRecycler.retrieved = 0;
-				blockRecycler.maxUsage = 0;
+			if (recycleBlocks) {
+				blockRecycler.printStats(String.valueOf(fileId));
 			}
 		}
 	}

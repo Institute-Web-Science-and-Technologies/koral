@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
 
 import java.util.LinkedList;
 
@@ -30,6 +30,15 @@ public class ObjectRecycler<T> {
 			return objects.removeFirst();
 		} else {
 			return null;
+		}
+	}
+
+	public void printStats(String owner) {
+		if (retrieved > 0) {
+			System.out.println("Owner " + owner + " recycled " + retrieved
+					+ " and had a max usage of " + maxUsage);
+			retrieved = 0;
+			maxUsage = 0;
 		}
 	}
 

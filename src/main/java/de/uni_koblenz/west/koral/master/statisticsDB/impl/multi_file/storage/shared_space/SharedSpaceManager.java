@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage;
 
 public class SharedSpaceManager {
 

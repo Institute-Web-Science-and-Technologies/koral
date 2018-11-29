@@ -10,8 +10,6 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_li
 public class PerFileBlockFlushListener {
 
 	private final boolean alignToGlobal;
-	private final String outputPath;
-	private final byte fileId;
 	private final long intervalLength;
 
 	private final Aggregator aggregator;
@@ -22,10 +20,8 @@ public class PerFileBlockFlushListener {
 	private long lastGlobalRowCount;
 
 	public PerFileBlockFlushListener(byte fileId, long intervalLength, boolean alignToGlobal, String outputPath) {
-		this.fileId = fileId;
 		this.intervalLength = intervalLength;
 		this.alignToGlobal = alignToGlobal;
-		this.outputPath = outputPath;
 
 		File csvFile = new File(outputPath,
 				"blockFlushes_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz");

@@ -15,10 +15,10 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.FileFlo
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraStorageAccessor;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.LRUCache;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RowStorage;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.SharedSpaceManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.StorageAccessor;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceManager;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 import playground.StatisticsDBTest;
 

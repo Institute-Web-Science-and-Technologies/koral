@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
 
 /**
  * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
@@ -34,7 +34,7 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 	}
 
 	@Override
-	void remove(DoublyLinkedNode node) {
+	protected void remove(DoublyLinkedNode node) {
 		super.remove(node);
 		size--;
 	}

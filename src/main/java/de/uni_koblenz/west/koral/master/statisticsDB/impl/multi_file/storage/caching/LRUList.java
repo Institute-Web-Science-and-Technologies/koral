@@ -1,4 +1,4 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -103,7 +103,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 	 *
 	 * @param node
 	 */
-	void remove(DoublyLinkedNode node) {
+	protected void remove(DoublyLinkedNode node) {
 		if (head == node) {
 			head = node.after;
 		}
@@ -202,7 +202,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		};
 	}
 
-	void removeEldest() {
+	public void removeEldest() {
 		DoublyLinkedNode eldest = head;
 		remove(eldest);
 		removeEldest(eldest.key, eldest.value);
@@ -245,7 +245,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		return sb.toString();
 	}
 
-	class DoublyLinkedNode {
+	public class DoublyLinkedNode {
 		DoublyLinkedNode before, after;
 		K key;
 		V value;

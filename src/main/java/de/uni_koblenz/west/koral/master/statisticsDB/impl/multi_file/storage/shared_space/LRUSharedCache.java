@@ -1,4 +1,6 @@
-package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space;
+
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUList;
 
 public class LRUSharedCache<K, V> extends LRUList<K, V> implements AutoCloseable {
 

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceConsumer;
+
 public interface RowStorage extends AutoCloseable, SharedSpaceConsumer {
 
 	/**

@@ -28,6 +28,7 @@ public class PerFileBlockAccessListener {
 	 * Counts block accesses for each interval. Is cleared after each interval and reused.
 	 */
 	private Counter counter;
+	@SuppressWarnings("unused") // Is used if RocksDB implementation is uncommented
 	private final int maxOpenFiles;
 
 	private final CSVPrinter csvWriter;
