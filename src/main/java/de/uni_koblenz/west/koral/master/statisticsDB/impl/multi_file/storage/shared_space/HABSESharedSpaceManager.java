@@ -62,7 +62,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 		SharedSpaceConsumer habseConsumer = null;
 		for (Entry<SharedSpaceConsumer, Long> e : recentAccessCount.entrySet()) {
 			double allowedCacheShare = e.getValue() / (double) historyLength;
-			double usedCacheShare = getSpaceUsed(e.getKey()) / maxSize;
+			double usedCacheShare = getSpaceUsed(e.getKey()) / (double) maxSize;
 			double exceedence = usedCacheShare - allowedCacheShare;
 			// Greater or equal because it might be possible that each file uses exactly its allowed share, resulting in
 			// zero exceedences only
@@ -79,7 +79,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 */
 	@Override
 	protected void makeRoom(long amount) {
-		fileLoop: while (true) {
+		while (true) {
 			SharedSpaceConsumer consumer = findHABSE();
 			if (consumer == null) {
 				throw new RuntimeException("Could not find any more HABSE consumers");
@@ -87,7 +87,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			while (consumer.makeRoom()) {
 				// Free up space until either enough is available or nothing is left to free up
 				if ((maxSize - used) >= amount) {
-					break fileLoop;
+					return;
 				}
 			}
 		}
