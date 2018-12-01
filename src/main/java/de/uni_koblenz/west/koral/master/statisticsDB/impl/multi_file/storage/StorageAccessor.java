@@ -80,7 +80,10 @@ public class StorageAccessor implements RowStorage {
 			long storageLength = file.length();
 			if (cacheSpaceManager.isAvailable(storageLength)) {
 				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, cacheSpaceManager, this);
-				cacheSpaceManager.request(this, storageLength);
+				if (!cacheSpaceManager.request(this, storageLength)) {
+					// This might also be thrown if this consumer has isAbleToMakeRoomForOwnRequests() set to false
+					throw new RuntimeException("Could not request allegedly available space");
+				}
 			}
 		}
 		// If the cache was created, fill it with the file contents
@@ -189,6 +192,14 @@ public class StorageAccessor implements RowStorage {
 	@Override
 	public int getRowLength() {
 		return rowLength;
+	}
+
+	@Override
+	public boolean isAbleToMakeRoomForOwnRequests() {
+		if (!valid()) {
+			throw new IllegalStateException("Cannot operate on close storage");
+		}
+		return currentStorage.isAbleToMakeRoomForOwnRequests();
 	}
 
 	public long[] getStorageStatistics() {

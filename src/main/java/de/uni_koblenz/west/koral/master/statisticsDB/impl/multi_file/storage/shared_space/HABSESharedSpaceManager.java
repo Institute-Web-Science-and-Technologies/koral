@@ -7,10 +7,10 @@ import java.util.Map.Entry;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 
 /**
- * A SharedSpaceManager that makes room by requesting the consumer with the highest access based shares exceedence to
- * make room, hence the name HABSE. The access based shares are computed by managing an access list/history over the
- * last N entries, and giving each file a proportional part of the space. These shares are stored in a table. When space
- * is requested, the consumer with the highest absolute exceedings of his shares is asked to make room.
+ * A SharedSpaceManager that makes room by requesting the consumer with the highest access based shares exceedence
+ * (HABSE) to make room. The access based shares are computed by managing an access list/history over the last N
+ * entries, and giving each file a proportional part of the space. These shares are stored in a table. When space is
+ * requested, the consumer with the highest absolute exceedings of his shares is asked to make room.
  *
  * @param fileManager
  * @param maxSize
@@ -64,8 +64,8 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			double allowedCacheShare = e.getValue() / (double) historyLength;
 			double usedCacheShare = getSpaceUsed(e.getKey()) / (double) maxSize;
 			double exceedence = usedCacheShare - allowedCacheShare;
-			// Greater or equal because it might be possible that each file uses exactly its allowed share, resulting in
-			// zero exceedences only
+			// Greater or equal comparison because it might be possible that each file uses exactly its allowed share,
+			// resulting in zero exceedences only
 			if (exceedence >= maxExceedence) {
 				maxExceedence = exceedence;
 				habseConsumer = e.getKey();
@@ -78,19 +78,19 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * Asks each consumer in order of HABSE to make room until enough space is available.
 	 */
 	@Override
-	protected void makeRoom(long amount) {
-		while (true) {
-			SharedSpaceConsumer consumer = findHABSE();
-			if (consumer == null) {
-				throw new RuntimeException("Could not find any more HABSE consumers");
+	protected boolean makeRoom(SharedSpaceConsumer requester, long amount) {
+		for (SharedSpaceConsumer consumer; (consumer = findHABSE()) != null;) {
+			if ((consumer == requester) && !consumer.isAbleToMakeRoomForOwnRequests()) {
+				return false;
 			}
 			while (consumer.makeRoom()) {
 				// Free up space until either enough is available or nothing is left to free up
 				if ((maxSize - used) >= amount) {
-					return;
+					return true;
 				}
 			}
 		}
+		throw new RuntimeException("Could not find any more HABSE consumers");
 	}
 
 	/**

@@ -17,12 +17,10 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements AutoCloseable
 
 	@Override
 	public void put(K key, V value) {
-		while (!sharedSpaceManager.isAvailable(entrySize) && !isEmpty()) {
-			removeEldest();
+		if (!sharedSpaceManager.request(sharedSpaceConsumer, entrySize)) {
+			// Since this is used by RARF that can make room for own requests, a failure means something serious
+			throw new RuntimeException("Space request failed");
 		}
-		// At this point, either we made enough space by removing the eldest or this cache is empty and the manager has
-		// to free up space now.
-		sharedSpaceManager.request(sharedSpaceConsumer, entrySize);
 		super.put(key, value);
 	}
 

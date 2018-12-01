@@ -32,13 +32,28 @@ public class SharedSpaceManager {
 		return amount <= (maxSize - used);
 	}
 
+	/**
+	 * Request an amount of space from the manager. It will do anything it can to make space, by asking other consumers
+	 * to make room until enough space is free. It might even ask the file that requested the space to make room. This
+	 * might be disabled for certain subimplementations by returning false for
+	 * {@code SharedSpaceConsumer.isAbleToMakeRoomForOwnRequests()}.
+	 *
+	 * @param consumer
+	 *            The consumer object that requests this space, for book keeping.
+	 * @param amount
+	 *            How much space is needed
+	 * @return True if space was succesfully freed. The base implementation is supposed to always returns true.
+	 */
 	public boolean request(SharedSpaceConsumer consumer, long amount) {
 		long available = maxSize - used;
 		if (available < 0) {
 			throw new IllegalStateException("Max size limit is violated");
 		}
 		if (available < amount) {
-			makeRoom(amount);
+			boolean success = makeRoom(consumer, amount);
+			if (!success) {
+				return false;
+			}
 		}
 		if ((maxSize - used) < amount) {
 			throw new OutOfMemoryError("Could not free up enough space. In use: " + used + ", requested: " + amount);
@@ -62,20 +77,24 @@ public class SharedSpaceManager {
 	 * Default implementation asks each extra file, starting from the least recently used, to make room until the
 	 * requested amount is free.
 	 *
+	 * @param requester
+	 *            The consumer that requests space
 	 * @param amount
 	 *            The requested amount of bytes
+	 * @return True if the attempt was succesful and there is now at least the given {@code amount} of space free.
 	 */
-	protected void makeRoom(long amount) {
+	protected boolean makeRoom(SharedSpaceConsumer requester, long amount) {
 		Iterator<Entry<Long, ExtraRowStorage>> extraFiles = fileManager.getLRUExtraFiles();
-		fileLoop: while (extraFiles.hasNext()) {
+		while (extraFiles.hasNext()) {
 			ExtraRowStorage extraFile = extraFiles.next().getValue();
 			while (extraFile.makeRoom()) {
 				// Free up space until either enough is available or is nothing left to free up
 				if ((maxSize - used) >= amount) {
-					break fileLoop;
+					return true;
 				}
 			}
 		}
+		return false;
 	}
 
 	public long getSpaceUsed(SharedSpaceConsumer consumer) {

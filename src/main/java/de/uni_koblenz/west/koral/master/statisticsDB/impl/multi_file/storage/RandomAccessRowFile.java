@@ -560,4 +560,9 @@ public class RandomAccessRowFile implements RowStorage {
 		return true;
 	}
 
+	@Override
+	public boolean isAbleToMakeRoomForOwnRequests() {
+		return true;
+	}
+
 }
