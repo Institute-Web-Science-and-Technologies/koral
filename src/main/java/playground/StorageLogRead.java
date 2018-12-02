@@ -40,6 +40,7 @@ public class StorageLogRead {
 		long samplingInterval;
 		try {
 			samplingInterval = Long.parseLong(args[2]);
+			System.out.println("Parameter Sampling Interval: " + samplingInterval);
 		} catch (NumberFormatException e) {
 			printUsage();
 			System.err.println("Invalid argument for sampling interval: " + args[2]);
@@ -48,6 +49,7 @@ public class StorageLogRead {
 		int maxOpenFilesPerFileId;
 		try {
 			maxOpenFilesPerFileId = Integer.parseInt(args[3]);
+			System.out.println("Parameter maxOpenFilesPerFileId: " + maxOpenFilesPerFileId);
 		} catch (NumberFormatException e) {
 			printUsage();
 			System.err.println("Invalid argument for maxOpenFilesPerFileId: " + args[3]);
