@@ -21,6 +21,11 @@ public class StorageLogRead {
 	}
 
 	public static void main(String[] args) {
+		if (args.length != 4) {
+			System.err.println("Invalid amount of arguments.");
+			printUsage();
+			return;
+		}
 		File storageFile = new File(args[0]);
 		if (!storageFile.exists() || !storageFile.isFile()) {
 			System.err.println("Invalid storage file: " + storageFile);
