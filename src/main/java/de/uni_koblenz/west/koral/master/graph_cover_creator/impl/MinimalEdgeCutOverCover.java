@@ -56,6 +56,7 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
@@ -340,6 +341,7 @@ public class MinimalEdgeCutOverCover extends GraphCoverCreatorBase {
             MinimalEdgeCutOverCover.MAX_CASH_SIZE);
     partition2chunk.delete();
 
+    ArrayList<long[]> stmtsOut = new ArrayList<>();
     try (EncodedLongFileInputStream partitionsInput = new EncodedLongFileInputStream(partitions);
             LongIterator partitionsIterator = partitionsInput.iterator();
             EncodedLongFileInputStream partition2chunkSortedInput = new EncodedLongFileInputStream(
@@ -356,10 +358,13 @@ public class MinimalEdgeCutOverCover extends GraphCoverCreatorBase {
         }
         int chunkId = (int) partition2chunkSortedIterator.next();
         for (long i = 0; i < numberOfTriples; i++) {
+          long subject = partitionsIterator.next();
+          long property = partitionsIterator.next();
+          long object = partitionsIterator.next();
+          stmtsOut.add(new long[] { subject, property, object });
           Statement statement = Statement.getStatement(getRequiredInputEncoding(),
-                  NumberConversion.long2bytes(partitionsIterator.next()),
-                  NumberConversion.long2bytes(partitionsIterator.next()),
-                  NumberConversion.long2bytes(partitionsIterator.next()), containment);
+                  NumberConversion.long2bytes(subject), NumberConversion.long2bytes(property),
+                  NumberConversion.long2bytes(object), containment);
           writeStatementToChunk(chunkId, numberOfGraphChunks, statement, outputs, writtenFiles);
         }
       }
@@ -766,7 +771,7 @@ public class MinimalEdgeCutOverCover extends GraphCoverCreatorBase {
           for (int nextIndexToWrite = 0; nextIndexToWrite < nextIndex; nextIndexToWrite++) {
             long currentChunk = elements[nextIndexToWrite][0];
             int lastIndexToWrite = nextIndexToWrite + 1;
-            while ((lastIndexToWrite < nextIndexToWrite)
+            while ((lastIndexToWrite < elements.length)
                     && (elements[lastIndexToWrite][0] == currentChunk)) {
               lastIndexToWrite++;
             }
