@@ -503,6 +503,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 	@Override
 	public long length() {
+		// TODO: This method does not work as intended in interface javadoc
 		return file.length();
 	}
 
