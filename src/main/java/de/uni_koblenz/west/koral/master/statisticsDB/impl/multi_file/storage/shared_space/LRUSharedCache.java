@@ -18,7 +18,8 @@ public class LRUSharedCache<K, V> extends LRUList<K, V> implements AutoCloseable
 	@Override
 	public void put(K key, V value) {
 		if (!sharedSpaceManager.request(sharedSpaceConsumer, entrySize)) {
-			// Since this is used by RARF that can make room for own requests, a failure means something serious
+			// Since this is used by RARF that can make room for own requests, which should cause makeRoom() to never
+			// return false, a failure means something serious
 			throw new RuntimeException("Space request failed");
 		}
 		super.put(key, value);
