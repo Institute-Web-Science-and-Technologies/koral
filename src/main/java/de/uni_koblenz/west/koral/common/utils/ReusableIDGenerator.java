@@ -21,7 +21,7 @@ package de.uni_koblenz.west.koral.common.utils;
 import java.util.Arrays;
 
 /**
- * Returns the first unused int id.
+ * Returns the first unused int id starting at zero.
  *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
@@ -36,8 +36,12 @@ public class ReusableIDGenerator {
 	 */
 	long[] ids;
 
-	public ReusableIDGenerator() {
-	}
+	/**
+	 * The currently highest id that is in use.
+	 */
+	private long maxId = -1;
+
+	public ReusableIDGenerator() {}
 
 	public ReusableIDGenerator(long[] ids) {
 		this.ids = ids;
@@ -63,6 +67,7 @@ public class ReusableIDGenerator {
 		if (ids == null) {
 			ids = new long[10];
 			ids[0] = 1;
+			maxId = 0;
 			return 0;
 		} else {
 			firstFreeID = getNextId();
@@ -106,6 +111,9 @@ public class ReusableIDGenerator {
 				ids[0]++;
 			}
 		}
+		if (firstFreeID > maxId) {
+			maxId = firstFreeID;
+		}
 		return firstFreeID;
 	}
 
@@ -135,11 +143,7 @@ public class ReusableIDGenerator {
 	}
 
 	public void release(long idToFree) {
-		if (ids.length == 0) {
-			return;
-		}
-		if (ids[0] == 0) {
-			// no ids are used
+		if (isEmpty()) {
 			return;
 		}
 		// find block to delete from
@@ -213,6 +217,9 @@ public class ReusableIDGenerator {
 			ids[deletionBlockIndex] = x1;
 			ids[deletionBlockIndex + 1] = -1;
 			ids[deletionBlockIndex + 2] = x2;
+		}
+		if (idToFree == maxId) {
+			maxId = findMaxId();
 		}
 	}
 
@@ -306,7 +313,7 @@ public class ReusableIDGenerator {
 	}
 
 	public boolean isUsed(long id) {
-		if ((ids == null) || (id < 0)) {
+		if (isEmpty() || (id < 0)) {
 			return false;
 		}
 		// Refers to the last id that the RLE list currently refers to
@@ -406,8 +413,13 @@ public class ReusableIDGenerator {
 		return currentId;
 	}
 
+	/**
+	 * How many IDs are currently in use.
+	 *
+	 * @return
+	 */
 	public long usedIdsCount() {
-		if (ids == null) {
+		if (isEmpty()) {
 			return 0;
 		}
 		long count = 0;
@@ -419,45 +431,69 @@ public class ReusableIDGenerator {
 		return count;
 	}
 
-	public long getTotalIds() {
-		if (ids == null) {
+	/**
+	 * Returns the maximum ID that is currently in use. Since zero is not a valid ID, it indicates no used ids.
+	 *
+	 * @return The maximum ID that is currently in use, and zero if there are no IDs in use.
+	 */
+	public long getMaxId() {
+		return maxId;
+	}
+
+	/**
+	 * Finds the maximum ID that is currently in use by iterating the ID list.
+	 *
+	 * @return -1 if there are no ids
+	 */
+	private long findMaxId() {
+		if (isEmpty()) {
 			return -1;
 		}
 		long count = 0;
 		for (int i = 0; i < ids.length; i++) {
 			count += Math.abs(ids[i]);
 		}
-		return count;
+		// IDs start at zero
+		return count - 1;
 
 	}
 
+	/**
+	 * Defrags the internal list by simply setting only the first n ids as used, where n is the amount of currently used
+	 * ids.
+	 */
 	public void defrag() {
-		long maxId = 0;
-		for (long idCount : ids) {
-			if (idCount > 0) {
-				maxId += idCount;
-			}
-		}
+		long idCount = usedIdsCount();
 		ids = new long[10];
-		ids[0] = maxId;
+		ids[0] = idCount;
 	}
 
+	/**
+	 * Returns a copy of the internal RLE-encoded id list. The current implementation is expensive, because there is
+	 * also an O(n) search for the last used list position.
+	 *
+	 * @return
+	 */
 	public long[] getData() {
 		int dataLength = 0;
-		for (; (dataLength < ids.length) && (ids[dataLength] != 0); dataLength++) {
-			;
+		while ((dataLength < ids.length) && (ids[dataLength] != 0)) {
+			dataLength++;
 		}
 		long[] data = new long[dataLength];
 		System.arraycopy(ids, 0, data, 0, dataLength);
 		return data;
 	}
 
+	/**
+	 * Resets all internal states and reinitializes ID list with empty array.
+	 */
 	public void clear() {
-		ids = null;
+		ids = new long[10];
+		maxId = -1;
 	}
 
 	public boolean isEmpty() {
-		return (ids == null) || (ids[0] == 0);
+		return (ids == null) || (ids.length == 0) || (ids[0] == 0);
 	}
 
 	@Override
