@@ -89,7 +89,7 @@ public class StorageLogRead {
 		System.out.println("Listener Computation Times:");
 		for (Entry<StorageLogReadListener, Long> entry : logReader.getListenerComputationTimes().entrySet()) {
 			System.out.println(String.format("%-32s", entry.getKey().getClass().getSimpleName()) + ": "
-					+ String.format("%,d", entry.getValue()));
+					+ StatisticsDBTest.formatTime(entry.getValue() / 1_000_000));
 		}
 		System.out
 				.println("Read a total of " + String.format("%,d", progressionListener.getCurrentRowCount()) + " rows");
