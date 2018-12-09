@@ -47,6 +47,15 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 		return freeSpaceIndex.getData();
 	}
 
+	public long getMaxRowId() {
+		return freeSpaceIndex.getMaxId();
+	}
+
+	@Override
+	public long accessCosts() {
+		return freeSpaceIndex.getMaxId();
+	}
+
 	@Override
 	public boolean isEmpty() {
 		return freeSpaceIndex.isEmpty();

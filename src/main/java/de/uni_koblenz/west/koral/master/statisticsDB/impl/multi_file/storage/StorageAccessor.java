@@ -194,6 +194,15 @@ public class StorageAccessor implements RowStorage {
 		return rowLength;
 	}
 
+	/**
+	 * For the general StorageAccessor, the length() return value is returned.
+	 */
+	@Override
+	public long accessCosts() {
+		// This is not supposed to be used anyways
+		return length();
+	}
+
 	@Override
 	public boolean isAbleToMakeRoomForOwnRequests() {
 		if (!valid()) {

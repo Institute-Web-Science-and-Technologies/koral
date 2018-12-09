@@ -239,4 +239,10 @@ class InMemoryRowStorage implements RowStorage {
 		return false;
 	}
 
+	@Override
+	public long accessCosts() {
+		// Pretty much equal costs independent of size
+		return 1;
+	}
+
 }

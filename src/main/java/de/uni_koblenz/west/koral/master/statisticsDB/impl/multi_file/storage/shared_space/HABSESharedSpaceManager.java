@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 
 /**
@@ -58,19 +59,33 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * @return
 	 */
 	private SharedSpaceConsumer findHABSE() {
+		long start = System.nanoTime();
 		double maxExceedence = 0;
 		SharedSpaceConsumer habseConsumer = null;
+		long totalAccessCosts = 0;
+		for (SharedSpaceConsumer c : recentAccessCount.keySet()) {
+			totalAccessCosts += c.accessCosts();
+		}
 		for (Entry<SharedSpaceConsumer, Long> e : recentAccessCount.entrySet()) {
-			double allowedCacheShare = e.getValue() / (double) historyLength;
-			double usedCacheShare = getSpaceUsed(e.getKey()) / (double) maxSize;
-			double exceedence = usedCacheShare - allowedCacheShare;
+			SharedSpaceConsumer consumer = e.getKey();
+			long recentAccesses = e.getValue();
+
+			double accessesShare = recentAccesses / (double) historyLength;
+			double accessCostsShare = consumer.accessCosts() / (double) totalAccessCosts;
+			double allowedShare = (0.3 * accessesShare) + (0.7 * accessCostsShare);
+
+			double usedCacheShare = getSpaceUsed(consumer) / (double) maxSize;
+
+			double exceedence = usedCacheShare - allowedShare;
 			// Greater or equal comparison because it might be possible that each file uses exactly its allowed share,
 			// resulting in zero exceedences only
 			if (exceedence >= maxExceedence) {
 				maxExceedence = exceedence;
-				habseConsumer = e.getKey();
+				habseConsumer = consumer;
 			}
 		}
+		long time = System.nanoTime() - start;
+		CentralLogger.getInstance().addHABSETime(time);
 		return habseConsumer;
 	}
 

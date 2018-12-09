@@ -19,7 +19,7 @@ public class SharedSpaceManager {
 	 */
 	protected final Map<SharedSpaceConsumer, Long> consumers;
 
-	private final FileManager fileManager;
+	protected final FileManager fileManager;
 
 	public SharedSpaceManager(FileManager fileManager, long maxSize) {
 		this.fileManager = fileManager;

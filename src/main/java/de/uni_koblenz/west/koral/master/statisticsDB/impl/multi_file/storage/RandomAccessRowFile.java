@@ -566,4 +566,9 @@ public class RandomAccessRowFile implements RowStorage {
 		return true;
 	}
 
+	@Override
+	public long accessCosts() {
+		return file.length();
+	}
+
 }

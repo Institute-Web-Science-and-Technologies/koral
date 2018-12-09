@@ -34,6 +34,7 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
@@ -47,7 +48,7 @@ public class StatisticsDBTest {
 
 	private static final boolean COLLECT_META_STATISTICS = false;
 
-	public static final boolean ENABLE_STORAGE_LOGGING = false;
+	public static final boolean ENABLE_STORAGE_LOGGING = true;
 
 	private static final boolean WRITE_STATISTICS_DATA = false;
 
@@ -188,6 +189,7 @@ public class StatisticsDBTest {
 				if (ENABLE_STORAGE_LOGGING) {
 					StorageLogWriter.getInstance().finish();
 				}
+				CentralLogger.getInstance().finish();
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
 				multiDB.defrag();
