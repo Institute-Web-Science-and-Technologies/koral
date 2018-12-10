@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.CompressedCSVWriter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.CSVWriter;
 
 public class FileAggregator {
 
@@ -15,7 +15,7 @@ public class FileAggregator {
 
 	private long rowCounter;
 
-	private final CompressedCSVWriter csvWriter;
+	private final CSVWriter csvWriter;
 
 	/**
 	 * Holds the values of the enum AggregatorType in the same order as the headers will be printed.
@@ -33,7 +33,7 @@ public class FileAggregator {
 	public FileAggregator(File outputFile, boolean alignToGlobal) {
 		this.alignToGlobal = alignToGlobal;
 		aggregators = new HashMap<>();
-		csvWriter = new CompressedCSVWriter(outputFile);
+		csvWriter = new CSVWriter(outputFile);
 		rowCounter = 0;
 
 		// If any of the following three structures is changed, the others most probably have to be updated as well
@@ -95,9 +95,9 @@ public class FileAggregator {
 	public void printAggregations(long globalRowCounter, long globalAccumulationCounter) {
 		Float[] aggregations = aggregate(globalAccumulationCounter);
 		if (alignToGlobal) {
-			csvWriter.addRecord(globalRowCounter, aggregations, null, null);
+			csvWriter.addIntervalRecord(globalRowCounter - 1, (Object[]) aggregations);
 		} else {
-			csvWriter.addRecord(rowCounter, aggregations, null, null);
+			csvWriter.addIntervalRecord(rowCounter - 1, (Object[]) aggregations);
 		}
 	}
 
@@ -120,14 +120,7 @@ public class FileAggregator {
 		return allAggregations;
 	}
 
-	public void close(long globalRowCounter) {
-		long lastRecordId;
-		if (alignToGlobal) {
-			lastRecordId = globalRowCounter - 1;
-		} else {
-			lastRecordId = rowCounter - 1;
-		}
-		csvWriter.finish(lastRecordId);
+	public void close() {
 		csvWriter.close();
 	}
 
