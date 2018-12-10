@@ -9,6 +9,14 @@ import java.util.Map;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.CSVWriter;
 
+/**
+ * Wraps
+ * {@link de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.Aggregator}
+ * by aggregating data for an individual file and a given perspective (local or global).
+ *
+ * @author Philipp Töws
+ *
+ */
 public class FileAggregator {
 
 	private final Map<AggregatorType, Aggregator> aggregators;
@@ -70,6 +78,12 @@ public class FileAggregator {
 		this(outputFile, alignToGlobal, 0);
 	}
 
+	/**
+	 * Extracts the data for the metrics from the event data and accumulates them in their corresponding aggregator.
+	 *
+	 * @param data
+	 *            The event data that maps from data identifiers (as defined in StorageLogWriter) to their values.
+	 */
 	public void accumulate(Map<String, Object> data) {
 		aggregators.get(AggregatorType.FILE_LOCAL_PERCENTAGE).accumulate(
 				(byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT),
@@ -96,6 +110,14 @@ public class FileAggregator {
 		rowCounter++;
 	}
 
+	/**
+	 * Triggers aggregation for each aggregator and writes the results into the output csv file.
+	 *
+	 * @param globalRowCounter
+	 *            The amount of all events that have been collected until now.
+	 * @param globalAccumulationCounter
+	 *            The amount of events that have been collected since the last aggregation.
+	 */
 	public void printAggregations(long globalRowCounter, long globalAccumulationCounter) {
 		Float[] aggregations = aggregate(globalAccumulationCounter);
 		if (alignToGlobal) {

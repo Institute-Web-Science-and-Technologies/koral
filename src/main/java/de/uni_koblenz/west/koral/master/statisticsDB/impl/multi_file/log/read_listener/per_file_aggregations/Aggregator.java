@@ -2,6 +2,15 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_l
 
 import java.util.Arrays;
 
+/**
+ * Collects/Accumulates multiple different data values (by addition) and provides a single representative value for each
+ * data column on aggregation. The number of columns has to be predetermined in the constructor. Accumulation entries do
+ * not have to have data for each column, individual accumulation counters are provided. How the accumulated sum is
+ * aggregated must be specified in the abstract method {@link #aggregate(long, long, long)}.
+ *
+ * @author Philipp Töws
+ *
+ */
 public abstract class Aggregator {
 
 	protected final long[] accumulations;
@@ -17,9 +26,16 @@ public abstract class Aggregator {
 		accumulations = new long[valueCount];
 	}
 
+	/**
+	 * Add data values for all columns. Empty or missing values can be represented as null.
+	 * 
+	 * @param values
+	 *            A list of values, one for each column. Must have the length that was given to the constructor.
+	 */
 	public void accumulate(Number... values) {
 		if (values.length != valueCount) {
-			throw new IllegalArgumentException("Values argument must have the length that was given on construction.");
+			throw new IllegalArgumentException(
+					"Values argument must have the length that was given on construction. Missing values can be represented as nulls.");
 		}
 		for (int i = 0; i < values.length; i++) {
 			if (values[i] != null) {
