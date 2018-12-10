@@ -30,10 +30,10 @@ public class FileAggregator {
 		FILE_LOCAL_AVERAGE
 	}
 
-	public FileAggregator(File outputFile, boolean alignToGlobal) {
+	public FileAggregator(File outputFile, boolean alignToGlobal, long firstRecordId) {
 		this.alignToGlobal = alignToGlobal;
 		aggregators = new HashMap<>();
-		csvWriter = new CSVWriter(outputFile);
+		csvWriter = new CSVWriter(outputFile, firstRecordId);
 		rowCounter = 0;
 
 		// If any of the following three structures is changed, the others most probably have to be updated as well
@@ -64,6 +64,10 @@ public class FileAggregator {
 				return accumulatedValue / (float) accumulationCounter;
 			}
 		});
+	}
+
+	public FileAggregator(File outputFile, boolean alignToGlobal) {
+		this(outputFile, alignToGlobal, 0);
 	}
 
 	public void accumulate(Map<String, Object> data) {

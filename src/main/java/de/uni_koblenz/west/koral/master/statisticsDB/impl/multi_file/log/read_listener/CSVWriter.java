@@ -24,7 +24,15 @@ public class CSVWriter {
 
 	private long lastId;
 
-	public CSVWriter(File csvFile) {
+	/**
+	 *
+	 * @param csvFile
+	 * @param firstRecordId
+	 *            The ID were the record ids will start at. For interval records, this value should be set to the ID
+	 *            where the recorded object was observed for the first time (i.e. the first global row id where the file
+	 *            this writer is responsible for had its first log event).
+	 */
+	public CSVWriter(File csvFile, long firstRecordId) {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		try {
 			csvPrinter = new CSVPrinter(
@@ -35,8 +43,12 @@ public class CSVWriter {
 		}
 
 		rowCounter = 0;
-		// Set to -1 because 1 is added to get the left interval id
-		lastId = -1;
+		// Subtract 1 because 1 is added in addIntervalRecord to get the left interval id
+		lastId = firstRecordId - 1;
+	}
+
+	public CSVWriter(File csvFile) {
+		this(csvFile, 0);
 	}
 
 	/**
