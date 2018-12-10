@@ -20,11 +20,13 @@ public class ImplementationListener implements StorageLogReadListener {
 
 	private long inMemoryImplementations;
 
-	private final CompressedCSVWriter csvWriter;
+	private long globalRowCounter;
+
+	private final CSVWriter csvWriter;
 
 	public ImplementationListener(String outputPath) {
 		implementations = new HashMap<>();
-		csvWriter = new CompressedCSVWriter(new File(outputPath, "implementations.csv.gz"));
+		csvWriter = new CSVWriter(new File(outputPath, "implementations.csv.gz"));
 		csvWriter.printHeader("FILE_IMPLEMENTATIONS", "INMEMORY_IMPLEMENTATIONS");
 	}
 
@@ -41,6 +43,7 @@ public class ImplementationListener implements StorageLogReadListener {
 				} else {
 					fileImplementations++;
 				}
+				csvWriter.addIntervalRecord(globalRowCounter, fileImplementations, inMemoryImplementations);
 			} else if (newImpl != oldImpl) {
 				// Only update values if the implementation changed
 				if (newImpl == 0) {
@@ -50,8 +53,9 @@ public class ImplementationListener implements StorageLogReadListener {
 					inMemoryImplementations--;
 					fileImplementations++;
 				}
+				csvWriter.addIntervalRecord(globalRowCounter, fileImplementations, inMemoryImplementations);
 			}
-			csvWriter.addSimpleRecord(fileImplementations, inMemoryImplementations);
+			globalRowCounter++;
 		}
 	}
 

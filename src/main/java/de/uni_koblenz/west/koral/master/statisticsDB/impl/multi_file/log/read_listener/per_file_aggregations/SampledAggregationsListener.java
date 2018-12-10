@@ -41,20 +41,23 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 			}
 			files.get(fileId).accumulate(data);
 			globalAccumulationCounter++;
+			globalRowCounter++;
 			if (((globalRowCounter % samplingInterval) == 0) && (globalRowCounter > 0)) {
 				for (FileAggregator file : files.values()) {
 					file.printAggregations(globalRowCounter, globalAccumulationCounter);
 				}
 				globalAccumulationCounter = 0;
 			}
-			globalRowCounter++;
 		}
 
 	}
 
 	@Override
 	public void close() {
-		files.values().forEach(file -> file.close(globalRowCounter));
+		for (FileAggregator file : files.values()) {
+			file.printAggregations(globalRowCounter, globalAccumulationCounter);
+			file.close();
+		}
 	}
 
 }

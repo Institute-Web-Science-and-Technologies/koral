@@ -4,9 +4,12 @@ import java.io.File;
 import java.util.Map;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.CompressedCSVWriter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.CSVWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.Aggregator;
 
+/**
+ * Listens to the BlockFlush events and logs the rate of blocks that were flushed and had the dirty flag set.
+ */
 public class PerFileBlockFlushListener {
 
 	private final boolean alignToGlobal;
@@ -14,7 +17,7 @@ public class PerFileBlockFlushListener {
 
 	private final Aggregator aggregator;
 
-	private final CompressedCSVWriter csvWriter;
+	private final CSVWriter csvWriter;
 
 	private long rowCounter;
 	private long lastGlobalRowCount;
@@ -25,7 +28,7 @@ public class PerFileBlockFlushListener {
 
 		File csvFile = new File(outputPath,
 				"blockFlushes_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz");
-		csvWriter = new CompressedCSVWriter(csvFile);
+		csvWriter = new CSVWriter(csvFile);
 		csvWriter.printHeader(alignToGlobal ? "GLOBAL_ROW" : "LOCAL_ROW", "PERCENTAGE_DIRTY");
 
 		aggregator = new Aggregator(1) {
@@ -55,8 +58,11 @@ public class PerFileBlockFlushListener {
 	private void writeInterval(long globalRowCounter) {
 		Float dirtyRate = aggregator.aggregate()[0];
 		aggregator.reset();
-		// Wrap in array for var args handling
-		csvWriter.addSimpleRecord(new Object[] { dirtyRate });
+		if (!alignToGlobal) {
+			csvWriter.addIntervalRecord(rowCounter, dirtyRate);
+		} else {
+			csvWriter.addIntervalRecord(globalRowCounter, dirtyRate);
+		}
 	}
 
 	public void close(long globalRowCounter) {
