@@ -61,6 +61,7 @@ public class ImplementationListener implements StorageLogReadListener {
 
 	@Override
 	public void close() {
+		csvWriter.addIntervalRecord(globalRowCounter, fileImplementations, inMemoryImplementations);
 		csvWriter.close();
 	}
 
