@@ -37,7 +37,12 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 			byte fileId = (byte) data.get(StorageLogWriter.KEY_FILEID);
 			if (!files.containsKey(fileId)) {
 				String fileName = "aggregations_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz";
-				files.put(fileId, new FileAggregator(new File(outputPath, fileName), alignToGlobal));
+				if (!alignToGlobal) {
+					files.put(fileId, new FileAggregator(new File(outputPath, fileName), alignToGlobal));
+				} else {
+					files.put(fileId,
+							new FileAggregator(new File(outputPath, fileName), alignToGlobal, globalRowCounter));
+				}
 			}
 			files.get(fileId).accumulate(data);
 			globalAccumulationCounter++;
