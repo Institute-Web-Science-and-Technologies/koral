@@ -63,6 +63,7 @@ public class PerFileBlockAccessListener {
 		counter.countFor(blockId);
 		// Choose relevant row counter
 		long relevantRowCounter = getRelevantRowCounter(globalRowCounter);
+		// TODO: This does not work as intended for global row counts
 		if (((relevantRowCounter % intervalLength) == 0) && (relevantRowCounter > 0)) {
 			writeInterval(relevantRowCounter);
 			newCounter();
