@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,53 +13,76 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_li
 /**
  * Wraps
  * {@link de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.Aggregator}
- * by aggregating data for an individual file and a given perspective (local or global).
+ * by aggregating data for an individual file and a given perspective (local or global). Also provides instances of
+ * Aggregator that implement common kinds of aggregation.
  *
  * @author Philipp Töws
  *
  */
 public class FileAggregator {
 
-	private final Map<AggregatorType, Aggregator> aggregators;
+	private final Map<AggregationMethod, Aggregator> aggregators;
 
 	private long rowCounter;
 
 	private final CSVWriter csvWriter;
 
 	/**
-	 * Holds the values of the enum AggregatorType in the same order as the headers will be printed.
+	 * The metrics that are used separated by their AggregationMethod.
 	 */
-	private final AggregatorType[] aggregatorOrder;
+	private final Map<AggregationMethod, List<Metric>> aggMetrics;
 
 	private final boolean alignToGlobal;
 
-	enum AggregatorType {
+	public enum AggregationMethod {
 		FILE_LOCAL_PERCENTAGE,
 		GLOBAL_PERCENTAGE,
-		FILE_LOCAL_AVERAGE
+		FILE_LOCAL_AVERAGE;
+
+		private final Aggregator aggregator;
+
+		private AggregationMethod(Aggregator aggregator) {
+			this.aggregator = aggregator;
+		}
+
+		public Aggregator getAggregator() {
+			return aggregator;
+		}
 	}
 
-	public FileAggregator(File outputFile, boolean alignToGlobal, long firstRecordId) {
+	public FileAggregator(Collection<Metric> metrics, File outputFile, boolean alignToGlobal, long firstRecordId) {
 		this.alignToGlobal = alignToGlobal;
 		aggregators = new HashMap<>();
 		csvWriter = new CSVWriter(outputFile, firstRecordId);
 		rowCounter = 0;
 
-		// If any of the following three structures is changed, the others most probably have to be updated as well
-		csvWriter.printHeader("CACHE_HITRATE", "WRITE_RATE", "ACCESS_RATE", "TIME_AVG_CACHE_READ",
-				"TIME_AVG_CACHE_WRITE", "TIME_AVG_FILE_READ", "TIME_AVG_FILE_WRITE", "TIME_AVG_TOTAL");
-		aggregatorOrder = new AggregatorType[] {
-				AggregatorType.FILE_LOCAL_PERCENTAGE,
-				AggregatorType.GLOBAL_PERCENTAGE,
-				AggregatorType.FILE_LOCAL_AVERAGE };
-		aggregators.put(AggregatorType.FILE_LOCAL_PERCENTAGE, new Aggregator(2) {
+		// Add the given metrics into the internal separated Map
+		aggMetrics = new HashMap<>();
+		for (Metric metric : metrics) {
+			AggregationMethod type = metric.getAggregatorType();
+			if (!aggMetrics.containsKey(type)) {
+				aggMetrics.put(type, new LinkedList<>());
+			}
+			aggMetrics.get(type).add(metric);
+		}
+
+		// Collect column headers and write into csv
+		LinkedList<String> headers = new LinkedList<>();
+		for (AggregationMethod type : AggregationMethod.values()) {
+			for (Metric metric : aggMetrics.get(type)) {
+				headers.add(metric.getName());
+			}
+		}
+		csvWriter.printHeader(headers.toArray());
+
+		aggregators.put(AggregationMethod.FILE_LOCAL_PERCENTAGE, new Aggregator(2) {
 			@Override
 			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
 				return (accumulatedValue / (float) accumulationCounter) * 100;
 			}
 		});
 
-		aggregators.put(AggregatorType.GLOBAL_PERCENTAGE, new Aggregator(1) {
+		aggregators.put(AggregationMethod.GLOBAL_PERCENTAGE, new Aggregator(1) {
 			@Override
 			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
 				// extraValue is supposed to be globalRowCounter
@@ -66,7 +90,7 @@ public class FileAggregator {
 			}
 		});
 
-		aggregators.put(AggregatorType.FILE_LOCAL_AVERAGE, new Aggregator(5) {
+		aggregators.put(AggregationMethod.FILE_LOCAL_AVERAGE, new Aggregator(5) {
 			@Override
 			protected float aggregate(long accumulatedValue, long accumulationCounter, long extraValue) {
 				return accumulatedValue / (float) accumulationCounter;
@@ -74,8 +98,8 @@ public class FileAggregator {
 		});
 	}
 
-	public FileAggregator(File outputFile, boolean alignToGlobal) {
-		this(outputFile, alignToGlobal, 0);
+	public FileAggregator(Collection<Metric> metrics, File outputFile, boolean alignToGlobal) {
+		this(metrics, outputFile, alignToGlobal, 0);
 	}
 
 	/**
@@ -85,11 +109,11 @@ public class FileAggregator {
 	 *            The event data that maps from data identifiers (as defined in StorageLogWriter) to their values.
 	 */
 	public void accumulate(Map<String, Object> data) {
-		aggregators.get(AggregatorType.FILE_LOCAL_PERCENTAGE).accumulate(
+		aggregators.get(AggregationMethod.FILE_LOCAL_PERCENTAGE).accumulate(
 				(byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT),
 				(byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE));
 		// Accumulate one per file access for access metric
-		aggregators.get(AggregatorType.GLOBAL_PERCENTAGE).accumulate(1);
+		aggregators.get(AggregationMethod.GLOBAL_PERCENTAGE).accumulate(1);
 		Long[] timeColumns = new Long[5];
 		boolean cacheAccess = (byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT) > 0;
 		boolean write = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE) > 0;
@@ -106,7 +130,7 @@ public class FileAggregator {
 		}
 		timeColumns[column] = (Long) data.get(StorageLogWriter.KEY_ACCESS_TIME);
 		timeColumns[4] = (Long) data.get(StorageLogWriter.KEY_ACCESS_TIME);
-		aggregators.get(AggregatorType.FILE_LOCAL_AVERAGE).accumulate(timeColumns);
+		aggregators.get(AggregationMethod.FILE_LOCAL_AVERAGE).accumulate(timeColumns);
 		rowCounter++;
 	}
 
@@ -129,7 +153,7 @@ public class FileAggregator {
 
 	private Float[] aggregate(long globalAccumulationCounter) {
 		List<Float[]> aggregatedArrays = new LinkedList<>();
-		for (AggregatorType aggType : aggregatorOrder) {
+		for (AggregationMethod aggType : AggregationMethod.values()) {
 			aggregatedArrays.add(aggregators.get(aggType).aggregate(globalAccumulationCounter));
 		}
 		int arraySize = 0;
