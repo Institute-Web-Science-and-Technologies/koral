@@ -9,6 +9,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.AccessRateMetric;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.BlockFlushDirtyMetric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.CacheHitsMetric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.CacheUsageMetric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.FileSizeMetric;
@@ -65,6 +66,7 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 					metrics.add(new TimeMetric(type));
 				}
 				metrics.add(new WriteRateMetric());
+				metrics.add(new BlockFlushDirtyMetric());
 				if (!alignToGlobal) {
 					files.put(fileId, new FileAggregator(metrics, file, alignToGlobal));
 				} else {
