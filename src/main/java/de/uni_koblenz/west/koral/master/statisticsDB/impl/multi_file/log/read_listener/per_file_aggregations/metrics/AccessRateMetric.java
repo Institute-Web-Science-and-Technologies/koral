@@ -21,7 +21,7 @@ public class AccessRateMetric implements Metric {
 
 	@Override
 	public long accumulate(Map<String, Object> data) {
-		return 0;
+		return 1;
 	}
 
 }
