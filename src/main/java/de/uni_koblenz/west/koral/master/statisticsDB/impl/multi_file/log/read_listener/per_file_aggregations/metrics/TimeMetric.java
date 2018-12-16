@@ -3,8 +3,8 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_l
 import java.util.Map;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.FileAggregator.AggregationMethod;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.Metric;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.aggregations.FileLocalAverageAggregator;
 
 /**
  * Extracts the time used for each event. Each instance represents only one of four different case distinctions that
@@ -14,7 +14,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_li
  * @author Philipp Töws
  *
  */
-public class TimeMetric implements Metric {
+public class TimeMetric extends Metric {
 
 	/**
 	 * Since there are multiple ways to aggregate used time as a metric, this enum represents all implemented ones. The
@@ -98,6 +98,8 @@ public class TimeMetric implements Metric {
 
 	public TimeMetric(TimeMetricType type) {
 		this.type = type;
+
+		aggregator = new FileLocalAverageAggregator();
 	}
 
 	@Override
@@ -106,18 +108,13 @@ public class TimeMetric implements Metric {
 	}
 
 	@Override
-	public AggregationMethod getAggregatorType() {
-		return AggregationMethod.FILE_LOCAL_AVERAGE;
-	}
-
-	@Override
-	public long accumulate(Map<String, Object> data) {
+	public void accumulate(Map<String, Object> data) {
 		boolean cacheAccess = (byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT) > 0;
 		boolean write = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE) > 0;
 		if (type.listensFor(cacheAccess, write)) {
-			return (long) data.get(StorageLogWriter.KEY_ACCESS_TIME);
+			aggregator.accumulate((long) data.get(StorageLogWriter.KEY_ACCESS_TIME));
 		} else {
-			return 0;
+			aggregator.accumulate(0);
 		}
 	}
 
