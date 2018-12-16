@@ -10,6 +10,9 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.AccessRateMetric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.CacheHitsMetric;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.CacheUsageMetric;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.FileSizeMetric;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.PercentageCachedMetric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.TimeMetric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.TimeMetric.TimeMetricType;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.metrics.WriteRateMetric;
@@ -53,6 +56,9 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 				File file = new File(outputPath, fileName);
 				// TODO: Does it make sense to collect all metrics both from a local and global perspective?
 				LinkedList<Metric> metrics = new LinkedList<>();
+				metrics.add(new CacheUsageMetric());
+				metrics.add(new FileSizeMetric());
+				metrics.add(new PercentageCachedMetric());
 				metrics.add(new AccessRateMetric());
 				metrics.add(new CacheHitsMetric());
 				for (TimeMetricType type : TimeMetricType.values()) {
@@ -68,8 +74,8 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 			files.get(fileId).accumulate(data);
 			globalAccumulationCounter++;
 			globalRowCounter++;
-			// TODO: This always aggregates windows determined by the global event count. Maybe for !alignToGlobal each
-			// file should aggregate when its own counter reached a certain limit?
+			// TODO: This always aggregates windows determined by the global event count. Maybe for !alignToGlobal there
+			// should be an own counter considered per each file?
 			if (((globalRowCounter % samplingInterval) == 0) && (globalRowCounter > 0)) {
 				for (FileAggregator file : files.values()) {
 					file.printAggregations(globalRowCounter, globalAccumulationCounter);
