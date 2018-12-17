@@ -50,7 +50,7 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 
 	@Override
 	public void onLogRowRead(int rowType, Map<String, Object> data) {
-		if (rowType == StorageLogEvent.READWRITE.ordinal()) {
+		if ((rowType == StorageLogEvent.READWRITE.ordinal()) || (rowType == StorageLogEvent.BLOCKFLUSH.ordinal())) {
 			byte fileId = (byte) data.get(StorageLogWriter.KEY_FILEID);
 			if (!files.containsKey(fileId)) {
 				String fileName = "aggregations_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz";
@@ -73,7 +73,7 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 					files.put(fileId, new FileAggregator(metrics, file, alignToGlobal, globalRowCounter));
 				}
 			}
-			files.get(fileId).accumulate(data);
+			files.get(fileId).accumulate(rowType, data);
 			globalAccumulationCounter++;
 			globalRowCounter++;
 			// TODO: This always aggregates windows determined by the global event count. Maybe for !alignToGlobal there
