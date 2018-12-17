@@ -113,8 +113,6 @@ public class TimeMetric extends Metric {
 		boolean write = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE) > 0;
 		if (type.listensFor(cacheAccess, write)) {
 			aggregator.accumulate((long) data.get(StorageLogWriter.KEY_ACCESS_TIME));
-		} else {
-			aggregator.accumulate(0);
 		}
 	}
 
