@@ -77,7 +77,8 @@ public class FileAggregator {
 	}
 
 	/**
-	 * Triggers aggregation for each aggregator and writes the results into the output csv file.
+	 * Triggers aggregation for each aggregator and writes the results into the output csv file. Aggregation results are
+	 * rounded to two decimal places before written into the file to prevent ugly floating point representation errors.
 	 *
 	 * @param globalRowCounter
 	 *            The amount of all events that have been collected until now.
@@ -86,6 +87,10 @@ public class FileAggregator {
 	 */
 	public void printAggregations(long globalRowCounter, long globalAccumulationCounter) {
 		Float[] aggregations = aggregate(globalAccumulationCounter);
+		for (int i = 0; i < aggregations.length; i++) {
+			// Round to two decimal places
+			aggregations[i] = Math.round(aggregations[i] * 100) / (float) 100;
+		}
 		if (alignToGlobal) {
 			csvWriter.addIntervalRecord(globalRowCounter - 1, (Object[]) aggregations);
 		} else {
