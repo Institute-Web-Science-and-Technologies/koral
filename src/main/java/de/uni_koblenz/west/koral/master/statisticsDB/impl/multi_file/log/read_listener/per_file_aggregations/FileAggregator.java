@@ -88,8 +88,10 @@ public class FileAggregator {
 	public void printAggregations(long globalRowCounter, long globalAccumulationCounter) {
 		Float[] aggregations = aggregate(globalAccumulationCounter);
 		for (int i = 0; i < aggregations.length; i++) {
-			// Round to two decimal places
-			aggregations[i] = Math.round(aggregations[i] * 100) / (float) 100;
+			if (aggregations[i] != null) {
+				// Round to two decimal places
+				aggregations[i] = Math.round(aggregations[i] * 100) / (float) 100;
+			}
 		}
 		if (alignToGlobal) {
 			csvWriter.addIntervalRecord(globalRowCounter - 1, (Object[]) aggregations);
