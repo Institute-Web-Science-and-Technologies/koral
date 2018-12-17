@@ -2,6 +2,8 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_l
 
 import java.util.Map;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogEvent;
+
 public abstract class Metric {
 
 	protected Aggregator aggregator;
@@ -23,9 +25,11 @@ public abstract class Metric {
 	 * Accumulate the value of interest from the data of an event. The extracted value from the data map is given to the
 	 * internal Aggregator.
 	 *
+	 * @param rowType
+	 *            Ordinal value of {@link StorageLogEvent} enum that describes the type of the occured log event.
 	 * @param data
 	 *            The data of a StorageLog event.
 	 * @return The value that will be added onto the accumulation value.
 	 */
-	public abstract void accumulate(Map<String, Object> data);
+	public abstract void accumulate(int rowType, Map<String, Object> data);
 }

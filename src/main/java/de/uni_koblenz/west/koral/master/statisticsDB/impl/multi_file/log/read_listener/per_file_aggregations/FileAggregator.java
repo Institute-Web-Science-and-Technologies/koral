@@ -69,9 +69,9 @@ public class FileAggregator {
 	 * @param data
 	 *            The event data that maps from data identifiers (as defined in StorageLogWriter) to their values.
 	 */
-	public void accumulate(Map<String, Object> data) {
+	public void accumulate(int rowType, Map<String, Object> data) {
 		for (Metric metric : metrics) {
-			metric.accumulate(data);
+			metric.accumulate(rowType, data);
 		}
 		rowCounter++;
 	}

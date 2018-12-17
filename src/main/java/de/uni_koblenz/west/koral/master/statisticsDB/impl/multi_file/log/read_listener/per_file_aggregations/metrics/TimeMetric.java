@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_l
 
 import java.util.Map;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogEvent;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.Metric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.aggregations.FileLocalAverageAggregator;
@@ -108,11 +109,13 @@ public class TimeMetric extends Metric {
 	}
 
 	@Override
-	public void accumulate(Map<String, Object> data) {
-		boolean cacheAccess = (byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT) > 0;
-		boolean write = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE) > 0;
-		if (type.listensFor(cacheAccess, write)) {
-			aggregator.accumulate((long) data.get(StorageLogWriter.KEY_ACCESS_TIME));
+	public void accumulate(int rowType, Map<String, Object> data) {
+		if (rowType == StorageLogEvent.READWRITE.ordinal()) {
+			boolean cacheAccess = (byte) data.get(StorageLogWriter.KEY_ACCESS_CACHEHIT) > 0;
+			boolean write = (byte) data.get(StorageLogWriter.KEY_ACCESS_WRITE) > 0;
+			if (type.listensFor(cacheAccess, write)) {
+				aggregator.accumulate((long) data.get(StorageLogWriter.KEY_ACCESS_TIME));
+			}
 		}
 	}
 
