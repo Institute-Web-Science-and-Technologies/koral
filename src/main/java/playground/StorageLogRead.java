@@ -10,7 +10,6 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ChunkSwitchListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ImplementationListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.ReadProgressionListener;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file.FileListenerManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.SampledAggregationsListener;
 
 public class StorageLogRead {
@@ -63,15 +62,9 @@ public class StorageLogRead {
 
 		List<StorageLogReadListener> listeners = new LinkedList<>();
 
-		listeners.add(new FileListenerManager(true, samplingInterval, samplingInterval / 1000, maxOpenFilesPerFileId,
-				outputPath));
-		listeners.add(new FileListenerManager(false, samplingInterval, samplingInterval / 1000, maxOpenFilesPerFileId,
-				outputPath));
 		listeners.add(new SampledAggregationsListener(samplingInterval, true, outputPath));
 		listeners.add(new SampledAggregationsListener(samplingInterval, false, outputPath));
 		listeners.add(new ChunkSwitchListener(outputPath));
-		// Not necessary because the total cache usage is calculated by the stacked area cache usage plot
-//		listeners.add(new ExtraCacheUsageListener(outputPath));
 		listeners.add(new ImplementationListener(outputPath));
 		listeners.add(progressionListener);
 
