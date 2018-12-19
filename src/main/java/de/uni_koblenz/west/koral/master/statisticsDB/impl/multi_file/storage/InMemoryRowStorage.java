@@ -69,7 +69,8 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public void open(boolean createIfNotExisting) {
-		// The createIfNotExisting flag does not matter here, because there is no persisted data that has to be checked
+		// The createIfNotExisting flag does not matter here, because there is no
+		// persisted data that has to be checked
 		// for being missing/corrupted.
 		blocks = new TreeMap<>();
 	}
@@ -204,6 +205,9 @@ class InMemoryRowStorage implements RowStorage {
 
 	@Override
 	public void delete() {
+		if (cacheSpaceManager != null) {
+			cacheSpaceManager.releaseAll(cacheSpaceConsumer);
+		}
 		blocks = null;
 	}
 
@@ -212,9 +216,6 @@ class InMemoryRowStorage implements RowStorage {
 	 */
 	@Override
 	public void close() {
-		if (cacheSpaceManager != null) {
-			cacheSpaceManager.releaseAll(cacheSpaceConsumer);
-		}
 		delete();
 	}
 
