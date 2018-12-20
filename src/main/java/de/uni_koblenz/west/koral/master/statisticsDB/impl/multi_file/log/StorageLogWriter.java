@@ -115,13 +115,15 @@ public class StorageLogWriter {
 		logWriter.log(StorageLogEvent.READWRITE.ordinal(), event);
 	}
 
-	public void logBlockFlushEvent(long fileId, long blockId, boolean dirty) {
+	public void logBlockFlushEvent(long fileId, long blockId, long cacheUsage, byte percentageCached, boolean dirty) {
 		if (finished) {
 			return;
 		}
 		event.clear();
 		event.put(KEY_FILEID, fileId);
 		event.put(KEY_POSITION, blockId);
+		event.put(KEY_CACHEUSAGE, cacheUsage);
+		event.put(KEY_PERCENTAGECACHED, percentageCached);
 		event.put(KEY_BLOCKFLUSH_DIRTY, dirty);
 		logWriter.log(StorageLogEvent.BLOCKFLUSH.ordinal(), event);
 	}
