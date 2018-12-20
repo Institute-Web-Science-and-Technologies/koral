@@ -11,10 +11,10 @@ public class StorageLogWriter {
 	public static final String KEY_FILEID = "fileId";
 	public static final String KEY_POSITION = "position";
 
+	public static final String KEY_CACHEUSAGE = "cacheUsage";
+	public static final String KEY_PERCENTAGECACHED = "percentageCached";
 	public static final String KEY_ACCESS_WRITE = "write";
 	public static final String KEY_ACCESS_FILESTORAGE = "fileStorage";
-	public static final String KEY_ACCESS_CACHEUSAGE = "cacheUsage";
-	public static final String KEY_ACCESS_PERCENTAGECACHED = "percentageCached";
 	public static final String KEY_ACCESS_FILESIZE = "fileSize";
 	public static final String KEY_ACCESS_CACHEHIT = "cacheHit";
 	public static final String KEY_ACCESS_FOUND = "found";
@@ -38,8 +38,8 @@ public class StorageLogWriter {
 		accessEventLayout.put(KEY_POSITION, ElementType.INTEGER);
 		accessEventLayout.put(KEY_ACCESS_WRITE, ElementType.BIT);
 		accessEventLayout.put(KEY_ACCESS_FILESTORAGE, ElementType.BIT);
-		accessEventLayout.put(KEY_ACCESS_CACHEUSAGE, ElementType.INTEGER);
-		accessEventLayout.put(KEY_ACCESS_PERCENTAGECACHED, ElementType.BYTE);
+		accessEventLayout.put(KEY_CACHEUSAGE, ElementType.INTEGER);
+		accessEventLayout.put(KEY_PERCENTAGECACHED, ElementType.BYTE);
 		accessEventLayout.put(KEY_ACCESS_FILESIZE, ElementType.INTEGER);
 		accessEventLayout.put(KEY_ACCESS_CACHEHIT, ElementType.BIT);
 		accessEventLayout.put(KEY_ACCESS_FOUND, ElementType.BIT);
@@ -49,6 +49,8 @@ public class StorageLogWriter {
 		Map<String, ElementType> blockFlushEventLayout = new TreeMap<>();
 		blockFlushEventLayout.put(KEY_FILEID, ElementType.BYTE);
 		blockFlushEventLayout.put(KEY_POSITION, ElementType.INTEGER);
+		blockFlushEventLayout.put(KEY_CACHEUSAGE, ElementType.INTEGER);
+		blockFlushEventLayout.put(KEY_PERCENTAGECACHED, ElementType.BYTE);
 		blockFlushEventLayout.put(KEY_BLOCKFLUSH_DIRTY, ElementType.BIT);
 		rowLayouts.put(StorageLogEvent.BLOCKFLUSH.ordinal(), blockFlushEventLayout);
 
@@ -104,8 +106,8 @@ public class StorageLogWriter {
 		event.put(KEY_POSITION, position);
 		event.put(KEY_ACCESS_WRITE, write);
 		event.put(KEY_ACCESS_FILESTORAGE, fileStorage);
-		event.put(KEY_ACCESS_CACHEUSAGE, cacheUsage);
-		event.put(KEY_ACCESS_PERCENTAGECACHED, percentageCached);
+		event.put(KEY_CACHEUSAGE, cacheUsage);
+		event.put(KEY_PERCENTAGECACHED, percentageCached);
 		event.put(KEY_ACCESS_FILESIZE, fileSize);
 		event.put(KEY_ACCESS_CACHEHIT, cacheHit);
 		event.put(KEY_ACCESS_FOUND, found);
