@@ -20,8 +20,8 @@ public class PercentageCachedMetric extends Metric {
 
 	@Override
 	public void accumulate(int rowType, Map<String, Object> data) {
-		if (rowType == StorageLogEvent.READWRITE.ordinal()) {
-			aggregator.accumulate((byte) data.get(StorageLogWriter.KEY_ACCESS_PERCENTAGECACHED));
+		if ((rowType == StorageLogEvent.READWRITE.ordinal()) || (rowType == StorageLogEvent.BLOCKFLUSH.ordinal())) {
+			aggregator.accumulate((byte) data.get(StorageLogWriter.KEY_PERCENTAGECACHED));
 		}
 	}
 

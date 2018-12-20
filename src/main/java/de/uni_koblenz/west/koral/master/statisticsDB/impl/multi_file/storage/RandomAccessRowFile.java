@@ -149,7 +149,8 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 			uncachedBlocks.add(blockId);
-			StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId, dirty);
+			StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId,
+					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), dirty);
 		}
 		if (RandomAccessRowFile.this.recycleBlocks) {
 			blockRecycler.dump(block);
