@@ -66,7 +66,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, int numberOfChunks, int rowDataLength,
-			long indexCacheSize, long extraFilesCacheSize, Logger logger) {
+			long indexCacheSize, long extraFilesCacheSize, float habseAccessesWeight, long habseHistoryLength,
+			Logger logger) {
 		this.logger = logger;
 
 		// First, check if we have metadata for an existing database
@@ -96,14 +97,15 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		mainfileRowLength = rowManager.getMainFileRowLength();
 
 		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, FileManager.DEFAULT_MAX_OPEN_FILES,
-				indexCacheSize, extraFilesCacheSize, logger);
+				indexCacheSize, extraFilesCacheSize, habseAccessesWeight, habseHistoryLength, logger);
 
 		dirty = false;
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, Logger logger) {
 		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
-				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, logger);
+				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
+				FileManager.DEFAULT_HABSE_HISTORY_LENGTH, logger);
 	}
 
 	private void loadStatisticsMetadata() {

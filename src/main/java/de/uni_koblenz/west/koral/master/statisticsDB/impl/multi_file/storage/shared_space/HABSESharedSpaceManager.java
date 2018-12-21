@@ -34,18 +34,24 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * The length of {@link #accessHistory}, i.e. how many recent accesses are considered for distributing the shared
 	 * space.
 	 */
-	private final int historyLength;
+	private final long historyLength;
+
+	private final float accessesWeight;
 
 	/**
 	 *
 	 * @param fileManager
 	 * @param maxSize
 	 *            The total available size of space this manager will manage
+	 * @param accessesWeight
+	 *            Value between [0,1]. Determines how big of a role the recent accesses of the file play when
+	 *            calculating the allowed cache shares.
 	 * @param historyLength
 	 *            The length of the access history list
 	 */
-	public HABSESharedSpaceManager(FileManager fileManager, long maxSize, int historyLength) {
+	public HABSESharedSpaceManager(FileManager fileManager, long maxSize, float accessesWeight, long historyLength) {
 		super(fileManager, maxSize);
+		this.accessesWeight = accessesWeight;
 		this.historyLength = historyLength;
 
 		accessHistory = new LinkedList<>();
@@ -72,7 +78,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 
 			double accessesShare = recentAccesses / (double) historyLength;
 			double accessCostsShare = consumer.accessCosts() / (double) totalAccessCosts;
-			double allowedShare = (0.3 * accessesShare) + (0.7 * accessCostsShare);
+			double allowedShare = (accessesWeight * accessesShare) + ((1 - accessesWeight) * accessCostsShare);
 
 			double usedCacheShare = getSpaceUsed(consumer) / (double) maxSize;
 

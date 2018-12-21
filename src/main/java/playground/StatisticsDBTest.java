@@ -56,12 +56,12 @@ public class StatisticsDBTest {
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
-				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");
+				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> <HABSE history length> [implementationNote]");
 	}
 
 	public static void main(String[] args) throws IOException {
 		boolean fileLogging = true;
-		if ((args.length != 8) && (args.length != 9)) {
+		if ((args.length != 10) && (args.length != 11)) {
 			System.err.println("Invalid amount of arguments.");
 			printUsage();
 			return;
@@ -107,9 +107,11 @@ public class StatisticsDBTest {
 		int rowDataLength = Integer.parseInt(args[5]);
 		long indexCacheSize = Long.parseLong(args[6]);
 		long extraFilesCacheSize = Long.parseLong(args[7]);
+		float habseAccessesWeight = Float.parseFloat(args[8]);
+		long habseHistoryLength = Long.parseLong(args[9]);
 		String implementationNote = "";
-		if (args.length == 9) {
-			implementationNote = args[8];
+		if (args.length == 11) {
+			implementationNote = args[10];
 		}
 
 		String[] datasetInfo = datasetName.split("_");
@@ -165,7 +167,8 @@ public class StatisticsDBTest {
 			statisticsDB = new SingleFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks);
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
 			statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks,
-					rowDataLength, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L, null);
+					rowDataLength, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
+					habseAccessesWeight, habseHistoryLength, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
 			return;
