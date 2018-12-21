@@ -85,7 +85,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			}
 		}
 		long time = System.nanoTime() - start;
-		CentralLogger.getInstance().addHABSETime(time);
+		CentralLogger.getInstance().addFindHABSETime(time);
 		return habseConsumer;
 	}
 
@@ -114,6 +114,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * @param consumer
 	 */
 	public void notifyAccess(SharedSpaceConsumer consumer) {
+		long start = System.nanoTime();
 		if (consumer == null) {
 			throw new NullPointerException("Consumer cannot be null");
 		}
@@ -141,7 +142,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			consumerAccessCount = 0L;
 		}
 		recentAccessCount.put(consumer, consumerAccessCount + 1);
-
+		CentralLogger.getInstance().addUpdateHABSETime(System.nanoTime() - start);
 	}
 
 }

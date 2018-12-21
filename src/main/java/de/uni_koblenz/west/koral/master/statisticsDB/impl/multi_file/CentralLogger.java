@@ -13,7 +13,9 @@ public class CentralLogger {
 
 	private static CentralLogger instance;
 
-	private long habseTime;
+	private long findHabseTime;
+
+	private long updateHabseTime;
 
 	private long totalIndexFileTime;
 
@@ -35,8 +37,17 @@ public class CentralLogger {
 	 *
 	 * @param time
 	 */
-	public void addHABSETime(long time) {
-		habseTime += time;
+	public void addFindHABSETime(long time) {
+		findHabseTime += time;
+	}
+
+	/**
+	 * Add time that was needed to update HABSE.
+	 *
+	 * @param time
+	 */
+	public void addUpdateHABSETime(long time) {
+		updateHabseTime += time;
 	}
 
 	/**
@@ -64,7 +75,8 @@ public class CentralLogger {
 
 	public void finish() {
 		System.out.println("=== CentralLogger:");
-		System.out.println("HABSE total time: " + StatisticsDBTest.formatTime(habseTime / 1_000_000));
+		System.out.println("Find HABSE total time: " + StatisticsDBTest.formatTime(findHabseTime / 1_000_000));
+		System.out.println("Update HABSE total time: " + StatisticsDBTest.formatTime(updateHabseTime / 1_000_000));
 		System.out.println("Input read total time: " + StatisticsDBTest.formatTime(totalInputReadTime / 1_000_000));
 		System.out.println("Index File Total Time: " + StatisticsDBTest.formatTime(totalIndexFileTime / 1_000_000));
 		System.out.println("Extra Files Total Time: " + StatisticsDBTest.formatTime(totalExtraFilesTime / 1_000_000));
