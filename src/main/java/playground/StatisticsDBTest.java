@@ -179,16 +179,21 @@ public class StatisticsDBTest {
 			long durationSec = time / 1_000;
 //			System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
+			long totalInputReadTime = CentralLogger.getInstance().getTotalInputReadTime() / (long) 1e9;
 
 			long indexFileLength = -1;
 			Map<Long, Long> freeSpaceIndexLengths = null;
 			long totalEntries = -1;
 			long unusedBytes = -1;
+			long totalIndexFileTime = -1;
+			long totalExtraFilesTime = -1;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
 				if (ENABLE_STORAGE_LOGGING) {
 					StorageLogWriter.getInstance().finish();
 				}
+				totalIndexFileTime = CentralLogger.getInstance().getTotalIndexFileTime() / (long) 1e9;
+				totalExtraFilesTime = CentralLogger.getInstance().getTotalExtraFilesTime() / (long) 1e9;
 				CentralLogger.getInstance().finish();
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
@@ -214,7 +219,9 @@ public class StatisticsDBTest {
 				long extraFilesSize = getExtraFilesSize(storageDir);
 				writeBenchmarkToCSV(resultCSV, date, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, implementationNote, durationSec,
-						dirSize, indexFileLength, extraFilesSize, totalEntries, unusedBytes);
+						totalInputReadTime, totalIndexFileTime, totalExtraFilesTime, dirSize, indexFileLength,
+						extraFilesSize, totalEntries,
+						unusedBytes);
 				System.out.println("Writing file distribution to CSV...");
 				writeFileDistributionToCSV(configNameWithoutCaches, conf.getStatisticsDir(true), freeSpaceIndexLengths);
 			}
@@ -250,22 +257,19 @@ public class StatisticsDBTest {
 		return encodedFiles;
 	}
 
-	private static void writeBenchmarkToCSV(File resultFile, String date, int tripleCount, short numberOfChunks,
-			int dataBytes, long indexCacheSize, long extraFilesCacheSize, String dbImplementation,
-			String coveringAlgorithm, String implementationNote, long durationSec, long dirSizeBytes,
-			long indexSizeBytes, long extraFilesSizeBytes, long totalEntries, long unusedBytes)
+	// TODO: Use varargs instead of billion params
+	private static void writeBenchmarkToCSV(File resultFile, Object... row)
 			throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
 				csvFileFormat);
 		if (resultFile.length() == 0) {
 			printer.printRecord("DATE_FINISHED", "TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB",
-					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "DIR_SIZE_BYTES",
-					"INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
+					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "INPUT_TIME", "INDEX_TIME",
+					"EXTRA_TIME", "DIR_SIZE_BYTES", "INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES",
+					"UNUSED_BYTES");
 		}
-		printer.printRecord(date, tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
-				dbImplementation, coveringAlgorithm, implementationNote, durationSec, dirSizeBytes, indexSizeBytes,
-				extraFilesSizeBytes, totalEntries, unusedBytes);
+		printer.printRecord(row);
 		printer.close();
 	}
 

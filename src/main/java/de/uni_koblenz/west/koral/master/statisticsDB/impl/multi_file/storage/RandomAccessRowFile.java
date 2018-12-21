@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache;
@@ -114,12 +115,14 @@ public class RandomAccessRowFile implements RowStorage {
 			// Capacity is calcuated by dividing the available space by estimated space per entry
 			long maxCacheEntries = maxCacheSize / estimatedSpacePerCacheEntry;
 			fileCache = new LRUCache<Long, byte[]>(maxCacheEntries) {
+
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
 					onRemoveEldest(blockId, block);
 					// Remove from cache
 					super.removeEldest(blockId, block);
 				}
+
 			};
 		} else {
 			fileCache = null;
@@ -221,27 +224,31 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 
 			if (block == null) {
-				if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-					long time = System.nanoTime() - start;
-					StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
-							fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), false,
-							false, time);
-				}
+				onReadRowFinished(start, blockId, cacheHit, false);
 				return null;
 			}
 			byte[] row = new byte[rowLength];
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
-			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				long time = System.nanoTime() - start;
-				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
-						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
-						blockFound && !Utils.isArrayZero(row), time);
-			}
+			onReadRowFinished(start, blockId, cacheHit, blockFound && !Utils.isArrayZero(row));
 			return row;
 		} else {
 			return readRowFromFile(rowId);
 		}
 
+	}
+
+	/**
+	 * Is called when readRow finishes and transmits meta data of this operation for statistical evaluations to the
+	 * StorageLog or CentralLogger.
+	 */
+	private void onReadRowFinished(long startTime, long blockId, boolean cacheHit, boolean found) {
+		long time = System.nanoTime() - startTime;
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, true,
+					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
+					found, time);
+		}
+		CentralLogger.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	private byte[] readBlock(long blockId) throws IOException {
@@ -375,20 +382,30 @@ public class RandomAccessRowFile implements RowStorage {
 			// Set dirty flag (located right behind the data)
 			block[dataLength] = 1;
 
-			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-				long time = System.nanoTime() - start;
-				byte[] readRow = new byte[cacheBlockSize];
-				if (readBlock != null) {
-					System.arraycopy(readBlock, blockOffset, readRow, 0, rowLength);
-				}
-				StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
-						fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
-						blockFound && !Utils.isArrayZero(readRow), time);
-			}
+			onWriteRowFinished(start, blockId, blockOffset, readBlock, cacheHit, blockFound);
 		} else {
 			writeRowToFile(rowId, row);
 		}
 		return true;
+	}
+
+	/**
+	 * Is called when writeRow finishes and transmits meta data of this operation for statistical evaluations to the
+	 * StorageLog or CentralLogger.
+	 */
+	private void onWriteRowFinished(long startTime, long blockId, int blockOffset, byte[] readBlock, boolean cacheHit,
+			boolean blockFound) {
+		long time = System.nanoTime() - startTime;
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			byte[] readRow = new byte[cacheBlockSize];
+			if (readBlock != null) {
+				System.arraycopy(readBlock, blockOffset, readRow, 0, rowLength);
+			}
+			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, true,
+					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
+					blockFound && !Utils.isArrayZero(readRow), time);
+		}
+		CentralLogger.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	private void writeRowToFile(long rowId, byte[] row) throws IOException {

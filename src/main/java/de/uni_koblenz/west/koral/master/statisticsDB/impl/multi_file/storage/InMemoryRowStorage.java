@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceConsumer;
@@ -91,13 +92,22 @@ class InMemoryRowStorage implements RowStorage {
 			row = new byte[rowLength];
 			System.arraycopy(block, blockOffset, row, 0, rowLength);
 		}
+		onReadRowFinished(start, blockId, row);
+		return row;
+	}
+
+	/**
+	 * Is called when readRow finishes and transmits meta data of this operation for statistical evaluations to the
+	 * StorageLog or CentralLogger.
+	 */
+	private void onReadRowFinished(long startTime, long blockId, byte[] row) {
+		long time = System.nanoTime() - startTime;
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			long time = System.nanoTime() - start;
 			boolean found = (row != null) && !Utils.isArrayZero(row);
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize,
 					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
-		return row;
+		CentralLogger.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	@Override
@@ -131,8 +141,17 @@ class InMemoryRowStorage implements RowStorage {
 				result = true;
 			}
 		}
+		onWriteRowFinished(start, blockId, blockOffset, readBlock);
+		return result;
+	}
+
+	/**
+	 * Is called when writeRow finishes and transmits meta data of this operation for statistical evaluations to the
+	 * StorageLog or CentralLogger.
+	 */
+	private void onWriteRowFinished(long startTime, long blockId, int blockOffset, byte[] readBlock) {
+		long time = System.nanoTime() - startTime;
 		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
-			long time = System.nanoTime() - start;
 			boolean found = false;
 			if (readBlock != null) {
 				byte[] readRow = new byte[rowLength];
@@ -142,7 +161,7 @@ class InMemoryRowStorage implements RowStorage {
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize,
 					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
-		return result;
+		CentralLogger.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	@Override
