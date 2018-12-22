@@ -66,7 +66,9 @@ public class GraphStatistics implements Closeable {
 	}
 
 	public void collectStatistics(File[] encodedChunks) {
+		long start = System.nanoTime();
 		clear();
+		CentralLogger.getInstance().addTime("CLEARING", System.nanoTime() - start);
 		for (int i = 0; i < encodedChunks.length; i++) {
 			collectStatistics(i, encodedChunks[i]);
 		}
@@ -79,7 +81,7 @@ public class GraphStatistics implements Closeable {
 		try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, chunk);) {
 			long start = System.nanoTime();
 			for (Statement statement : in) {
-				CentralLogger.getInstance().addInputReadTime(System.nanoTime() - start);
+				CentralLogger.getInstance().addTime("INPUT_READ", System.nanoTime() - start);
 				count(statement.getSubjectAsLong(), statement.getPropertyAsLong(), statement.getObjectAsLong(),
 						chunkIndex);
 				start = System.nanoTime();
@@ -96,9 +98,11 @@ public class GraphStatistics implements Closeable {
 	public void count(long subject, long property, long object, int chunk) {
 //		SimpleLogger.log("Chunk " + chunk + ": _" + subject + "_" + property + "_" + object + "_");
 		// Remove ownership bits
+		long start = System.nanoTime();
 		database.incrementSubjectCount(subject & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
 		database.incrementPropertyCount(property & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
 		database.incrementObjectCount(object & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
+		CentralLogger.getInstance().addTime("COUNT", System.nanoTime() - start);
 		database.incrementNumberOfTriplesPerChunk(chunk);
 	}
 

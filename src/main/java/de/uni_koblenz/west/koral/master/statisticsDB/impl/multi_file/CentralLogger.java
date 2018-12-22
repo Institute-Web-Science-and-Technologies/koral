@@ -1,10 +1,15 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import playground.StatisticsDBTest;
 
 /**
  * General-purpose singleton class for all kinds of meta-logging. May be used to collect metrics or statistics of
- * different implementation parts without much effort for development/experimenting.
+ * different implementation parts without much effort for development/experimenting. Is not supposed to be used in
+ * production settings.
  *
  * @author Philipp Töws
  *
@@ -13,30 +18,17 @@ public class CentralLogger {
 
 	private static CentralLogger instance;
 
-	private long habseTime;
+	private final Map<String, Long> times;
 
-	private long totalIndexFileTime;
-
-	private long totalExtraFilesTime;
-
-	private long totalInputReadTime;
-
-	private CentralLogger() {}
+	private CentralLogger() {
+		times = new HashMap<>();
+	}
 
 	public static CentralLogger getInstance() {
 		if (instance == null) {
 			instance = new CentralLogger();
 		}
 		return instance;
-	}
-
-	/**
-	 * Add time that was needed to find HABSE consumer.
-	 *
-	 * @param time
-	 */
-	public void addHABSETime(long time) {
-		habseTime += time;
 	}
 
 	/**
@@ -47,40 +39,34 @@ public class CentralLogger {
 	 */
 	public void addFileOperationTime(long fileId, long time) {
 		if (fileId == 0L) {
-			totalIndexFileTime += time;
+			addTime("FILE_OPERATION_INDEX", time);
 		} else {
-			totalExtraFilesTime += time;
+			addTime("FILE_OPERATION_EXTRA", time);
 		}
 	}
 
-	/**
-	 * Add time that was used to read the input file/dataset.
-	 *
-	 * @param time
-	 */
-	public void addInputReadTime(long time) {
-		totalInputReadTime += time;
+	public void addTime(String key, long time) {
+		Long currentTime = times.get(key);
+		if (currentTime == null) {
+			currentTime = 0L;
+		}
+		times.put(key, currentTime + time);
 	}
 
 	public void finish() {
-		System.out.println("=== CentralLogger:");
-		System.out.println("HABSE total time: " + StatisticsDBTest.formatTime(habseTime / 1_000_000));
-		System.out.println("Input read total time: " + StatisticsDBTest.formatTime(totalInputReadTime / 1_000_000));
-		System.out.println("Index File Total Time: " + StatisticsDBTest.formatTime(totalIndexFileTime / 1_000_000));
-		System.out.println("Extra Files Total Time: " + StatisticsDBTest.formatTime(totalExtraFilesTime / 1_000_000));
-		System.out.println("=== End CentralLogger");
+		System.out.println("===== CentralLogger:");
+		System.out.println("Times:");
+		for (Entry<String, Long> e : times.entrySet()) {
+			System.out.println(e.getKey() + ": " + StatisticsDBTest.formatTime(e.getValue() / 1_000_000));
+		}
+		System.out.println("-");
+		System.out.println("Total logged time: " + StatisticsDBTest.formatTime(
+				(times.values().stream().reduce(Long::sum)).get() / 1_000_000));
+		System.out.println("===== End CentralLogger");
 	}
 
-	public long getTotalIndexFileTime() {
-		return totalIndexFileTime;
-	}
-
-	public long getTotalExtraFilesTime() {
-		return totalExtraFilesTime;
-	}
-
-	public long getTotalInputReadTime() {
-		return totalInputReadTime;
+	public long getTime(String key) {
+		return times.get(key);
 	}
 
 }
