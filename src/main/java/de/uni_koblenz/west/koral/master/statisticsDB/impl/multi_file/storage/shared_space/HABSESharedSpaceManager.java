@@ -91,7 +91,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			}
 		}
 		long time = System.nanoTime() - start;
-		CentralLogger.getInstance().addFindHABSETime(time);
+		CentralLogger.getInstance().addTime("FIND_HABSE", time);
 		return habseConsumer;
 	}
 
@@ -148,7 +148,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			consumerAccessCount = 0L;
 		}
 		recentAccessCount.put(consumer, consumerAccessCount + 1);
-		CentralLogger.getInstance().addUpdateHABSETime(System.nanoTime() - start);
+		CentralLogger.getInstance().addTime("UPDATE_HABSE", System.nanoTime() - start);
 	}
 
 }

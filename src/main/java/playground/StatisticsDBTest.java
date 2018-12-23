@@ -182,7 +182,7 @@ public class StatisticsDBTest {
 			long durationSec = time / 1_000;
 //			System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
-			long totalInputReadTime = CentralLogger.getInstance().getTotalInputReadTime() / (long) 1e9;
+			long totalInputReadTime = CentralLogger.getInstance().getTime("INPUT_READ") / (long) 1e9;
 
 			long indexFileLength = -1;
 			Map<Long, Long> freeSpaceIndexLengths = null;
@@ -195,8 +195,8 @@ public class StatisticsDBTest {
 				if (ENABLE_STORAGE_LOGGING) {
 					StorageLogWriter.getInstance().finish();
 				}
-				totalIndexFileTime = CentralLogger.getInstance().getTotalIndexFileTime() / (long) 1e9;
-				totalExtraFilesTime = CentralLogger.getInstance().getTotalExtraFilesTime() / (long) 1e9;
+				totalIndexFileTime = CentralLogger.getInstance().getTime("FILE_OPERATION_INDEX") / (long) 1e9;
+				totalExtraFilesTime = CentralLogger.getInstance().getTime("FILE_OPERATION_EXTRA") / (long) 1e9;
 				CentralLogger.getInstance().finish();
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
