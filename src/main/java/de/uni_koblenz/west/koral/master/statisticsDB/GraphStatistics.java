@@ -66,7 +66,7 @@ public class GraphStatistics implements Closeable {
 	}
 
 	public void collectStatistics(File[] encodedChunks) {
-		long start = System.nanoTime();
+//		long start = System.nanoTime();
 		clear();
 //		CentralLogger.getInstance().addTime("CLEARING", System.nanoTime() - start);
 		for (int i = 0; i < encodedChunks.length; i++) {

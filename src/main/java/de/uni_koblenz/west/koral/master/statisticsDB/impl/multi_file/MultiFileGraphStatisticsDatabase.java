@@ -172,37 +172,37 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	@Override
 	public void incrementSubjectCount(long subject, int chunk) {
-		long start = System.nanoTime();
+//		long start = System.nanoTime();
 		incrementOccurences(subject, ResourceType.SUBJECT, chunk);
-		CentralLogger.getInstance().addTime("MF_INC", System.nanoTime() - start);
+//		CentralLogger.getInstance().addTime("MF_INC", System.nanoTime() - start);
 
 	}
 
 	@Override
 	public void incrementPropertyCount(long property, int chunk) {
-		long start = System.nanoTime();
+//		long start = System.nanoTime();
 		incrementOccurences(property, ResourceType.PROPERTY, chunk);
-		CentralLogger.getInstance().addTime("MF_INC", System.nanoTime() - start);
+//		CentralLogger.getInstance().addTime("MF_INC", System.nanoTime() - start);
 
 	}
 
 	@Override
 	public void incrementObjectCount(long object, int chunk) {
-		long start = System.nanoTime();
+//		long start = System.nanoTime();
 		incrementOccurences(object, ResourceType.OBJECT, chunk);
-		CentralLogger.getInstance().addTime("MF_INC", System.nanoTime() - start);
+//		CentralLogger.getInstance().addTime("MF_INC", System.nanoTime() - start);
 
 	}
 
 	private void incrementOccurences(long resourceId, ResourceType resourceType, int chunk) {
-		long startTotal = System.nanoTime();
+//		long startTotal = System.nanoTime();
 		dirty = true;
 		try {
 			boolean rowFound = loadRow(resourceId);
 			if (!rowFound) {
-				long start = System.nanoTime();
+//				long start = System.nanoTime();
 				rowManager.create(resourceType, chunk);
-				CentralLogger.getInstance().addTime("ROWMANAGER_CREATE", System.nanoTime() - start);
+//				CentralLogger.getInstance().addTime("ROWMANAGER_CREATE", System.nanoTime() - start);
 				if (rowManager.isTooLongForMain()) {
 					insertEntryInExtraFile();
 				}
@@ -211,9 +211,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			}
 			// Extract file id before incrementing for later comparison
 			long fileIdRead = rowManager.getFileId();
-			long start = System.nanoTime();
+//			long start = System.nanoTime();
 			rowManager.incrementOccurence(resourceType, chunk);
-			CentralLogger.getInstance().addTime("ROWMANAGER_INCREMENT", System.nanoTime() - start);
+//			CentralLogger.getInstance().addTime("ROWMANAGER_INCREMENT", System.nanoTime() - start);
 			if (!rowManager.isDataExternal()) {
 				// Row is in Index
 				if (rowManager.isTooLongForMain()) {
@@ -237,10 +237,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				long extraFileRowId = rowManager.getExternalFileRowId();
 				long newExtraFileRowID = extraFileRowId;
 				if (fileIdWrite != fileIdRead) {
-					start = System.nanoTime();
+//					start = System.nanoTime();
 					// Move entry into different extra file
 					fileManager.deleteExternalRow(fileIdRead, extraFileRowId);
-					CentralLogger.getInstance().addTime("DELETE_EXTERNAL_ROW", System.nanoTime() - start);
+//					CentralLogger.getInstance().addTime("DELETE_EXTERNAL_ROW", System.nanoTime() - start);
 					newExtraFileRowID = fileManager.writeExternalRow(fileIdWrite, rowManager.getDataBytes());
 					checkIfDataBytesLengthIsEnough(newExtraFileRowID);
 					// Write new offset into index row
@@ -269,7 +269,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			close();
 			throw new RuntimeException(e);
 		}
-		CentralLogger.getInstance().addTime("TOTAL_MF_INC", System.nanoTime() - startTotal);
+//		CentralLogger.getInstance().addTime("TOTAL_MF_INC", System.nanoTime() - startTotal);
 	}
 
 	/**
