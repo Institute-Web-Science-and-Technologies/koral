@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 
 /**
@@ -65,7 +64,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * @return
 	 */
 	private SharedSpaceConsumer findHABSE() {
-		long start = System.nanoTime();
+//		long start = System.nanoTime();
 		double maxExceedence = 0;
 		SharedSpaceConsumer habseConsumer = null;
 		long totalAccessCosts = 0;
@@ -90,8 +89,8 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 				habseConsumer = consumer;
 			}
 		}
-		long time = System.nanoTime() - start;
-		CentralLogger.getInstance().addTime("FIND_HABSE", time);
+//		long time = System.nanoTime() - start;
+//		CentralLogger.getInstance().addTime("FIND_HABSE", time);
 		return habseConsumer;
 	}
 
@@ -120,7 +119,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * @param consumer
 	 */
 	public void notifyAccess(SharedSpaceConsumer consumer) {
-		long start = System.nanoTime();
+//		long start = System.nanoTime();
 		if (consumer == null) {
 			throw new NullPointerException("Consumer cannot be null");
 		}
@@ -148,7 +147,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			consumerAccessCount = 0L;
 		}
 		recentAccessCount.put(consumer, consumerAccessCount + 1);
-		CentralLogger.getInstance().addTime("UPDATE_HABSE", System.nanoTime() - start);
+//		CentralLogger.getInstance().addTime("UPDATE_HABSE", System.nanoTime() - start);
 	}
 
 }
