@@ -20,6 +20,12 @@ public class CentralLogger {
 
 	private final Map<String, Long> times;
 
+	private long indexTime;
+
+	private long extraTime;
+
+	private long inputTime;
+
 	private CentralLogger() {
 		times = new HashMap<>();
 	}
@@ -39,10 +45,14 @@ public class CentralLogger {
 	 */
 	public void addFileOperationTime(long fileId, long time) {
 		if (fileId == 0L) {
-			addTime("FILE_OPERATION_INDEX", time);
+			indexTime += time;
 		} else {
-			addTime("FILE_OPERATION_EXTRA", time);
+			extraTime += time;
 		}
+	}
+
+	public void addInputReadTime(long time) {
+		inputTime += time;
 	}
 
 	public void addTime(String key, long time) {
@@ -56,6 +66,9 @@ public class CentralLogger {
 	public void finish() {
 		System.out.println("===== CentralLogger:");
 		System.out.println("Times:");
+		System.out.println("FILE_INDEX_TIME: " + StatisticsDBTest.formatTime(indexTime / 1_000_000));
+		System.out.println("FILE_EXTRA_TIME: " + StatisticsDBTest.formatTime(extraTime / 1_000_000));
+		System.out.println("INPUT_READ_TIME: " + StatisticsDBTest.formatTime(inputTime / 1_000_000));
 		for (Entry<String, Long> e : times.entrySet()) {
 			System.out.println(e.getKey() + ": " + StatisticsDBTest.formatTime(e.getValue() / 1_000_000));
 		}
