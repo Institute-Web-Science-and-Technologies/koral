@@ -72,14 +72,28 @@ public class CentralLogger {
 		for (Entry<String, Long> e : times.entrySet()) {
 			System.out.println(e.getKey() + ": " + StatisticsDBTest.formatTime(e.getValue() / 1_000_000));
 		}
-		System.out.println("-");
-		System.out.println("Total logged time: " + StatisticsDBTest.formatTime(
-				(times.values().stream().reduce(Long::sum)).get() / 1_000_000));
+		if (times.size() > 0) {
+			System.out.println("-");
+			System.out.println("Total logged time: " + StatisticsDBTest.formatTime(
+					(times.values().stream().reduce(Long::sum)).get() / 1_000_000));
+		}
 		System.out.println("===== End CentralLogger");
 	}
 
 	public long getTime(String key) {
 		return times.get(key);
+	}
+
+	public long getInputReadTime() {
+		return inputTime;
+	}
+
+	public long getIndexTime() {
+		return indexTime;
+	}
+
+	public long getExtraTime() {
+		return extraTime;
 	}
 
 }
