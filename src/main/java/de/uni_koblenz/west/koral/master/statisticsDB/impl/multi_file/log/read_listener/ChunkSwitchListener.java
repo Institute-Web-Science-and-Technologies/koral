@@ -32,7 +32,7 @@ public class ChunkSwitchListener implements StorageLogReadListener {
 
 	@Override
 	public void onLogRowRead(int rowType, Map<String, Object> data) {
-		if (rowType == StorageLogEvent.READWRITE.ordinal()) {
+		if ((rowType == StorageLogEvent.READWRITE.ordinal()) || (rowType == StorageLogEvent.BLOCKFLUSH.ordinal())) {
 			globalRowCounter++;
 		}
 		if (rowType == StorageLogEvent.CHUNKSWITCH.ordinal()) {
