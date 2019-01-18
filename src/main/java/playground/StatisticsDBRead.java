@@ -73,7 +73,7 @@ public class StatisticsDBRead {
 		long indexCacheSize = Long.parseLong(args[4]);
 		long extraFilesCacheSize = Long.parseLong(args[5]);
 		float habseAccessesWeight = Float.parseFloat(args[6]);
-		long habseHistoryLength = Long.parseLong(args[7]);
+		int habseHistoryLength = Integer.parseInt(args[7]);
 		String implementationNote = "";
 		if (args.length == 9) {
 			implementationNote = args[8];

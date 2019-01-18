@@ -32,7 +32,7 @@ public class FileManager {
 
 	public static final float DEFAULT_HABSE_ACCESSES_WEIGHT = 0.5f;
 
-	public static final long DEFAULT_HABSE_HISTORY_LENGTH = 1_000_000;
+	public static final int DEFAULT_HABSE_HISTORY_LENGTH = 1_000_000;
 
 	private final Logger logger;
 
@@ -53,7 +53,7 @@ public class FileManager {
 	private long maxResourceId;
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxOpenFiles, long indexFileCacheSize,
-			long extraFilesCacheSize, float habseAccessesWeight, long habseHistoryLength, Logger logger) {
+			long extraFilesCacheSize, float habseAccessesWeight, int habseHistoryLength, Logger logger) {
 		this.storagePath = storagePath;
 		this.indexFileCacheSize = indexFileCacheSize;
 		this.mainFileRowLength = mainFileRowLength;

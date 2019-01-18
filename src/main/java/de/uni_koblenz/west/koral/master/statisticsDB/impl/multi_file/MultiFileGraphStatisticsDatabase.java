@@ -66,7 +66,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, int numberOfChunks, int rowDataLength,
-			long indexCacheSize, long extraFilesCacheSize, float habseAccessesWeight, long habseHistoryLength,
+			long indexCacheSize, long extraFilesCacheSize, float habseAccessesWeight, int habseHistoryLength,
 			Logger logger) {
 		this.logger = logger;
 

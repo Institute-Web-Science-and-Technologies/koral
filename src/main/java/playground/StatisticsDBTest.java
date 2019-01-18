@@ -108,7 +108,7 @@ public class StatisticsDBTest {
 		long indexCacheSize = Long.parseLong(args[6]);
 		long extraFilesCacheSize = Long.parseLong(args[7]);
 		float habseAccessesWeight = Float.parseFloat(args[8]);
-		long habseHistoryLength = Long.parseLong(args[9]);
+		int habseHistoryLength = Integer.parseInt(args[9]);
 		String implementationNote = "";
 		if (args.length == 11) {
 			implementationNote = args[10];

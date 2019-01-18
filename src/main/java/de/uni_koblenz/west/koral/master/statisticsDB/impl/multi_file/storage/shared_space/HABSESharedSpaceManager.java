@@ -1,8 +1,9 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map.Entry;
+
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 
@@ -21,7 +22,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * The history list of the consumers. Has length {@link #historyLength}. Front element is most recently accessed
 	 * consumer.
 	 */
-	private final LinkedList<SharedSpaceConsumer> accessHistory;
+	private final CircularFifoQueue<SharedSpaceConsumer> accessHistory;
 
 	/**
 	 * The access count table. Contains always updated occurence frequencies of consumers in {@link #accessHistory}.
@@ -48,12 +49,12 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * @param historyLength
 	 *            The length of the access history list
 	 */
-	public HABSESharedSpaceManager(FileManager fileManager, long maxSize, float accessesWeight, long historyLength) {
+	public HABSESharedSpaceManager(FileManager fileManager, long maxSize, float accessesWeight, int historyLength) {
 		super(fileManager, maxSize);
 		this.accessesWeight = accessesWeight;
 		this.historyLength = historyLength;
 
-		accessHistory = new LinkedList<>();
+		accessHistory = new CircularFifoQueue<>(historyLength);
 		recentAccessCount = new HashMap<>();
 	}
 
@@ -126,9 +127,10 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 		SharedSpaceConsumer last = null;
 		assert accessHistory.size() <= historyLength;
 		if (accessHistory.size() == historyLength) {
-			last = accessHistory.pollLast();
+			last = accessHistory.poll();
 		}
-		accessHistory.addFirst(consumer);
+		assert accessHistory.size() < historyLength;
+		accessHistory.add(consumer);
 		assert accessHistory.size() <= historyLength;
 
 		// Update shares
