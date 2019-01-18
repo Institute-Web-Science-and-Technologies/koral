@@ -219,7 +219,7 @@ public class ReusableIDGenerator {
 			ids[deletionBlockIndex + 2] = x2;
 		}
 		if (idToFree == maxId) {
-			maxId = findMaxId();
+			findMaxId();
 		}
 	}
 
@@ -434,27 +434,25 @@ public class ReusableIDGenerator {
 	/**
 	 * Returns the maximum ID that is currently in use. Since zero is not a valid ID, it indicates no used ids.
 	 *
-	 * @return The maximum ID that is currently in use, and zero if there are no IDs in use.
+	 * @return The maximum ID that is currently in use, and -1 if there are no IDs in use.
 	 */
 	public long getMaxId() {
 		return maxId;
 	}
 
 	/**
-	 * Finds the maximum ID that is currently in use by iterating the ID list.
-	 *
-	 * @return -1 if there are no ids
+	 * Finds the maximum ID that is currently in use by iterating the ID list and assigns this value to {@link #maxId}.
 	 */
-	private long findMaxId() {
+	private void findMaxId() {
 		if (isEmpty()) {
-			return -1;
+			maxId = -1;
 		}
 		long count = 0;
 		for (int i = 0; i < ids.length; i++) {
 			count += Math.abs(ids[i]);
 		}
 		// IDs start at zero
-		return count - 1;
+		maxId = count - 1;
 
 	}
 
