@@ -1,8 +1,6 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.ArrayList;
 
 import playground.StatisticsDBTest;
 
@@ -18,7 +16,7 @@ public class CentralLogger {
 
 	private static CentralLogger instance;
 
-	private final Map<String, Long> times;
+	private final ArrayList<Long> times;
 
 	private long indexTime;
 
@@ -26,8 +24,24 @@ public class CentralLogger {
 
 	private long inputTime;
 
+	public static enum SUBBENCHMARK_EVENT {
+		FILE_OPERATION_INDEX,
+		FILE_OPERATION_EXTRA,
+		INPUT_READ,
+		RLE_NEXT,
+		RLE_IS_USED,
+		RLE_RELEASE,
+		ROWMANAGER_CREATE,
+		ROWMANAGER_INCREMENT,
+		MF_INC,
+		HABSE_NOTIFY_ACCESS,
+	}
+
 	private CentralLogger() {
-		times = new HashMap<>();
+		times = new ArrayList<>();
+		for (int i = 0; i < SUBBENCHMARK_EVENT.values().length; i++) {
+			times.add(0L);
+		}
 	}
 
 	public static CentralLogger getInstance() {
@@ -44,44 +58,32 @@ public class CentralLogger {
 	 * @param time
 	 */
 	public void addFileOperationTime(long fileId, long time) {
+		SUBBENCHMARK_EVENT event;
 		if (fileId == 0L) {
-			indexTime += time;
+			event = SUBBENCHMARK_EVENT.FILE_OPERATION_INDEX;
 		} else {
-			extraTime += time;
+			event = SUBBENCHMARK_EVENT.FILE_OPERATION_EXTRA;
 		}
+		addTime(event, time);
 	}
 
-	public void addInputReadTime(long time) {
-		inputTime += time;
-	}
-
-	public void addTime(String key, long time) {
-		Long currentTime = times.get(key);
-		if (currentTime == null) {
-			currentTime = 0L;
-		}
-		times.put(key, currentTime + time);
+	public void addTime(SUBBENCHMARK_EVENT event, long time) {
+		Long currentTime = times.get(event.ordinal());
+		times.set(event.ordinal(), currentTime + time);
 	}
 
 	public void finish() {
 		System.out.println("===== CentralLogger:");
 		System.out.println("Times:");
-		System.out.println("FILE_INDEX_TIME: " + StatisticsDBTest.formatTime(indexTime / 1_000_000));
-		System.out.println("FILE_EXTRA_TIME: " + StatisticsDBTest.formatTime(extraTime / 1_000_000));
-		System.out.println("INPUT_READ_TIME: " + StatisticsDBTest.formatTime(inputTime / 1_000_000));
-		for (Entry<String, Long> e : times.entrySet()) {
-			System.out.println(e.getKey() + ": " + StatisticsDBTest.formatTime(e.getValue() / 1_000_000));
-		}
-		if (times.size() > 0) {
-			System.out.println("-");
-			System.out.println("Total logged time: " + StatisticsDBTest.formatTime(
-					(times.values().stream().reduce(Long::sum)).get() / 1_000_000));
+		for (int i = 0; i < times.size(); i++) {
+			System.out.println(
+					SUBBENCHMARK_EVENT.values()[i] + ": " + StatisticsDBTest.formatTime(times.get(i) / 1_000_000));
 		}
 		System.out.println("===== End CentralLogger");
 	}
 
-	public long getTime(String key) {
-		return times.get(key);
+	public long getTime(SUBBENCHMARK_EVENT event) {
+		return times.get(event.ordinal());
 	}
 
 	public long getInputReadTime() {
