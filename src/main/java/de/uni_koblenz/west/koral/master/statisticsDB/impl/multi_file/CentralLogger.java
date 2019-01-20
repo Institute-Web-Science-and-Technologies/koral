@@ -1,7 +1,5 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
-import java.util.ArrayList;
-
 import playground.StatisticsDBTest;
 
 /**
@@ -16,7 +14,7 @@ public class CentralLogger {
 
 	private static CentralLogger instance;
 
-	private final ArrayList<Long> times;
+	private final long[] times;
 
 	private long indexTime;
 
@@ -41,10 +39,7 @@ public class CentralLogger {
 	}
 
 	private CentralLogger() {
-		times = new ArrayList<>();
-		for (int i = 0; i < SUBBENCHMARK_EVENT.values().length; i++) {
-			times.add(0L);
-		}
+		times = new long[SUBBENCHMARK_EVENT.values().length];
 	}
 
 	public static CentralLogger getInstance() {
@@ -71,22 +66,21 @@ public class CentralLogger {
 	}
 
 	public void addTime(SUBBENCHMARK_EVENT event, long time) {
-		Long currentTime = times.get(event.ordinal());
-		times.set(event.ordinal(), currentTime + time);
+		times[event.ordinal()] += time;
 	}
 
 	public void finish() {
 		System.out.println("===== CentralLogger:");
 		System.out.println("Times:");
-		for (int i = 0; i < times.size(); i++) {
+		for (int i = 0; i < times.length; i++) {
 			System.out.println(
-					SUBBENCHMARK_EVENT.values()[i] + ": " + StatisticsDBTest.formatTime(times.get(i) / 1_000_000));
+					SUBBENCHMARK_EVENT.values()[i] + ": " + StatisticsDBTest.formatTime(times[i] / 1_000_000));
 		}
 		System.out.println("===== End CentralLogger");
 	}
 
 	public long getTime(SUBBENCHMARK_EVENT event) {
-		return times.get(event.ordinal());
+		return times[event.ordinal()];
 	}
 
 	public long getInputReadTime() {
