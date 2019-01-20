@@ -23,9 +23,6 @@ public class CentralLogger {
 	private long inputTime;
 
 	public static enum SUBBENCHMARK_EVENT {
-		FILE_OPERATION_INDEX,
-		FILE_OPERATION_EXTRA,
-		INPUT_READ,
 		RLE_NEXT,
 		RLE_IS_USED,
 		RLE_RELEASE,
@@ -56,13 +53,15 @@ public class CentralLogger {
 	 * @param time
 	 */
 	public void addFileOperationTime(long fileId, long time) {
-		SUBBENCHMARK_EVENT event;
 		if (fileId == 0L) {
-			event = SUBBENCHMARK_EVENT.FILE_OPERATION_INDEX;
+			indexTime += time;
 		} else {
-			event = SUBBENCHMARK_EVENT.FILE_OPERATION_EXTRA;
+			extraTime += time;
 		}
-		addTime(event, time);
+	}
+
+	public void addInputReadTime(long time) {
+		inputTime += time;
 	}
 
 	public void addTime(SUBBENCHMARK_EVENT event, long time) {
@@ -72,6 +71,9 @@ public class CentralLogger {
 	public void finish() {
 		System.out.println("===== CentralLogger:");
 		System.out.println("Times:");
+		System.out.println("FILE_INDEX_TIME: " + StatisticsDBTest.formatTime(indexTime / 1_000_000));
+		System.out.println("FILE_EXTRA_TIME: " + StatisticsDBTest.formatTime(extraTime / 1_000_000));
+		System.out.println("INPUT_READ_TIME: " + StatisticsDBTest.formatTime(inputTime / 1_000_000));
 		for (int i = 0; i < times.length; i++) {
 			System.out.println(
 					SUBBENCHMARK_EVENT.values()[i] + ": " + StatisticsDBTest.formatTime(times[i] / 1_000_000));
