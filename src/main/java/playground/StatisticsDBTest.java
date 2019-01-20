@@ -44,13 +44,24 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
  */
 public class StatisticsDBTest {
 
+	/*
+	 * Debug flags only used in this current class.
+	 */
+
 	private static final boolean WRITE_BENCHMARK_RESULTS = true;
 
 	private static final boolean COLLECT_META_STATISTICS = false;
 
+	private static final boolean WRITE_STATISTICS_DATA = false;
+
+	/*
+	 * Performance influencing flags. Making these constant allows removal of all related code at compile time
+	 * optimization.
+	 */
+
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	private static final boolean WRITE_STATISTICS_DATA = false;
+	public static final boolean SUBBENCHMARKS = false;
 
 	public static final boolean WATCH_FILE_FLOW = false;
 
