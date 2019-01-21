@@ -492,7 +492,8 @@ public class ReusableIDGenerator {
 
 	/**
 	 * Returns a copy of the internal RLE-encoded id list. The current implementation is expensive, because there is
-	 * also an O(n) search for the last used list position.
+	 * also an O(n) search for the last used list position. The length of the returned array is equal to the amount of
+	 * used positions in the RLE list and might be different to the length of the internal ids array.
 	 *
 	 * @return
 	 */
