@@ -209,6 +209,7 @@ public class StatisticsDBTest {
 				totalIndexFileTime = CentralLogger.getInstance().getIndexTime() / (long) 1e9;
 				totalExtraFilesTime = CentralLogger.getInstance().getExtraTime() / (long) 1e9;
 				CentralLogger.getInstance().finish();
+				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
 				multiDB.defrag();
@@ -218,7 +219,6 @@ public class StatisticsDBTest {
 					System.out.println("Collecting meta statistics...");
 					writeDataStatisticsToFile(configNameWithoutCaches, multiDB.getDataStatistics());
 				}
-				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				indexFileLength = multiDB.getIndexFileLength();
 				totalEntries = multiDB.getTotalEntries();
 				unusedBytes = multiDB.getUnusedBytes();
