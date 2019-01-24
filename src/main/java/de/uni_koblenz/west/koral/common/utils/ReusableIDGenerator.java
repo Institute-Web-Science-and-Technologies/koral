@@ -297,7 +297,15 @@ public class ReusableIDGenerator {
 			ids[deletionBlockIndex + 2] = x2;
 		}
 		if (idToFree == maxId) {
+			long start = 0;
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				start = System.nanoTime();
+			}
 			findMaxId();
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_RELEASE_FINDMAXID,
+						System.nanoTime() - start);
+			}
 		}
 	}
 
