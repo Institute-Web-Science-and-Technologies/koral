@@ -256,9 +256,7 @@ public class RandomAccessRowFile implements RowStorage {
 					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 					found, time);
 		}
-		if (StatisticsDBTest.SUBBENCHMARKS) {
-			CentralLogger.getInstance().addFileOperationTime(fileId, time);
-		}
+		CentralLogger.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	private byte[] readBlock(long blockId) throws IOException {
@@ -416,9 +414,7 @@ public class RandomAccessRowFile implements RowStorage {
 					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 					blockFound && !Utils.isArrayZero(readRow), time);
 		}
-		if (StatisticsDBTest.SUBBENCHMARKS) {
-			CentralLogger.getInstance().addFileOperationTime(fileId, time);
-		}
+		CentralLogger.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	private void writeRowToFile(long rowId, byte[] row) throws IOException {

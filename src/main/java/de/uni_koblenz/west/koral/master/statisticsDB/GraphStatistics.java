@@ -81,14 +81,10 @@ public class GraphStatistics implements Closeable {
 		try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, chunk);) {
 			long start = System.nanoTime();
 			for (Statement statement : in) {
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addInputReadTime(System.nanoTime() - start);
-				}
+				CentralLogger.getInstance().addInputReadTime(System.nanoTime() - start);
 				count(statement.getSubjectAsLong(), statement.getPropertyAsLong(), statement.getObjectAsLong(),
 						chunkIndex);
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					start = System.nanoTime();
-				}
+				start = System.nanoTime();
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
