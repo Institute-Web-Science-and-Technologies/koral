@@ -33,8 +33,9 @@ public class SharedSpaceManager {
 	}
 
 	/**
-	 * Request an amount of space from the manager. It will do anything it can to make space, by asking other consumers
-	 * to make room until enough space is free. It might even ask the file that requested the space to make room. This
+	 * Request an amount of space from the manager. It will do anything it can to
+	 * make space, by asking other consumers to make room until enough space is
+	 * free. It might even ask the file that requested the space to make room. This
 	 * might be disabled for certain subimplementations by returning false for
 	 * {@code SharedSpaceConsumer.isAbleToMakeRoomForOwnRequests()}.
 	 *
@@ -42,7 +43,8 @@ public class SharedSpaceManager {
 	 *            The consumer object that requests this space, for book keeping.
 	 * @param amount
 	 *            How much space is needed
-	 * @return True if space was succesfully freed. The base implementation is supposed to always returns true.
+	 * @return True if space was succesfully freed. The base implementation is
+	 *         supposed to always returns true.
 	 */
 	public boolean request(SharedSpaceConsumer consumer, long amount) {
 		long available = maxSize - used;
@@ -60,10 +62,7 @@ public class SharedSpaceManager {
 		}
 		used += amount;
 
-		Long consumerUsed = consumers.get(consumer);
-		if (consumerUsed == null) {
-			consumerUsed = 0L;
-		}
+		Long consumerUsed = getSpaceUsed(consumer);
 		consumerUsed += amount;
 		consumers.put(consumer, consumerUsed);
 
@@ -71,17 +70,19 @@ public class SharedSpaceManager {
 	}
 
 	/**
-	 * Attempt to make room to allow a new entry in the cache. If there is still not enough memory after this method
-	 * returned, {@link #request(SharedSpaceConsumer, long)} will throw an OOM exception.
+	 * Attempt to make room to allow a new entry in the cache. If there is still not
+	 * enough memory after this method returned,
+	 * {@link #request(SharedSpaceConsumer, long)} will throw an OOM exception.
 	 *
-	 * Default implementation asks each extra file, starting from the least recently used, to make room until the
-	 * requested amount is free.
+	 * Default implementation asks each extra file, starting from the least recently
+	 * used, to make room until the requested amount is free.
 	 *
 	 * @param requester
 	 *            The consumer that requests space
 	 * @param amount
 	 *            The requested amount of bytes
-	 * @return True if the attempt was succesful and there is now at least the given {@code amount} of space free.
+	 * @return True if the attempt was succesful and there is now at least the given
+	 *         {@code amount} of space free.
 	 */
 	protected boolean makeRoom(SharedSpaceConsumer requester, long amount) {
 		Iterator<Entry<Long, ExtraRowStorage>> extraFiles = fileManager.getLRUExtraFiles();
