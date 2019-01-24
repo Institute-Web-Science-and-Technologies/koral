@@ -34,9 +34,9 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
 /**
@@ -62,7 +62,7 @@ public class StatisticsDBTest {
 
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	public static final boolean SUBBENCHMARKS = true;
+	public static final boolean SUBBENCHMARKS = false;
 
 	public static final boolean WATCH_FILE_FLOW = false;
 
@@ -209,7 +209,7 @@ public class StatisticsDBTest {
 				}
 				totalIndexFileTime = SubbenchmarkManager.getInstance().getIndexTime() / (long) 1e9;
 				totalExtraFilesTime = SubbenchmarkManager.getInstance().getExtraTime() / (long) 1e9;
-				SubbenchmarkManager.getInstance().finish();
+				SubbenchmarkManager.getInstance().finish(new File("subbenchmarks.csv"), configName, durationSec);
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
