@@ -44,24 +44,35 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
  */
 public class StatisticsDBTest {
 
+	/*
+	 * Debug flags only used in this current class.
+	 */
+
 	private static final boolean WRITE_BENCHMARK_RESULTS = true;
 
 	private static final boolean COLLECT_META_STATISTICS = false;
 
+	private static final boolean WRITE_STATISTICS_DATA = false;
+
+	/*
+	 * Performance influencing flags. Making these constant allows removal of all related code at compile time
+	 * optimization.
+	 */
+
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	private static final boolean WRITE_STATISTICS_DATA = false;
+	public static final boolean SUBBENCHMARKS = false;
 
 	public static final boolean WATCH_FILE_FLOW = false;
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
-				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");
+				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> <HABSE history length> [implementationNote]");
 	}
 
 	public static void main(String[] args) throws IOException {
 		boolean fileLogging = true;
-		if ((args.length != 8) && (args.length != 9)) {
+		if ((args.length != 10) && (args.length != 11)) {
 			System.err.println("Invalid amount of arguments.");
 			printUsage();
 			return;
@@ -107,9 +118,11 @@ public class StatisticsDBTest {
 		int rowDataLength = Integer.parseInt(args[5]);
 		long indexCacheSize = Long.parseLong(args[6]);
 		long extraFilesCacheSize = Long.parseLong(args[7]);
+		float habseAccessesWeight = Float.parseFloat(args[8]);
+		int habseHistoryLength = Integer.parseInt(args[9]);
 		String implementationNote = "";
-		if (args.length == 9) {
-			implementationNote = args[8];
+		if (args.length == 11) {
+			implementationNote = args[10];
 		}
 
 		String[] datasetInfo = datasetName.split("_");
@@ -165,7 +178,8 @@ public class StatisticsDBTest {
 			statisticsDB = new SingleFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks);
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
 			statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks,
-					rowDataLength, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L, null);
+					rowDataLength, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
+					habseAccessesWeight, habseHistoryLength, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
 			return;
@@ -179,16 +193,21 @@ public class StatisticsDBTest {
 			long durationSec = time / 1_000;
 //			System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
+			long totalInputReadTime = CentralLogger.getInstance().getInputReadTime() / (long) 1e9;
 
 			long indexFileLength = -1;
 			Map<Long, Long> freeSpaceIndexLengths = null;
 			long totalEntries = -1;
 			long unusedBytes = -1;
+			long totalIndexFileTime = -1;
+			long totalExtraFilesTime = -1;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
 				if (ENABLE_STORAGE_LOGGING) {
 					StorageLogWriter.getInstance().finish();
 				}
+				totalIndexFileTime = CentralLogger.getInstance().getIndexTime() / (long) 1e9;
+				totalExtraFilesTime = CentralLogger.getInstance().getExtraTime() / (long) 1e9;
 				CentralLogger.getInstance().finish();
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
@@ -214,7 +233,9 @@ public class StatisticsDBTest {
 				long extraFilesSize = getExtraFilesSize(storageDir);
 				writeBenchmarkToCSV(resultCSV, date, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, implementationNote, durationSec,
-						dirSize, indexFileLength, extraFilesSize, totalEntries, unusedBytes);
+						totalInputReadTime, totalIndexFileTime, totalExtraFilesTime, dirSize, indexFileLength,
+						extraFilesSize, totalEntries,
+						unusedBytes);
 				System.out.println("Writing file distribution to CSV...");
 				writeFileDistributionToCSV(configNameWithoutCaches, conf.getStatisticsDir(true), freeSpaceIndexLengths);
 			}
@@ -250,22 +271,19 @@ public class StatisticsDBTest {
 		return encodedFiles;
 	}
 
-	private static void writeBenchmarkToCSV(File resultFile, String date, int tripleCount, short numberOfChunks,
-			int dataBytes, long indexCacheSize, long extraFilesCacheSize, String dbImplementation,
-			String coveringAlgorithm, String implementationNote, long durationSec, long dirSizeBytes,
-			long indexSizeBytes, long extraFilesSizeBytes, long totalEntries, long unusedBytes)
+	// TODO: Use varargs instead of billion params
+	private static void writeBenchmarkToCSV(File resultFile, Object... row)
 			throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
 				csvFileFormat);
 		if (resultFile.length() == 0) {
 			printer.printRecord("DATE_FINISHED", "TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB",
-					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "DIR_SIZE_BYTES",
-					"INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES", "UNUSED_BYTES");
+					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "INPUT_TIME", "INDEX_TIME",
+					"EXTRA_TIME", "DIR_SIZE_BYTES", "INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES",
+					"UNUSED_BYTES");
 		}
-		printer.printRecord(date, tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
-				dbImplementation, coveringAlgorithm, implementationNote, durationSec, dirSizeBytes, indexSizeBytes,
-				extraFilesSizeBytes, totalEntries, unusedBytes);
+		printer.printRecord(row);
 		printer.close();
 	}
 

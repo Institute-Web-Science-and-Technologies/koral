@@ -66,7 +66,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, int numberOfChunks, int rowDataLength,
-			long indexCacheSize, long extraFilesCacheSize, Logger logger) {
+			long indexCacheSize, long extraFilesCacheSize, float habseAccessesWeight, int habseHistoryLength,
+			Logger logger) {
 		this.logger = logger;
 
 		// First, check if we have metadata for an existing database
@@ -96,14 +97,15 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		mainfileRowLength = rowManager.getMainFileRowLength();
 
 		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, FileManager.DEFAULT_MAX_OPEN_FILES,
-				indexCacheSize, extraFilesCacheSize, logger);
+				indexCacheSize, extraFilesCacheSize, habseAccessesWeight, habseHistoryLength, logger);
 
 		dirty = false;
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, Logger logger) {
 		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
-				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, logger);
+				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
+				FileManager.DEFAULT_HABSE_HISTORY_LENGTH, logger);
 	}
 
 	private void loadStatisticsMetadata() {
@@ -187,11 +189,15 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	private void incrementOccurences(long resourceId, ResourceType resourceType, int chunk) {
+		long startTotal = System.nanoTime();
 		dirty = true;
 		try {
 			boolean rowFound = loadRow(resourceId);
 			if (!rowFound) {
+				long start = System.nanoTime();
 				rowManager.create(resourceType, chunk);
+				CentralLogger.getInstance().addTime(CentralLogger.SUBBENCHMARK_EVENT.ROWMANAGER_CREATE,
+						System.nanoTime() - start);
 				if (rowManager.isTooLongForMain()) {
 					insertEntryInExtraFile();
 				}
@@ -200,7 +206,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			}
 			// Extract file id before incrementing for later comparison
 			long fileIdRead = rowManager.getFileId();
+			long start = System.nanoTime();
 			rowManager.incrementOccurence(resourceType, chunk);
+			CentralLogger.getInstance().addTime(CentralLogger.SUBBENCHMARK_EVENT.ROWMANAGER_INCREMENT,
+					System.nanoTime() - start);
 			if (!rowManager.isDataExternal()) {
 				// Row is in Index
 				if (rowManager.isTooLongForMain()) {
@@ -254,6 +263,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			close();
 			throw new RuntimeException(e);
 		}
+		CentralLogger.getInstance().addTime(CentralLogger.SUBBENCHMARK_EVENT.MF_INC, System.nanoTime() - startTotal);
 	}
 
 	/**
@@ -309,7 +319,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			long rowId = rowManager.getExternalFileRowId();
 			byte[] dataBytes = fileManager.readExternalRow(fileId, rowId);
 			if (dataBytes == null) {
-				fileManager.readExternalRow(fileId, rowId);
 				throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
 			}
 			rowManager.loadExternalRow(dataBytes);

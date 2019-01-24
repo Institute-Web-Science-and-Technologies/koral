@@ -28,9 +28,9 @@ public class PerFileCacheListener {
 	}
 
 	public void onLogRowRead(Map<String, Object> data, long globalRowCounter) {
-		values[0] = data.get(StorageLogWriter.KEY_ACCESS_CACHEUSAGE);
+		values[0] = data.get(StorageLogWriter.KEY_CACHEUSAGE);
 		values[1] = data.get(StorageLogWriter.KEY_ACCESS_FILESIZE);
-		values[2] = data.get(StorageLogWriter.KEY_ACCESS_PERCENTAGECACHED);
+		values[2] = data.get(StorageLogWriter.KEY_PERCENTAGECACHED);
 		if (alignToGlobal) {
 			csvWriter.addRecord(globalRowCounter, values);
 		} else {

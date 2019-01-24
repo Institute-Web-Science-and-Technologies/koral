@@ -29,6 +29,7 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import playground.StatisticsDBTest;
@@ -65,7 +66,9 @@ public class GraphStatistics implements Closeable {
 	}
 
 	public void collectStatistics(File[] encodedChunks) {
+//		long start = System.nanoTime();
 		clear();
+//		CentralLogger.getInstance().addTime("CLEARING", System.nanoTime() - start);
 		for (int i = 0; i < encodedChunks.length; i++) {
 			collectStatistics(i, encodedChunks[i]);
 		}
@@ -76,9 +79,12 @@ public class GraphStatistics implements Closeable {
 			return;
 		}
 		try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, chunk);) {
+			long start = System.nanoTime();
 			for (Statement statement : in) {
+				CentralLogger.getInstance().addInputReadTime(System.nanoTime() - start);
 				count(statement.getSubjectAsLong(), statement.getPropertyAsLong(), statement.getObjectAsLong(),
 						chunkIndex);
+				start = System.nanoTime();
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);

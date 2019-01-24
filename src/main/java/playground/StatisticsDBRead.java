@@ -31,7 +31,7 @@ public class StatisticsDBRead {
 
 	private static void printUsage() {
 		System.out.println(
-				"Usage: java -jar StatisticsDBRead.jar <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");
+				"Usage: java -jar StatisticsDBRead.jar <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> <HABSE history length> [implementationNote]");
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -72,9 +72,11 @@ public class StatisticsDBRead {
 
 		long indexCacheSize = Long.parseLong(args[4]);
 		long extraFilesCacheSize = Long.parseLong(args[5]);
+		float habseAccessesWeight = Float.parseFloat(args[6]);
+		int habseHistoryLength = Integer.parseInt(args[7]);
 		String implementationNote = "";
-		if (args.length == 7) {
-			implementationNote = args[6];
+		if (args.length == 9) {
+			implementationNote = args[8];
 		}
 
 		String datasetName = encodedChunksDir.getName();
@@ -116,7 +118,7 @@ public class StatisticsDBRead {
 
 		MultiFileGraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(
 				storageDir.getCanonicalPath(), numberOfChunks, -99, indexCacheSize * 1024 * 1024L,
-				extraFilesCacheSize * 1024 * 1024L, null);
+				extraFilesCacheSize * 1024 * 1024L, habseAccessesWeight, habseHistoryLength, null);
 
 		long optimizationPreventer = 0;
 		GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);

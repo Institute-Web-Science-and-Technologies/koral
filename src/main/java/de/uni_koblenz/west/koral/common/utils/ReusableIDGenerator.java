@@ -20,6 +20,9 @@ package de.uni_koblenz.west.koral.common.utils;
 
 import java.util.Arrays;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger.SUBBENCHMARK_EVENT;
+
 /**
  * Returns the first unused int id starting at zero.
  *
@@ -65,7 +68,9 @@ public class ReusableIDGenerator {
 	public long next() {
 		long firstFreeID;
 		if (ids == null) {
+			long start = System.nanoTime();
 			ids = new long[10];
+			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
 			ids[0] = 1;
 			maxId = 0;
 			return 0;
@@ -90,7 +95,10 @@ public class ReusableIDGenerator {
 					// join [+x,0,+y,-z,...] to [+x+y,-z,...]
 					ids[0] += ids[2];
 					if (ids.length > 3) {
+						long start = System.nanoTime();
 						System.arraycopy(ids, 3, ids, 1, ids.length - 3);
+						CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY,
+								System.nanoTime() - start);
 					}
 					ids[ids.length - 1] = 0;
 					ids[ids.length - 2] = 0;
@@ -106,7 +114,9 @@ public class ReusableIDGenerator {
 				ids[0] = 1;
 			} else if ((ids[0] == 0) && (ids.length >= 2) && (ids[1] > 0)) {
 				// [0,+x,...] -> [+x+1,...]
+				long start = System.nanoTime();
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
+				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 				ids[ids.length - 1] = 0;
 				ids[0]++;
 			}
@@ -122,11 +132,15 @@ public class ReusableIDGenerator {
 		int numberOfUsedBlocks = getNumberOfUsedBlocks();
 		if (((numberOfUsedBlocks + numberShifts) - 1) >= ids.length) {
 			// extend array
+			long start = System.nanoTime();
 			ids = new long[ids.length + 10 + numberShifts];
+			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
 		}
+		long start = System.nanoTime();
 		System.arraycopy(src, 0, ids, 0, firstIndexToShift);
 		System.arraycopy(src, firstIndexToShift, ids, firstIndexToShift + numberShifts,
 				numberOfUsedBlocks - firstIndexToShift);
+		CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 		for (int i = firstIndexToShift; i < (firstIndexToShift + numberShifts); i++) {
 			ids[i] = 0;
 		}
@@ -177,15 +191,19 @@ public class ReusableIDGenerator {
 				}
 			} else if (deletionBlockIndex == 0) {
 				// [1,-x,...] -> [-x-1,...]
+				long start = System.nanoTime();
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
+				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 				ids[0]--;
 				ids[ids.length - 1] = 0;
 			} else {
 				// [..,+w,-x,1,-y,+z,...] -> [...,+w,-x-y-1,+z,...]
 				int lastUsedBlockIndex = getNumberOfUsedBlocks() - 1;
 				ids[deletionBlockIndex - 1] += ids[deletionBlockIndex + 1] - 1;
+				long start = System.nanoTime();
 				System.arraycopy(ids, deletionBlockIndex + 2, ids, deletionBlockIndex,
 						ids.length - deletionBlockIndex - 2);
+				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 				ids[lastUsedBlockIndex] = 0;
 				ids[lastUsedBlockIndex - 1] = 0;
 			}
@@ -219,7 +237,7 @@ public class ReusableIDGenerator {
 			ids[deletionBlockIndex + 2] = x2;
 		}
 		if (idToFree == maxId) {
-			maxId = findMaxId();
+			findMaxId();
 		}
 	}
 
@@ -230,7 +248,9 @@ public class ReusableIDGenerator {
 	 */
 	public void set(long idToSet) {
 		if ((ids == null) || (ids.length == 0)) {
+			long start = System.nanoTime();
 			ids = new long[10];
+			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
 		}
 		// find block that contains idToSet
 		int blockIndex;
@@ -271,14 +291,18 @@ public class ReusableIDGenerator {
 			// the only unused id in this block is set
 			if (blockIndex == 0) {
 				// [-1,x,...] -> [x+1,...]
+				long start = System.nanoTime();
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
+				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 				ids[0]++;
 				ids[ids.length - 1] = 0;
 			} else {
 				// [..,-w,+x,1,+y,-z,...] -> [...,-w,+x+y+1,-z,...]
 				int lastUsedBlockIndex = getNumberOfUsedBlocks() - 1;
 				ids[blockIndex - 1] += ids[blockIndex + 1] + 1;
+				long start = System.nanoTime();
 				System.arraycopy(ids, blockIndex + 2, ids, blockIndex, ids.length - blockIndex - 2);
+				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 				// Remove leftover data that wasn't overwritten
 				ids[lastUsedBlockIndex] = 0;
 				ids[lastUsedBlockIndex - 1] = 0;
@@ -434,27 +458,25 @@ public class ReusableIDGenerator {
 	/**
 	 * Returns the maximum ID that is currently in use. Since zero is not a valid ID, it indicates no used ids.
 	 *
-	 * @return The maximum ID that is currently in use, and zero if there are no IDs in use.
+	 * @return The maximum ID that is currently in use, and -1 if there are no IDs in use.
 	 */
 	public long getMaxId() {
 		return maxId;
 	}
 
 	/**
-	 * Finds the maximum ID that is currently in use by iterating the ID list.
-	 *
-	 * @return -1 if there are no ids
+	 * Finds the maximum ID that is currently in use by iterating the ID list and assigns this value to {@link #maxId}.
 	 */
-	private long findMaxId() {
+	private void findMaxId() {
 		if (isEmpty()) {
-			return -1;
+			maxId = -1;
 		}
 		long count = 0;
 		for (int i = 0; i < ids.length; i++) {
 			count += Math.abs(ids[i]);
 		}
 		// IDs start at zero
-		return count - 1;
+		maxId = count - 1;
 
 	}
 
@@ -502,8 +524,12 @@ public class ReusableIDGenerator {
 	}
 
 	private void extendIdsArray(int minLength) {
+		long start = System.nanoTime();
 		long[] newIds = new long[minLength + 10];
+		CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
+		start = System.nanoTime();
 		System.arraycopy(ids, 0, newIds, 0, ids.length);
+		CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 		ids = newIds;
 	}
 

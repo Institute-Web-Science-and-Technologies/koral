@@ -30,6 +30,10 @@ public class FileManager {
 
 	public static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
 
+	public static final float DEFAULT_HABSE_ACCESSES_WEIGHT = 0.5f;
+
+	public static final int DEFAULT_HABSE_HISTORY_LENGTH = 1_000_000;
+
 	private final Logger logger;
 
 	private final LRUCache<Long, ExtraRowStorage> extraFiles;
@@ -49,14 +53,15 @@ public class FileManager {
 	private long maxResourceId;
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxOpenFiles, long indexFileCacheSize,
-			long extraFilesCacheSize, Logger logger) {
+			long extraFilesCacheSize, float habseAccessesWeight, int habseHistoryLength, Logger logger) {
 		this.storagePath = storagePath;
 		this.indexFileCacheSize = indexFileCacheSize;
 		this.mainFileRowLength = mainFileRowLength;
 		this.logger = logger;
 
 		if (extraFilesCacheSize > 0) {
-			extraCacheSpaceManager = new HABSESharedSpaceManager(this, extraFilesCacheSize, 1000);
+			extraCacheSpaceManager = new HABSESharedSpaceManager(this, extraFilesCacheSize, habseAccessesWeight,
+					habseHistoryLength);
 		} else {
 			extraCacheSpaceManager = null;
 		}
@@ -88,7 +93,7 @@ public class FileManager {
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, Logger logger) {
 		this(storagePath, mainFileRowLength, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE,
-				DEFAULT_EXTRAFILES_CACHE_SIZE, logger);
+				DEFAULT_EXTRAFILES_CACHE_SIZE, DEFAULT_HABSE_ACCESSES_WEIGHT, DEFAULT_HABSE_HISTORY_LENGTH, logger);
 	}
 
 	void setup() {

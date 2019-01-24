@@ -20,8 +20,8 @@ public class CacheUsageMetric extends Metric {
 
 	@Override
 	public void accumulate(int rowType, Map<String, Object> data) {
-		if (rowType == StorageLogEvent.READWRITE.ordinal()) {
-			aggregator.accumulate((int) data.get(StorageLogWriter.KEY_ACCESS_CACHEUSAGE));
+		if ((rowType == StorageLogEvent.READWRITE.ordinal()) || (rowType == StorageLogEvent.BLOCKFLUSH.ordinal())) {
+			aggregator.accumulate((int) data.get(StorageLogWriter.KEY_CACHEUSAGE));
 		}
 	}
 
