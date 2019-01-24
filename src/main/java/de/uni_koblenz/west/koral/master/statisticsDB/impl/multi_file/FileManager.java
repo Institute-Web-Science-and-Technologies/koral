@@ -32,7 +32,7 @@ public class FileManager {
 
 	public static final float DEFAULT_HABSE_ACCESSES_WEIGHT = 0.5f;
 
-	public static final int DEFAULT_HABSE_HISTORY_LENGTH = 1_000_000;
+	public static final int DEFAULT_HABSE_HISTORY_LENGTH = 100_000;
 
 	private final Logger logger;
 

@@ -35,6 +35,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
@@ -67,12 +68,12 @@ public class StatisticsDBTest {
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
-				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> <HABSE history length> [implementationNote]");
+				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> [implementationNote]");
 	}
 
 	public static void main(String[] args) throws IOException {
 		boolean fileLogging = true;
-		if ((args.length != 10) && (args.length != 11)) {
+		if ((args.length != 9) && (args.length != 10)) {
 			System.err.println("Invalid amount of arguments.");
 			printUsage();
 			return;
@@ -119,10 +120,10 @@ public class StatisticsDBTest {
 		long indexCacheSize = Long.parseLong(args[6]);
 		long extraFilesCacheSize = Long.parseLong(args[7]);
 		float habseAccessesWeight = Float.parseFloat(args[8]);
-		int habseHistoryLength = Integer.parseInt(args[9]);
+//		int habseHistoryLength = Integer.parseInt(args[9]);
 		String implementationNote = "";
-		if (args.length == 11) {
-			implementationNote = args[10];
+		if (args.length == 10) {
+			implementationNote = args[9];
 		}
 
 		String[] datasetInfo = datasetName.split("_");
@@ -179,7 +180,7 @@ public class StatisticsDBTest {
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
 			statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks,
 					rowDataLength, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
-					habseAccessesWeight, habseHistoryLength, null);
+					habseAccessesWeight, FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
 			return;
