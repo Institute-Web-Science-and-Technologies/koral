@@ -8,6 +8,7 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger.SUBBENCHMARK_EVENT;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
+import playground.StatisticsDBTest;
 
 /**
  * A SharedSpaceManager that makes room by requesting the consumer with the highest access based shares exceedence
@@ -67,7 +68,10 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * @return
 	 */
 	private SharedSpaceConsumer findHABSE() {
-		long start = System.nanoTime();
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		double maxExceedence = 0;
 		SharedSpaceConsumer habseConsumer = null;
 		long totalAccessCosts = 0;
@@ -92,7 +96,9 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 				habseConsumer = consumer;
 			}
 		}
-		CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.HABSE_FIND, System.nanoTime() - start);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.HABSE_FIND, System.nanoTime() - start);
+		}
 		return habseConsumer;
 	}
 
@@ -121,7 +127,10 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 * @param consumer
 	 */
 	public void notifyAccess(SharedSpaceConsumer consumer) {
-		long start = System.nanoTime();
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		if (consumer == null) {
 			throw new NullPointerException("Consumer cannot be null");
 		}
@@ -150,8 +159,10 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			consumerAccessCount = 0L;
 		}
 		recentAccessCount.put(consumer, consumerAccessCount + 1);
-		CentralLogger.getInstance().addTime(CentralLogger.SUBBENCHMARK_EVENT.HABSE_NOTIFY_ACCESS,
-				System.nanoTime() - start);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			CentralLogger.getInstance().addTime(CentralLogger.SUBBENCHMARK_EVENT.HABSE_NOTIFY_ACCESS,
+					System.nanoTime() - start);
+		}
 	}
 
 }

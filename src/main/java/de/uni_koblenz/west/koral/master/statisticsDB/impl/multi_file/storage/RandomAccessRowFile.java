@@ -37,19 +37,17 @@ public class RandomAccessRowFile implements RowStorage {
 	final int rowLength;
 
 	/**
-	 * Refers to the size of a block that contains exactly how many rows would fit
-	 * into a block with the size given in the constructor, but without any
-	 * padding/filled space in the end.
+	 * Refers to the size of a block that contains exactly how many rows would fit into a block with the size given in
+	 * the constructor, but without any padding/filled space in the end.
 	 */
 	final int dataLength;
 
 	final int cacheBlockSize;
 
 	/**
-	 * Maps RowIds to their rows. Note: It should always be ensured that the values
-	 * are not-null (on inserting/updating), because the LRUCache doesn't care and
-	 * NullPointerExceptions are not thrown before actually writing to file, when it
-	 * is too late to find out where the null came from, in the case of a bug.
+	 * Maps RowIds to their rows. Note: It should always be ensured that the values are not-null (on
+	 * inserting/updating), because the LRUCache doesn't care and NullPointerExceptions are not thrown before actually
+	 * writing to file, when it is too late to find out where the null came from, in the case of a bug.
 	 */
 	private final LRUList<Long, byte[]> fileCache;
 
@@ -183,8 +181,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Retrieves a row from <code>file</code>. The offset is calculated by
-	 * <code>rowId * row.length</code>.
+	 * Retrieves a row from <code>file</code>. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            The RandomAccessFile that will be read
@@ -192,8 +189,7 @@ public class RandomAccessRowFile implements RowStorage {
 	 *            The row number in the file
 	 * @param rowLength
 	 *            The length of a row in the specified file
-	 * @return The row as a byte array. The returned array has the length of
-	 *         rowLength.
+	 * @return The row as a byte array. The returned array has the length of rowLength.
 	 * @throws IOException
 	 */
 	@Override
@@ -260,7 +256,9 @@ public class RandomAccessRowFile implements RowStorage {
 					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 					found, time);
 		}
-		CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		}
 	}
 
 	private byte[] readBlock(long blockId) throws IOException {
@@ -326,8 +324,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by
-	 * <code>rowId * row.length</code>.
+	 * Writes a row into a {@link RandomAccessFile}. The offset is calculated by <code>rowId * row.length</code>.
 	 *
 	 * @param rowFile
 	 *            A RandomAccessFile that will be updated
@@ -419,7 +416,9 @@ public class RandomAccessRowFile implements RowStorage {
 					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 					blockFound && !Utils.isArrayZero(readRow), time);
 		}
-		CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		}
 	}
 
 	private void writeRowToFile(long rowId, byte[] row) throws IOException {
@@ -441,8 +440,7 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	/**
-	 * Returned blocks have a length of {@link #cacheBlockSize}, that is the
-	 * dataLength plus one byte for the dirty flag
+	 * Returned blocks have a length of {@link #cacheBlockSize}, that is the dataLength plus one byte for the dirty flag
 	 */
 	@Override
 	public Iterator<Entry<Long, byte[]>> getBlockIterator() throws IOException {

@@ -108,7 +108,9 @@ class InMemoryRowStorage implements RowStorage {
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize,
 					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
-		CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		}
 	}
 
 	@Override
@@ -162,7 +164,9 @@ class InMemoryRowStorage implements RowStorage {
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize,
 					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
-		CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		}
 	}
 
 	@Override
