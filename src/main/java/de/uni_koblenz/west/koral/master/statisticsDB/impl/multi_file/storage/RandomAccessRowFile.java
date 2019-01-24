@@ -11,7 +11,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache;
@@ -256,7 +256,7 @@ public class RandomAccessRowFile implements RowStorage {
 					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 					found, time);
 		}
-		CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		SubbenchmarkManager.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	private byte[] readBlock(long blockId) throws IOException {
@@ -414,7 +414,7 @@ public class RandomAccessRowFile implements RowStorage {
 					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), getFileSize(), cacheHit,
 					blockFound && !Utils.isArrayZero(readRow), time);
 		}
-		CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		SubbenchmarkManager.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	private void writeRowToFile(long rowId, byte[] row) throws IOException {

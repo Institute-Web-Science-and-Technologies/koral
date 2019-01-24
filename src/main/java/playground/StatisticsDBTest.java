@@ -34,7 +34,7 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
@@ -62,7 +62,7 @@ public class StatisticsDBTest {
 
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	public static final boolean SUBBENCHMARKS = false;
+	public static final boolean SUBBENCHMARKS = true;
 
 	public static final boolean WATCH_FILE_FLOW = false;
 
@@ -194,7 +194,7 @@ public class StatisticsDBTest {
 			long durationSec = time / 1_000;
 //			System.out.println(statisticsDB);
 			System.out.println("Collecting Statistics took " + timeFormatted);
-			long totalInputReadTime = CentralLogger.getInstance().getInputReadTime() / (long) 1e9;
+			long totalInputReadTime = SubbenchmarkManager.getInstance().getInputReadTime() / (long) 1e9;
 
 			long indexFileLength = -1;
 			Map<Long, Long> freeSpaceIndexLengths = null;
@@ -207,9 +207,9 @@ public class StatisticsDBTest {
 				if (ENABLE_STORAGE_LOGGING) {
 					StorageLogWriter.getInstance().finish();
 				}
-				totalIndexFileTime = CentralLogger.getInstance().getIndexTime() / (long) 1e9;
-				totalExtraFilesTime = CentralLogger.getInstance().getExtraTime() / (long) 1e9;
-				CentralLogger.getInstance().finish();
+				totalIndexFileTime = SubbenchmarkManager.getInstance().getIndexTime() / (long) 1e9;
+				totalExtraFilesTime = SubbenchmarkManager.getInstance().getExtraTime() / (long) 1e9;
+				SubbenchmarkManager.getInstance().finish();
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();

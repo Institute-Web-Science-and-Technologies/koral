@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceConsumer;
@@ -108,7 +108,7 @@ class InMemoryRowStorage implements RowStorage {
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, false, false, blocks.size() * cacheBlockSize,
 					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
-		CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		SubbenchmarkManager.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	@Override
@@ -162,7 +162,7 @@ class InMemoryRowStorage implements RowStorage {
 			StorageLogWriter.getInstance().logAccessEvent(fileId, blockId, true, false, blocks.size() * cacheBlockSize,
 					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
-		CentralLogger.getInstance().addFileOperationTime(fileId, time);
+		SubbenchmarkManager.getInstance().addFileOperationTime(fileId, time);
 	}
 
 	@Override

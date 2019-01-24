@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 import playground.StatisticsDBTest;
 
@@ -29,7 +29,7 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 			return null;
 		}
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			CentralLogger.getInstance().addTime(CentralLogger.SUBBENCHMARK_EVENT.RLE_IS_USED,
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.RLE_IS_USED,
 					System.nanoTime() - start);
 		}
 		return super.readRow(rowId);
@@ -43,7 +43,7 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 		}
 		long rowId = freeSpaceIndex.next();
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			CentralLogger.getInstance().addTime(CentralLogger.SUBBENCHMARK_EVENT.RLE_NEXT, System.nanoTime() - start);
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.RLE_NEXT, System.nanoTime() - start);
 		}
 		writeRow(rowId, row);
 		return rowId;
@@ -57,7 +57,7 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 		}
 		freeSpaceIndex.release(rowId);
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			CentralLogger.getInstance().addTime(CentralLogger.SUBBENCHMARK_EVENT.RLE_RELEASE,
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.RLE_RELEASE,
 					System.nanoTime() - start);
 		}
 	}

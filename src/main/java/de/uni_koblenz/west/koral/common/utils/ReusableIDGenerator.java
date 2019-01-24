@@ -20,8 +20,8 @@ package de.uni_koblenz.west.koral.common.utils;
 
 import java.util.Arrays;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger.SUBBENCHMARK_EVENT;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_EVENT;
 import playground.StatisticsDBTest;
 
 /**
@@ -75,7 +75,7 @@ public class ReusableIDGenerator {
 			}
 			ids = new long[10];
 			if (StatisticsDBTest.SUBBENCHMARKS) {
-				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ALLOC, System.nanoTime() - start);
+				SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ALLOC, System.nanoTime() - start);
 			}
 			ids[0] = 1;
 			maxId = 0;
@@ -107,7 +107,7 @@ public class ReusableIDGenerator {
 						}
 						System.arraycopy(ids, 3, ids, 1, ids.length - 3);
 						if (StatisticsDBTest.SUBBENCHMARKS) {
-							CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ARRAYCOPY,
+							SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ARRAYCOPY,
 									System.nanoTime() - start);
 						}
 					}
@@ -131,7 +131,7 @@ public class ReusableIDGenerator {
 				}
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ARRAYCOPY,
+					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ARRAYCOPY,
 							System.nanoTime() - start);
 				}
 				ids[ids.length - 1] = 0;
@@ -170,7 +170,7 @@ public class ReusableIDGenerator {
 				} else if (caller == SATR_CALLER.RELEASE) {
 					event = SUBBENCHMARK_EVENT.RLE_RELEASE_ALLOC;
 				}
-				CentralLogger.getInstance().addTime(event, System.nanoTime() - start);
+				SubbenchmarkManager.getInstance().addTime(event, System.nanoTime() - start);
 			}
 		}
 		long start = 0;
@@ -187,7 +187,7 @@ public class ReusableIDGenerator {
 			} else if (caller == SATR_CALLER.RELEASE) {
 				event = SUBBENCHMARK_EVENT.RLE_RELEASE_ARRAYCOPY;
 			}
-			CentralLogger.getInstance().addTime(event, System.nanoTime() - start);
+			SubbenchmarkManager.getInstance().addTime(event, System.nanoTime() - start);
 		}
 		for (int i = firstIndexToShift; i < (firstIndexToShift + numberShifts); i++) {
 			ids[i] = 0;
@@ -245,7 +245,7 @@ public class ReusableIDGenerator {
 				}
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_RELEASE_ARRAYCOPY,
+					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_RELEASE_ARRAYCOPY,
 							System.nanoTime() - start);
 				}
 				ids[0]--;
@@ -261,7 +261,7 @@ public class ReusableIDGenerator {
 				System.arraycopy(ids, deletionBlockIndex + 2, ids, deletionBlockIndex,
 						ids.length - deletionBlockIndex - 2);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_RELEASE_ARRAYCOPY,
+					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_RELEASE_ARRAYCOPY,
 							System.nanoTime() - start);
 				}
 				ids[lastUsedBlockIndex] = 0;

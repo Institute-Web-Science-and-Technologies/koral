@@ -29,7 +29,7 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import playground.StatisticsDBTest;
@@ -81,7 +81,7 @@ public class GraphStatistics implements Closeable {
 		try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, chunk);) {
 			long start = System.nanoTime();
 			for (Statement statement : in) {
-				CentralLogger.getInstance().addInputReadTime(System.nanoTime() - start);
+				SubbenchmarkManager.getInstance().addInputReadTime(System.nanoTime() - start);
 				count(statement.getSubjectAsLong(), statement.getPropertyAsLong(), statement.getObjectAsLong(),
 						chunkIndex);
 				start = System.nanoTime();
