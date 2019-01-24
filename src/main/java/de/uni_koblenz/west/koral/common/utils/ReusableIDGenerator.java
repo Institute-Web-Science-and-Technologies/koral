@@ -75,7 +75,7 @@ public class ReusableIDGenerator {
 			}
 			ids = new long[10];
 			if (StatisticsDBTest.SUBBENCHMARKS) {
-				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
+				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ALLOC, System.nanoTime() - start);
 			}
 			ids[0] = 1;
 			maxId = 0;
@@ -107,7 +107,7 @@ public class ReusableIDGenerator {
 						}
 						System.arraycopy(ids, 3, ids, 1, ids.length - 3);
 						if (StatisticsDBTest.SUBBENCHMARKS) {
-							CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY,
+							CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ARRAYCOPY,
 									System.nanoTime() - start);
 						}
 					}
@@ -121,7 +121,7 @@ public class ReusableIDGenerator {
 			ids[0]++;
 			if (ids[0] < 0) {
 				// [-x,+y,...] -> [+1,-x,+y,...]
-				shiftArrayToRight(0, 1);
+				shiftArrayToRight(0, 1, SATR_CALLER.NEXT);
 				ids[0] = 1;
 			} else if ((ids[0] == 0) && (ids.length >= 2) && (ids[1] > 0)) {
 				// [0,+x,...] -> [+x+1,...]
@@ -131,7 +131,8 @@ public class ReusableIDGenerator {
 				}
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
+					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_NEXT_ARRAYCOPY,
+							System.nanoTime() - start);
 				}
 				ids[ids.length - 1] = 0;
 				ids[0]++;
@@ -143,7 +144,16 @@ public class ReusableIDGenerator {
 		return firstFreeID;
 	}
 
-	private void shiftArrayToRight(int firstIndexToShift, int numberShifts) {
+	/**
+	 * Only used to identify subbenchmarking tasks.
+	 *
+	 */
+	private static enum SATR_CALLER {
+		NEXT,
+		RELEASE
+	}
+
+	private void shiftArrayToRight(int firstIndexToShift, int numberShifts, SATR_CALLER caller) {
 		long[] src = ids;
 		int numberOfUsedBlocks = getNumberOfUsedBlocks();
 		if (((numberOfUsedBlocks + numberShifts) - 1) >= ids.length) {
@@ -154,7 +164,13 @@ public class ReusableIDGenerator {
 			}
 			ids = new long[ids.length + 10 + numberShifts];
 			if (StatisticsDBTest.SUBBENCHMARKS) {
-				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
+				SUBBENCHMARK_EVENT event = null;
+				if (caller == SATR_CALLER.NEXT) {
+					event = SUBBENCHMARK_EVENT.RLE_NEXT_ALLOC;
+				} else if (caller == SATR_CALLER.RELEASE) {
+					event = SUBBENCHMARK_EVENT.RLE_RELEASE_ALLOC;
+				}
+				CentralLogger.getInstance().addTime(event, System.nanoTime() - start);
 			}
 		}
 		long start = 0;
@@ -165,7 +181,13 @@ public class ReusableIDGenerator {
 		System.arraycopy(src, firstIndexToShift, ids, firstIndexToShift + numberShifts,
 				numberOfUsedBlocks - firstIndexToShift);
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
+			SUBBENCHMARK_EVENT event = null;
+			if (caller == SATR_CALLER.NEXT) {
+				event = SUBBENCHMARK_EVENT.RLE_NEXT_ARRAYCOPY;
+			} else if (caller == SATR_CALLER.RELEASE) {
+				event = SUBBENCHMARK_EVENT.RLE_RELEASE_ARRAYCOPY;
+			}
+			CentralLogger.getInstance().addTime(event, System.nanoTime() - start);
 		}
 		for (int i = firstIndexToShift; i < (firstIndexToShift + numberShifts); i++) {
 			ids[i] = 0;
@@ -223,7 +245,8 @@ public class ReusableIDGenerator {
 				}
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
+					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_RELEASE_ARRAYCOPY,
+							System.nanoTime() - start);
 				}
 				ids[0]--;
 				ids[ids.length - 1] = 0;
@@ -238,7 +261,8 @@ public class ReusableIDGenerator {
 				System.arraycopy(ids, deletionBlockIndex + 2, ids, deletionBlockIndex,
 						ids.length - deletionBlockIndex - 2);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
+					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_RELEASE_ARRAYCOPY,
+							System.nanoTime() - start);
 				}
 				ids[lastUsedBlockIndex] = 0;
 				ids[lastUsedBlockIndex - 1] = 0;
@@ -247,7 +271,7 @@ public class ReusableIDGenerator {
 			// the first id of a used block is freed
 			if (deletionBlockIndex == 0) {
 				// [+x,...]->[-1,+x-1,...]
-				shiftArrayToRight(0, 1);
+				shiftArrayToRight(0, 1, SATR_CALLER.RELEASE);
 				ids[0] = -1;
 				ids[1]--;
 			} else {
@@ -267,7 +291,7 @@ public class ReusableIDGenerator {
 			// [...,+x,...]->[...,+x1,-1,+x2,...]
 			long x1 = idToFree - maxPreviousId - 1;
 			long x2 = (maxPreviousId + ids[deletionBlockIndex]) - idToFree;
-			shiftArrayToRight(deletionBlockIndex, 2);
+			shiftArrayToRight(deletionBlockIndex, 2, SATR_CALLER.RELEASE);
 			ids[deletionBlockIndex] = x1;
 			ids[deletionBlockIndex + 1] = -1;
 			ids[deletionBlockIndex + 2] = x2;
@@ -290,7 +314,9 @@ public class ReusableIDGenerator {
 			}
 			ids = new long[10];
 			if (StatisticsDBTest.SUBBENCHMARKS) {
-				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
+				throw new UnsupportedOperationException(
+						"Subbenchmarks not yet implemented for set() method in RLE list");
+//				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
 			}
 		}
 		// find block that contains idToSet
@@ -338,7 +364,9 @@ public class ReusableIDGenerator {
 				}
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
+					throw new UnsupportedOperationException(
+							"Subbenchmarks not yet implemented for set() method in RLE list");
+//					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 				}
 				ids[0]++;
 				ids[ids.length - 1] = 0;
@@ -352,7 +380,9 @@ public class ReusableIDGenerator {
 				}
 				System.arraycopy(ids, blockIndex + 2, ids, blockIndex, ids.length - blockIndex - 2);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
+					throw new UnsupportedOperationException(
+							"Subbenchmarks not yet implemented for set() method in RLE list");
+//					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 				}
 				// Remove leftover data that wasn't overwritten
 				ids[lastUsedBlockIndex] = 0;
@@ -362,9 +392,12 @@ public class ReusableIDGenerator {
 			// the first id of an unused block is set
 			if (blockIndex == 0) {
 				// [-x,...]->[+1,-x+1,...]
-				shiftArrayToRight(0, 1);
+//				shiftArrayToRight(0, 1);
 				ids[0] = 1;
 				ids[1]++;
+				// See above commented shiftArrayToRight(0, 1)
+				throw new UnsupportedOperationException(
+						"Subbenchmarks not yet implemented for set() method in RLE list");
 			} else {
 				// [..,+x,-y,...] -> [...,+x+1,-y+1,...]
 				ids[blockIndex]++;
@@ -380,7 +413,7 @@ public class ReusableIDGenerator {
 			// [...,-x,...]->[...,-x1,+1,-x2,...]
 			long x1 = idToSet - maxPreviousId - 1;
 			long x2 = (maxPreviousId - ids[blockIndex]) - idToSet;
-			shiftArrayToRight(blockIndex, 2);
+//			shiftArrayToRight(blockIndex, 2);
 			ids[blockIndex] = -x1;
 			ids[blockIndex + 1] = 1;
 			ids[blockIndex + 2] = -x2;
@@ -582,12 +615,13 @@ public class ReusableIDGenerator {
 		}
 		long[] newIds = new long[minLength + 10];
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
+//			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
 			start = System.nanoTime();
+			throw new UnsupportedOperationException("Subbenchmarks not yet implemented for set() method in RLE list");
 		}
 		System.arraycopy(ids, 0, newIds, 0, ids.length);
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
+//			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
 		}
 		ids = newIds;
 	}
