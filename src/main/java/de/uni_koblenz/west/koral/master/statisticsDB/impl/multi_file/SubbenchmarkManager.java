@@ -35,6 +35,7 @@ public class SubbenchmarkManager {
 	private long inputTime;
 
 	public static enum SUBBENCHMARK_EVENT {
+		MF_INC,
 		RLE_IS_USED,
 		RLE_RELEASE,
 		RLE_RELEASE_ALLOC,
@@ -45,7 +46,6 @@ public class SubbenchmarkManager {
 		RLE_NEXT_ARRAYCOPY,
 		ROWMANAGER_CREATE,
 		ROWMANAGER_INCREMENT,
-		MF_INC,
 		HABSE_FIND,
 		HABSE_NOTIFY_ACCESS,
 	}
