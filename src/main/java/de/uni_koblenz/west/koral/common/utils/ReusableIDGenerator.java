@@ -206,11 +206,19 @@ public class ReusableIDGenerator {
 	}
 
 	private int getNumberOfUsedBlocks() {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		int numberOfUsedBlocks;
 		for (numberOfUsedBlocks = 1; numberOfUsedBlocks < ids.length; numberOfUsedBlocks++) {
 			if (ids[numberOfUsedBlocks] == 0) {
 				break;
 			}
+		}
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_NUMBER_OF_BLOCKS,
+					System.nanoTime() - start);
 		}
 		return numberOfUsedBlocks;
 	}
