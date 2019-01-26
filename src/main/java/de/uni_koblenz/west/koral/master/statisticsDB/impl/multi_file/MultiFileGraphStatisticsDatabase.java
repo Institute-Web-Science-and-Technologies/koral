@@ -203,7 +203,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				}
 				rowManager.create(resourceType, chunk);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
-					SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.ROWMANAGER_CREATE,
+					SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.ROWMANAGER_CREATE,
 							System.nanoTime() - start);
 				}
 				if (rowManager.isTooLongForMain()) {
@@ -220,7 +220,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			}
 			rowManager.incrementOccurence(resourceType, chunk);
 			if (StatisticsDBTest.SUBBENCHMARKS) {
-				SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.ROWMANAGER_INCREMENT,
+				SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.ROWMANAGER_INCREMENT,
 						System.nanoTime() - start);
 			}
 			if (!rowManager.isDataExternal()) {
@@ -277,7 +277,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 			throw new RuntimeException(e);
 		}
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.MF_INC,
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.MF_INC,
 					System.nanoTime() - startTotal);
 		}
 	}

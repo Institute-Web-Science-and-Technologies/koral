@@ -34,7 +34,7 @@ public class SubbenchmarkManager {
 
 	private long inputTime;
 
-	public static enum SUBBENCHMARK_EVENT {
+	public static enum SUBBENCHMARK_TASK {
 		MF_INC,
 		RLE_IS_USED,
 		RLE_RELEASE,
@@ -51,7 +51,7 @@ public class SubbenchmarkManager {
 	}
 
 	private SubbenchmarkManager() {
-		times = new long[SUBBENCHMARK_EVENT.values().length];
+		times = new long[SUBBENCHMARK_TASK.values().length];
 	}
 
 	public static SubbenchmarkManager getInstance() {
@@ -79,12 +79,12 @@ public class SubbenchmarkManager {
 		inputTime += time;
 	}
 
-	public void addTime(SUBBENCHMARK_EVENT event, long time) {
-		times[event.ordinal()] += time;
+	public void addTime(SUBBENCHMARK_TASK task, long time) {
+		times[task.ordinal()] += time;
 	}
 
-	public long getTime(SUBBENCHMARK_EVENT event) {
-		return times[event.ordinal()];
+	public long getTime(SUBBENCHMARK_TASK task) {
+		return times[task.ordinal()];
 	}
 
 	public long getInputReadTime() {
@@ -106,14 +106,15 @@ public class SubbenchmarkManager {
 	 */
 	public void finish(File csvFile, String configName, long totalTimeSec) {
 		// Calculate time that was recorded in MF_INC event, but doesn't show up in other events
-		long rest = times[SUBBENCHMARK_EVENT.MF_INC.ordinal()] -
+		// Note the task hierarchy, i.e. only the tasks one level below are added
+		long rest = times[SUBBENCHMARK_TASK.MF_INC.ordinal()] -
 				(indexTime + extraTime +
-						times[SUBBENCHMARK_EVENT.RLE_IS_USED.ordinal()] +
-						times[SUBBENCHMARK_EVENT.RLE_NEXT.ordinal()] +
-						times[SUBBENCHMARK_EVENT.RLE_RELEASE.ordinal()] +
-						times[SUBBENCHMARK_EVENT.HABSE_NOTIFY_ACCESS.ordinal()] +
-						times[SUBBENCHMARK_EVENT.ROWMANAGER_CREATE.ordinal()] +
-						times[SUBBENCHMARK_EVENT.ROWMANAGER_INCREMENT.ordinal()]);
+						times[SUBBENCHMARK_TASK.RLE_IS_USED.ordinal()] +
+						times[SUBBENCHMARK_TASK.RLE_NEXT.ordinal()] +
+						times[SUBBENCHMARK_TASK.RLE_RELEASE.ordinal()] +
+						times[SUBBENCHMARK_TASK.HABSE_NOTIFY_ACCESS.ordinal()] +
+						times[SUBBENCHMARK_TASK.ROWMANAGER_CREATE.ordinal()] +
+						times[SUBBENCHMARK_TASK.ROWMANAGER_INCREMENT.ordinal()]);
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		boolean fileExists = false;
 		if (csvFile.exists()) {
@@ -129,7 +130,7 @@ public class SubbenchmarkManager {
 				csvPrinter.print("INPUT_READ");
 				csvPrinter.print("FILE_OPERATIONS_INDEX");
 				csvPrinter.print("FILE_OPERATIONS_EXTRA");
-				for (SUBBENCHMARK_EVENT event : SUBBENCHMARK_EVENT.values()) {
+				for (SUBBENCHMARK_TASK event : SUBBENCHMARK_TASK.values()) {
 					csvPrinter.print(event.toString());
 				}
 				csvPrinter.print("REST_MF_INC");

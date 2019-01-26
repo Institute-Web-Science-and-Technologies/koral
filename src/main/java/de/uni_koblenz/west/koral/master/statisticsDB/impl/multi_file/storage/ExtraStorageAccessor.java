@@ -29,7 +29,7 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 			return null;
 		}
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.RLE_IS_USED,
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_IS_USED,
 					System.nanoTime() - start);
 		}
 		return super.readRow(rowId);
@@ -43,7 +43,7 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 		}
 		long rowId = freeSpaceIndex.next();
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.RLE_NEXT, System.nanoTime() - start);
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_NEXT, System.nanoTime() - start);
 		}
 		writeRow(rowId, row);
 		return rowId;
@@ -57,7 +57,7 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 		}
 		freeSpaceIndex.release(rowId);
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.RLE_RELEASE,
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_RELEASE,
 					System.nanoTime() - start);
 		}
 	}

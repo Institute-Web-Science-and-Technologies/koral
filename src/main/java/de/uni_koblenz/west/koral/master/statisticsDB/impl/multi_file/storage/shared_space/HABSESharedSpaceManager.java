@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_EVENT;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_TASK;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import playground.StatisticsDBTest;
 
@@ -97,7 +97,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			}
 		}
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_EVENT.HABSE_FIND, System.nanoTime() - start);
+			SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.HABSE_FIND, System.nanoTime() - start);
 		}
 		return habseConsumer;
 	}
@@ -160,7 +160,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 		}
 		recentAccessCount.put(consumer, consumerAccessCount + 1);
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_EVENT.HABSE_NOTIFY_ACCESS,
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.HABSE_NOTIFY_ACCESS,
 					System.nanoTime() - start);
 		}
 	}
