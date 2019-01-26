@@ -20,6 +20,8 @@ package de.uni_koblenz.west.koral.common.utils;
 
 import java.util.Arrays;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration.ConfigurationKey;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_TASK;
 import playground.StatisticsDBTest;
@@ -45,10 +47,19 @@ public class ReusableIDGenerator {
 	 */
 	private long maxId = -1;
 
-	public ReusableIDGenerator() {}
+	/**
+	 * How many bytes are allocated if the array size needs to grow
+	 */
+	private final int extensionLength;
+
+	public ReusableIDGenerator() {
+		this(null);
+	}
 
 	public ReusableIDGenerator(long[] ids) {
 		this.ids = ids;
+
+		extensionLength = (int) SimpleConfiguration.getInstance().getValue(ConfigurationKey.RLE_EXTENSION_LENGTH);
 	}
 
 	/**
@@ -73,7 +84,7 @@ public class ReusableIDGenerator {
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				start = System.nanoTime();
 			}
-			ids = new long[10];
+			ids = new long[extensionLength];
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_NEXT_ALLOC, System.nanoTime() - start);
 			}
@@ -162,7 +173,7 @@ public class ReusableIDGenerator {
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				start = System.nanoTime();
 			}
-			ids = new long[ids.length + 10 + numberShifts];
+			ids = new long[ids.length + extensionLength + numberShifts];
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				SUBBENCHMARK_TASK task = null;
 				if (caller == SATR_CALLER.NEXT) {
@@ -320,7 +331,7 @@ public class ReusableIDGenerator {
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				start = System.nanoTime();
 			}
-			ids = new long[10];
+			ids = new long[extensionLength];
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				throw new UnsupportedOperationException(
 						"Subbenchmarks not yet implemented for set() method in RLE list");
@@ -548,7 +559,6 @@ public class ReusableIDGenerator {
 	}
 
 	/**
-	 * Returns the maximum ID that is currently in use. Since zero is not a valid ID, it indicates no used ids.
 	 *
 	 * @return The maximum ID that is currently in use, and -1 if there are no IDs in use.
 	 */
@@ -578,7 +588,7 @@ public class ReusableIDGenerator {
 	 */
 	public void defrag() {
 		long idCount = usedIdsCount();
-		ids = new long[10];
+		ids = new long[extensionLength];
 		ids[0] = idCount;
 	}
 
@@ -603,7 +613,7 @@ public class ReusableIDGenerator {
 	 * Resets all internal states and reinitializes ID list with empty array.
 	 */
 	public void clear() {
-		ids = new long[10];
+		ids = new long[extensionLength];
 		maxId = -1;
 	}
 
@@ -621,7 +631,7 @@ public class ReusableIDGenerator {
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 			start = System.nanoTime();
 		}
-		long[] newIds = new long[minLength + 10];
+		long[] newIds = new long[minLength + extensionLength];
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 //			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
 			start = System.nanoTime();

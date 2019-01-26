@@ -36,6 +36,8 @@ import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration.ConfigurationKey;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
@@ -62,34 +64,35 @@ public class StatisticsDBTest {
 
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	public static final boolean SUBBENCHMARKS = false;
+	public static final boolean SUBBENCHMARKS = true;
 
 	public static final boolean WATCH_FILE_FLOW = false;
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
-				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> [implementationNote]");
+				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> <RLE extension length> [implementationNote]");
 	}
 
 	public static void main(String[] args) throws IOException {
 		boolean fileLogging = true;
-		if ((args.length != 9) && (args.length != 10)) {
-			System.err.println("Invalid amount of arguments.");
+		if (args.length <= 1) {
 			printUsage();
 			return;
 		}
-		File encodedChunksDir = new File(args[0]);
+		// argument counter for easier CLI parameter changes
+		int argc = 0;
+		File encodedChunksDir = new File(args[argc++]);
 		if (!encodedChunksDir.exists() || !encodedChunksDir.isDirectory()) {
 			System.err.println("Directory does not exist: " + encodedChunksDir);
 			printUsage();
 			return;
 		}
-		File logDir = new File(args[1]);
+		File logDir = new File(args[argc++]);
 		if (!logDir.exists() || !logDir.isDirectory()) {
 			System.err.println("Directory does not exist: " + logDir + ". Logging to file disabled.");
 			fileLogging = false;
 		}
-		File storageDir = new File(args[2]);
+		File storageDir = new File(args[argc++]);
 		if (!storageDir.exists() || !storageDir.isDirectory()) {
 			System.out.println("The path " + storageDir
 					+ " is not a valid, existing directory. Database will be stored in temp dir.");
@@ -99,9 +102,9 @@ public class StatisticsDBTest {
 			System.err.println("The given storage directory " + storageDir + " is not empty.");
 			return;
 		}
-		File resultCSV = new File(args[3]);
+		File resultCSV = new File(args[argc++]);
 		if (resultCSV.getParent() == null) {
-			System.err.println("Invalid path for result file: " + args[3]);
+			System.err.println("Invalid path for result file: " + resultCSV);
 			printUsage();
 			return;
 		}
@@ -114,17 +117,26 @@ public class StatisticsDBTest {
 		File[] encodedFiles = getEncodedChunkFiles(encodedChunksDir);
 		short numberOfChunks = (short) encodedFiles.length;
 
-		String implementation = args[4];
+		String implementation = args[argc++];
 		System.out.println("Chosen implementation: " + implementation);
-		int rowDataLength = Integer.parseInt(args[5]);
-		long indexCacheSize = Long.parseLong(args[6]);
-		long extraFilesCacheSize = Long.parseLong(args[7]);
-		float habseAccessesWeight = Float.parseFloat(args[8]);
+		int rowDataLength = Integer.parseInt(args[argc++]);
+		long indexCacheSize = Long.parseLong(args[argc++]);
+		long extraFilesCacheSize = Long.parseLong(args[argc++]);
+		float habseAccessesWeight = Float.parseFloat(args[argc++]);
+		int rleExtLength = Integer.parseInt(args[argc++]);
 //		int habseHistoryLength = Integer.parseInt(args[9]);
 		String implementationNote = "";
-		if (args.length == 10) {
-			implementationNote = args[9];
+		if (args.length == (argc + 1)) {
+			implementationNote = args[argc++];
 		}
+		if (args.length > argc) {
+			System.err.println("Too many arguments.");
+			printUsage();
+			return;
+		}
+
+		SimpleConfiguration parameterConfig = SimpleConfiguration.getInstance();
+		parameterConfig.setValue(ConfigurationKey.RLE_EXTENSION_LENGTH, rleExtLength);
 
 		String[] datasetInfo = datasetName.split("_");
 		String coveringAlgorithm = "NULL";
@@ -272,7 +284,6 @@ public class StatisticsDBTest {
 		return encodedFiles;
 	}
 
-	// TODO: Use varargs instead of billion params
 	private static void writeBenchmarkToCSV(File resultFile, Object... row)
 			throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
