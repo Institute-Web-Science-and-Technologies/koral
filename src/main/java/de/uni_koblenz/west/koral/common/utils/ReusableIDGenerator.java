@@ -334,17 +334,12 @@ public class ReusableIDGenerator {
 	 * @param id
 	 */
 	public void set(long idToSet) {
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			throw new UnsupportedOperationException(
+					"Subbenchmarks not yet implemented for set() method in RLE list");
+		}
 		if ((ids == null) || (ids.length == 0)) {
-			long start = 0;
-			if (StatisticsDBTest.SUBBENCHMARKS) {
-				start = System.nanoTime();
-			}
 			ids = new long[extensionLength];
-			if (StatisticsDBTest.SUBBENCHMARKS) {
-				throw new UnsupportedOperationException(
-						"Subbenchmarks not yet implemented for set() method in RLE list");
-//				CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
-			}
 		}
 		// find block that contains idToSet
 		int blockIndex;
@@ -385,32 +380,14 @@ public class ReusableIDGenerator {
 			// the only unused id in this block is set
 			if (blockIndex == 0) {
 				// [-1,x,...] -> [x+1,...]
-				long start = 0;
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					start = System.nanoTime();
-				}
 				System.arraycopy(ids, 1, ids, 0, ids.length - 1);
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					throw new UnsupportedOperationException(
-							"Subbenchmarks not yet implemented for set() method in RLE list");
-//					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
-				}
 				ids[0]++;
 				ids[ids.length - 1] = 0;
 			} else {
 				// [..,-w,+x,1,+y,-z,...] -> [...,-w,+x+y+1,-z,...]
 				int lastUsedBlockIndex = getNumberOfUsedBlocks() - 1;
 				ids[blockIndex - 1] += ids[blockIndex + 1] + 1;
-				long start = 0;
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					start = System.nanoTime();
-				}
 				System.arraycopy(ids, blockIndex + 2, ids, blockIndex, ids.length - blockIndex - 2);
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					throw new UnsupportedOperationException(
-							"Subbenchmarks not yet implemented for set() method in RLE list");
-//					CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
-				}
 				// Remove leftover data that wasn't overwritten
 				ids[lastUsedBlockIndex] = 0;
 				ids[lastUsedBlockIndex - 1] = 0;
@@ -419,12 +396,9 @@ public class ReusableIDGenerator {
 			// the first id of an unused block is set
 			if (blockIndex == 0) {
 				// [-x,...]->[+1,-x+1,...]
-//				shiftArrayToRight(0, 1);
+				shiftArrayToRight(0, 1, null);
 				ids[0] = 1;
 				ids[1]++;
-				// See above commented shiftArrayToRight(0, 1)
-				throw new UnsupportedOperationException(
-						"Subbenchmarks not yet implemented for set() method in RLE list");
 			} else {
 				// [..,+x,-y,...] -> [...,+x+1,-y+1,...]
 				ids[blockIndex]++;
@@ -440,7 +414,7 @@ public class ReusableIDGenerator {
 			// [...,-x,...]->[...,-x1,+1,-x2,...]
 			long x1 = idToSet - maxPreviousId - 1;
 			long x2 = (maxPreviousId - ids[blockIndex]) - idToSet;
-//			shiftArrayToRight(blockIndex, 2);
+			shiftArrayToRight(blockIndex, 2, null);
 			ids[blockIndex] = -x1;
 			ids[blockIndex + 1] = 1;
 			ids[blockIndex + 2] = -x2;
@@ -635,20 +609,8 @@ public class ReusableIDGenerator {
 	}
 
 	private void extendIdsArray(int minLength) {
-		long start = 0;
-		if (StatisticsDBTest.SUBBENCHMARKS) {
-			start = System.nanoTime();
-		}
 		long[] newIds = new long[minLength + extensionLength];
-		if (StatisticsDBTest.SUBBENCHMARKS) {
-//			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ALLOC, System.nanoTime() - start);
-			start = System.nanoTime();
-			throw new UnsupportedOperationException("Subbenchmarks not yet implemented for set() method in RLE list");
-		}
 		System.arraycopy(ids, 0, newIds, 0, ids.length);
-		if (StatisticsDBTest.SUBBENCHMARKS) {
-//			CentralLogger.getInstance().addTime(SUBBENCHMARK_EVENT.RLE_ARRAYCOPY, System.nanoTime() - start);
-		}
 		ids = newIds;
 	}
 
