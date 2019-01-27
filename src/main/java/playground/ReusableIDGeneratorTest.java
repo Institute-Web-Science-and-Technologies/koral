@@ -9,12 +9,12 @@ public class ReusableIDGeneratorTest {
 
 	public static void main(String[] args) {
 		test1();
-//		test2();
+		test2();
 //		test3();
 	}
 
 	static void test1() {
-		ReusableIDGenerator rig = new ReusableIDGenerator();
+		ReusableIDGenerator rig = new ReusableIDGenerator(null, 4);
 		set(rig, 0);
 		release(rig, 0);
 		set(rig, 1);
@@ -50,14 +50,14 @@ public class ReusableIDGeneratorTest {
 				return left + Math.abs(right);
 			}
 		});
-		ReusableIDGenerator rig = new ReusableIDGenerator(rle);
-		rig.release(25);
+		ReusableIDGenerator rig = new ReusableIDGenerator(rle, 4);
+		release(rig, 25);
 		System.out.println(rig);
 		System.out.println(ReusableIDGeneratorTest.visualizeRLE(rle));
 		for (long id = 0; id <= (maxId + 5); id++) {
-//			if (rig.isUsed(id)) {
-			System.out.println(id + ":" + rig.usedIdsBefore(id));
-//			}
+			if (rig.isUsed(id)) {
+				System.out.println(id + ":" + rig.usedIdsBefore(id));
+			}
 		}
 	}
 
