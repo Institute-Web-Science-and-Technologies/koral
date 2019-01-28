@@ -1,10 +1,10 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
@@ -71,9 +71,8 @@ class InMemoryRowStorage implements RowStorage {
 	@Override
 	public void open(boolean createIfNotExisting) {
 		// The createIfNotExisting flag does not matter here, because there is no
-		// persisted data that has to be checked
-		// for being missing/corrupted.
-		blocks = new TreeMap<>();
+		// persisted data that has to be checked for being missing/corrupted.
+		blocks = new HashMap<>();
 	}
 
 	@Override
