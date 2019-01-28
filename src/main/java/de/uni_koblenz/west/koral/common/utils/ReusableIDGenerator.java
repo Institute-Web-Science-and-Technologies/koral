@@ -240,6 +240,10 @@ public class ReusableIDGenerator {
 		if (isEmpty()) {
 			return;
 		}
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		// find block to delete from
 		int deletionBlockIndex;
 		long maxPreviousId = -1;
@@ -250,6 +254,10 @@ public class ReusableIDGenerator {
 			} else {
 				maxPreviousId = maxCurrentId;
 			}
+		}
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_RELEASE_FINDBLOCK,
+					System.nanoTime() - start);
 		}
 		if ((deletionBlockIndex > ids.length) || (ids[deletionBlockIndex] == 0)) {
 			// the id is out of range of the given ids
@@ -271,7 +279,7 @@ public class ReusableIDGenerator {
 				}
 			} else if (deletionBlockIndex == 0) {
 				// [1,-x,...] -> [-x-1,...]
-				long start = 0;
+				start = 0;
 				if (StatisticsDBTest.SUBBENCHMARKS) {
 					start = System.nanoTime();
 				}
@@ -287,7 +295,7 @@ public class ReusableIDGenerator {
 				// [..,+w,-x,1,-y,+z,...] -> [...,+w,-x-y-1,+z,...]
 				int lastUsedBlockIndex = numberOfUsedBlocks - 1;
 				ids[deletionBlockIndex - 1] += ids[deletionBlockIndex + 1] - 1;
-				long start = 0;
+				start = 0;
 				if (StatisticsDBTest.SUBBENCHMARKS) {
 					start = System.nanoTime();
 				}
@@ -333,7 +341,7 @@ public class ReusableIDGenerator {
 			numberOfUsedBlocks += 2;
 		}
 		if (idToFree == maxId) {
-			long start = 0;
+			start = 0;
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				start = System.nanoTime();
 			}

@@ -17,7 +17,8 @@ import org.apache.commons.csv.CSVPrinter;
  * respectively. These core timings are collected via primitive variables to avoid performance overhead, all other
  * measures are collected in an primitive array indexed by the SUBBENCHMARK_EVENT enum.
  *
- * This class is not supposed to be used in production settings.
+ * This class is not supposed to be used in production settings, because mainly the subtasks listed in
+ * #{@link SUBBENCHMARK_TASK}, which use array accesses, slow down the performance noticeable.
  *
  * @author Philipp Töws
  *
@@ -42,6 +43,7 @@ public class SubbenchmarkManager {
 		RLE_RELEASE_ALLOC,
 		RLE_RELEASE_ARRAYCOPY,
 		RLE_RELEASE_FINDMAXID,
+		RLE_RELEASE_FINDBLOCK,
 		RLE_NEXT,
 		RLE_NEXT_ALLOC,
 		RLE_NEXT_ARRAYCOPY,
