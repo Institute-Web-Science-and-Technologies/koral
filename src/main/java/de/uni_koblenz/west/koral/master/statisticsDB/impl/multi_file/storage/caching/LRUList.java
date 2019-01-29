@@ -23,7 +23,7 @@ import java.util.Set;
 public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 
 	final Map<K, DoublyLinkedNode> index;
-	// TODO: head should be the most recently used node
+
 	DoublyLinkedNode head;
 
 	DoublyLinkedNode tail;
