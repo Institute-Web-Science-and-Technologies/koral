@@ -21,17 +21,6 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 
 	@Override
 	public byte[] readRow(long rowId) throws IOException {
-		long start = 0;
-		if (StatisticsDBTest.SUBBENCHMARKS) {
-			start = System.nanoTime();
-		}
-		if (!freeSpaceIndex.isUsed(rowId)) {
-			return null;
-		}
-		if (StatisticsDBTest.SUBBENCHMARKS) {
-			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_IS_USED,
-					System.nanoTime() - start);
-		}
 		return super.readRow(rowId);
 	}
 
@@ -43,7 +32,8 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 		}
 		long rowId = freeSpaceIndex.next();
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_NEXT, System.nanoTime() - start);
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_NEXT,
+					System.nanoTime() - start);
 		}
 		writeRow(rowId, row);
 		return rowId;
