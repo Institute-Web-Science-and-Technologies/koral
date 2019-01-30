@@ -53,7 +53,8 @@ public class ReusableIDGenerator {
 	private long maxId = -1;
 
 	/**
-	 * How many blocks the RLE list contains, i.e. how many fields in the ids array are filled.
+	 * How many blocks the RLE list contains, i.e. how many fields in the ids array
+	 * are filled.
 	 */
 	private int numberOfUsedBlocks;
 
@@ -76,7 +77,8 @@ public class ReusableIDGenerator {
 
 	/**
 	 *
-	 * @return Next ID without changing internal list. Returns -1 if there are no free ids available.
+	 * @return Next ID without changing internal list. Returns -1 if there are no
+	 *         free ids available.
 	 */
 	public long getNextId() {
 		if (ids == null) {
@@ -174,8 +176,7 @@ public class ReusableIDGenerator {
 	 *
 	 */
 	private static enum SATR_CALLER {
-		NEXT,
-		RELEASE
+		NEXT, RELEASE
 	}
 
 	private void shiftArrayToRight(int firstIndexToShift, int numberShifts, SATR_CALLER caller) {
@@ -362,8 +363,7 @@ public class ReusableIDGenerator {
 	 */
 	public void set(long idToSet) {
 		if (StatisticsDBTest.SUBBENCHMARKS) {
-			throw new UnsupportedOperationException(
-					"Subbenchmarks not yet implemented for set() method in RLE list");
+			throw new UnsupportedOperationException("Subbenchmarks not yet implemented for set() method in RLE list");
 		}
 		if ((ids == null) || (ids.length == 0)) {
 			ids = new long[extensionLength];
@@ -467,20 +467,20 @@ public class ReusableIDGenerator {
 		long idCounter = -1;
 		for (int i = 0; i < numberOfUsedBlocks; i++) {
 			// Negative value implies the last values aren't used
-			boolean idsUsed = ids[i] > 0;
 			idCounter += Math.abs(ids[i]);
 			if (idCounter >= id) {
 				// Found the section where the desired id is included
-				return idsUsed;
+				return ids[i] > 0;
 			}
 		}
 		return false;
 	}
 
 	/**
-	 * Returns the amount of used ids before the given id. It is assumed that the id is currently in use (no exceptions
-	 * are thrown if not). The given id itself is not counted. Can be viewed as translating a total index to an index of
-	 * the used subset. Pretty much the opposite of {@link #positionOf(long)}.
+	 * Returns the amount of used ids before the given id. It is assumed that the id
+	 * is currently in use (no exceptions are thrown if not). The given id itself is
+	 * not counted. Can be viewed as translating a total index to an index of the
+	 * used subset. Pretty much the opposite of {@link #positionOf(long)}.
 	 *
 	 * @param id
 	 * @return
@@ -515,8 +515,9 @@ public class ReusableIDGenerator {
 	}
 
 	/**
-	 * Returns the (n+1)th used id. Can be viewed as translating an index of the used subset to the total index. Pretty
-	 * much the opposite of {@link #usedIdsBefore(long)}.
+	 * Returns the (n+1)th used id. Can be viewed as translating an index of the
+	 * used subset to the total index. Pretty much the opposite of
+	 * {@link #usedIdsBefore(long)}.
 	 *
 	 * @param n
 	 * @return
@@ -570,14 +571,16 @@ public class ReusableIDGenerator {
 
 	/**
 	 *
-	 * @return The maximum ID that is currently in use, and -1 if there are no IDs in use.
+	 * @return The maximum ID that is currently in use, and -1 if there are no IDs
+	 *         in use.
 	 */
 	public long getMaxId() {
 		return maxId;
 	}
 
 	/**
-	 * Finds the maximum ID that is currently in use by iterating the ID list and assigns this value to {@link #maxId}.
+	 * Finds the maximum ID that is currently in use by iterating the ID list and
+	 * assigns this value to {@link #maxId}.
 	 */
 	private void findMaxId() {
 		if (isEmpty()) {
@@ -592,8 +595,8 @@ public class ReusableIDGenerator {
 	}
 
 	/**
-	 * Defrags the internal list by simply setting only the first n ids as used, where n is the amount of currently used
-	 * ids.
+	 * Defrags the internal list by simply setting only the first n ids as used,
+	 * where n is the amount of currently used ids.
 	 */
 	public void defrag() {
 		long idCount = usedIdsCount();
@@ -603,8 +606,9 @@ public class ReusableIDGenerator {
 	}
 
 	/**
-	 * Returns a copy of the internal RLE-encoded id list. The length of the returned array is equal to the amount of
-	 * used positions in the RLE list and might be different to the length of the internal ids array.
+	 * Returns a copy of the internal RLE-encoded id list. The length of the
+	 * returned array is equal to the amount of used positions in the RLE list and
+	 * might be different to the length of the internal ids array.
 	 *
 	 * @return
 	 */
