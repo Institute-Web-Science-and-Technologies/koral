@@ -38,7 +38,6 @@ public class SubbenchmarkManager {
 	public static enum SUBBENCHMARK_TASK {
 		MF_INC,
 		RLE_IS_USED,
-		RLE_NUMBER_OF_BLOCKS,
 		RLE_RELEASE,
 		RLE_RELEASE_ALLOC,
 		RLE_RELEASE_ARRAYCOPY,
