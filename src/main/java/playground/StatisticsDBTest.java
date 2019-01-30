@@ -58,8 +58,8 @@ public class StatisticsDBTest {
 	private static final boolean WRITE_STATISTICS_DATA = false;
 
 	/*
-	 * Performance influencing flags. Making these constant allows removal of all related code at compile time
-	 * optimization.
+	 * Performance influencing flags. Making these constant allows removal of all
+	 * related code at compile time optimization.
 	 */
 
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
@@ -97,10 +97,6 @@ public class StatisticsDBTest {
 			System.out.println("The path " + storageDir
 					+ " is not a valid, existing directory. Database will be stored in temp dir.");
 			storageDir = null;
-		} else if (storageDir.list().length > 0) {
-			// We don't want to be responsible for deleting directory content
-			System.err.println("The given storage directory " + storageDir + " is not empty.");
-			return;
 		}
 		File resultCSV = new File(args[argc++]);
 		if (resultCSV.getParent() == null) {
@@ -138,6 +134,26 @@ public class StatisticsDBTest {
 		SimpleConfiguration parameterConfig = SimpleConfiguration.getInstance();
 		parameterConfig.setValue(ConfigurationKey.RLE_EXTENSION_LENGTH, rleExtLength);
 
+		Configuration conf = new Configuration();
+		if (storageDir == null) {
+			// Default to tmp dir
+			storageDir = new File(conf.getStatisticsDir(true));
+		}
+		if (storageDir.exists() && (storageDir.listFiles().length > 0)) {
+			System.err.println("WARNING: Given storage directory " + storageDir
+					+ " is not empty. Content will be deleted in 10 seconds. Press Ctrl+C to abort.");
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e1) {
+				throw new RuntimeException(e1);
+			}
+			try {
+				FileUtils.cleanDirectory(storageDir);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
 		String[] datasetInfo = datasetName.split("_");
 		String coveringAlgorithm = "NULL";
 		int tripleCount = -1;
@@ -172,20 +188,8 @@ public class StatisticsDBTest {
 		System.out.println("Starting at " + new Date());
 		System.out.println("Config string: " + configName);
 
-		Configuration conf = new Configuration();
 		System.out.println("Collecting Statistics...");
 
-		if (storageDir == null) {
-			// Default to tmp dir
-			storageDir = new File(conf.getStatisticsDir(true));
-			if (storageDir.exists()) {
-				try {
-					FileUtils.cleanDirectory(storageDir);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
 		GraphStatisticsDatabase statisticsDB = null;
 		if (implementation.trim().equalsIgnoreCase("single")) {
 			statisticsDB = new SingleFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks);
@@ -247,8 +251,7 @@ public class StatisticsDBTest {
 				writeBenchmarkToCSV(resultCSV, date, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, implementationNote, durationSec,
 						totalInputReadTime, totalIndexFileTime, totalExtraFilesTime, dirSize, indexFileLength,
-						extraFilesSize, totalEntries,
-						unusedBytes);
+						extraFilesSize, totalEntries, unusedBytes);
 				System.out.println("Writing file distribution to CSV...");
 				writeFileDistributionToCSV(configNameWithoutCaches, conf.getStatisticsDir(true), freeSpaceIndexLengths);
 			}
@@ -350,7 +353,8 @@ public class StatisticsDBTest {
 				for (long l : statisticsDB.getStatisticsForResource(id)) {
 					printer.print(l);
 				}
-				// SingleDB has another zero entry per column for total resources, add that one as well for easier
+				// SingleDB has another zero entry per column for total resources, add that one
+				// as well for easier
 				// diffing
 				if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 					printer.print(0);
@@ -381,8 +385,8 @@ public class StatisticsDBTest {
 	 * Attempts to calculate the size of a file or directory.
 	 *
 	 * <p>
-	 * Since the operation is non-atomic, the returned value may be inaccurate. However, this method is quick and does
-	 * its best.
+	 * Since the operation is non-atomic, the returned value may be inaccurate.
+	 * However, this method is quick and does its best.
 	 */
 	public static long dirSize(String pathString) {
 
