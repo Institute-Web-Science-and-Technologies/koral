@@ -31,8 +31,12 @@ public class NumberConversion {
   }
 
   public static long bytes2long(byte[] bytes, int startIndex) {
+    return bytes2long(bytes, startIndex, Long.BYTES);
+  }
+
+  public static long bytes2long(byte[] bytes, int startIndex, int length) {
     long longValue = 0;
-    for (int i = startIndex; i < (startIndex + Long.BYTES); i++) {
+    for (int i = startIndex; i < (startIndex + length); i++) {
       longValue = longValue << Byte.SIZE;
       longValue |= (bytes[i] & 0x000000ff);
     }
@@ -72,7 +76,11 @@ public class NumberConversion {
   }
 
   public static void long2bytes(long value, byte[] destinationArray, int firstIndex) {
-    for (int i = (firstIndex + Long.BYTES) - 1; i >= firstIndex; i--) {
+    NumberConversion.long2bytes(value, destinationArray, firstIndex, Long.BYTES);
+  }
+
+  public static void long2bytes(long value, byte[] destinationArray, int firstIndex, int length) {
+    for (int i = (firstIndex + length) - 1; i >= firstIndex; i--) {
       destinationArray[i] = (byte) (value & 0x000000ff);
       value = value >>> Byte.SIZE;
     }
