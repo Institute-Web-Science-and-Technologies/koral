@@ -58,13 +58,13 @@ public class StatisticsDBTest {
 	private static final boolean WRITE_STATISTICS_DATA = false;
 
 	/*
-	 * Performance influencing flags. Making these constant allows removal of all
-	 * related code at compile time optimization.
+	 * Performance influencing flags. Making these constant allows removal of all related code at compile time
+	 * optimization.
 	 */
 
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	public static final boolean SUBBENCHMARKS = true;
+	public static final boolean SUBBENCHMARKS = false;
 
 	public static final boolean WATCH_FILE_FLOW = false;
 
@@ -385,8 +385,8 @@ public class StatisticsDBTest {
 	 * Attempts to calculate the size of a file or directory.
 	 *
 	 * <p>
-	 * Since the operation is non-atomic, the returned value may be inaccurate.
-	 * However, this method is quick and does its best.
+	 * Since the operation is non-atomic, the returned value may be inaccurate. However, this method is quick and does
+	 * its best.
 	 */
 	public static long dirSize(String pathString) {
 

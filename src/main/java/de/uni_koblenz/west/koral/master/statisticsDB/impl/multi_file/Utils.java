@@ -2,8 +2,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
 public class Utils {
 
-	private Utils() {
-	}
+	private Utils() {}
 
 	/**
 	 * Converts a part of a byte array into a long value.
@@ -137,5 +136,31 @@ public class Utils {
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Calculates how many bytes are needed to represent the given value either signed or unsigned. Note that every
+	 * negative number stored as unsigned number will need all of the possible 8 bytes.
+	 *
+	 * @param value
+	 *            The value that should be represented, can be positive or negative in both cases
+	 * @param signed
+	 *            Whether the bytes representation should be signed or not
+	 * @return How many bytes are at minimum needed to represent the given value as a signed number
+	 */
+	public static int neededBytesForValue(long value, boolean signed) {
+		if (value == 0) {
+			return 1;
+		}
+		if (signed && (value < 0)) {
+			// There is no Long.numberOfLeadingOnes(), so transfer negative case to positive one
+			value ^= -1;
+		}
+		int neededBits = ((Long.BYTES * Byte.SIZE) - Long.numberOfLeadingZeros(value));
+		if (signed) {
+			// For sign bit
+			neededBits++;
+		}
+		return (int) Math.ceil(neededBits / 8.0);
 	}
 }
