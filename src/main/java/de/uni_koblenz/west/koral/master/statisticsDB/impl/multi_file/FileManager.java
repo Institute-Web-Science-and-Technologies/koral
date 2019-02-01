@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -316,13 +317,17 @@ public class FileManager {
 			extraStorage.flush();
 		}
 		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(extraFilesMetadataFile, false)) {
-			for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
-				if (entry.getValue().isEmpty()) {
+			Long[] keys = new Long[extraFiles.keySet().size()];
+			extraFiles.keySet().toArray(keys);
+			Arrays.sort(keys);
+			for (long fileId : keys) {
+				ExtraRowStorage extraFile = extraFiles.get(fileId);
+				if (extraFile.isEmpty()) {
 					continue;
 				}
-				long[] data = entry.getValue().getFreeSpaceIndexData();
-				out.writeLong(entry.getKey());
-				out.writeLong(entry.getValue().getRowLength());
+				long[] data = extraFile.getFreeSpaceIndexData();
+				out.writeLong(fileId);
+				out.writeLong(extraFile.getRowLength());
 				out.writeLong(data.length);
 				for (int i = 0; i < data.length; i++) {
 					out.writeLong(data[i]);
