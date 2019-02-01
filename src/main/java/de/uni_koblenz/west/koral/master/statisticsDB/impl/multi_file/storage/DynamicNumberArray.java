@@ -30,6 +30,12 @@ public class DynamicNumberArray {
 		valueSize = 1;
 	}
 
+	public DynamicNumberArray(byte[] array, int valueSize) {
+		this.array = array;
+		this.valueSize = valueSize;
+		capacity = array.length / valueSize;
+	}
+
 	public long get(int index) {
 		int offset = index * valueSize;
 		return NumberConversion.signedBytes2long(array, offset, valueSize);
@@ -46,7 +52,6 @@ public class DynamicNumberArray {
 	}
 
 	private void upgrade(int newValueSize) {
-		int capacity = array.length / valueSize;
 		byte[] newArray = new byte[capacity * newValueSize];
 		for (int i = 0; i < capacity; i++) {
 			NumberConversion.signedLong2bytes(get(i), newArray, i * newValueSize, newValueSize);
