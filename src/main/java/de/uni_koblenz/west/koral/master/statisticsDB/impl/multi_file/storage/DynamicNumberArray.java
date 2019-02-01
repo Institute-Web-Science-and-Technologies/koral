@@ -47,6 +47,8 @@ public class DynamicNumberArray {
 		long currentMinValue = -currentMaxValue - 1;
 		if ((value >= currentMaxValue) || (value <= currentMinValue)) {
 			upgrade(Utils.neededBytesForValue(value, true));
+			// Recalculate offset with new valueSize
+			offset = index * valueSize;
 		}
 		NumberConversion.signedLong2bytes(value, array, offset, valueSize);
 	}
