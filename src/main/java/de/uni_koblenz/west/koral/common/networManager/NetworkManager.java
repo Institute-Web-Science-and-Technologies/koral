@@ -54,6 +54,8 @@ public class NetworkManager implements Closeable, MessageSender {
   }
 
   public NetworkManager(Configuration conf, String[] currentServer, boolean contactSlaves) {
+    // TODO remove
+    System.out.println("currentServer: " + Arrays.toString(currentServer));
     context = NetworkContextFactory.getNetworkContext();
 
     receiver = context.createSocket(ZMQ.PULL);
@@ -70,6 +72,8 @@ public class NetworkManager implements Closeable, MessageSender {
       }
       for (int i = 1; i < senders.length; i++) {
         String[] slave = conf.getSlave(i - 1);
+        // TODO remove
+        System.out.println("slave" + (i - 1) + ":" + Arrays.toString(conf.getSlave(i - 1)));
         senders[i] = context.createSocket(ZMQ.PUSH);
         senders[i].connect("tcp://" + slave[0] + ":" + slave[1]);
         if (Arrays.equals(currentServer, slave)) {
