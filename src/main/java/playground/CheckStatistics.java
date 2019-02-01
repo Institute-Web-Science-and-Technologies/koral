@@ -61,7 +61,7 @@ public class CheckStatistics {
             }
 
             long property = stmt.getPropertyAsLong();
-            long plainProperty = subject & 0x00_00_ff_ff_ff_ff_ff_ffL;
+            long plainProperty = property & 0x00_00_ff_ff_ff_ff_ff_ffL;
             long newProperty = statistics.getIDWithOwner(plainProperty);
             if (newProperty != property) {
               throw new RuntimeException("The property " + plainProperty + " in "
@@ -70,7 +70,7 @@ public class CheckStatistics {
             }
 
             long object = stmt.getObjectAsLong();
-            long plainObject = subject & 0x00_00_ff_ff_ff_ff_ff_ffL;
+            long plainObject = object & 0x00_00_ff_ff_ff_ff_ff_ffL;
             long newObject = statistics.getIDWithOwner(plainObject);
             if (newObject != object) {
               throw new RuntimeException("The object " + plainObject + " in "
