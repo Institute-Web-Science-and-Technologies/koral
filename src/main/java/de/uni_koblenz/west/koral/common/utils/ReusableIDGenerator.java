@@ -200,9 +200,12 @@ public class ReusableIDGenerator {
   }
 
   public long[] getData() {
+    if (isEmpty()) {
+    	return new long[0];
+    }
     int dataLength = 0;
-    for (; ids[dataLength] != 0; dataLength++) {
-      ;
+    while (dataLength < ids.length && ids[dataLength] != 0) {
+	  dataLength++;
     }
     long[] data = new long[dataLength];
     System.arraycopy(ids, 0, data, 0, dataLength);
@@ -210,7 +213,7 @@ public class ReusableIDGenerator {
   }
 
   public boolean isEmpty() {
-    return ids == null ? true : ids[0] == 0;
+    return ids == null || ids.length == 0 || ids[0] == 0;
   }
 
   @Override
