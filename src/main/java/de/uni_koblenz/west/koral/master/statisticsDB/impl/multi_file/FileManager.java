@@ -2,6 +2,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -37,6 +38,9 @@ public class FileManager {
 		};
 
 		freeSpaceIndexFile = new File(storagePath + "freeSpaceIndex");
+		if (freeSpaceIndexFile.exists()) {
+			loadExtraFiles();
+		}
 		setup();
 	}
 
@@ -171,7 +175,7 @@ public class FileManager {
 		}
 	}
 
-	void load() {
+	private void loadExtraFiles() {
 		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(freeSpaceIndexFile)) {
 			LongIterator iterator = input.iterator();
 			long fileId = -1;
@@ -182,38 +186,43 @@ public class FileManager {
 				long l = iterator.next();
 				if (fileId == -1) {
 					fileId = l;
-					continue;
-				}
-				if (dataLength == -1) {
+				} else if (dataLength == -1) {
 					dataLength = (int) l;
 					list = new long[dataLength];
-					continue;
-				}
-				if (listIndex < dataLength) {
+				} else if (listIndex < dataLength) {
 					list[listIndex] = l;
+					listIndex++;
+					if (listIndex == dataLength) {
+						// Reading one entry is done, store and reset everything for next one
+						extraFiles.put(fileId, new ExtraRowFile(storagePath + fileId, false, list));
+						fileId = -1;
+						dataLength = -1;
+						list = null;
+						listIndex = 0;
+					}
 				} else {
-					// Reading one entry is done, store and reset everything for next one
-					extraFiles.put(fileId, new ExtraRowFile(storagePath + fileId, false, list));
-					fileId = -1;
-					dataLength = -1;
-					list = null;
-					listIndex = 0;
+					iterator.close();
+					throw new RuntimeException("Corrupt extra files metadata file");
 				}
-
 			}
-		} catch (IOException e1) {
-			e1.printStackTrace();
+			iterator.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
 	void flush() {
-		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(freeSpaceIndexFile, true)) {
-			for (Entry<Long, ExtraRowFile> entry : extraFiles.entrySet()) {
-				if (entry.getValue().isEmpty()) {
+		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(freeSpaceIndexFile, false)) {
+			Long[] keys = new Long[extraFiles.keySet().size()];
+			extraFiles.keySet().toArray(keys);
+			Arrays.sort(keys);
+			for (long fileId : keys) {
+				ExtraRowFile extraFile = extraFiles.get(fileId);
+				if (extraFile.isEmpty()) {
 					continue;
 				}
-				long[] data = entry.getValue().getFreeSpaceIndexData();
-				out.writeLong(entry.getKey());
+				long[] data = extraFile.getFreeSpaceIndexData();
+				out.writeLong(fileId);
 				out.writeLong(data.length);
 				for (int i = 0; i < data.length; i++) {
 					out.writeLong(data[i]);
