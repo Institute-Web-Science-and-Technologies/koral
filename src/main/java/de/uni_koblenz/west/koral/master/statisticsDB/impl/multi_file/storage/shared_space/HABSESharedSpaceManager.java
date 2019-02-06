@@ -5,9 +5,9 @@ import java.util.Map.Entry;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_TASK;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import playground.StatisticsDBTest;
 
 /**
@@ -75,15 +75,20 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 		double maxExceedence = 0;
 		SharedSpaceConsumer habseConsumer = null;
 		long totalAccessCosts = 0;
-		for (SharedSpaceConsumer c : recentAccessCount.keySet()) {
-			totalAccessCosts += c.accessCosts();
+		if (accessesWeight < 1) {
+			for (SharedSpaceConsumer c : recentAccessCount.keySet()) {
+				totalAccessCosts += c.accessCosts();
+			}
 		}
 		for (Entry<SharedSpaceConsumer, Long> e : recentAccessCount.entrySet()) {
 			SharedSpaceConsumer consumer = e.getKey();
 			long recentAccesses = e.getValue();
 
 			double accessesShare = recentAccesses / (double) historyLength;
-			double accessCostsShare = consumer.accessCosts() / (double) totalAccessCosts;
+			double accessCostsShare = 0;
+			if (accessesWeight < 1) {
+				accessCostsShare = consumer.accessCosts() / (double) totalAccessCosts;
+			}
 			double allowedShare = (accessesWeight * accessesShare) + ((1 - accessesWeight) * accessCostsShare);
 
 			double usedCacheShare = getSpaceUsed(consumer) / (double) maxSize;
