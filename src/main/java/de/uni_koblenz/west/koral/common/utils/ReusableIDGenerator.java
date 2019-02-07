@@ -20,8 +20,6 @@ package de.uni_koblenz.west.koral.common.utils;
 
 import java.util.Arrays;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration.ConfigurationKey;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_TASK;
 import playground.StatisticsDBTest;
@@ -36,11 +34,18 @@ public class ReusableIDGenerator {
 
 	private static final long MAX_NUMBER_OF_IDS = Long.MAX_VALUE - 1;
 
+	public static final int DEFAULT_INITIAL_LENGTH = 10;
+
+	// 1000 is a good value for quickly growing arrays
+	public static final int DEFAULT_EXTENSION_LENGTH = 1000;
+
 	/**
 	 * positive values represent used ids<br>
 	 * negative values represent free ids
 	 */
 	long[] ids;
+
+	private final int initialLength;
 
 	/**
 	 * How many bytes are allocated if the array size needs to grow
@@ -53,8 +58,7 @@ public class ReusableIDGenerator {
 	private long maxId = -1;
 
 	/**
-	 * How many blocks the RLE list contains, i.e. how many fields in the ids array
-	 * are filled.
+	 * How many blocks the RLE list contains, i.e. how many fields in the ids array are filled.
 	 */
 	private int numberOfUsedBlocks;
 
@@ -63,11 +67,12 @@ public class ReusableIDGenerator {
 	}
 
 	public ReusableIDGenerator(long[] ids) {
-		this(ids, (int) SimpleConfiguration.getInstance().getValue(ConfigurationKey.RLE_EXTENSION_LENGTH));
+		this(ids, DEFAULT_INITIAL_LENGTH, DEFAULT_EXTENSION_LENGTH);
 	}
 
-	public ReusableIDGenerator(long[] ids, int extensionLength) {
+	public ReusableIDGenerator(long[] ids, int initialLength, int extensionLength) {
 		this.ids = ids;
+		this.initialLength = initialLength;
 		this.extensionLength = extensionLength;
 		if (ids != null) {
 			findMaxId();
@@ -77,8 +82,7 @@ public class ReusableIDGenerator {
 
 	/**
 	 *
-	 * @return Next ID without changing internal list. Returns -1 if there are no
-	 *         free ids available.
+	 * @return Next ID without changing internal list. Returns -1 if there are no free ids available.
 	 */
 	public long getNextId() {
 		if (ids == null) {
@@ -98,7 +102,7 @@ public class ReusableIDGenerator {
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				start = System.nanoTime();
 			}
-			ids = new long[extensionLength];
+			ids = new long[initialLength];
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_NEXT_ALLOC, System.nanoTime() - start);
 			}
@@ -358,7 +362,7 @@ public class ReusableIDGenerator {
 			throw new UnsupportedOperationException("Subbenchmarks not yet implemented for set() method in RLE list");
 		}
 		if ((ids == null) || (ids.length == 0)) {
-			ids = new long[extensionLength];
+			ids = new long[initialLength];
 		}
 		// Index of the block that contains idToSet
 		int blockIndex;
@@ -469,10 +473,9 @@ public class ReusableIDGenerator {
 	}
 
 	/**
-	 * Returns the amount of used ids before the given id. It is assumed that the id
-	 * is currently in use (no exceptions are thrown if not). The given id itself is
-	 * not counted. Can be viewed as translating a total index to an index of the
-	 * used subset. Pretty much the opposite of {@link #positionOf(long)}.
+	 * Returns the amount of used ids before the given id. It is assumed that the id is currently in use (no exceptions
+	 * are thrown if not). The given id itself is not counted. Can be viewed as translating a total index to an index of
+	 * the used subset. Pretty much the opposite of {@link #positionOf(long)}.
 	 *
 	 * @param id
 	 * @return
@@ -507,9 +510,8 @@ public class ReusableIDGenerator {
 	}
 
 	/**
-	 * Returns the (n+1)th used id. Can be viewed as translating an index of the
-	 * used subset to the total index. Pretty much the opposite of
-	 * {@link #usedIdsBefore(long)}.
+	 * Returns the (n+1)th used id. Can be viewed as translating an index of the used subset to the total index. Pretty
+	 * much the opposite of {@link #usedIdsBefore(long)}.
 	 *
 	 * @param n
 	 * @return
@@ -563,16 +565,14 @@ public class ReusableIDGenerator {
 
 	/**
 	 *
-	 * @return The maximum ID that is currently in use, and -1 if there are no IDs
-	 *         in use.
+	 * @return The maximum ID that is currently in use, and -1 if there are no IDs in use.
 	 */
 	public long getMaxId() {
 		return maxId;
 	}
 
 	/**
-	 * Finds the maximum ID that is currently in use by iterating the ID list and
-	 * assigns this value to {@link #maxId}.
+	 * Finds the maximum ID that is currently in use by iterating the ID list and assigns this value to {@link #maxId}.
 	 */
 	private void findMaxId() {
 		if (isEmpty()) {
@@ -587,20 +587,19 @@ public class ReusableIDGenerator {
 	}
 
 	/**
-	 * Defrags the internal list by simply setting only the first n ids as used,
-	 * where n is the amount of currently used ids.
+	 * Defrags the internal list by simply setting only the first n ids as used, where n is the amount of currently used
+	 * ids.
 	 */
 	public void defrag() {
 		long idCount = usedIdsCount();
-		ids = new long[extensionLength];
+		ids = new long[initialLength];
 		ids[0] = idCount;
 		numberOfUsedBlocks = 1;
 	}
 
 	/**
-	 * Returns a copy of the internal RLE-encoded id list. The length of the
-	 * returned array is equal to the amount of used positions in the RLE list and
-	 * might be different to the length of the internal ids array.
+	 * Returns a copy of the internal RLE-encoded id list. The length of the returned array is equal to the amount of
+	 * used positions in the RLE list and might be different to the length of the internal ids array.
 	 *
 	 * @return
 	 */
@@ -614,7 +613,7 @@ public class ReusableIDGenerator {
 	 * Resets all internal states and reinitializes ID list with empty array.
 	 */
 	public void clear() {
-		ids = new long[extensionLength];
+		ids = new long[initialLength];
 		maxId = -1;
 		numberOfUsedBlocks = 0;
 	}

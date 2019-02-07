@@ -14,7 +14,7 @@ public class ReusableIDGeneratorTest {
 	}
 
 	static void test1() {
-		ReusableIDGenerator rig = new ReusableIDGenerator(null, 4);
+		ReusableIDGenerator rig = new ReusableIDGenerator(null, 4, 10);
 		set(rig, 0);
 		release(rig, 0);
 		set(rig, 1);
@@ -50,7 +50,7 @@ public class ReusableIDGeneratorTest {
 				return left + Math.abs(right);
 			}
 		});
-		ReusableIDGenerator rig = new ReusableIDGenerator(rle, 4);
+		ReusableIDGenerator rig = new ReusableIDGenerator(rle, 4, 10);
 		release(rig, 25);
 		System.out.println(rig);
 		System.out.println(ReusableIDGeneratorTest.visualizeRLE(rle));
