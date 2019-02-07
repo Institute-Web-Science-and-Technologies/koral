@@ -195,7 +195,7 @@ public class StatisticsDBTest {
 			statisticsDB = new SingleFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks);
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
 			statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks,
-					rowDataLength, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
+					rowDataLength, true, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
 					habseAccessesWeight, FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);

@@ -117,7 +117,7 @@ public class StatisticsDBRead {
 		System.out.println("Reading Statistics...");
 
 		MultiFileGraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(
-				storageDir.getCanonicalPath(), numberOfChunks, -99, indexCacheSize * 1024 * 1024L,
+				storageDir.getCanonicalPath(), numberOfChunks, -99, true, indexCacheSize * 1024 * 1024L,
 				extraFilesCacheSize * 1024 * 1024L, habseAccessesWeight, habseHistoryLength, null);
 
 		long optimizationPreventer = 0;
