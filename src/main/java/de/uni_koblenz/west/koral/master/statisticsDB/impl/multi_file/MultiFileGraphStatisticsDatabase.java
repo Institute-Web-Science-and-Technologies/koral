@@ -49,10 +49,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 
 	private boolean dirty;
 
+	private final boolean rowLengthsAsIds;
+
 	static enum ResourceType {
-		SUBJECT(0),
-		PROPERTY(1),
-		OBJECT(2);
+		SUBJECT(0), PROPERTY(1), OBJECT(2);
 
 		private final int position;
 
@@ -66,8 +66,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, int numberOfChunks, int rowDataLength,
-			long indexCacheSize, long extraFilesCacheSize, float habseAccessesWeight, int habseHistoryLength,
-			Logger logger) {
+			boolean rowLengthsAsIds, long indexCacheSize, long extraFilesCacheSize, float habseAccessesWeight,
+			int habseHistoryLength, Logger logger) {
+		this.rowLengthsAsIds = rowLengthsAsIds;
 		this.logger = logger;
 
 		// First, check if we have metadata for an existing database
@@ -103,7 +104,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, Logger logger) {
-		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
+		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, true, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
 				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
 				FileManager.DEFAULT_HABSE_HISTORY_LENGTH, logger);
 	}
@@ -213,7 +214,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				return;
 			}
 			// Extract file id before incrementing for later comparison
-			long fileIdRead = rowManager.getFileId();
+			long fileIdRead = getCurrentFileId();
 			long start = 0;
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				start = System.nanoTime();
@@ -229,7 +230,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					// Move from index to extra file
 					insertEntryInExtraFile();
 					if (StatisticsDBTest.WATCH_FILE_FLOW) {
-						long newFileId = rowManager.getFileId();
+						long newFileId = getCurrentFileId();
 						if (newFileId > Integer.MAX_VALUE) {
 							throw new RuntimeException("File ID too large for FileFlowWatcher: " + newFileId);
 						}
@@ -241,8 +242,8 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				}
 				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 			} else {
-				// Row is in extra file
-				long fileIdWrite = rowManager.getFileId();
+// Row is in extra file
+				long fileIdWrite = getCurrentFileId();
 				long extraFileRowId = rowManager.getExternalFileRowId();
 				long newExtraFileRowID = extraFileRowId;
 				if (fileIdWrite != fileIdRead) {
@@ -331,7 +332,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		boolean dataExternal = rowManager.load(row);
 //		SimpleLogger.log("row " + resourceId + ": " + Arrays.toString(rowManager.getRow()));
 		if (dataExternal) {
-			long fileId = rowManager.getFileId();
+			long fileId = getCurrentFileId();
 			long rowId = rowManager.getExternalFileRowId();
 			byte[] dataBytes = fileManager.readExternalRow(fileId, rowId);
 			if (dataBytes == null) {
@@ -344,10 +345,18 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	private void insertEntryInExtraFile() throws IOException {
-		long newExtraFileRowId = fileManager.writeExternalRow(rowManager.getFileId(), rowManager.getDataBytes());
+		long newExtraFileRowId = fileManager.writeExternalRow(getCurrentFileId(), rowManager.getDataBytes());
 		checkIfDataBytesLengthIsEnough(newExtraFileRowId);
 //		SimpleLogger.log("I->E " + newExtraFileRowId + ": " + Arrays.toString(rowManager.getDataBytes()));
 		rowManager.updateExtraRowId(newExtraFileRowId);
+	}
+
+	private long getCurrentFileId() {
+		if (rowLengthsAsIds) {
+			return rowManager.getDataLength();
+		} else {
+			return rowManager.getMetadataBits();
+		}
 	}
 
 	/**
@@ -364,7 +373,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				throw new RuntimeException("Empty row for resource " + resourceId + " found while defragging");
 			}
 			if (rowManager.isDataExternal()) {
-				long fileId = rowManager.getFileId();
+				long fileId = getCurrentFileId();
 				// Use negative file ids for the temporary extra files. This is not only simple, but also ensures that
 				// the maximal amount of open files (set in the FileManager) is adhered to.
 				long newRowId = fileManager.writeExternalRow(-fileId, rowManager.getDataBytes());

@@ -218,8 +218,12 @@ public class StatisticsRowManager {
 		return extraFileRowId;
 	}
 
-	long getFileId() {
+	long getDataLength() {
 		return dataLength;
+	}
+
+	long getMetadataBits() {
+		return metadataBits;
 	}
 
 	byte[] getRow() {
