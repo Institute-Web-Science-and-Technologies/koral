@@ -52,7 +52,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private final boolean rowLengthsAsIds;
 
 	static enum ResourceType {
-		SUBJECT(0), PROPERTY(1), OBJECT(2);
+		SUBJECT(0),
+		PROPERTY(1),
+		OBJECT(2);
 
 		private final int position;
 
@@ -326,8 +328,16 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private boolean loadRow(long resourceId) throws IOException {
 //		SimpleLogger.log("----- ID " + resourceId);
 		byte[] row = fileManager.readIndexRow(resourceId);
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		if ((row == null) || Utils.isArrayZero(row)) {
 			return false;
+		}
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.IS_ARRAY_ZERO,
+					System.nanoTime() - start);
 		}
 		boolean dataExternal = rowManager.load(row);
 //		SimpleLogger.log("row " + resourceId + ": " + Arrays.toString(rowManager.getRow()));

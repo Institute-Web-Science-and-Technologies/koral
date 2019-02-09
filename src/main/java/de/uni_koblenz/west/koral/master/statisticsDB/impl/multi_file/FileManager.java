@@ -216,7 +216,15 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	private ExtraRowStorage getOrCreateExtraFile(long fileId, int rowLength) {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		ExtraRowStorage extra = extraFiles.get(fileId);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.GET_EXTRA_FILE,
+					System.nanoTime() - start);
+		}
 		if (extra == null) {
 			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), fileId, rowLength,
 					extraCacheSpaceManager, null, true, logger);
@@ -237,7 +245,15 @@ public class FileManager {
 	 * @return
 	 */
 	private ExtraRowStorage getExtraFile(long fileId) {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		ExtraRowStorage extra = extraFiles.get(fileId);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.GET_EXTRA_FILE,
+					System.nanoTime() - start);
+		}
 		if (extra == null) {
 			throw new RuntimeException("File " + fileId + " does not exist");
 		} else if (!extra.valid()) {

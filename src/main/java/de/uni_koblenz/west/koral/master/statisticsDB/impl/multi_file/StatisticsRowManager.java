@@ -374,7 +374,15 @@ public class StatisticsRowManager {
 	 * Writes internal dataBytes into internal row.
 	 */
 	void mergeDataBytesIntoRow() {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		System.arraycopy(dataBytes, 0, row, metadataLength, dataBytes.length);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.MERGE_DATA_BYTES,
+					System.nanoTime() - start);
+		}
 	}
 
 	/**
@@ -384,8 +392,16 @@ public class StatisticsRowManager {
 	 *            Thw new row id
 	 */
 	void updateExtraRowId(long newRowId) {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		// The row ids of the extra files use an offset of +1 to prevent zero-only rows
 		Utils.writeLongIntoBytes(newRowId + 1, row, metadataLength, extraFileRowIdLength);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.UPDATE_EXTRA_ROW_ID,
+					System.nanoTime() - start);
+		}
 	}
 
 	/**

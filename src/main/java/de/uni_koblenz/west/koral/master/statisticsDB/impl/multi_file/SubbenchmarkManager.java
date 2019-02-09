@@ -52,6 +52,10 @@ public class SubbenchmarkManager {
 		HABSE_NOTIFY_ACCESS,
 		STORAGEACCESSOR_OPEN,
 		SWITCH_TO_FILE,
+		IS_ARRAY_ZERO,
+		MERGE_DATA_BYTES,
+		UPDATE_EXTRA_ROW_ID,
+		GET_EXTRA_FILE,
 	}
 
 	private SubbenchmarkManager() {
@@ -111,16 +115,26 @@ public class SubbenchmarkManager {
 	public void finish(File csvFile, String configName, long totalTimeSec) {
 		// Calculate time that was recorded in MF_INC event, but doesn't show up in other events
 		// Note the task hierarchy, i.e. only the tasks one level below are added
-		long rest = times[SUBBENCHMARK_TASK.MF_INC.ordinal()] -
-				(indexTime + extraTime +
-						times[SUBBENCHMARK_TASK.RLE_IS_USED.ordinal()] +
-						times[SUBBENCHMARK_TASK.RLE_NEXT.ordinal()] +
-						times[SUBBENCHMARK_TASK.RLE_RELEASE.ordinal()] +
-						times[SUBBENCHMARK_TASK.HABSE_NOTIFY_ACCESS.ordinal()] +
-						times[SUBBENCHMARK_TASK.ROWMANAGER_CREATE.ordinal()] +
-						times[SUBBENCHMARK_TASK.ROWMANAGER_INCREMENT.ordinal()] +
-						times[SUBBENCHMARK_TASK.STORAGEACCESSOR_OPEN.ordinal()] +
-						times[SUBBENCHMARK_TASK.SWITCH_TO_FILE.ordinal()]);
+		SUBBENCHMARK_TASK[] mfRecordedTasks = new SUBBENCHMARK_TASK[] {
+				SUBBENCHMARK_TASK.RLE_IS_USED,
+				SUBBENCHMARK_TASK.RLE_NEXT,
+				SUBBENCHMARK_TASK.RLE_RELEASE,
+				SUBBENCHMARK_TASK.HABSE_NOTIFY_ACCESS,
+				SUBBENCHMARK_TASK.ROWMANAGER_CREATE,
+				SUBBENCHMARK_TASK.ROWMANAGER_INCREMENT,
+				SUBBENCHMARK_TASK.STORAGEACCESSOR_OPEN,
+				SUBBENCHMARK_TASK.SWITCH_TO_FILE,
+				SUBBENCHMARK_TASK.IS_ARRAY_ZERO,
+				SUBBENCHMARK_TASK.MERGE_DATA_BYTES,
+				SUBBENCHMARK_TASK.UPDATE_EXTRA_ROW_ID,
+				SUBBENCHMARK_TASK.GET_EXTRA_FILE
+		};
+		int mfSum = 0;
+		for (SUBBENCHMARK_TASK task : mfRecordedTasks) {
+			mfSum += times[task.ordinal()];
+		}
+		mfSum += indexTime + extraTime;
+		long rest = times[SUBBENCHMARK_TASK.MF_INC.ordinal()] - mfSum;
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		boolean fileExists = false;
 		if (csvFile.exists()) {
