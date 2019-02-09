@@ -6,7 +6,9 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
+import playground.StatisticsDBTest;
 
 public class StorageAccessor implements RowStorage {
 
@@ -60,6 +62,10 @@ public class StorageAccessor implements RowStorage {
 
 	@Override
 	public void open(boolean createIfNotExisting) {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		if (!new File(storageFilePath).exists() && !createIfNotExisting) {
 			throw new RuntimeException("File " + storageFilePath + " does not exist");
 		}
@@ -105,6 +111,10 @@ public class StorageAccessor implements RowStorage {
 		} else {
 //			System.out.println("File " + fileId + ": Using RARF");
 		}
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.STORAGEACCESSOR_OPEN,
+					System.nanoTime() - start);
+		}
 	}
 
 	@Override
@@ -134,6 +144,10 @@ public class StorageAccessor implements RowStorage {
 	}
 
 	private void switchToFile() {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		System.out.println("Switching storage " + fileId + " to file");
 		if (logger != null) {
 			logger.finest("Switching storage " + fileId + " to file");
@@ -146,6 +160,10 @@ public class StorageAccessor implements RowStorage {
 		cache.close();
 		cache = null;
 		currentStorage = file;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.SWITCH_TO_FILE,
+					System.nanoTime() - start);
+		}
 	}
 
 	@Override

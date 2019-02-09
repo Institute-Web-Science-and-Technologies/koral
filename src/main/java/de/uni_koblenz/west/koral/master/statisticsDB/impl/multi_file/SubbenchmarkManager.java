@@ -9,8 +9,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 /**
- * Singleton class for central managing of subbenchmarks. Calls can be toggled in StatisticsDBTest.class via
- * SUBBENCHMARKING flag. Events are built as hierarchy, i.e. the time of one task might be included in another as well.
+ * Singleton class for central managing of subbenchmarks. Calls can be toggled in StatisticsDBTest via SUBBENCHMARKING
+ * flag. Events are built as hierarchy, i.e. the time of one task might be included in another as well.
  *
  * There are three "core timings", which are always measured independetly from the subbenchmarking flag. Those are the
  * time for reading the input file and the times for index and extra file operations (including caching etc.)
@@ -50,6 +50,8 @@ public class SubbenchmarkManager {
 		ROWMANAGER_INCREMENT,
 		HABSE_FIND,
 		HABSE_NOTIFY_ACCESS,
+		STORAGEACCESSOR_OPEN,
+		SWITCH_TO_FILE,
 	}
 
 	private SubbenchmarkManager() {
@@ -116,7 +118,9 @@ public class SubbenchmarkManager {
 						times[SUBBENCHMARK_TASK.RLE_RELEASE.ordinal()] +
 						times[SUBBENCHMARK_TASK.HABSE_NOTIFY_ACCESS.ordinal()] +
 						times[SUBBENCHMARK_TASK.ROWMANAGER_CREATE.ordinal()] +
-						times[SUBBENCHMARK_TASK.ROWMANAGER_INCREMENT.ordinal()]);
+						times[SUBBENCHMARK_TASK.ROWMANAGER_INCREMENT.ordinal()] +
+						times[SUBBENCHMARK_TASK.STORAGEACCESSOR_OPEN.ordinal()] +
+						times[SUBBENCHMARK_TASK.SWITCH_TO_FILE.ordinal()]);
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		boolean fileExists = false;
 		if (csvFile.exists()) {
