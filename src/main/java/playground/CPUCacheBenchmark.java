@@ -1,5 +1,13 @@
 package playground;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+
 /**
  * This class tests the hypothesis that frequent copies of frequently used arrays might result in CPU cache misses
  * because the array moves into RAM after the CPU cache runs out of space.
@@ -9,59 +17,120 @@ package playground;
  */
 public class CPUCacheBenchmark {
 
-	private static final int ARRAY_SIZE = 10_000;
-
-	private static final int CLONES = 10_000_000;
-
-	private static void read(byte[] array, int count) {
+	private static long[] read(byte[] array, int count, boolean logTimes) {
+		long[] times = null;
+		if (logTimes) {
+			times = new long[count];
+		}
 		int sum = 0;
 		for (int n = 0; n < count; n++) {
 			long start = System.nanoTime();
 			for (int i = 0; i < array.length; i++) {
 				sum += array[i];
 			}
-			if (count < 5) {
+			if (logTimes) {
 				long time = System.nanoTime() - start;
-				System.out.println("Reading took " + String.format("%,d", time) + "ns");
+				times[n] = time;
 			}
 		}
 		System.out.println(sum);
+		return times;
 	}
 
 	public static void main(String[] args) {
-		System.out.println("Parameters:");
-		System.out.println("Array size: " + String.format("%,d", ARRAY_SIZE));
-		System.out.println("Clones: " + String.format("%,d", CLONES));
-		byte[] array = new byte[ARRAY_SIZE];
+		int arraySize = Integer.parseInt(args[0]);
+		int clones = Integer.parseInt(args[1]);
+		byte[] array = new byte[arraySize];
 		// Fill with some non-zero content
 		for (int i = 0; i < array.length; i++) {
 			array[i] = (byte) i;
 		}
 		// Make this array important, so it lands in CPU Cache
-		read(array, 1_000_000);
+		read(array, 1_000_000, false);
 
-		System.out.println("Initial Reads:");
-		read(array, 3);
+		long[] initialReadTimes = read(array, 3, true);
 
-		// Dont put this into a method because the array variable reference would still point to the old array
+		// Dont put this into a method because the array reference would not be changed
+		long[] afterFirstCloneReadTimes = null;
+		long[] cloneTimes = new long[100];
 		long start = System.nanoTime();
-		for (int i = 0; i < CLONES; i++) {
+		for (int i = 1; i <= clones; i++) {
 			byte[] copy = new byte[array.length];
 			System.arraycopy(array, 0, copy, 0, array.length);
 			array = copy;
-			if ((i % 100_000) == 0) {
+			if (((i % (clones / 100)) == 0)) {
 				long time = System.nanoTime() - start;
-				System.out.println("Cloning until #" + String.format("%,d", i) + ": " + String.format("%,d", time));
+				cloneTimes[(i / (clones / 100)) - 1] = time;
 				start = System.nanoTime();
 			}
-			if (i == 0) {
-				System.out.println("Reads after first cloning:");
-				read(array, 3);
+			if (i == 1) {
+				afterFirstCloneReadTimes = read(array, 3, true);
 			}
 		}
 
-		System.out.println("Reads after lots of cloning:");
-		read(array, 3);
+		long[] afterAllClonesReadTimes = read(array, 3, true);
+
+		// Write to CSV
+		String config = String.format("%,d", arraySize).replace(",", "_")
+				+ "-arraysize-" + String.format("%,d", clones).replace(",", "_") + "-clones";
+		File readTimesCSV = new File("CPUCB_readtimes_" + config + ".csv");
+		writeReadTimesCSV(readTimesCSV, initialReadTimes, afterFirstCloneReadTimes, afterAllClonesReadTimes);
+		File cloneTimesCSV = new File("CPUCB_clonetimes_" + config + ".csv");
+		writeCloneTimesCSV(cloneTimesCSV, cloneTimes, clones / 100);
+		System.out.println("Finished.");
+	}
+
+	private static void printCSVRecord(CSVPrinter printer, String label, long[] readTimes) throws IOException {
+		printer.print(label);
+		for (long time : readTimes) {
+			printer.print(time);
+		}
+		printer.println();
+	}
+
+	private static void writeReadTimesCSV(File csvFile, long[] initialReadTimes, long[] afterFirstCloneReadTimes,
+			long[] afterAllClonesReadTimes) {
+		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+		try (CSVPrinter printer = new CSVPrinter(
+				new OutputStreamWriter(new FileOutputStream(csvFile, false), "UTF-8"),
+				csvFileFormat)) {
+
+			// Print column headers
+			printer.print("READ_TYPE");
+			int maxCount = Math.max(initialReadTimes.length,
+					Math.max(afterAllClonesReadTimes.length, afterFirstCloneReadTimes.length));
+			for (int i = 1; i <= maxCount; i++) {
+				printer.print("#" + i);
+			}
+			printer.println();
+
+			// Print read times
+			printCSVRecord(printer, "INITIAL_READ_TIMES", initialReadTimes);
+			printCSVRecord(printer, "AFTER_FIRST_CLONE_READ_TIMES", afterFirstCloneReadTimes);
+			printCSVRecord(printer, "AFTER_ALL_CLONES_READ_TIMES", afterAllClonesReadTimes);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static void writeCloneTimesCSV(File csvFile, long[] cloneTimes, int intervalLength) {
+		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+		try (CSVPrinter printer = new CSVPrinter(
+				new OutputStreamWriter(new FileOutputStream(csvFile, false), "UTF-8"),
+				csvFileFormat)) {
+
+			// Print column headers
+			printer.printRecord("INTERVAL", "TOTAL_CLONE_TIME");
+
+			// Print times
+			for (int i = 0; i < cloneTimes.length; i++) {
+				printer.print((i + 1) * intervalLength);
+				printer.print(cloneTimes[i]);
+				printer.println();
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }
