@@ -68,17 +68,11 @@ public class RandomAccessRowFile implements RowStorage {
 	// Metastatistics for read benchmarks
 	private long cacheHits, cacheMisses, notExisting;
 
-	private final SharedSpaceManager cacheSpaceManager;
-
-	private final SharedSpaceConsumer cacheSpaceConsumer;
-
 	private RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
 			SharedSpaceManager cacheSpaceManager, SharedSpaceConsumer cacheSpaceConsumer, int blockSize,
 			boolean recycleBlocks) {
 		this.fileId = fileId;
 		this.rowLength = rowLength;
-		this.cacheSpaceManager = cacheSpaceManager;
-		this.cacheSpaceConsumer = cacheSpaceConsumer;
 		if (blockSize >= rowLength) {
 			// Default case: At least one row fits into a block
 			rowsAsBlocks = false;
