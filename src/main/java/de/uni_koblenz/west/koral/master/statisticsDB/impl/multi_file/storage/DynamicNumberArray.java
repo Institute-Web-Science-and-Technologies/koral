@@ -285,8 +285,8 @@ public class DynamicNumberArray {
 	}
 
 	public byte[] getData() {
-		byte[] data = new byte[lastUsedIndex + 1];
-		copy(0, 0, lastUsedIndex + 1, data);
+		byte[] data = new byte[(lastUsedIndex + 1) * valueSize];
+		copy(0, 0, (lastUsedIndex + 1), data);
 		return data;
 	}
 
