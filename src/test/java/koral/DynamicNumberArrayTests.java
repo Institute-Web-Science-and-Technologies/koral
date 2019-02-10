@@ -137,8 +137,7 @@ class DynamicNumberArrayTests {
 		dna.set(8, 0);
 		assertEquals(9, dna.getLastUsedIndex());
 		dna.set(9, 0);
-		// Although index=8 is zero
-		assertEquals(8, dna.getLastUsedIndex());
+		assertEquals(7, dna.getLastUsedIndex());
 		assertEquals(10, dna.capacity());
 	}
 
@@ -230,12 +229,32 @@ class DynamicNumberArrayTests {
 	}
 
 	@Test
+	void moveSmallToRightWithoutOverlapTest() {
+		setSmallValues();
+		dna.set(10, 0);
+		dna.set(11, 0);
+		dna.set(12, 0);
+		assertEquals(9, dna.getLastUsedIndex());
+		dna.move(1, 10);
+		assertContent(new Number[] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 126, 53, 0, -117, 2, 98, 11, 7, 127 });
+		assertEquals(18, dna.getLastUsedIndex());
+	}
+
+	@Test
 	void moveSmallToLeftTest() {
 		setSmallValues();
 		assertEquals(SIZE - 1, dna.getLastUsedIndex());
 		dna.move(3, 1);
 		assertContent(new Number[] { -1, 0, -117, 2, 98, 11, 7, 127, 0, 0 });
 		assertEquals(SIZE - 3, dna.getLastUsedIndex());
+	}
+
+	@Test
+	void moveSmallToLeftWithoutOverlapTest() {
+		setSmallValues();
+		dna.move(9, 1);
+		assertContent(new Number[] { -1, 127, 53, 0, -117, 2, 98, 11, 7, 0 });
+		assertEquals(8, dna.getLastUsedIndex());
 	}
 
 	@Test
