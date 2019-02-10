@@ -35,6 +35,8 @@ public class SubbenchmarkManager {
 
 	private long inputTime;
 
+	private long loggingTime;
+
 	public static enum SUBBENCHMARK_TASK {
 		MF_INC,
 		RLE_RELEASE,
@@ -87,7 +89,9 @@ public class SubbenchmarkManager {
 	}
 
 	public void addTime(SUBBENCHMARK_TASK task, long time) {
+		long start = System.nanoTime();
 		times[task.ordinal()] += time;
+		loggingTime += System.nanoTime() - start;
 	}
 
 	public long getTime(SUBBENCHMARK_TASK task) {
@@ -131,7 +135,7 @@ public class SubbenchmarkManager {
 		for (SUBBENCHMARK_TASK task : mfRecordedTasks) {
 			mfSum += times[task.ordinal()];
 		}
-		mfSum += indexTime + extraTime;
+		mfSum += indexTime + extraTime + loggingTime;
 		long rest = times[SUBBENCHMARK_TASK.MF_INC.ordinal()] - mfSum;
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		boolean fileExists = false;
@@ -151,6 +155,7 @@ public class SubbenchmarkManager {
 				for (SUBBENCHMARK_TASK event : SUBBENCHMARK_TASK.values()) {
 					csvPrinter.print(event.toString());
 				}
+				csvPrinter.print("LOGGING_TIME");
 				csvPrinter.print("REST_MF_INC");
 				csvPrinter.println();
 
@@ -163,6 +168,7 @@ public class SubbenchmarkManager {
 			for (int i = 0; i < times.length; i++) {
 				csvPrinter.print(times[i] / 1_000_000_000);
 			}
+			csvPrinter.print(loggingTime);
 			csvPrinter.print(rest / 1_000_000_000);
 			csvPrinter.println();
 		} catch (IOException e) {
