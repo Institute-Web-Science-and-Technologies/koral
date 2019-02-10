@@ -129,7 +129,7 @@ public class SubbenchmarkManager {
 				SUBBENCHMARK_TASK.UPDATE_EXTRA_ROW_ID,
 				SUBBENCHMARK_TASK.GET_EXTRA_FILE
 		};
-		int mfSum = 0;
+		long mfSum = 0;
 		for (SUBBENCHMARK_TASK task : mfRecordedTasks) {
 			mfSum += times[task.ordinal()];
 		}
