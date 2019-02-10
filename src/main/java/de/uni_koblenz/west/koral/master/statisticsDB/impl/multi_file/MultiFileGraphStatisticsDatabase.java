@@ -192,6 +192,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	private void incrementOccurences(long resourceId, ResourceType resourceType, int chunk) {
+		long outerMF = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			outerMF = System.nanoTime();
+		}
 		long startTotal = 0;
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 			startTotal = System.nanoTime();
@@ -282,6 +286,10 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.MF_INC,
 					System.nanoTime() - startTotal);
+		}
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.OUTER_MF_INC,
+					System.nanoTime() - outerMF);
 		}
 	}
 
