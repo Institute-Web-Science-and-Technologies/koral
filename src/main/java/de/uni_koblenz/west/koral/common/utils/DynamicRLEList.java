@@ -50,11 +50,11 @@ public class DynamicRLEList {
 	private long maxId = -1;
 
 	public DynamicRLEList() {
-		this(null, 1);
+		this(null);
 	}
 
-	public DynamicRLEList(byte[] ids, int valueSize) {
-		this(ids, valueSize, DEFAULT_INITIAL_LENGTH, DEFAULT_EXTENSION_LENGTH);
+	public DynamicRLEList(byte[] ids) {
+		this(ids, 1, DEFAULT_INITIAL_LENGTH, DEFAULT_EXTENSION_LENGTH);
 	}
 
 	/**
