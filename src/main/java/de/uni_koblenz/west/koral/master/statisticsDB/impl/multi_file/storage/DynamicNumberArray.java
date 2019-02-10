@@ -1,5 +1,7 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 
+import java.util.Arrays;
+
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 
@@ -22,12 +24,12 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
  */
 public class DynamicNumberArray {
 
-	private static final int DEFAULT_CAPACITY = 10;
+	public static final int DEFAULT_CAPACITY = 10;
 
-	// 100 is a good value for quickly growing arrays
-	public static final int DEFAULT_EXTENSION_LENGTH = 100;
+	// 1000 is a good value for quickly growing arrays
+	public static final int DEFAULT_EXTENSION_LENGTH = 1000;
 
-	private final int capacity;
+	private int capacity;
 
 	/**
 	 * How many additional values will be storeable after an extension
@@ -47,32 +49,49 @@ public class DynamicNumberArray {
 	 */
 	private int lastUsedIndex;
 
+	private int initialValueSize;
+
+	private int initialCapacity;
+
 	public DynamicNumberArray() {
-		this(DEFAULT_CAPACITY, DEFAULT_EXTENSION_LENGTH);
+		this(DEFAULT_CAPACITY, 1, DEFAULT_EXTENSION_LENGTH);
 	}
 
-	public DynamicNumberArray(int capacity, int extensionLength) {
-		this.capacity = capacity;
+	public DynamicNumberArray(int initialCapacity, int initialValueSize, int extensionLength) {
+		this.initialCapacity = initialCapacity;
+		this.initialValueSize = initialValueSize;
 		this.extensionLength = extensionLength;
 
+		reset();
+	}
+
+	/**
+	 *
+	 * @param array
+	 *            Must not be null
+	 * @param valueSize
+	 * @param extensionLength
+	 */
+	public DynamicNumberArray(byte[] array, int initialValueSize, int extensionLength) {
+		this.array = array;
+		valueSize = initialValueSize;
+		this.extensionLength = extensionLength;
+
+		if (this.array == null) {
+			throw new IllegalArgumentException("Array must not be null");
+		}
+		capacity = this.array.length / valueSize;
+		lastUsedIndex = findLastUsedIndex(this.array.length - 1);
+	}
+
+	public void reset() {
+		capacity = initialCapacity;
 		array = new byte[capacity];
-		valueSize = 1;
+		valueSize = initialValueSize;
 		lastUsedIndex = -1;
 	}
 
-	public DynamicNumberArray(byte[] array, int valueSize, int extensionLength) {
-		this.array = array;
-		this.valueSize = valueSize;
-		this.extensionLength = extensionLength;
-		capacity = array.length / valueSize;
-
-		if (this.array == null) {
-			this.array = new byte[DEFAULT_CAPACITY];
-		}
-		lastUsedIndex = findLastUsedIndex(0);
-	}
-
-	public int getCapacity() {
+	public int capacity() {
 		return capacity;
 	}
 
@@ -96,12 +115,22 @@ public class DynamicNumberArray {
 		if ((index > lastUsedIndex) && (value != 0)) {
 			lastUsedIndex = index;
 		} else if ((index == lastUsedIndex) && (value == 0)) {
-			lastUsedIndex = findLastUsedIndex(index);
+			lastUsedIndex = index - 1;
+			// Use this if the array is not consecutive
+			// lastUsedIndex = findLastUsedIndex(index);
 		}
 	}
 
+	public void inc(int index) {
+		set(index, get(index) + 1);
+	}
+
+	public void dec(int index) {
+		set(index, get(index) - 1);
+	}
+
 	private void upgrade(int newValueSize) {
-		byte[] newArray = createExtendedArray(newValueSize);
+		byte[] newArray = createExtendedArray(capacity, newValueSize);
 		for (int i = 0; i <= lastUsedIndex; i++) {
 			NumberConversion.signedLong2bytes(get(i), newArray, i * newValueSize, newValueSize);
 		}
@@ -124,7 +153,7 @@ public class DynamicNumberArray {
 	}
 
 	private void copy(int srcIndex, int destIndex, int length, byte[] target) {
-		System.arraycopy(target, srcIndex * valueSize, array, destIndex * valueSize, length * valueSize);
+		System.arraycopy(array, srcIndex * valueSize, target, destIndex * valueSize, length * valueSize);
 		int last = (destIndex + length) - 1;
 		if (last > lastUsedIndex) {
 			// It is assumed that the copied segment does not end with a zero
@@ -134,7 +163,25 @@ public class DynamicNumberArray {
 
 	/**
 	 * Moves part of the array analogous to System.arraycopy() but also clears everything of the source segment that is
+	 * not overwritten. Moves all values right to (and including) srcIndex to destIndex. Uses internal lastUsedIndex
+	 * value for optimization.
+	 *
+	 * For updating the lastUsedIndex it is assumed that the last element of the moved segment is not equal to zero.
+	 *
+	 * @param srcIndex
+	 *            The index of the first value that will be moved
+	 * @param destIndex
+	 *            The index that will contain the first moved value
+	 */
+	public void move(int srcIndex, int destIndex) {
+		move(srcIndex, destIndex, (lastUsedIndex - srcIndex) + 1, array);
+	}
+
+	/**
+	 * Moves part of the array analogous to System.arraycopy() but also clears everything of the source segment that is
 	 * not overwritten.
+	 *
+	 * For updating the lastUsedIndex it is assumed that the last element of the moved segment is not equal to zero.
 	 *
 	 * @param srcIndex
 	 *            The index of the first value that will be moved
@@ -160,7 +207,7 @@ public class DynamicNumberArray {
 			stopExclusive = (srcIndex + length) * valueSize;
 		}
 		for (int i = startInclusive; i < stopExclusive; i++) {
-			array[i] = 0;
+			target[i] = 0;
 		}
 
 		// Update lastUsedIndex if necessary
@@ -183,15 +230,27 @@ public class DynamicNumberArray {
 	 */
 	public void insertGap(int index, int length) {
 		byte[] target = array;
-		if ((index + length) > capacity) {
-			target = createExtendedArray(valueSize);
+		int lastNeededIndex = Math.max(lastUsedIndex + length, index + length);
+		if ((lastNeededIndex + 1) > capacity) {
+			target = createExtendedArray(lastNeededIndex + 1, valueSize);
 			copy(0, 0, index, target);
 		}
-		move(index, (index + length) - 1, lastUsedIndex - index, target);
+		move(index, index + length, (lastUsedIndex - index) + 1, target);
+		array = target;
 	}
 
-	private byte[] createExtendedArray(int newValueSize) {
-		return new byte[(capacity + extensionLength) * newValueSize];
+	/**
+	 * Extends the internal array, ensuring at least <code>minCapacity</code> fields can be hold. The smallest multiple
+	 * of the given extensionLength will be added to the capacity. If the minimum new capacity is the same as the
+	 * current capacity, the extensionLength is added to the new capacity regardless.
+	 *
+	 * @param minCapacity
+	 * @param newValueSize
+	 * @return
+	 */
+	private byte[] createExtendedArray(int minCapacity, int newValueSize) {
+		int additionalCapacity = (((minCapacity - capacity) / extensionLength) + 1) * extensionLength;
+		return new byte[(capacity + additionalCapacity) * newValueSize];
 	}
 
 	/**
@@ -214,6 +273,26 @@ public class DynamicNumberArray {
 			i = startIndex + 1;
 		}
 		return -1;
+	}
+
+	/**
+	 * For unit tests.
+	 *
+	 * @return
+	 */
+	public int getLastUsedIndex() {
+		return lastUsedIndex;
+	}
+
+	public byte[] getData() {
+		byte[] data = new byte[lastUsedIndex + 1];
+		copy(0, 0, lastUsedIndex + 1, data);
+		return data;
+	}
+
+	@Override
+	public String toString() {
+		return array == null ? "[]" : Arrays.toString(array);
 	}
 
 }
