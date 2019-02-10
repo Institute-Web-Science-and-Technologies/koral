@@ -37,7 +37,6 @@ public class SubbenchmarkManager {
 
 	public static enum SUBBENCHMARK_TASK {
 		MF_INC,
-		RLE_IS_USED,
 		RLE_RELEASE,
 		RLE_RELEASE_ALLOC,
 		RLE_RELEASE_ARRAYCOPY,
@@ -116,7 +115,6 @@ public class SubbenchmarkManager {
 		// Calculate time that was recorded in MF_INC event, but doesn't show up in other events
 		// Note the task hierarchy, i.e. only the tasks one level below are added
 		SUBBENCHMARK_TASK[] mfRecordedTasks = new SUBBENCHMARK_TASK[] {
-				SUBBENCHMARK_TASK.RLE_IS_USED,
 				SUBBENCHMARK_TASK.RLE_NEXT,
 				SUBBENCHMARK_TASK.RLE_RELEASE,
 				SUBBENCHMARK_TASK.HABSE_NOTIFY_ACCESS,
