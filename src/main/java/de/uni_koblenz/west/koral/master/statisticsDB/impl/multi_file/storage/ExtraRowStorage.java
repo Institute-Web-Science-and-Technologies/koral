@@ -8,7 +8,7 @@ public interface ExtraRowStorage extends RowStorage {
 
 	public void deleteRow(long rowId);
 
-	public long[] getFreeSpaceIndexData();
+	public byte[] getFreeSpaceIndexData();
 
 	public void defragFreeSpaceIndex();
 

@@ -33,10 +33,10 @@ public class DynamicRLEList {
 
 	private static final long MAX_NUMBER_OF_IDS = Long.MAX_VALUE - 1;
 
-	public static final int DEFAULT_INITIAL_LENGTH = 100;
+	public static final int DEFAULT_INITIAL_LENGTH = 10;
 
 	// 1000 is a good value for quickly growing arrays
-	public static final int DEFAULT_EXTENSION_LENGTH = 100;
+	public static final int DEFAULT_EXTENSION_LENGTH = 1000;
 
 	/**
 	 * positive values represent used ids<br>

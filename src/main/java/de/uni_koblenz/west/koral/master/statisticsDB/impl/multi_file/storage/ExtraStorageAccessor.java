@@ -3,20 +3,20 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import de.uni_koblenz.west.koral.common.utils.ReusableIDGenerator;
+import de.uni_koblenz.west.koral.common.utils.DynamicRLEList;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 import playground.StatisticsDBTest;
 
 public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowStorage {
 
-	private final ReusableIDGenerator freeSpaceIndex;
+	private final DynamicRLEList freeSpaceIndex;
 
 	public ExtraStorageAccessor(String storageFilePath, long fileId, int rowLength,
-			HABSESharedSpaceManager extraCacheSpaceManager, long[] loadedFreeSpaceIndex, boolean createIfNotExisting,
+			HABSESharedSpaceManager extraCacheSpaceManager, byte[] loadedFreeSpaceIndex, boolean createIfNotExisting,
 			Logger logger) {
 		super(storageFilePath, fileId, rowLength, extraCacheSpaceManager, true, createIfNotExisting, logger);
-		freeSpaceIndex = new ReusableIDGenerator(loadedFreeSpaceIndex);
+		freeSpaceIndex = new DynamicRLEList(loadedFreeSpaceIndex);
 	}
 
 	@Override
@@ -58,7 +58,7 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 	}
 
 	@Override
-	public long[] getFreeSpaceIndexData() {
+	public byte[] getFreeSpaceIndexData() {
 		return freeSpaceIndex.getData();
 	}
 
