@@ -137,7 +137,8 @@ class DynamicNumberArrayTests {
 		dna.set(8, 0);
 		assertEquals(9, dna.getLastUsedIndex());
 		dna.set(9, 0);
-		assertEquals(7, dna.getLastUsedIndex());
+		// Although value at 8 is = 0
+		assertEquals(8, dna.getLastUsedIndex());
 		assertEquals(10, dna.capacity());
 	}
 
@@ -196,7 +197,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void moveNothing() {
 		setSmallValues();
-		dna.move(0, 0, 10);
+		dna.move(0, 0);
 		assertContent(new Number[] { -1, 126, 53, 0, -117, 2, 98, 11, 7, 127 });
 		assertEquals(10, dna.capacity());
 		assertEquals(9, dna.getLastUsedIndex());
