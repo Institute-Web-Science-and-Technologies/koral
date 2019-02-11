@@ -40,7 +40,6 @@ public class SubbenchmarkManager {
 	private long loggingTime;
 
 	public static enum SUBBENCHMARK_TASK {
-		OUTER_MF_INC,
 		MF_INC,
 		RLE_RELEASE,
 		RLE_RELEASE_ALLOC,
