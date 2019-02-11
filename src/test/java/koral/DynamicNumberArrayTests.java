@@ -74,7 +74,7 @@ class DynamicNumberArrayTests {
 	void resetTest() {
 		setBigValues();
 		// Provoke extension
-		dna.set(14, 53278);
+		dna.set(14, 53278, null);
 		dna.reset();
 		assertEquals(SIZE, dna.capacity());
 		assertEquals(-1, dna.getLastUsedIndex());
@@ -86,7 +86,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void setLowValuesTest() {
 		for (int i = 0; i < SIZE; i++) {
-			dna.set(i, (i + 1) * 2);
+			dna.set(i, (i + 1) * 2, null);
 			assertEquals(i, dna.getLastUsedIndex());
 		}
 		for (int i = 0; i < SIZE; i++) {
@@ -98,35 +98,35 @@ class DynamicNumberArrayTests {
 	@Test
 	void incSmallTest() {
 		setSmallValues();
-		dna.inc(2);
+		dna.inc(2, null);
 		assertContent(new Number[] { -1, 126, 54, 0, -117, 2, 98, 11, 7, 127 });
 	}
 
 	@Test
 	void incBigTest() {
 		setBigValues();
-		dna.inc(2);
+		dna.inc(2, null);
 		assertContent(new Number[] { -1, 65534, 11253, 0, -26317, 2, 980, 112, 55123, 65535 });
 	}
 
 	@Test
 	void decSmallTest() {
 		setSmallValues();
-		dna.dec(2);
+		dna.dec(2, null);
 		assertContent(new Number[] { -1, 126, 52, 0, -117, 2, 98, 11, 7, 127 });
 	}
 
 	@Test
 	void decBigTest() {
 		setBigValues();
-		dna.dec(2);
+		dna.dec(2, null);
 		assertContent(new Number[] { -1, 65534, 11251, 0, -26317, 2, 980, 112, 55123, 65535 });
 	}
 
 	@Test
 	void setLastFieldToZeroTest() {
 		setSmallValues();
-		dna.set(9, 0);
+		dna.set(9, 0, null);
 		assertEquals(10, dna.capacity());
 		assertEquals(8, dna.getLastUsedIndex());
 	}
@@ -134,9 +134,9 @@ class DynamicNumberArrayTests {
 	@Test
 	void setLastFieldToZeroNonConsecutiveTest() {
 		setSmallValues();
-		dna.set(8, 0);
+		dna.set(8, 0, null);
 		assertEquals(9, dna.getLastUsedIndex());
-		dna.set(9, 0);
+		dna.set(9, 0, null);
 		// Although value at 8 is = 0
 		assertEquals(8, dna.getLastUsedIndex());
 		assertEquals(10, dna.capacity());
@@ -144,8 +144,8 @@ class DynamicNumberArrayTests {
 
 	@Test
 	void upgradeMaxTest() {
-		dna.set(1, 56);
-		dna.set(0, Byte.MAX_VALUE + 1);
+		dna.set(1, 56, null);
+		dna.set(0, Byte.MAX_VALUE + 1, null);
 		assertEquals(56, dna.get(1));
 		assertEquals(Byte.MAX_VALUE + 1, dna.get(0));
 
@@ -154,8 +154,8 @@ class DynamicNumberArrayTests {
 
 	@Test
 	void upgradeMinTest() {
-		dna.set(1, 56);
-		dna.set(0, Byte.MIN_VALUE - 1);
+		dna.set(1, 56, null);
+		dna.set(0, Byte.MIN_VALUE - 1, null);
 		assertEquals(56, dna.get(1));
 		assertEquals(Byte.MIN_VALUE - 1, dna.get(0));
 
@@ -164,9 +164,9 @@ class DynamicNumberArrayTests {
 
 	@Test
 	void upgradeMinusOneTest() {
-		dna.set(0, 1);
-		dna.set(2, -1);
-		dna.set(1, Byte.MAX_VALUE + 1);
+		dna.set(0, 1, null);
+		dna.set(2, -1, null);
+		dna.set(1, Byte.MAX_VALUE + 1, null);
 		assertEquals(1, dna.get(0));
 		assertEquals(-1, dna.get(2));
 		assertEquals(Byte.MAX_VALUE + 1, dna.get(1));
@@ -176,8 +176,8 @@ class DynamicNumberArrayTests {
 
 	@Test
 	void bigUpgradeMaxTest() {
-		dna.set(1, 56);
-		dna.set(0, Integer.MAX_VALUE + 1L);
+		dna.set(1, 56, null);
+		dna.set(0, Integer.MAX_VALUE + 1L, null);
 		assertEquals(56, dna.get(1));
 		assertEquals(Integer.MAX_VALUE + 1L, dna.get(0));
 
@@ -186,8 +186,8 @@ class DynamicNumberArrayTests {
 
 	@Test
 	void bigUpgradeMinTest() {
-		dna.set(1, 56);
-		dna.set(0, Integer.MIN_VALUE - 1L);
+		dna.set(1, 56, null);
+		dna.set(0, Integer.MIN_VALUE - 1L, null);
 		assertEquals(56, dna.get(1));
 		assertEquals(Integer.MIN_VALUE - 1L, dna.get(0));
 
@@ -197,7 +197,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void moveNothing() {
 		setSmallValues();
-		dna.move(0, 0);
+		dna.move(0, 0, null);
 		assertContent(new Number[] { -1, 126, 53, 0, -117, 2, 98, 11, 7, 127 });
 		assertEquals(10, dna.capacity());
 		assertEquals(9, dna.getLastUsedIndex());
@@ -206,25 +206,25 @@ class DynamicNumberArrayTests {
 	@Test
 	void moveSmallAtZeroTest() {
 		setSmallValues();
-		dna.move(0, 1);
+		dna.move(0, 1, null);
 		assertContent(new Number[] { 0, -1, 126, 53, 0, -117, 2, 98, 11, 7 });
 	}
 
 	@Test
 	void moveSmallAtOneTest() {
 		setSmallValues();
-		dna.move(1, 3);
+		dna.move(1, 3, null);
 		assertContent(new Number[] { -1, 0, 0, 126, 53, 0, -117, 2, 98, 11 });
 	}
 
 	@Test
 	void moveSmallToRightTest() {
 		setSmallValues();
-		dna.set(10, 0);
-		dna.set(11, 0);
-		dna.set(12, 0);
+		dna.set(10, 0, null);
+		dna.set(11, 0, null);
+		dna.set(12, 0, null);
 		assertEquals(9, dna.getLastUsedIndex());
-		dna.move(1, 3);
+		dna.move(1, 3, null);
 		assertContent(new Number[] { -1, 0, 0, 126, 53, 0, -117, 2, 98, 11, 7, 127, 0 });
 		assertEquals(11, dna.getLastUsedIndex());
 	}
@@ -232,11 +232,11 @@ class DynamicNumberArrayTests {
 	@Test
 	void moveSmallToRightWithoutOverlapTest() {
 		setSmallValues();
-		dna.set(10, 0);
-		dna.set(11, 0);
-		dna.set(12, 0);
+		dna.set(10, 0, null);
+		dna.set(11, 0, null);
+		dna.set(12, 0, null);
 		assertEquals(9, dna.getLastUsedIndex());
-		dna.move(1, 10);
+		dna.move(1, 10, null);
 		assertContent(new Number[] { -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 126, 53, 0, -117, 2, 98, 11, 7, 127 });
 		assertEquals(18, dna.getLastUsedIndex());
 	}
@@ -245,7 +245,7 @@ class DynamicNumberArrayTests {
 	void moveSmallToLeftTest() {
 		setSmallValues();
 		assertEquals(SIZE - 1, dna.getLastUsedIndex());
-		dna.move(3, 1);
+		dna.move(3, 1, null);
 		assertContent(new Number[] { -1, 0, -117, 2, 98, 11, 7, 127, 0, 0 });
 		assertEquals(SIZE - 3, dna.getLastUsedIndex());
 	}
@@ -253,7 +253,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void moveSmallToLeftWithoutOverlapTest() {
 		setSmallValues();
-		dna.move(9, 1);
+		dna.move(9, 1, null);
 		assertContent(new Number[] { -1, 127, 53, 0, -117, 2, 98, 11, 7, 0 });
 		assertEquals(8, dna.getLastUsedIndex());
 	}
@@ -261,18 +261,18 @@ class DynamicNumberArrayTests {
 	@Test
 	void moveBigAtOneTest() {
 		setBigValues();
-		dna.move(1, 3);
+		dna.move(1, 3, null);
 		assertContent(new Number[] { -1, 0, 0, 65534, 11252, 0, -26317, 2, 980, 112 });
 	}
 
 	@Test
 	void moveBigToRightTest() {
 		setBigValues();
-		dna.set(10, 0);
-		dna.set(11, 0);
-		dna.set(12, 0);
+		dna.set(10, 0, null);
+		dna.set(11, 0, null);
+		dna.set(12, 0, null);
 		assertEquals(9, dna.getLastUsedIndex());
-		dna.move(1, 3);
+		dna.move(1, 3, null);
 		assertContent(new Number[] { -1, 0, 0, 65534, 11252, 0, -26317, 2, 980, 112, 55123, 65535, 0 });
 		assertEquals(11, dna.getLastUsedIndex());
 	}
@@ -281,16 +281,16 @@ class DynamicNumberArrayTests {
 	void moveBigToLeftTest() {
 		setBigValues();
 		assertEquals(SIZE - 1, dna.getLastUsedIndex());
-		dna.move(3, 1);
+		dna.move(3, 1, null);
 		assertContent(new Number[] { -1, 0, -26317, 2, 980, 112, 55123, 65535, 0, 0 });
 		assertEquals(SIZE - 3, dna.getLastUsedIndex());
 	}
 
 	@Test
 	void insertGapWithoutExtensionTest() {
-		dna.set(0, 127);
-		dna.set(1, 126);
-		dna.insertGap(1, 4);
+		dna.set(0, 127, null);
+		dna.set(1, 126, null);
+		dna.insertGap(1, 4, null);
 		assertEquals(127L, dna.get(0));
 		for (int i = 1; i < 5; i++) {
 			assertEquals(0L, dna.get(i));
@@ -302,7 +302,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void insertGapLeftSmallTest() {
 		setSmallValues();
-		dna.insertGap(0, 3);
+		dna.insertGap(0, 3, null);
 		assertContent(new Number[] { 0, 0, 0, -1, 126, 53, 0, -117, 2, 98, 11, 7, 127 });
 		assertEquals(12, dna.getLastUsedIndex());
 	}
@@ -310,7 +310,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void insertGapMiddleSmallTest() {
 		setSmallValues();
-		dna.insertGap(2, 3);
+		dna.insertGap(2, 3, null);
 		assertContent(new Number[] { -1, 126, 0, 0, 0, 53, 0, -117, 2, 98, 11, 7, 127 });
 		assertEquals(12, dna.getLastUsedIndex());
 	}
@@ -318,7 +318,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void insertGapRightSmallTest() {
 		setSmallValues();
-		dna.insertGap(9, 3);
+		dna.insertGap(9, 3, null);
 		assertContent(new Number[] { -1, 126, 53, 0, -117, 2, 98, 11, 7, 0, 0, 0, 127 });
 		assertEquals(12, dna.getLastUsedIndex());
 	}
@@ -326,7 +326,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void insertGapLeftBigTest() {
 		setBigValues();
-		dna.insertGap(0, 3);
+		dna.insertGap(0, 3, null);
 		assertContent(new Number[] { 0, 0, 0, -1, 65534, 11252, 0, -26317, 2, 980, 112, 55123, 65535 });
 		assertEquals(12, dna.getLastUsedIndex());
 	}
@@ -334,7 +334,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void insertGapMiddleBigTest() {
 		setBigValues();
-		dna.insertGap(2, 3);
+		dna.insertGap(2, 3, null);
 		assertContent(new Number[] { -1, 65534, 0, 0, 0, 11252, 0, -26317, 2, 980, 112, 55123, 65535 });
 		assertEquals(12, dna.getLastUsedIndex());
 	}
@@ -342,7 +342,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void insertGapRightBigTest() {
 		setBigValues();
-		dna.insertGap(9, 3);
+		dna.insertGap(9, 3, null);
 		assertContent(new Number[] { -1, 65534, 11252, 0, -26317, 2, 980, 112, 55123, 0, 0, 0, 65535 });
 		assertEquals(12, dna.getLastUsedIndex());
 	}
@@ -350,7 +350,7 @@ class DynamicNumberArrayTests {
 	@Test
 	void insertBigGapBigTest() {
 		setBigValues();
-		dna.insertGap(7, 3000);
+		dna.insertGap(7, 3000, null);
 		long[] leftPart = new long[] { -1, 65534, 11252, 0, -26317, 2, 980 };
 		long[] rightPart = new long[] { 112, 55123, 65535 };
 		for (int i = 0; i < 7; i++) {
@@ -384,7 +384,7 @@ class DynamicNumberArrayTests {
 
 	private void setValueArray(long[] array) {
 		for (int i = 0; i < array.length; i++) {
-			dna.set(i, array[i]);
+			dna.set(i, array[i], null);
 		}
 	}
 

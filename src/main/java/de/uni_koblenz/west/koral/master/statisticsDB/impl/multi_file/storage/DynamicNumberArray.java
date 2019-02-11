@@ -3,7 +3,9 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage;
 import java.util.Arrays;
 
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
+import playground.StatisticsDBTest;
 
 /**
  * Wraps a byte array and allows index access for (numerical) values that may consist of more than one array field. This
@@ -52,6 +54,15 @@ public class DynamicNumberArray {
 	private final int initialValueSize;
 
 	private final int initialCapacity;
+
+	/**
+	 * Only used to identify subbenchmarking tasks.
+	 *
+	 */
+	public static enum Caller {
+		NEXT,
+		RELEASE
+	}
 
 	public DynamicNumberArray() {
 		this(DEFAULT_CAPACITY, 1, DEFAULT_EXTENSION_LENGTH);
@@ -102,17 +113,17 @@ public class DynamicNumberArray {
 		return NumberConversion.signedBytes2long(array, offset, valueSize);
 	}
 
-	public void set(int index, long value) {
+	public void set(int index, long value, Caller caller) {
 		int offset = index * valueSize;
 		long currentMaxValue = (1 << ((Byte.SIZE * valueSize) - 1)) - 1;
 		long currentMinValue = -currentMaxValue - 1;
 		if ((value > currentMaxValue) || (value < currentMinValue)) {
-			upgrade(capacity, Utils.neededBytesForValue(value, true));
+			upgrade(capacity, Utils.neededBytesForValue(value, true), caller);
 			// Recalculate offset with new valueSize
 			offset = index * valueSize;
 		}
 		if (index > (capacity - 1)) {
-			upgrade(index + 1, valueSize);
+			upgrade(index + 1, valueSize, caller);
 		}
 		NumberConversion.signedLong2bytes(value, array, offset, valueSize);
 
@@ -126,21 +137,42 @@ public class DynamicNumberArray {
 		}
 	}
 
-	public void inc(int index) {
-		set(index, get(index) + 1);
+	public void inc(int index, Caller caller) {
+		set(index, get(index) + 1, caller);
 	}
 
-	public void dec(int index) {
-		set(index, get(index) - 1);
+	public void dec(int index, Caller caller) {
+		set(index, get(index) - 1, caller);
 	}
 
-	private void upgrade(int minCapacity, int newValueSize) {
+	private void upgrade(int minCapacity, int newValueSize, Caller caller) {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		byte[] newArray = createExtendedArray(minCapacity, newValueSize);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			subbenchmark(SubbenchmarkType.ALLOC, caller, System.nanoTime() - start);
+		}
 		if (newValueSize == valueSize) {
+			start = 0;
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				start = System.nanoTime();
+			}
 			System.arraycopy(array, 0, newArray, 0, (lastUsedIndex + 1) * valueSize);
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				subbenchmark(SubbenchmarkType.ARRAYCOPY, caller, System.nanoTime() - start);
+			}
 		} else {
+			start = 0;
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				start = System.nanoTime();
+			}
 			for (int i = 0; i <= lastUsedIndex; i++) {
 				NumberConversion.signedLong2bytes(get(i), newArray, i * newValueSize, newValueSize);
+			}
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				subbenchmark(SubbenchmarkType.ARRAYCOPY, caller, System.nanoTime() - start);
 			}
 		}
 		array = newArray;
@@ -158,12 +190,12 @@ public class DynamicNumberArray {
 	 * @param length
 	 *            How many values are copied
 	 */
-	public void copy(int srcIndex, int destIndex, int length) {
+	public void copy(int srcIndex, int destIndex, int length, Caller caller) {
 		int last = (destIndex + length) - 1;
 		if ((last + 1) > capacity) {
-			upgrade(last + 1, valueSize);
+			upgrade(last + 1, valueSize, caller);
 		}
-		copy(srcIndex, destIndex, length, array);
+		copy(srcIndex, destIndex, length, array, caller);
 	}
 
 	/**
@@ -178,12 +210,19 @@ public class DynamicNumberArray {
 	 * @throws ArrayIndexOutOfBoundsException
 	 *             If the target array has not enough capacity.
 	 */
-	private void copy(int srcIndex, int destIndex, int length, byte[] target) {
+	private void copy(int srcIndex, int destIndex, int length, byte[] target, Caller caller) {
 		int last = (destIndex + length) - 1;
 		if (((last + 1) * valueSize) > target.length) {
 			throw new ArrayIndexOutOfBoundsException("Target array needs at least a capacity of " + (last + 1));
 		}
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
 		System.arraycopy(array, srcIndex * valueSize, target, destIndex * valueSize, length * valueSize);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			subbenchmark(SubbenchmarkType.ARRAYCOPY, caller, System.nanoTime() - start);
+		}
 		if (last > lastUsedIndex) {
 			// It is assumed that the copied segment does not end with a zero
 			lastUsedIndex = last;
@@ -202,8 +241,8 @@ public class DynamicNumberArray {
 	 * @param destIndex
 	 *            The index that will contain the first moved value
 	 */
-	public void move(int srcIndex, int destIndex) {
-		move(srcIndex, destIndex, (lastUsedIndex - srcIndex) + 1);
+	public void move(int srcIndex, int destIndex, Caller caller) {
+		move(srcIndex, destIndex, (lastUsedIndex - srcIndex) + 1, caller);
 	}
 
 	/**
@@ -220,8 +259,8 @@ public class DynamicNumberArray {
 	 * @param length
 	 *            How many values are moved
 	 */
-	private void move(int srcIndex, int destIndex, int length) {
-		copy(srcIndex, destIndex, length);
+	private void move(int srcIndex, int destIndex, int length, Caller caller) {
+		copy(srcIndex, destIndex, length, caller);
 
 		// Clear fields that were not overwritten
 		int startInclusive = 0, stopExclusive = 0;
@@ -268,16 +307,27 @@ public class DynamicNumberArray {
 	 * @param length
 	 *            How many empty values will be available in the created gap
 	 */
-	public void insertGap(int index, int length) {
+	public void insertGap(int index, int length, Caller caller) {
 		int lastNeededIndex = Math.max(lastUsedIndex + length, index + length);
 		if ((lastNeededIndex + 1) > capacity) {
+			long start = 0;
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				start = System.nanoTime();
+			}
 			byte[] target = createExtendedArray(lastNeededIndex + 1, valueSize);
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				subbenchmark(SubbenchmarkType.ALLOC, caller, System.nanoTime() - start);
+				start = System.nanoTime();
+			}
 			// Don't use copy() for the left part because it would invalidate lastUsedIndex
 			System.arraycopy(array, 0, target, 0, index * valueSize);
-			copy(index, index + length, (lastUsedIndex - index) + 1, target);
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				subbenchmark(SubbenchmarkType.ARRAYCOPY, caller, System.nanoTime() - start);
+			}
+			copy(index, index + length, (lastUsedIndex - index) + 1, target, caller);
 			array = target;
 		} else {
-			move(index, index + length, (lastUsedIndex - index) + 1);
+			move(index, index + length, (lastUsedIndex - index) + 1, caller);
 		}
 		capacity = array.length / valueSize;
 	}
@@ -341,13 +391,38 @@ public class DynamicNumberArray {
 
 	public byte[] getData() {
 		byte[] data = new byte[(lastUsedIndex + 1) * valueSize];
-		copy(0, 0, (lastUsedIndex + 1), data);
+		copy(0, 0, (lastUsedIndex + 1), data, null);
 		return data;
 	}
 
 	@Override
 	public String toString() {
 		return array == null ? "[]" : Arrays.toString(array);
+	}
+
+	private static enum SubbenchmarkType {
+		ARRAYCOPY,
+		ALLOC
+	}
+
+	private void subbenchmark(SubbenchmarkType type, Caller caller, long time) {
+		if (caller == Caller.NEXT) {
+			if (type == SubbenchmarkType.ARRAYCOPY) {
+				SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_NEXT_ARRAYCOPY,
+						time);
+			} else if (type == SubbenchmarkType.ALLOC) {
+				SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_NEXT_ALLOC,
+						time);
+			}
+		} else if (caller == Caller.RELEASE) {
+			if (type == SubbenchmarkType.ARRAYCOPY) {
+				SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_RELEASE_ARRAYCOPY,
+						time);
+			} else if (type == SubbenchmarkType.ALLOC) {
+				SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.RLE_RELEASE_ALLOC,
+						time);
+			}
+		}
 	}
 
 }

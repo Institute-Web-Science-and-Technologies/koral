@@ -21,6 +21,7 @@ package de.uni_koblenz.west.koral.common.utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_TASK;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.DynamicNumberArray;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.DynamicNumberArray.Caller;
 import playground.StatisticsDBTest;
 
 /**
@@ -90,30 +91,31 @@ public class DynamicRLEList {
 	}
 
 	public long next() {
+		Caller caller = Caller.NEXT;
 		long firstFreeID = getNextId();
 		if (firstFreeID < 0) {
 			throw new RuntimeException("There are no free ids available any more.");
 		}
 		if (ids.get(0) == 0) {
 			// ids is empty
-			ids.inc(0);
+			ids.inc(0, caller);
 		} else if (ids.get(0) > 0) {
 			// first block is used block
 			// increase number of used ids
-			ids.inc(0);
+			ids.inc(0, caller);
 			if ((ids.capacity() >= 2) && (ids.get(1) < 0)) {
 				// the second block is a free block
 				// reduce number of free ids
-				ids.inc(1);
+				ids.inc(1, caller);
 				if ((ids.capacity() >= 3) && (ids.get(1) == 0) && (ids.get(2) > 0)) {
 					// join [+x,0,+y,-z,...] to [+x+y,-z,...]
-					ids.set(0, ids.get(0) + ids.get(2));
+					ids.set(0, ids.get(0) + ids.get(2), caller);
 					if (ids.capacity() > 3) {
 						long start = 0;
 						if (StatisticsDBTest.SUBBENCHMARKS) {
 							start = System.nanoTime();
 						}
-						ids.move(3, 1);
+						ids.move(3, 1, caller);
 						if (StatisticsDBTest.SUBBENCHMARKS) {
 							SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_NEXT_ARRAYCOPY,
 									System.nanoTime() - start);
@@ -124,23 +126,23 @@ public class DynamicRLEList {
 		} else if (ids.get(0) < 0) {
 			// first block is free block => ids.length>=2
 			// reduce number of free ids
-			ids.inc(0);
+			ids.inc(0, caller);
 			if (ids.get(0) < 0) {
 				// [-x,+y,...] -> [+1,-x,+y,...]
-				ids.insertGap(0, 1);
-				ids.set(0, 1);
+				ids.insertGap(0, 1, caller);
+				ids.set(0, 1, caller);
 			} else if ((ids.get(0) == 0) && (ids.capacity() >= 2) && (ids.get(1) > 0)) {
 				// [0,+x,...] -> [+x+1,...]
 				long start = 0;
 				if (StatisticsDBTest.SUBBENCHMARKS) {
 					start = System.nanoTime();
 				}
-				ids.move(1, 0);
+				ids.move(1, 0, caller);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
 					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_NEXT_ARRAYCOPY,
 							System.nanoTime() - start);
 				}
-				ids.inc(0);
+				ids.inc(0, caller);
 			}
 		}
 		if (firstFreeID > maxId) {
@@ -149,16 +151,8 @@ public class DynamicRLEList {
 		return firstFreeID;
 	}
 
-	/**
-	 * Only used to identify subbenchmarking tasks.
-	 *
-	 */
-	private static enum SATR_CALLER {
-		NEXT,
-		RELEASE
-	}
-
 	public void release(long idToFree) {
+		Caller caller = Caller.RELEASE;
 		if (isEmpty()) {
 			return;
 		}
@@ -193,9 +187,9 @@ public class DynamicRLEList {
 			// the only used id in this block is freed
 			if ((deletionBlockIndex == (ids.capacity() - 1)) || (ids.get(deletionBlockIndex + 1) == 0)) {
 				// this is the last used block
-				ids.set(deletionBlockIndex, 0);
+				ids.set(deletionBlockIndex, 0, caller);
 				if (deletionBlockIndex > 0) {
-					ids.set(deletionBlockIndex - 1, 0);
+					ids.set(deletionBlockIndex - 1, 0, caller);
 				}
 			} else if (deletionBlockIndex == 0) {
 				// [1,-x,...] -> [-x-1,...]
@@ -203,21 +197,21 @@ public class DynamicRLEList {
 				if (StatisticsDBTest.SUBBENCHMARKS) {
 					start = System.nanoTime();
 				}
-				ids.move(1, 0);
+				ids.move(1, 0, caller);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
 					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_RELEASE_ARRAYCOPY,
 							System.nanoTime() - start);
 				}
-				ids.dec(0);
+				ids.dec(0, caller);
 			} else {
 				// [..,+w,-x,1,-y,+z,...] -> [...,+w,-x-y-1,+z,...]
 				ids.set(deletionBlockIndex - 1,
-						(ids.get(deletionBlockIndex - 1) + ids.get(deletionBlockIndex + 1)) - 1);
+						(ids.get(deletionBlockIndex - 1) + ids.get(deletionBlockIndex + 1)) - 1, caller);
 				start = 0;
 				if (StatisticsDBTest.SUBBENCHMARKS) {
 					start = System.nanoTime();
 				}
-				ids.move(deletionBlockIndex + 2, deletionBlockIndex);
+				ids.move(deletionBlockIndex + 2, deletionBlockIndex, caller);
 				if (StatisticsDBTest.SUBBENCHMARKS) {
 					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_RELEASE_ARRAYCOPY,
 							System.nanoTime() - start);
@@ -227,30 +221,30 @@ public class DynamicRLEList {
 			// the first id of a used block is freed
 			if (deletionBlockIndex == 0) {
 				// [+x,...]->[-1,+x-1,...]
-				ids.insertGap(0, 1);
-				ids.set(0, -1);
-				ids.dec(1);
+				ids.insertGap(0, 1, caller);
+				ids.set(0, -1, caller);
+				ids.dec(1, caller);
 			} else {
 				// [..,-x,+y,...] -> [...,-x-1,+y-1,...]
-				ids.dec(deletionBlockIndex);
-				ids.dec(deletionBlockIndex - 1);
+				ids.dec(deletionBlockIndex, caller);
+				ids.dec(deletionBlockIndex - 1, caller);
 			}
 		} else if ((maxPreviousId + ids.get(deletionBlockIndex)) == idToFree) {
 			// the last id of a used block is freed
 			// [...,+x,-y,...] -> [...,+x-1,-y-1,...]
-			ids.dec(deletionBlockIndex);
+			ids.dec(deletionBlockIndex, caller);
 			if (((deletionBlockIndex + 1) < ids.capacity()) && (ids.get(deletionBlockIndex + 1) != 0)) {
-				ids.dec(deletionBlockIndex + 1);
+				ids.dec(deletionBlockIndex + 1, caller);
 			}
 		} else {
 			// the freed id is in the middle of the used block
 			// [...,+x,...]->[...,+x1,-1,+x2,...]
 			long x1 = idToFree - maxPreviousId - 1;
 			long x2 = (maxPreviousId + ids.get(deletionBlockIndex)) - idToFree;
-			ids.insertGap(deletionBlockIndex, 2);
-			ids.set(deletionBlockIndex, x1);
-			ids.set(deletionBlockIndex + 1, -1);
-			ids.set(deletionBlockIndex + 2, x2);
+			ids.insertGap(deletionBlockIndex, 2, caller);
+			ids.set(deletionBlockIndex, x1, caller);
+			ids.set(deletionBlockIndex + 1, -1, caller);
+			ids.set(deletionBlockIndex + 2, x2, caller);
 		}
 		if (idToFree == maxId) {
 			start = 0;
@@ -274,6 +268,7 @@ public class DynamicRLEList {
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 			throw new UnsupportedOperationException("Subbenchmarks not yet implemented for set() method in RLE list");
 		}
+		Caller caller = null;
 		// Index of the block that contains idToSet
 		int blockIndex;
 		// Largest id of the block before the block that contains idToSet
@@ -290,13 +285,13 @@ public class DynamicRLEList {
 			// the id is larger than previous ids
 			long unusedIds = idToSet - maxPreviousId - 1;
 			if (unusedIds > 0) {
-				ids.set(blockIndex, -unusedIds);
-				ids.set(blockIndex + 1, 1);
+				ids.set(blockIndex, -unusedIds, caller);
+				ids.set(blockIndex + 1, 1, caller);
 			} else {
 				if (blockIndex > 0) {
-					ids.inc(blockIndex - 1);
+					ids.inc(blockIndex - 1, caller);
 				} else {
-					ids.set(0, 1);
+					ids.set(0, 1, caller);
 				}
 			}
 		} else if (ids.get(blockIndex) > 0) {
@@ -306,39 +301,39 @@ public class DynamicRLEList {
 			// the only unused id in this block is set
 			if (blockIndex == 0) {
 				// [-1,x,...] -> [x+1,...]
-				ids.move(1, 0);
-				ids.inc(0);
+				ids.move(1, 0, caller);
+				ids.inc(0, caller);
 			} else {
 				// [..,-w,+x,-1,+y,-z,...] -> [...,-w,+x+y+1,-z,...]
-				ids.set(blockIndex - 1, ids.get(blockIndex - 1) + ids.get(blockIndex + 1) + 1);
-				ids.move(blockIndex + 2, blockIndex);
+				ids.set(blockIndex - 1, ids.get(blockIndex - 1) + ids.get(blockIndex + 1) + 1, caller);
+				ids.move(blockIndex + 2, blockIndex, caller);
 			}
 		} else if ((maxPreviousId + 1) == idToSet) {
 			// the first id of an unused block is set
 			if (blockIndex == 0) {
 				// [-x,...]->[+1,-x+1,...]
-				ids.insertGap(0, 1);
-				ids.set(0, 1);
-				ids.inc(1);
+				ids.insertGap(0, 1, caller);
+				ids.set(0, 1, caller);
+				ids.inc(1, caller);
 			} else {
 				// [..,+x,-y,...] -> [...,+x+1,-y+1,...]
-				ids.inc(blockIndex);
-				ids.inc(blockIndex - 1);
+				ids.inc(blockIndex, caller);
+				ids.inc(blockIndex - 1, caller);
 			}
 		} else if ((maxPreviousId - ids.get(blockIndex)) == idToSet) {
 			// the last id of an unused block is set
 			// [...,-x,+y,...] -> [...,-x+1,+y+1,...]
-			ids.inc(blockIndex);
-			ids.inc(blockIndex + 1);
+			ids.inc(blockIndex, caller);
+			ids.inc(blockIndex + 1, caller);
 		} else {
 			// the set id is in the middle of the unused block
 			// [...,-x,...]->[...,-x1,+1,-x2,...]
 			long x1 = idToSet - maxPreviousId - 1;
 			long x2 = (maxPreviousId - ids.get(blockIndex)) - idToSet;
-			ids.insertGap(blockIndex, 2);
-			ids.set(blockIndex, -x1);
-			ids.set(blockIndex + 1, 1);
-			ids.set(blockIndex + 2, -x2);
+			ids.insertGap(blockIndex, 2, caller);
+			ids.set(blockIndex, -x1, caller);
+			ids.set(blockIndex + 1, 1, caller);
+			ids.set(blockIndex + 2, -x2, caller);
 		}
 	}
 
@@ -483,7 +478,7 @@ public class DynamicRLEList {
 	public void defrag() {
 		long idCount = usedIdsCount();
 		ids.reset();
-		ids.set(0, idCount);
+		ids.set(0, idCount, null);
 	}
 
 	/**
