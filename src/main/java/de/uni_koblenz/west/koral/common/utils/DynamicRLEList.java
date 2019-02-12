@@ -111,15 +111,7 @@ public class DynamicRLEList {
 					// join [+x,0,+y,-z,...] to [+x+y,-z,...]
 					ids.set(0, ids.get(0) + ids.get(2), caller);
 					if (ids.capacity() > 3) {
-						long start = 0;
-						if (StatisticsDBTest.SUBBENCHMARKS) {
-							start = System.nanoTime();
-						}
 						ids.move(3, 1, caller);
-						if (StatisticsDBTest.SUBBENCHMARKS) {
-							SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_NEXT_ARRAYCOPY,
-									System.nanoTime() - start);
-						}
 					}
 				}
 			}
@@ -133,15 +125,7 @@ public class DynamicRLEList {
 				ids.set(0, 1, caller);
 			} else if ((ids.get(0) == 0) && (ids.capacity() >= 2) && (ids.get(1) > 0)) {
 				// [0,+x,...] -> [+x+1,...]
-				long start = 0;
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					start = System.nanoTime();
-				}
 				ids.move(1, 0, caller);
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_NEXT_ARRAYCOPY,
-							System.nanoTime() - start);
-				}
 				ids.inc(0, caller);
 			}
 		}
@@ -193,29 +177,13 @@ public class DynamicRLEList {
 				}
 			} else if (deletionBlockIndex == 0) {
 				// [1,-x,...] -> [-x-1,...]
-				start = 0;
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					start = System.nanoTime();
-				}
 				ids.move(1, 0, caller);
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_RELEASE_ARRAYCOPY,
-							System.nanoTime() - start);
-				}
 				ids.dec(0, caller);
 			} else {
 				// [..,+w,-x,1,-y,+z,...] -> [...,+w,-x-y-1,+z,...]
 				ids.set(deletionBlockIndex - 1,
 						(ids.get(deletionBlockIndex - 1) + ids.get(deletionBlockIndex + 1)) - 1, caller);
-				start = 0;
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					start = System.nanoTime();
-				}
 				ids.move(deletionBlockIndex + 2, deletionBlockIndex, caller);
-				if (StatisticsDBTest.SUBBENCHMARKS) {
-					SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.RLE_RELEASE_ARRAYCOPY,
-							System.nanoTime() - start);
-				}
 			}
 		} else if ((maxPreviousId + 1) == idToFree) {
 			// the first id of a used block is freed
