@@ -42,9 +42,7 @@ public class CPUCacheBenchmark {
 		int clones = Integer.parseInt(args[1]);
 		byte[] array = new byte[arraySize];
 		// Fill with some non-zero content
-		for (int i = 0; i < array.length; i++) {
-			array[i] = (byte) i;
-		}
+		long[] firstReadTimes = read(array, 3, true);
 		// Make this array important, so it lands in CPU Cache
 		read(array, 1_000_000, false);
 
@@ -71,10 +69,11 @@ public class CPUCacheBenchmark {
 		long[] afterAllClonesReadTimes = read(array, 3, true);
 
 		// Write to CSV
-		String config = String.format("%,d", arraySize).replace(",", "_")
-				+ "-arraysize-" + String.format("%,d", clones).replace(",", "_") + "-clones";
+		String config = String.format("%,d", arraySize).replace(",", "_") + "-arraysize-"
+				+ String.format("%,d", clones).replace(",", "_") + "-clones";
 		File readTimesCSV = new File("CPUCB_readtimes_" + config + ".csv");
-		writeReadTimesCSV(readTimesCSV, initialReadTimes, afterFirstCloneReadTimes, afterAllClonesReadTimes);
+		writeReadTimesCSV(readTimesCSV, firstReadTimes, initialReadTimes, afterFirstCloneReadTimes,
+				afterAllClonesReadTimes);
 		File cloneTimesCSV = new File("CPUCB_clonetimes_" + config + ".csv");
 		writeCloneTimesCSV(cloneTimesCSV, cloneTimes, clones / 100);
 		System.out.println("Finished.");
@@ -88,11 +87,10 @@ public class CPUCacheBenchmark {
 		printer.println();
 	}
 
-	private static void writeReadTimesCSV(File csvFile, long[] initialReadTimes, long[] afterFirstCloneReadTimes,
-			long[] afterAllClonesReadTimes) {
+	private static void writeReadTimesCSV(File csvFile, long[] firstReadTimes, long[] initialReadTimes,
+			long[] afterFirstCloneReadTimes, long[] afterAllClonesReadTimes) {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
-		try (CSVPrinter printer = new CSVPrinter(
-				new OutputStreamWriter(new FileOutputStream(csvFile, false), "UTF-8"),
+		try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(csvFile, false), "UTF-8"),
 				csvFileFormat)) {
 
 			// Print column headers
@@ -105,6 +103,7 @@ public class CPUCacheBenchmark {
 			printer.println();
 
 			// Print read times
+			printCSVRecord(printer, "FIRST_READ_TIMES", firstReadTimes);
 			printCSVRecord(printer, "INITIAL_READ_TIMES", initialReadTimes);
 			printCSVRecord(printer, "AFTER_FIRST_CLONE_READ_TIMES", afterFirstCloneReadTimes);
 			printCSVRecord(printer, "AFTER_ALL_CLONES_READ_TIMES", afterAllClonesReadTimes);
@@ -115,8 +114,7 @@ public class CPUCacheBenchmark {
 
 	private static void writeCloneTimesCSV(File csvFile, long[] cloneTimes, int intervalLength) {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
-		try (CSVPrinter printer = new CSVPrinter(
-				new OutputStreamWriter(new FileOutputStream(csvFile, false), "UTF-8"),
+		try (CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(csvFile, false), "UTF-8"),
 				csvFileFormat)) {
 
 			// Print column headers
