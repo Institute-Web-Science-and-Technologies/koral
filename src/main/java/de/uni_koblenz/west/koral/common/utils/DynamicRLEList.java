@@ -20,8 +20,8 @@ package de.uni_koblenz.west.koral.common.utils;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_TASK;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.DynamicNumberArray;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.DynamicNumberArray.Caller;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.dynamic_number_array.Caller;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.dynamic_number_array.DynamicNumberArrayAccessor;
 import playground.StatisticsDBTest;
 
 /**
@@ -43,7 +43,7 @@ public class DynamicRLEList {
 	 * positive values represent used ids<br>
 	 * negative values represent free ids
 	 */
-	private final DynamicNumberArray ids;
+	private final DynamicNumberArrayAccessor ids;
 
 	/**
 	 * The currently highest id that is in use.
@@ -68,10 +68,11 @@ public class DynamicRLEList {
 	 */
 	public DynamicRLEList(byte[] ids, int valueSize, int initialLength, int extensionLength) {
 		if (ids != null) {
-			this.ids = new DynamicNumberArray(ids, valueSize, extensionLength);
-			findMaxId();
+//			this.ids = new DynamicNumberArrayAccessor(ids, valueSize, extensionLength);
+//			findMaxId();
+			throw new UnsupportedOperationException("TODO");
 		} else {
-			this.ids = new DynamicNumberArray(initialLength, 1, extensionLength);
+			this.ids = new DynamicNumberArrayAccessor(initialLength, 1, extensionLength);
 		}
 	}
 
