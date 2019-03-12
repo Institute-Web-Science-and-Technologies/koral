@@ -18,10 +18,11 @@
  */
 package de.uni_koblenz.west.koral.common.utils;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_TASK;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.dynamic_number_array.Caller;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.dynamic_number_array.DynamicNumberArrayAccessor;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.DynamicNumberArray;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.DynamicNumberArray.Caller;
 import playground.StatisticsDBTest;
 
 /**
@@ -43,7 +44,7 @@ public class DynamicRLEList {
 	 * positive values represent used ids<br>
 	 * negative values represent free ids
 	 */
-	private final DynamicNumberArrayAccessor ids;
+	private final DynamicNumberArray ids;
 
 	/**
 	 * The currently highest id that is in use.
@@ -72,7 +73,7 @@ public class DynamicRLEList {
 //			findMaxId();
 			throw new UnsupportedOperationException("TODO");
 		} else {
-			this.ids = new DynamicNumberArrayAccessor(initialLength, 1, extensionLength);
+			this.ids = new DynamicNumberArray(initialLength, 1, extensionLength);
 		}
 	}
 
@@ -141,6 +142,7 @@ public class DynamicRLEList {
 		if (isEmpty()) {
 			return;
 		}
+		CentralLogger.getInstance().addReleaseExecute();
 		long start = 0;
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 			start = System.nanoTime();
@@ -149,6 +151,7 @@ public class DynamicRLEList {
 		int deletionBlockIndex;
 		long maxPreviousId = -1;
 		for (deletionBlockIndex = 0; deletionBlockIndex <= ids.getLastUsedIndex(); deletionBlockIndex++) {
+			CentralLogger.getInstance().addReleaseFindBlockIteration();
 			long maxCurrentId = maxPreviousId + Math.abs(ids.get(deletionBlockIndex));
 			if (idToFree <= maxCurrentId) {
 				break;
