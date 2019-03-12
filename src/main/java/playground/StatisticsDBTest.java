@@ -34,6 +34,7 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatistics;
 import de.uni_koblenz.west.koral.master.statisticsDB.GraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
@@ -53,7 +54,7 @@ public class StatisticsDBTest {
 
 	private static final boolean COLLECT_META_STATISTICS = false;
 
-	private static final boolean WRITE_STATISTICS_DATA = true;
+	private static final boolean WRITE_STATISTICS_DATA = false;
 
 	/*
 	 * Performance influencing flags. Making these constant allows removal of all related code at compile time
@@ -220,6 +221,7 @@ public class StatisticsDBTest {
 				}
 				totalIndexFileTime = SubbenchmarkManager.getInstance().getIndexTime() / (long) 1e9;
 				totalExtraFilesTime = SubbenchmarkManager.getInstance().getExtraTime() / (long) 1e9;
+				CentralLogger.getInstance().finish();
 				SubbenchmarkManager.getInstance().finish(new File("subbenchmarks.csv"), configName, durationSec);
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				System.out.println("Flushing database...");

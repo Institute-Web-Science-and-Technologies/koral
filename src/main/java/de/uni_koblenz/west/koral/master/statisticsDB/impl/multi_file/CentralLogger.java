@@ -12,6 +12,10 @@ public class CentralLogger {
 
 	private static CentralLogger instance;
 
+	private long releaseExecutes;
+
+	private long releaseFindBlockIterations;
+
 	private CentralLogger() {}
 
 	public static CentralLogger getInstance() {
@@ -21,8 +25,18 @@ public class CentralLogger {
 		return instance;
 	}
 
+	public void addReleaseExecute() {
+		releaseExecutes++;
+	}
+
+	public void addReleaseFindBlockIteration() {
+		releaseFindBlockIterations++;
+	}
+
 	public void finish() {
 		System.out.println("===== CentralLogger:");
+		System.out.println("Release executes: " + String.format("%,d", releaseExecutes));
+		System.out.println("Release FindBlock Iterations: " + String.format("%,d", releaseFindBlockIterations));
 		System.out.println("===== End CentralLogger");
 	}
 
