@@ -309,9 +309,8 @@ public class FileManager {
 					listIndex++;
 					if (listIndex == dataLength) {
 						// Reading one entry is done, store and reset everything for next one
-						// TODO: replace null list with proper read data
 						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength,
-								extraCacheSpaceManager, null, false, logger));
+								extraCacheSpaceManager, list, false, logger));
 						fileId = -1;
 						rowLength = -1;
 						dataLength = -1;
@@ -342,8 +341,7 @@ public class FileManager {
 				if (extraFile.isEmpty()) {
 					continue;
 				}
-				// TODO: adapt to new byte array
-				byte[] data = extraFile.getFreeSpaceIndexData();
+				long[] data = extraFile.getFreeSpaceIndexData();
 				out.writeLong(fileId);
 				out.writeLong(extraFile.getRowLength());
 				out.writeLong(data.length);
