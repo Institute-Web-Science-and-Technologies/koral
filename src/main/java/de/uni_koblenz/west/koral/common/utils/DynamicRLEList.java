@@ -18,7 +18,6 @@
  */
 package de.uni_koblenz.west.koral.common.utils;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager.SUBBENCHMARK_TASK;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.DynamicNumberArray;
@@ -142,7 +141,6 @@ public class DynamicRLEList {
 		if (isEmpty()) {
 			return;
 		}
-		CentralLogger.getInstance().addReleaseExecute();
 		long start = 0;
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 			start = System.nanoTime();
@@ -151,7 +149,6 @@ public class DynamicRLEList {
 		int deletionBlockIndex;
 		long maxPreviousId = -1;
 		for (deletionBlockIndex = 0; deletionBlockIndex <= ids.getLastUsedIndex(); deletionBlockIndex++) {
-			CentralLogger.getInstance().addReleaseFindBlockIteration();
 			long maxCurrentId = maxPreviousId + Math.abs(ids.get(deletionBlockIndex));
 			if (idToFree <= maxCurrentId) {
 				break;
