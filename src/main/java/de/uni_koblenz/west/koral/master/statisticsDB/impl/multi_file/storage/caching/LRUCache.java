@@ -1,5 +1,7 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedList.DoublyLinkedNode;
+
 /**
  * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
  * access. Differs from LRUList by enforcing a given capacity limit.
@@ -34,8 +36,14 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 	}
 
 	@Override
-	protected void remove(DoublyLinkedNode node) {
-		super.remove(node);
+	public void remove(K key) {
+		super.remove(key);
+		size--;
+	}
+
+	@Override
+	public void evict() {
+		super.evict();
 		size--;
 	}
 
@@ -56,17 +64,7 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("Cache size: " + size + " [");
-		for (DoublyLinkedNode node = head; node != null; node = node.after) {
-			sb.append(node.key).append("=").append(node.value);
-			if (node.after != null) {
-				sb.append(", ");
-			}
-		}
-		sb.append("]");
-		sb.append("\nIndex: ");
-		sb.append(index.toString());
-		return sb.toString();
+		return super.toString() + "\nSize: " + size;
 	}
 
 }
