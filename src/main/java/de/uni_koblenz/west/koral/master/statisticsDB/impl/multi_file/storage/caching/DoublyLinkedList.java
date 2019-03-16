@@ -39,6 +39,7 @@ public class DoublyLinkedList<C> {
 		} else {
 			node.after = null;
 		}
+		size++;
 	}
 
 	public void insertBefore(DoublyLinkedNode<C> successor, DoublyLinkedNode<C> node) {
@@ -56,6 +57,7 @@ public class DoublyLinkedList<C> {
 		} else {
 			node.before = null;
 		}
+		size++;
 	}
 
 	public void prepend(DoublyLinkedNode<C> node) {
@@ -68,6 +70,7 @@ public class DoublyLinkedList<C> {
 			tail = node;
 		}
 		head = node;
+		size++;
 	}
 
 	public void append(DoublyLinkedNode<C> node) {
@@ -80,6 +83,7 @@ public class DoublyLinkedList<C> {
 			head = node;
 		}
 		tail = node;
+		size++;
 	}
 
 	protected void remove(DoublyLinkedNode<C> node) {
@@ -97,6 +101,7 @@ public class DoublyLinkedList<C> {
 		}
 		node.before = null;
 		node.after = null;
+		size--;
 	}
 
 	/**
