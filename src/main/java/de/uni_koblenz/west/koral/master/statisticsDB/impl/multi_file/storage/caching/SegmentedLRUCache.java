@@ -1,0 +1,214 @@
+package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
+
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNode.KeyValueSegmentContent;
+
+/**
+ * Implementation based on: R. Karedla, J. S. Love and B. G. Wherry, "Caching strategies to improve disk system
+ * performance," in Computer, vol. 27, no. 3, pp. 38-46, March 1994. doi: 10.1109/2.268884 URL:
+ * https://ieeexplore.ieee.org/document/268884
+ *
+ * @author Philipp Töws
+ *
+ * @param <K>
+ *            Type of the key of the node content
+ * @param <V>
+ *            Type of the value of the node content
+ */
+public class SegmentedLRUCache<K, V> implements Cache<K, V> {
+
+	private final Map<K, DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>>> index;
+
+	private final DoublyLinkedList<KeyValueSegmentContent<K, V, Segment>> list;
+
+	/**
+	 * The most recently used element of the probationary segment
+	 */
+	private DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> mruProbationary;
+
+	/**
+	 * Current amount of elements in protected segment.
+	 */
+	private long protectedSize;
+
+	private final long capacity;
+
+	/**
+	 * The maximum amount of elements in the protected segment
+	 */
+	private final long protectedLimit;
+
+	static enum Segment {
+		PROBATIONARY,
+		PROTECTED
+	}
+
+	/**
+	 *
+	 * @param capacity
+	 *            The maximum amount of elements the cache can hold in total
+	 * @param protectedLimit
+	 *            The maximum amount of elements in the protected segment
+	 */
+	public SegmentedLRUCache(long capacity, long protectedLimit) {
+		this.capacity = capacity;
+		this.protectedLimit = protectedLimit;
+
+		index = new HashMap<>();
+		list = new DoublyLinkedList<>();
+	}
+
+	@Override
+	public void put(K key, V value) {
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node = new DoublyLinkedNode<>();
+		node.content.key = key;
+		node.content.value = value;
+		node.content.segment = Segment.PROBATIONARY;
+
+		list.insertBefore(mruProbationary, node);
+		mruProbationary = node;
+
+		if (list.size() > capacity) {
+			evict();
+		}
+
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> oldValue = index.put(key, node);
+		if (oldValue != null) {
+			// Using put as update would result in memory leaks because the old value would
+			// stay in the doubly-linked list
+			throw new IllegalArgumentException(
+					"Key " + key + " already exists. Use update() to change existing entries");
+		}
+	}
+
+	@Override
+	public void update(K key, V newValue) {
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node = index.get(key);
+		if (node == null) {
+			put(key, newValue);
+			return;
+		}
+		access(node);
+		node.content.value = newValue;
+	}
+
+	void access(DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node) {
+		if (node == list.head()) {
+			return;
+		}
+		list.remove(node);
+		list.prepend(node);
+		protectedSize++;
+		if (node.content.segment == Segment.PROBATIONARY) {
+			node.content.segment = Segment.PROTECTED;
+			if (protectedSize > protectedLimit) {
+				evictProtected();
+			}
+		}
+	}
+
+	@Override
+	public V get(K key) {
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node = index.get(key);
+		if (node == null) {
+			return null;
+		}
+		access(node);
+		return node.content.value;
+	}
+
+	@Override
+	public Iterator<Entry<K, V>> iterator() {
+		Iterator<Entry<K, DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>>>> iterator = index.entrySet()
+				.iterator();
+		return new Iterator<Entry<K, V>>() {
+
+			@Override
+			public boolean hasNext() {
+				return iterator.hasNext();
+			}
+
+			@Override
+			public Entry<K, V> next() {
+				Entry<K, DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>>> next = iterator.next();
+				Entry<K, V> result = new AbstractMap.SimpleImmutableEntry<>(next.getKey(),
+						next.getValue().content.value);
+				return result;
+			}
+		};
+	}
+
+	@Override
+	public void remove(K key) {
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node = index.get(key);
+		list.remove(node);
+		index.remove(key);
+		if (node.content.segment == Segment.PROTECTED) {
+			protectedSize--;
+		}
+		if (node == mruProbationary) {
+			mruProbationary = mruProbationary.after;
+		}
+	}
+
+	@Override
+	public void evict() {
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> lru = list.tail();
+		assert lru.content.segment == Segment.PROBATIONARY;
+		list.remove(lru);
+		if (mruProbationary == lru) {
+			mruProbationary = mruProbationary.before;
+			if (mruProbationary.content.segment == Segment.PROTECTED) {
+				// We went to far, no probationary elements left
+				mruProbationary = null;
+			}
+		}
+		removeEldest(lru.content.key, lru.content.value);
+	}
+
+	/**
+	 * Removes the oldest element which is given via the parameters from the index. Subimplementations might disable
+	 * this deletion or do something with the removed element.
+	 *
+	 * @param value
+	 *            Might be used in subimplementations
+	 */
+	protected void removeEldest(K key, V value) {
+		index.remove(key);
+	}
+
+	/**
+	 * Evicts protected segment by moving the LRU element to the MRU end of the prohibited segment by shifting the
+	 * {@link #mruProbationary} pointer to the previous element.
+	 */
+	private void evictProtected() {
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> lruProtected = mruProbationary.before;
+		mruProbationary = lruProtected;
+		mruProbationary.content.segment = Segment.PROBATIONARY;
+		protectedSize--;
+	}
+
+	@Override
+	public void clear() {
+		list.clear();
+		index.clear();
+		protectedSize = 0;
+		mruProbationary = null;
+	}
+
+	@Override
+	public long size() {
+		return list.size();
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return list.isEmpty();
+	}
+
+}
