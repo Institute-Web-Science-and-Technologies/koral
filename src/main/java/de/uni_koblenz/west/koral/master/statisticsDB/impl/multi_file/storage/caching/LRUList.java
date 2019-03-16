@@ -25,7 +25,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	private final Map<K, DoublyLinkedNode<KeyValueContent<K, V>>> index;
 
-	private final DoublyLinkedList<KeyValueContent<K, V>> list;
+	protected final DoublyLinkedList<KeyValueContent<K, V>> list;
 
 	public LRUList() {
 		index = new HashMap<>();

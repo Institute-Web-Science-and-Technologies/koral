@@ -14,6 +14,8 @@ public class DoublyLinkedList<C> {
 
 	private DoublyLinkedNode<C> tail;
 
+	private long size;
+
 	public DoublyLinkedNode<C> head() {
 		return head;
 	}
@@ -127,6 +129,10 @@ public class DoublyLinkedList<C> {
 
 	public boolean isEmpty() {
 		return tail == null;
+	}
+
+	public long size() {
+		return size;
 	}
 
 	public void clear() {

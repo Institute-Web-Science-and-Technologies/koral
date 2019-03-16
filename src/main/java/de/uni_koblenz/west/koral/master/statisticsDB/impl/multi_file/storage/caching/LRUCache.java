@@ -13,12 +13,6 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 
 	private final long capacity;
 
-	/**
-	 * Amount of elements in the cache, that is the doubly linked list. There may be more in the index map, depending on
-	 * sub-implementations of {@link #removeEldest(DoublyLinkedNode)}.
-	 */
-	long size;
-
 	public LRUCache(long capacity) {
 		super();
 		this.capacity = capacity;
@@ -26,23 +20,10 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 
 	@Override
 	public void put(K key, V value) {
-		if (size == capacity) {
+		if (list.size() == capacity) {
 			evict();
 		}
 		super.put(key, value);
-		size++;
-	}
-
-	@Override
-	public void remove(K key) {
-		super.remove(key);
-		size--;
-	}
-
-	@Override
-	public void evict() {
-		super.evict();
-		size--;
 	}
 
 	/**
@@ -51,18 +32,17 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 	 */
 	@Override
 	public long size() {
-		return size;
+		return list.size();
 	}
 
 	@Override
 	public void clear() {
 		super.clear();
-		size = 0;
 	}
 
 	@Override
 	public String toString() {
-		return super.toString() + "\nSize: " + size;
+		return super.toString() + "\nSize: " + list.size();
 	}
 
 }
