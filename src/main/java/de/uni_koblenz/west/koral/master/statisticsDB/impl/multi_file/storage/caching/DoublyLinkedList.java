@@ -138,6 +138,7 @@ public class DoublyLinkedList<C> {
 	public void clear() {
 		head = null;
 		tail = null;
+		size = 0;
 	}
 
 }
