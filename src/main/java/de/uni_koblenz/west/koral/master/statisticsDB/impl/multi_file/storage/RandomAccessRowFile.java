@@ -14,8 +14,8 @@ import java.util.Set;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.Cache;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUList;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.ObjectRecycler;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.LRUSharedCache;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceConsumer;
@@ -49,7 +49,7 @@ public class RandomAccessRowFile implements RowStorage {
 	 * inserting/updating), because the LRUCache doesn't care and NullPointerExceptions are not thrown before actually
 	 * writing to file, when it is too late to find out where the null came from, in the case of a bug.
 	 */
-	private final LRUList<Long, byte[]> fileCache;
+	private final Cache<Long, byte[]> fileCache;
 
 	private final ObjectRecycler<byte[]> blockRecycler;
 
@@ -580,7 +580,7 @@ public class RandomAccessRowFile implements RowStorage {
 		if ((fileCache == null) || fileCache.isEmpty()) {
 			return false;
 		}
-		fileCache.removeEldest();
+		fileCache.evict();
 		return true;
 	}
 

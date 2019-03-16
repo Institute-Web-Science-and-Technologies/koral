@@ -2,7 +2,7 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ca
 
 /**
  * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
- * access.
+ * access. Differs from LRUList by enforcing a given capacity limit.
  *
  * @author philipp
  *
@@ -27,7 +27,7 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 	@Override
 	public void put(K key, V value) {
 		if (size == capacity) {
-			removeEldest();
+			evict();
 		}
 		super.put(key, value);
 		size++;

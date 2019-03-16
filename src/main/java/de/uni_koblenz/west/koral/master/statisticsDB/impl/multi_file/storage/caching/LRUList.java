@@ -20,7 +20,7 @@ import java.util.Set;
  * @param <K>
  * @param <V>
  */
-public class LRUList<K, V> implements Iterable<Entry<K, V>> {
+public class LRUList<K, V> implements Cache<K, V> {
 
 	final Map<K, DoublyLinkedNode> index;
 
@@ -32,6 +32,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		index = new HashMap<>();
 	}
 
+	@Override
 	public void put(K key, V value) {
 		DoublyLinkedNode node = new DoublyLinkedNode();
 		node.key = key;
@@ -55,6 +56,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 	 * @param key
 	 * @param newValue
 	 */
+	@Override
 	public void update(K key, V newValue) {
 		DoublyLinkedNode node = index.get(key);
 		if (node == null) {
@@ -65,6 +67,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		node.value = newValue;
 	}
 
+	@Override
 	public V get(K key) {
 		DoublyLinkedNode node = index.get(key);
 		if (node == null) {
@@ -125,6 +128,7 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 	 *
 	 * @param key
 	 */
+	@Override
 	public void remove(K key) {
 		DoublyLinkedNode node = index.get(key);
 		index.remove(key);
@@ -202,7 +206,8 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		};
 	}
 
-	public void removeEldest() {
+	@Override
+	public void evict() {
 		DoublyLinkedNode eldest = head;
 		remove(eldest);
 		removeEldest(eldest.key, eldest.value);
@@ -216,14 +221,17 @@ public class LRUList<K, V> implements Iterable<Entry<K, V>> {
 		index.remove(key);
 	}
 
+	@Override
 	public long size() {
 		return index.size();
 	}
 
+	@Override
 	public boolean isEmpty() {
 		return tail == null;
 	}
 
+	@Override
 	public void clear() {
 		index.clear();
 		head = null;
