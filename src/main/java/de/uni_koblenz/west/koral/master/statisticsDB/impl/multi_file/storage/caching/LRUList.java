@@ -35,6 +35,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 	@Override
 	public void put(K key, V value) {
 		DoublyLinkedNode<KeyValueContent<K, V>> node = new DoublyLinkedNode<>();
+		node.content = new KeyValueContent<>();
 		node.content.key = key;
 		node.content.value = value;
 		access(node);
@@ -174,7 +175,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	/**
 	 * Removes the oldest element which is given via the parameters from the index. Subimplementations might disable
-	 * this deletion.
+	 * this deletion or do something with the removed element.
 	 *
 	 * @param value
 	 *            Might be used in subimplementations

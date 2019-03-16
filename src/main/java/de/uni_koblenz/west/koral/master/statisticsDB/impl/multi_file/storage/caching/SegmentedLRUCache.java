@@ -66,6 +66,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	@Override
 	public void put(K key, V value) {
 		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node = new DoublyLinkedNode<>();
+		node.content = new KeyValueSegmentContent<>();
 		node.content.key = key;
 		node.content.value = value;
 		node.content.segment = Segment.PROBATIONARY;
@@ -188,6 +189,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	 */
 	private void evictProtected() {
 		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> lruProtected = mruProbationary.before;
+		assert lruProtected != null;
 		mruProbationary = lruProtected;
 		mruProbationary.content.segment = Segment.PROBATIONARY;
 		protectedSize--;
