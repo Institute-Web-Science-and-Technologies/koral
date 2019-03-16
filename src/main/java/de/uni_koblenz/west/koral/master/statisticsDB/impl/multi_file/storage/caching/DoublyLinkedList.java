@@ -12,19 +12,19 @@ import java.util.NoSuchElementException;
  *
  */
 public class DoublyLinkedList<K, V> {
-	private DoublyLinkedNode head;
+	private DoublyLinkedNode<K, V> head;
 
-	private DoublyLinkedNode tail;
+	private DoublyLinkedNode<K, V> tail;
 
-	public DoublyLinkedNode head() {
+	public DoublyLinkedNode<K, V> head() {
 		return head;
 	}
 
-	public DoublyLinkedNode tail() {
+	public DoublyLinkedNode<K, V> tail() {
 		return tail;
 	}
 
-	public void insertAfter(DoublyLinkedNode predecessor, DoublyLinkedNode node) {
+	public void insertAfter(DoublyLinkedNode<K, V> predecessor, DoublyLinkedNode<K, V> node) {
 		if (predecessor == tail) {
 			append(node);
 			return;
@@ -41,7 +41,7 @@ public class DoublyLinkedList<K, V> {
 		}
 	}
 
-	public void append(DoublyLinkedNode node) {
+	public void append(DoublyLinkedNode<K, V> node) {
 		node.before = tail;
 		node.after = null;
 		if (tail != null) {
@@ -58,7 +58,7 @@ public class DoublyLinkedList<K, V> {
 	 *
 	 * @param node
 	 */
-	protected void remove(DoublyLinkedNode node) {
+	protected void remove(DoublyLinkedNode<K, V> node) {
 		if (head == node) {
 			head = node.after;
 		}
@@ -83,7 +83,7 @@ public class DoublyLinkedList<K, V> {
 	 */
 	public Iterator<Entry<K, V>> iteratorFromLast() {
 		return new Iterator<Entry<K, V>>() {
-			DoublyLinkedList<K, V>.DoublyLinkedNode nextNode = head;
+			DoublyLinkedNode<K, V> nextNode = head;
 
 			@Override
 			public boolean hasNext() {
@@ -95,7 +95,7 @@ public class DoublyLinkedList<K, V> {
 				if (!hasNext()) {
 					throw new NoSuchElementException("Call hasNext() before next()");
 				}
-				DoublyLinkedList<K, V>.DoublyLinkedNode returnNode = nextNode;
+				DoublyLinkedNode<K, V> returnNode = nextNode;
 				nextNode = nextNode.after;
 				return new AbstractMap.SimpleImmutableEntry<>(returnNode.key, returnNode.value);
 			}
@@ -112,14 +112,4 @@ public class DoublyLinkedList<K, V> {
 		tail = null;
 	}
 
-	public class DoublyLinkedNode {
-		DoublyLinkedNode before, after;
-		K key;
-		V value;
-
-		@Override
-		public String toString() {
-			return getClass().getSimpleName() + '@' + Integer.toHexString(hashCode());
-		}
-	}
 }

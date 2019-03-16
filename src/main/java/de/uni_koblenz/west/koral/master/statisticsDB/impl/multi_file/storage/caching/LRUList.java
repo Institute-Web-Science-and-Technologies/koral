@@ -21,7 +21,7 @@ import java.util.Set;
  */
 public class LRUList<K, V> implements Cache<K, V> {
 
-	private final Map<K, DoublyLinkedList<K, V>.DoublyLinkedNode> index;
+	private final Map<K, DoublyLinkedNode<K, V>> index;
 
 	private final DoublyLinkedList<K, V> list;
 
@@ -32,11 +32,11 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	@Override
 	public void put(K key, V value) {
-		DoublyLinkedList<K, V>.DoublyLinkedNode node = list.new DoublyLinkedNode();
+		DoublyLinkedNode<K, V> node = new DoublyLinkedNode<>();
 		node.key = key;
 		node.value = value;
 		access(node);
-		DoublyLinkedList<K, V>.DoublyLinkedNode oldValue = index.put(key, node);
+		DoublyLinkedNode<K, V> oldValue = index.put(key, node);
 		if (oldValue != null) {
 			// Using put as update would result in memory leaks because the old value would
 			// stay in the doubly-linked list
@@ -53,7 +53,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 	 */
 	@Override
 	public void update(K key, V newValue) {
-		DoublyLinkedList<K, V>.DoublyLinkedNode node = index.get(key);
+		DoublyLinkedNode<K, V> node = index.get(key);
 		if (node == null) {
 			put(key, newValue);
 			return;
@@ -64,7 +64,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	@Override
 	public V get(K key) {
-		DoublyLinkedList<K, V>.DoublyLinkedNode node = index.get(key);
+		DoublyLinkedNode<K, V> node = index.get(key);
 		if (node == null) {
 			return null;
 		}
@@ -72,7 +72,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 		return node.value;
 	}
 
-	void access(DoublyLinkedList<K, V>.DoublyLinkedNode node) {
+	void access(DoublyLinkedNode<K, V> node) {
 		if (node == list.tail()) {
 			return;
 		}
@@ -87,7 +87,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 	 */
 	@Override
 	public void remove(K key) {
-		DoublyLinkedList<K, V>.DoublyLinkedNode node = index.get(key);
+		DoublyLinkedNode<K, V> node = index.get(key);
 		index.remove(key);
 		list.remove(node);
 	}
@@ -102,7 +102,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	public Collection<V> values() {
 		LinkedList<V> values = new LinkedList<>();
-		for (DoublyLinkedList<K, V>.DoublyLinkedNode node : index.values()) {
+		for (DoublyLinkedNode<K, V> node : index.values()) {
 			values.add(node.value);
 		}
 		return values;
@@ -110,7 +110,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	public Collection<Entry<K, V>> entrySet() {
 		LinkedList<Entry<K, V>> entrySet = new LinkedList<>();
-		for (Entry<K, DoublyLinkedList<K, V>.DoublyLinkedNode> entry : index.entrySet()) {
+		for (Entry<K, DoublyLinkedNode<K, V>> entry : index.entrySet()) {
 			entrySet.add(new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), entry.getValue().value));
 		}
 		return entrySet;
@@ -118,7 +118,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	@Override
 	public Iterator<Entry<K, V>> iterator() {
-		Iterator<Entry<K, DoublyLinkedList<K, V>.DoublyLinkedNode>> iterator = index.entrySet().iterator();
+		Iterator<Entry<K, DoublyLinkedNode<K, V>>> iterator = index.entrySet().iterator();
 		return new Iterator<Entry<K, V>>() {
 
 			@Override
@@ -128,7 +128,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 			@Override
 			public Entry<K, V> next() {
-				Entry<K, DoublyLinkedList<K, V>.DoublyLinkedNode> next = iterator.next();
+				Entry<K, DoublyLinkedNode<K, V>> next = iterator.next();
 				Entry<K, V> result = new AbstractMap.SimpleImmutableEntry<>(next.getKey(), next.getValue().value);
 				return result;
 			}
@@ -150,7 +150,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 	 */
 	@Override
 	public void evict() {
-		DoublyLinkedList<K, V>.DoublyLinkedNode eldest = list.head();
+		DoublyLinkedNode<K, V> eldest = list.head();
 		list.remove(eldest);
 		removeEldest(eldest.key, eldest.value);
 	}
@@ -185,7 +185,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("LRU List [");
-		for (DoublyLinkedList<K, V>.DoublyLinkedNode node = list.head(); node != null; node = node.after) {
+		for (DoublyLinkedNode<K, V> node = list.head(); node != null; node = node.after) {
 			sb.append(node.key).append("=").append(node.value);
 			if (node.after != null) {
 				sb.append(", ");

@@ -1,7 +1,5 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
 
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedList.DoublyLinkedNode;
-
 /**
  * A generic LRU cache with O(1) operations. Uses a doubly-linked-list for access order plus an index (Map) for O(1)
  * access. Differs from LRUList by enforcing a given capacity limit.
