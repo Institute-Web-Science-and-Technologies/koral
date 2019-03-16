@@ -54,7 +54,7 @@ public class CPUCacheBenchmark {
 
 		// Dont put this into a method because the array reference would not be changed
 		long[] afterFirstCloneReadTimes = null;
-		long[] cloneTimes = new long[100];
+//		long[] cloneTimes = new long[100];
 		byte[] copy = new byte[array.length];
 		System.arraycopy(array, 0, copy, 0, array.length);
 //		long start = System.nanoTime();
@@ -80,8 +80,8 @@ public class CPUCacheBenchmark {
 		File readTimesCSV = new File("CPUCB_readtimes_" + config + ".csv");
 		writeReadTimesCSV(readTimesCSV, initialReadTimes, afterWriteTimes, afterReadTimes, afterFirstCloneReadTimes,
 				afterAllClonesReadTimes);
-		File cloneTimesCSV = new File("CPUCB_clonetimes_" + config + ".csv");
-		writeCloneTimesCSV(cloneTimesCSV, cloneTimes, clones / 100);
+//		File cloneTimesCSV = new File("CPUCB_clonetimes_" + config + ".csv");
+//		writeCloneTimesCSV(cloneTimesCSV, cloneTimes, clones / 100);
 		System.out.println("Finished.");
 	}
 
