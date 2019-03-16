@@ -42,6 +42,10 @@ public class DoublyLinkedList<K, V> {
 	}
 
 	public void insertBefore(DoublyLinkedNode<K, V> successor, DoublyLinkedNode<K, V> node) {
+		if (successor == head) {
+			prepend(node);
+			return;
+		}
 		node.after = successor;
 		if (successor != null) {
 			node.before = successor.before;
@@ -52,9 +56,18 @@ public class DoublyLinkedList<K, V> {
 		} else {
 			node.before = null;
 		}
-		if (successor == head) {
-			head = node;
+	}
+
+	public void prepend(DoublyLinkedNode<K, V> node) {
+		node.before = null;
+		node.after = head;
+		if (head != null) {
+			head.before = node;
+		} else {
+			assert tail == null;
+			tail = node;
 		}
+		head = node;
 	}
 
 	public void append(DoublyLinkedNode<K, V> node) {
@@ -69,11 +82,6 @@ public class DoublyLinkedList<K, V> {
 		tail = node;
 	}
 
-	/**
-	 * Removes a node from the DoublyLinkedList only.
-	 *
-	 * @param node
-	 */
 	protected void remove(DoublyLinkedNode<K, V> node) {
 		if (head == node) {
 			head = node.after;
