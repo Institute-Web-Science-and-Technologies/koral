@@ -17,7 +17,7 @@ public interface Cache<K, V> extends Iterable<Entry<K, V>> {
 
 	public void put(K key, V value);
 
-	public void update(K key, V value);
+	public void update(K key, V newValue);
 
 	public V get(K key);
 

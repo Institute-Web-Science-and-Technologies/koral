@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
 /**
- * A general doubly-linked list, which nodes are key-value mappings.
+ * A general doubly-linked list, whose nodes are key-value mappings.
  *
  * @author Philipp Töws
  *
@@ -38,6 +38,22 @@ public class DoublyLinkedList<K, V> {
 			predecessor.after = node;
 		} else {
 			node.after = null;
+		}
+	}
+
+	public void insertBefore(DoublyLinkedNode<K, V> successor, DoublyLinkedNode<K, V> node) {
+		node.after = successor;
+		if (successor != null) {
+			node.before = successor.before;
+			if (successor.before != null) {
+				successor.before.after = node;
+			}
+			successor.before = node;
+		} else {
+			node.before = null;
+		}
+		if (successor == head) {
+			head = node;
 		}
 	}
 
