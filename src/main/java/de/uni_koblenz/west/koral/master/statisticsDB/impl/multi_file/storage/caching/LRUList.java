@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNode.KeyValueContent;
+
 /**
  * A generic LRU list with O(1) operations and no capacity limits. Uses a doubly-linked-list for access order plus an
  * index (Map) for O(1) access.
@@ -21,9 +23,9 @@ import java.util.Set;
  */
 public class LRUList<K, V> implements Cache<K, V> {
 
-	private final Map<K, DoublyLinkedNode<K, V>> index;
+	private final Map<K, DoublyLinkedNode<KeyValueContent<K, V>>> index;
 
-	private final DoublyLinkedList<K, V> list;
+	private final DoublyLinkedList<KeyValueContent<K, V>> list;
 
 	public LRUList() {
 		index = new HashMap<>();
@@ -32,11 +34,11 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	@Override
 	public void put(K key, V value) {
-		DoublyLinkedNode<K, V> node = new DoublyLinkedNode<>();
-		node.key = key;
-		node.value = value;
+		DoublyLinkedNode<KeyValueContent<K, V>> node = new DoublyLinkedNode<>();
+		node.content.key = key;
+		node.content.value = value;
 		access(node);
-		DoublyLinkedNode<K, V> oldValue = index.put(key, node);
+		DoublyLinkedNode<KeyValueContent<K, V>> oldValue = index.put(key, node);
 		if (oldValue != null) {
 			// Using put as update would result in memory leaks because the old value would
 			// stay in the doubly-linked list
@@ -53,26 +55,26 @@ public class LRUList<K, V> implements Cache<K, V> {
 	 */
 	@Override
 	public void update(K key, V newValue) {
-		DoublyLinkedNode<K, V> node = index.get(key);
+		DoublyLinkedNode<KeyValueContent<K, V>> node = index.get(key);
 		if (node == null) {
 			put(key, newValue);
 			return;
 		}
 		access(node);
-		node.value = newValue;
+		node.content.value = newValue;
 	}
 
 	@Override
 	public V get(K key) {
-		DoublyLinkedNode<K, V> node = index.get(key);
+		DoublyLinkedNode<KeyValueContent<K, V>> node = index.get(key);
 		if (node == null) {
 			return null;
 		}
 		access(node);
-		return node.value;
+		return node.content.value;
 	}
 
-	void access(DoublyLinkedNode<K, V> node) {
+	void access(DoublyLinkedNode<KeyValueContent<K, V>> node) {
 		if (node == list.tail()) {
 			return;
 		}
@@ -87,7 +89,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 	 */
 	@Override
 	public void remove(K key) {
-		DoublyLinkedNode<K, V> node = index.get(key);
+		DoublyLinkedNode<KeyValueContent<K, V>> node = index.get(key);
 		index.remove(key);
 		list.remove(node);
 	}
@@ -102,23 +104,23 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 	public Collection<V> values() {
 		LinkedList<V> values = new LinkedList<>();
-		for (DoublyLinkedNode<K, V> node : index.values()) {
-			values.add(node.value);
+		for (DoublyLinkedNode<KeyValueContent<K, V>> node : index.values()) {
+			values.add(node.content.value);
 		}
 		return values;
 	}
 
 	public Collection<Entry<K, V>> entrySet() {
 		LinkedList<Entry<K, V>> entrySet = new LinkedList<>();
-		for (Entry<K, DoublyLinkedNode<K, V>> entry : index.entrySet()) {
-			entrySet.add(new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), entry.getValue().value));
+		for (Entry<K, DoublyLinkedNode<KeyValueContent<K, V>>> entry : index.entrySet()) {
+			entrySet.add(new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), entry.getValue().content.value));
 		}
 		return entrySet;
 	}
 
 	@Override
 	public Iterator<Entry<K, V>> iterator() {
-		Iterator<Entry<K, DoublyLinkedNode<K, V>>> iterator = index.entrySet().iterator();
+		Iterator<Entry<K, DoublyLinkedNode<KeyValueContent<K, V>>>> iterator = index.entrySet().iterator();
 		return new Iterator<Entry<K, V>>() {
 
 			@Override
@@ -128,8 +130,9 @@ public class LRUList<K, V> implements Cache<K, V> {
 
 			@Override
 			public Entry<K, V> next() {
-				Entry<K, DoublyLinkedNode<K, V>> next = iterator.next();
-				Entry<K, V> result = new AbstractMap.SimpleImmutableEntry<>(next.getKey(), next.getValue().value);
+				Entry<K, DoublyLinkedNode<KeyValueContent<K, V>>> next = iterator.next();
+				Entry<K, V> result = new AbstractMap.SimpleImmutableEntry<>(next.getKey(),
+						next.getValue().content.value);
 				return result;
 			}
 		};
@@ -142,7 +145,21 @@ public class LRUList<K, V> implements Cache<K, V> {
 	 * @return
 	 */
 	public Iterator<Entry<K, V>> iteratorFromLast() {
-		return list.iteratorFromLast();
+		Iterator<KeyValueContent<K, V>> iterator = list.iteratorFromLast();
+		return new Iterator<Entry<K, V>>() {
+
+			@Override
+			public boolean hasNext() {
+				return iterator.hasNext();
+			}
+
+			@Override
+			public Entry<K, V> next() {
+				KeyValueContent<K, V> nextContent = iterator.next();
+				return new AbstractMap.SimpleImmutableEntry<>(nextContent.key, nextContent.value);
+			}
+
+		};
 	}
 
 	/**
@@ -150,9 +167,9 @@ public class LRUList<K, V> implements Cache<K, V> {
 	 */
 	@Override
 	public void evict() {
-		DoublyLinkedNode<K, V> eldest = list.head();
+		DoublyLinkedNode<KeyValueContent<K, V>> eldest = list.head();
 		list.remove(eldest);
-		removeEldest(eldest.key, eldest.value);
+		removeEldest(eldest.content.key, eldest.content.value);
 	}
 
 	/**
@@ -185,8 +202,8 @@ public class LRUList<K, V> implements Cache<K, V> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("LRU List [");
-		for (DoublyLinkedNode<K, V> node = list.head(); node != null; node = node.after) {
-			sb.append(node.key).append("=").append(node.value);
+		for (DoublyLinkedNode<KeyValueContent<K, V>> node = list.head(); node != null; node = node.after) {
+			sb.append(node.content.key).append("=").append(node.content.value);
 			if (node.after != null) {
 				sb.append(", ");
 			}

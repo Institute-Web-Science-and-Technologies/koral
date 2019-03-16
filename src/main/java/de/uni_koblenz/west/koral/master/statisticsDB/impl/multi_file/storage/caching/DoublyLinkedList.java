@@ -1,30 +1,28 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
 
-import java.util.AbstractMap;
 import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
 /**
- * A general doubly-linked list, whose nodes are key-value mappings.
+ * A general doubly-linked list, whose nodes contain container classes as content.
  *
  * @author Philipp Töws
  *
  */
-public class DoublyLinkedList<K, V> {
-	private DoublyLinkedNode<K, V> head;
+public class DoublyLinkedList<C> {
+	private DoublyLinkedNode<C> head;
 
-	private DoublyLinkedNode<K, V> tail;
+	private DoublyLinkedNode<C> tail;
 
-	public DoublyLinkedNode<K, V> head() {
+	public DoublyLinkedNode<C> head() {
 		return head;
 	}
 
-	public DoublyLinkedNode<K, V> tail() {
+	public DoublyLinkedNode<C> tail() {
 		return tail;
 	}
 
-	public void insertAfter(DoublyLinkedNode<K, V> predecessor, DoublyLinkedNode<K, V> node) {
+	public void insertAfter(DoublyLinkedNode<C> predecessor, DoublyLinkedNode<C> node) {
 		if (predecessor == tail) {
 			append(node);
 			return;
@@ -41,7 +39,7 @@ public class DoublyLinkedList<K, V> {
 		}
 	}
 
-	public void insertBefore(DoublyLinkedNode<K, V> successor, DoublyLinkedNode<K, V> node) {
+	public void insertBefore(DoublyLinkedNode<C> successor, DoublyLinkedNode<C> node) {
 		if (successor == head) {
 			prepend(node);
 			return;
@@ -58,7 +56,7 @@ public class DoublyLinkedList<K, V> {
 		}
 	}
 
-	public void prepend(DoublyLinkedNode<K, V> node) {
+	public void prepend(DoublyLinkedNode<C> node) {
 		node.before = null;
 		node.after = head;
 		if (head != null) {
@@ -70,7 +68,7 @@ public class DoublyLinkedList<K, V> {
 		head = node;
 	}
 
-	public void append(DoublyLinkedNode<K, V> node) {
+	public void append(DoublyLinkedNode<C> node) {
 		node.before = tail;
 		node.after = null;
 		if (tail != null) {
@@ -82,7 +80,7 @@ public class DoublyLinkedList<K, V> {
 		tail = node;
 	}
 
-	protected void remove(DoublyLinkedNode<K, V> node) {
+	protected void remove(DoublyLinkedNode<C> node) {
 		if (head == node) {
 			head = node.after;
 		}
@@ -105,9 +103,9 @@ public class DoublyLinkedList<K, V> {
 	 *
 	 * @return
 	 */
-	public Iterator<Entry<K, V>> iteratorFromLast() {
-		return new Iterator<Entry<K, V>>() {
-			DoublyLinkedNode<K, V> nextNode = head;
+	public Iterator<C> iteratorFromLast() {
+		return new Iterator<C>() {
+			DoublyLinkedNode<C> nextNode = head;
 
 			@Override
 			public boolean hasNext() {
@@ -115,13 +113,13 @@ public class DoublyLinkedList<K, V> {
 			}
 
 			@Override
-			public Entry<K, V> next() {
+			public C next() {
 				if (!hasNext()) {
 					throw new NoSuchElementException("Call hasNext() before next()");
 				}
-				DoublyLinkedNode<K, V> returnNode = nextNode;
+				DoublyLinkedNode<C> returnNode = nextNode;
 				nextNode = nextNode.after;
-				return new AbstractMap.SimpleImmutableEntry<>(returnNode.key, returnNode.value);
+				return returnNode.content;
 			}
 
 		};
