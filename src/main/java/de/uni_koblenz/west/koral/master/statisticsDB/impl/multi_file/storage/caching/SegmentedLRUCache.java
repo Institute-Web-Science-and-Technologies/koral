@@ -71,7 +71,11 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		node.content.value = value;
 		node.content.segment = Segment.PROBATIONARY;
 
-		list.insertBefore(mruProbationary, node);
+		if (mruProbationary != null) {
+			list.insertBefore(mruProbationary, node);
+		} else {
+			list.append(node);
+		}
 		mruProbationary = node;
 
 		if (list.size() > capacity) {
@@ -99,13 +103,15 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	}
 
 	void access(DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node) {
-		if (node == list.head()) {
-			return;
+		if (node == mruProbationary) {
+			mruProbationary = mruProbationary.after;
 		}
-		list.remove(node);
-		list.prepend(node);
-		protectedSize++;
+		if (node != list.head()) {
+			list.remove(node);
+			list.prepend(node);
+		}
 		if (node.content.segment == Segment.PROBATIONARY) {
+			protectedSize++;
 			node.content.segment = Segment.PROTECTED;
 			if (protectedSize > protectedLimit) {
 				evictProtected();
@@ -188,8 +194,13 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	 * {@link #mruProbationary} pointer to the previous element.
 	 */
 	private void evictProtected() {
-		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> lruProtected = mruProbationary.before;
-		assert lruProtected != null;
+		assert (protectedSize - 1) == protectedLimit;
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> lruProtected;
+		if (mruProbationary != null) {
+			lruProtected = mruProbationary.before;
+		} else {
+			lruProtected = list.tail();
+		}
 		mruProbationary = lruProtected;
 		mruProbationary.content.segment = Segment.PROBATIONARY;
 		protectedSize--;
