@@ -25,38 +25,36 @@ public class DoublyLinkedList<C> {
 	}
 
 	public void insertAfter(DoublyLinkedNode<C> predecessor, DoublyLinkedNode<C> node) {
+		if (predecessor == null) {
+			throw new NullPointerException();
+		}
 		if (predecessor == tail) {
 			append(node);
 			return;
 		}
 		node.before = predecessor;
-		if (predecessor != null) {
-			node.after = predecessor.after;
-			if (predecessor.after != null) {
-				predecessor.after.before = node;
-			}
-			predecessor.after = node;
-		} else {
-			node.after = null;
+		node.after = predecessor.after;
+		if (predecessor.after != null) {
+			predecessor.after.before = node;
 		}
+		predecessor.after = node;
 		size++;
 	}
 
 	public void insertBefore(DoublyLinkedNode<C> successor, DoublyLinkedNode<C> node) {
+		if (successor == null) {
+			throw new NullPointerException();
+		}
 		if (successor == head) {
 			prepend(node);
 			return;
 		}
 		node.after = successor;
-		if (successor != null) {
-			node.before = successor.before;
-			if (successor.before != null) {
-				successor.before.after = node;
-			}
-			successor.before = node;
-		} else {
-			node.before = null;
+		node.before = successor.before;
+		if (successor.before != null) {
+			successor.before.after = node;
 		}
+		successor.before = node;
 		size++;
 	}
 
