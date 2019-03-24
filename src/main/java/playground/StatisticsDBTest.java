@@ -214,6 +214,9 @@ public class StatisticsDBTest {
 			long unusedBytes = -1;
 			long totalIndexFileTime = -1;
 			long totalExtraFilesTime = -1;
+			long totalCacheHits = 0, totalCacheMisses = 0, totalNotExisting = 0;
+			double totalHitrate = 0;
+			Map<Long, long[]> storageStatistics = null;
 			if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
 				MultiFileGraphStatisticsDatabase multiDB = ((MultiFileGraphStatisticsDatabase) statisticsDB);
 				if (ENABLE_STORAGE_LOGGING) {
@@ -223,6 +226,16 @@ public class StatisticsDBTest {
 				totalExtraFilesTime = SubbenchmarkManager.getInstance().getExtraTime() / (long) 1e9;
 				CentralLogger.getInstance().finish();
 				SubbenchmarkManager.getInstance().finish(new File("subbenchmarks.csv"), configName, durationSec);
+
+				storageStatistics = multiDB.getStorageStatistics();
+				for (Entry<Long, long[]> entry : storageStatistics.entrySet()) {
+					long[] values = entry.getValue();
+					totalCacheHits += values[0];
+					totalCacheMisses += values[1];
+					totalNotExisting += values[2];
+				}
+				totalHitrate = totalCacheHits / (double) (totalCacheHits + totalCacheMisses);
+
 				freeSpaceIndexLengths = multiDB.getFreeSpaceIndexLenghts();
 				System.out.println("Flushing database...");
 				start = System.currentTimeMillis();
@@ -241,13 +254,17 @@ public class StatisticsDBTest {
 			System.out.println("Dir Size: " + String.format("%,d", dirSize) + " Bytes");
 			System.out.println("Index File size: " + String.format("%,d", indexFileLength) + " Bytes");
 			if (WRITE_BENCHMARK_RESULTS) {
+				writeStorageStatisticsToCSV(configName, storageDir.getCanonicalPath(), storageStatistics,
+						totalCacheHits,
+						totalCacheMisses, totalNotExisting, totalHitrate);
 				System.out.println("Writing benchmarks to CSV...");
 				SimpleDateFormat dateFormatter = new SimpleDateFormat("dd.MM.yy HH:mm");
 				String date = dateFormatter.format(new Date());
 				long extraFilesSize = getExtraFilesSize(storageDir);
 				writeBenchmarkToCSV(resultCSV, date, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, implementationNote, durationSec,
-						totalInputReadTime, totalIndexFileTime, totalExtraFilesTime, dirSize, indexFileLength,
+						totalInputReadTime, totalIndexFileTime, totalExtraFilesTime, totalCacheHits,
+						totalCacheMisses, totalHitrate, dirSize, indexFileLength,
 						extraFilesSize, totalEntries, unusedBytes);
 				System.out.println("Writing file distribution to CSV...");
 				writeFileDistributionToCSV(configNameWithoutCaches, conf.getStatisticsDir(true), freeSpaceIndexLengths);
@@ -292,7 +309,8 @@ public class StatisticsDBTest {
 		if (resultFile.length() == 0) {
 			printer.printRecord("DATE_FINISHED", "TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB",
 					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "INPUT_TIME", "INDEX_TIME",
-					"EXTRA_TIME", "DIR_SIZE_BYTES", "INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES",
+					"EXTRA_TIME", "TOTAL_CACHE_HITS", "TOTAL_CACHE_MISSES", "TOTAL_HITRATE", "DIR_SIZE_BYTES",
+					"INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES",
 					"UNUSED_BYTES");
 		}
 		printer.printRecord(row);
@@ -362,6 +380,32 @@ public class StatisticsDBTest {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static void writeStorageStatisticsToCSV(String configName, String storageDir,
+			Map<Long, long[]> storageStatistics, long totalCacheHits, long totalCacheMisses, long totalNotExisting,
+			double totalHitrate) throws IOException {
+		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(
+				new FileOutputStream("storageStatistics-" + configName + ".csv", false), "UTF-8"), csvFileFormat);
+		printer.printRecord("FILE_ID", "FILE_SIZE", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE", "NOT_EXISTING");
+		for (Entry<Long, long[]> entry : storageStatistics.entrySet()) {
+			long fileId = entry.getKey();
+			long[] values = entry.getValue();
+			File file;
+			if (fileId == 0) {
+				file = new File(storageDir, "statistics");
+			} else {
+				file = new File(storageDir, String.valueOf(fileId));
+			}
+			double hitrate = values[0] / (double) (values[0] + values[1]);
+			printer.printRecord(fileId, file.length(), values[0], values[1], String.format("%.3f", hitrate), values[2]);
+		}
+		printer.println();
+		printer.printRecord("TOTAL", "", totalCacheHits, totalCacheMisses, String.format("%.3f", totalHitrate),
+				totalNotExisting);
+		printer.close();
+
 	}
 
 	private static long getExtraFilesSize(File storageDir) {
