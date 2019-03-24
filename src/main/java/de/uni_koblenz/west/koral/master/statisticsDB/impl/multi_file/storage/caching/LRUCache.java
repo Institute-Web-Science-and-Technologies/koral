@@ -23,6 +23,7 @@ public class LRUCache<K, V> extends LRUList<K, V> {
 		if (list.size() == capacity) {
 			evict();
 		}
+		assert list.size() < capacity : "List: " + list.size() + ", capacity: " + capacity;
 		super.put(key, value);
 	}
 

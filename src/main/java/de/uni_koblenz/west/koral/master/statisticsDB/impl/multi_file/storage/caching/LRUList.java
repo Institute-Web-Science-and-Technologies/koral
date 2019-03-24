@@ -38,7 +38,7 @@ public class LRUList<K, V> implements Cache<K, V> {
 		node.content = new KeyValueContent<>();
 		node.content.key = key;
 		node.content.value = value;
-		access(node);
+		list.append(node);
 		DoublyLinkedNode<KeyValueContent<K, V>> oldValue = index.put(key, node);
 		if (oldValue != null) {
 			// Using put as update would result in memory leaks because the old value would
