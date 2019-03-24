@@ -31,6 +31,10 @@ public class SubbenchmarkManager {
 
 	private final long[] times;
 
+	private final long[] indexTimes;
+
+	private final long[] extraTimes;
+
 	private long indexTime;
 
 	private long extraTime;
@@ -61,8 +65,26 @@ public class SubbenchmarkManager {
 		GET_EXTRA_FILE,
 	}
 
+	/**
+	 * Subbenchmark tasks that are measured separately dependent on whether it is executed by an index or extra file.
+	 *
+	 * @author Philipp Töws
+	 *
+	 */
+	public static enum FileSubbenchmarkTask {
+		RARF,
+		RARF_CACHING,
+		RARF_DISKREAD,
+		RARF_DISKFLUSH,
+		RARF_RAWDISKWRITE,
+		RARF_RAWDISKREAD,
+		IMRS,
+	}
+
 	private SubbenchmarkManager() {
 		times = new long[SUBBENCHMARK_TASK.values().length];
+		indexTimes = new long[FileSubbenchmarkTask.values().length];
+		extraTimes = new long[FileSubbenchmarkTask.values().length];
 	}
 
 	public static SubbenchmarkManager getInstance() {
@@ -93,6 +115,16 @@ public class SubbenchmarkManager {
 	public void addTime(SUBBENCHMARK_TASK task, long time) {
 		long start = System.nanoTime();
 		times[task.ordinal()] += time;
+		loggingTime += System.nanoTime() - start;
+	}
+
+	public void addFileTime(long fileId, FileSubbenchmarkTask task, long time) {
+		long start = System.nanoTime();
+		if (fileId == 0L) {
+			indexTimes[task.ordinal()] += time;
+		} else {
+			extraTimes[task.ordinal()] += time;
+		}
 		loggingTime += System.nanoTime() - start;
 	}
 
@@ -157,6 +189,12 @@ public class SubbenchmarkManager {
 				csvPrinter.print("INPUT_READ");
 				csvPrinter.print("FILE_OPERATIONS_INDEX");
 				csvPrinter.print("FILE_OPERATIONS_EXTRA");
+				for (FileSubbenchmarkTask event : FileSubbenchmarkTask.values()) {
+					csvPrinter.print("INDEX_" + event.toString());
+				}
+				for (FileSubbenchmarkTask event : FileSubbenchmarkTask.values()) {
+					csvPrinter.print("EXTRA_" + event.toString());
+				}
 				for (SUBBENCHMARK_TASK event : SUBBENCHMARK_TASK.values()) {
 					csvPrinter.print(event.toString());
 				}
@@ -170,6 +208,12 @@ public class SubbenchmarkManager {
 			csvPrinter.print(inputTime / 1_000_000_000);
 			csvPrinter.print(indexTime / 1_000_000_000);
 			csvPrinter.print(extraTime / 1_000_000_000);
+			for (int i = 0; i < indexTimes.length; i++) {
+				csvPrinter.print(indexTimes[i] / 1_000_000_000);
+			}
+			for (int i = 0; i < extraTimes.length; i++) {
+				csvPrinter.print(extraTimes[i] / 1_000_000_000);
+			}
 			for (int i = 0; i < times.length; i++) {
 				csvPrinter.print(times[i] / 1_000_000_000);
 			}

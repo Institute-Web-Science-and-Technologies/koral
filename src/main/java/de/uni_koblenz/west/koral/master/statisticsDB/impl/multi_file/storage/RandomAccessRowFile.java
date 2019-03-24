@@ -145,10 +145,16 @@ public class RandomAccessRowFile implements RowStorage {
 		boolean dirty = block[dataLength] == 1;
 		if (dirty) {
 			// Persist entry before removing
+			long start = System.nanoTime();
 			try {
-				writeBlockToFile(blockId, block);
+				writeBlockToFile(blockId, block, true);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
+			}
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				SubbenchmarkManager.getInstance().addFileTime(fileId,
+						SubbenchmarkManager.FileSubbenchmarkTask.RARF_DISKFLUSH,
+						System.nanoTime() - start);
 			}
 			block[dataLength] = 0;
 		}
@@ -204,17 +210,35 @@ public class RandomAccessRowFile implements RowStorage {
 
 //			byte[] block = readBlock(blockId);
 			boolean cacheHit, blockFound;
+			long start2 = System.nanoTime();
 			byte[] block = fileCache.get(blockId);
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				SubbenchmarkManager.getInstance().addFileTime(fileId,
+						SubbenchmarkManager.FileSubbenchmarkTask.RARF_CACHING,
+						System.nanoTime() - start2);
+			}
 			if (block == null) {
 				cacheHit = false;
-				block = readBlockFromFile(blockId);
+				long start3 = System.nanoTime();
+				block = readBlockFromFile(blockId, true);
+				if (StatisticsDBTest.SUBBENCHMARKS) {
+					SubbenchmarkManager.getInstance().addFileTime(fileId,
+							SubbenchmarkManager.FileSubbenchmarkTask.RARF_DISKREAD,
+							System.nanoTime() - start3);
+				}
 				if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 					uncachedBlocks.remove(blockId);
 				}
 				if (block != null) {
 					blockFound = true;
 					cacheMisses++;
+					long start4 = System.nanoTime();
 					fileCache.put(blockId, block);
+					if (StatisticsDBTest.SUBBENCHMARKS) {
+						SubbenchmarkManager.getInstance().addFileTime(fileId,
+								SubbenchmarkManager.FileSubbenchmarkTask.RARF_CACHING,
+								System.nanoTime() - start4);
+					}
 				} else {
 					blockFound = false;
 					notExisting++;
@@ -251,15 +275,30 @@ public class RandomAccessRowFile implements RowStorage {
 					found, time);
 		}
 		SubbenchmarkManager.getInstance().addFileOperationTime(fileId, time);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addFileTime(fileId, SubbenchmarkManager.FileSubbenchmarkTask.RARF, time);
+		}
 	}
 
 	private byte[] readBlock(long blockId) throws IOException {
 		byte[] block = fileCache.get(blockId);
 		if (block == null) {
-			block = readBlockFromFile(blockId);
+			long start = System.nanoTime();
+			block = readBlockFromFile(blockId, true);
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				SubbenchmarkManager.getInstance().addFileTime(fileId,
+						SubbenchmarkManager.FileSubbenchmarkTask.RARF_DISKREAD,
+						System.nanoTime() - start);
+			}
 			if (block != null) {
 				cacheMisses++;
+				long start2 = System.nanoTime();
 				fileCache.put(blockId, block);
+				if (StatisticsDBTest.SUBBENCHMARKS) {
+					SubbenchmarkManager.getInstance().addFileTime(fileId,
+							SubbenchmarkManager.FileSubbenchmarkTask.RARF_CACHING,
+							System.nanoTime() - start2);
+				}
 			} else {
 				notExisting++;
 			}
@@ -269,7 +308,7 @@ public class RandomAccessRowFile implements RowStorage {
 		return block;
 	}
 
-	private byte[] readBlockFromFile(long blockId) throws IOException {
+	private byte[] readBlockFromFile(long blockId, boolean logTime) throws IOException {
 		if (!valid()) {
 			throw new IllegalStateException("FileId " + fileId + ": Cannot operate on a closed storage");
 		}
@@ -278,7 +317,13 @@ public class RandomAccessRowFile implements RowStorage {
 			// Resource doesn't have an entry
 			return null;
 		}
+		long start = System.nanoTime();
 		rowFile.seek(offset);
+		if (StatisticsDBTest.SUBBENCHMARKS && logTime) {
+			SubbenchmarkManager.getInstance().addFileTime(fileId,
+					SubbenchmarkManager.FileSubbenchmarkTask.RARF_RAWDISKREAD,
+					System.nanoTime() - start);
+		}
 
 		// Initialize block array
 		byte[] block = null;
@@ -289,7 +334,14 @@ public class RandomAccessRowFile implements RowStorage {
 			block = new byte[cacheBlockSize];
 		}
 
+		start = System.nanoTime();
 		int bytesRead = rowFile.read(block, 0, dataLength);
+		if (StatisticsDBTest.SUBBENCHMARKS && logTime) {
+			SubbenchmarkManager.getInstance().addFileTime(fileId,
+					SubbenchmarkManager.FileSubbenchmarkTask.RARF_RAWDISKREAD,
+					System.nanoTime() - start);
+		}
+
 		if (bytesRead != dataLength) {
 			throw new RuntimeException("FileId " + fileId + ": Corrupted database: EOF before block end");
 		}
@@ -344,14 +396,32 @@ public class RandomAccessRowFile implements RowStorage {
 
 //			byte[] block = readBlock(blockId);
 			boolean cacheHit, blockFound;
+			long start2 = System.nanoTime();
 			byte[] block = fileCache.get(blockId);
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				SubbenchmarkManager.getInstance().addFileTime(fileId,
+						SubbenchmarkManager.FileSubbenchmarkTask.RARF_CACHING,
+						System.nanoTime() - start2);
+			}
 			if (block == null) {
 				cacheHit = false;
-				block = readBlockFromFile(blockId);
+				long start3 = System.nanoTime();
+				block = readBlockFromFile(blockId, true);
+				if (StatisticsDBTest.SUBBENCHMARKS) {
+					SubbenchmarkManager.getInstance().addFileTime(fileId,
+							SubbenchmarkManager.FileSubbenchmarkTask.RARF_DISKREAD,
+							System.nanoTime() - start3);
+				}
 				if (block != null) {
 					blockFound = true;
 					cacheMisses++;
+					long start4 = System.nanoTime();
 					fileCache.put(blockId, block);
+					if (StatisticsDBTest.SUBBENCHMARKS) {
+						SubbenchmarkManager.getInstance().addFileTime(fileId,
+								SubbenchmarkManager.FileSubbenchmarkTask.RARF_CACHING,
+								System.nanoTime() - start4);
+					}
 					if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 						uncachedBlocks.remove(blockId);
 					}
@@ -381,7 +451,13 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 			System.arraycopy(row, 0, block, blockOffset, row.length);
 			// TODO: Not always necessary
+			long start5 = System.nanoTime();
 			fileCache.update(blockId, block);
+			if (StatisticsDBTest.SUBBENCHMARKS) {
+				SubbenchmarkManager.getInstance().addFileTime(fileId,
+						SubbenchmarkManager.FileSubbenchmarkTask.RARF_CACHING,
+						System.nanoTime() - start5);
+			}
 			// Set dirty flag (located right behind the data)
 			block[dataLength] = 1;
 
@@ -409,6 +485,9 @@ public class RandomAccessRowFile implements RowStorage {
 					blockFound && !Utils.isArrayZero(readRow), time);
 		}
 		SubbenchmarkManager.getInstance().addFileOperationTime(fileId, time);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addFileTime(fileId, SubbenchmarkManager.FileSubbenchmarkTask.RARF, time);
+		}
 	}
 
 	private void writeRowToFile(long rowId, byte[] row) throws IOException {
@@ -420,10 +499,16 @@ public class RandomAccessRowFile implements RowStorage {
 		}
 	}
 
-	private void writeBlockToFile(long blockId, byte[] block) throws IOException {
+	private void writeBlockToFile(long blockId, byte[] block, boolean logTime) throws IOException {
 		long offset = blockId * dataLength;
+		long start = System.nanoTime();
 		rowFile.seek(offset);
 		rowFile.write(block, 0, dataLength);
+		if (StatisticsDBTest.SUBBENCHMARKS && logTime) {
+			SubbenchmarkManager.getInstance().addFileTime(fileId,
+					SubbenchmarkManager.FileSubbenchmarkTask.RARF_RAWDISKWRITE,
+					System.nanoTime() - start);
+		}
 		if ((offset + dataLength) > fileLength) {
 			fileLength = offset + dataLength;
 		}
@@ -457,7 +542,7 @@ public class RandomAccessRowFile implements RowStorage {
 					// optimal cache
 					// content afterwards (the last few blocks would be stored, and not the most
 					// frequent used ones).
-					byte[] block = readBlockFromFile(blockId);
+					byte[] block = readBlockFromFile(blockId, false);
 					if (block == null) {
 						// This should never happen because hasNext() checks for this
 						throw new IOException("FileId " + fileId + ": Invalid file length");
@@ -485,7 +570,7 @@ public class RandomAccessRowFile implements RowStorage {
 		while (blocks.hasNext()) {
 			Entry<Long, byte[]> blockEntry = blocks.next();
 			byte[] block = blockEntry.getValue();
-			writeBlockToFile(blockEntry.getKey(), block);
+			writeBlockToFile(blockEntry.getKey(), block, false);
 			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
 				uncachedBlocks.add(blockEntry.getKey());
 			}
@@ -500,7 +585,7 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 			for (Entry<Long, byte[]> entry : fileCache) {
 				byte[] block = entry.getValue();
-				writeBlockToFile(entry.getKey(), block);
+				writeBlockToFile(entry.getKey(), block, false);
 				// Clear dirty flag
 				block[dataLength] = 0;
 			}
@@ -580,7 +665,13 @@ public class RandomAccessRowFile implements RowStorage {
 		if ((fileCache == null) || fileCache.isEmpty()) {
 			return false;
 		}
+		long start = System.nanoTime();
 		fileCache.evict();
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addFileTime(fileId,
+					SubbenchmarkManager.FileSubbenchmarkTask.RARF_CACHING,
+					System.nanoTime() - start);
+		}
 		return true;
 	}
 

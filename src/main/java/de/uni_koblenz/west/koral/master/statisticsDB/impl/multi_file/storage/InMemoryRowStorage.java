@@ -108,6 +108,9 @@ class InMemoryRowStorage implements RowStorage {
 					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
 		SubbenchmarkManager.getInstance().addFileOperationTime(fileId, time);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addFileTime(fileId, SubbenchmarkManager.FileSubbenchmarkTask.IMRS, time);
+		}
 	}
 
 	@Override
@@ -162,6 +165,9 @@ class InMemoryRowStorage implements RowStorage {
 					(byte) 100, blocks.size() * cacheBlockSize, true, found, time);
 		}
 		SubbenchmarkManager.getInstance().addFileOperationTime(fileId, time);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addFileTime(fileId, SubbenchmarkManager.FileSubbenchmarkTask.IMRS, time);
+		}
 	}
 
 	@Override
