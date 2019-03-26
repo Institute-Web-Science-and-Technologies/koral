@@ -52,13 +52,14 @@ public class CentralLogger {
 		}
 	}
 
-	public void finish() {
+	public void finish(String configName) {
 		System.out.println("===== CentralLogger:");
 		System.out.println("===== End CentralLogger");
 
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		try (CSVPrinter csvPrinter = new CSVPrinter(
-				new OutputStreamWriter(new FileOutputStream("SLRU-CacheSizesLog.csv", false), "UTF-8"),
+				new OutputStreamWriter(new FileOutputStream("SLRU-CacheSizesLog_" + configName + ".csv", false),
+						"UTF-8"),
 				csvFileFormat);) {
 			csvPrinter.printRecord("PROTECTED_SIZE", "TOTAL_CACHE_SIZE");
 			assert protectedSizes.size() == totalCacheSizes.size();

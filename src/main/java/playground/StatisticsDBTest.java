@@ -224,7 +224,7 @@ public class StatisticsDBTest {
 				}
 				totalIndexFileTime = SubbenchmarkManager.getInstance().getIndexTime() / (long) 1e9;
 				totalExtraFilesTime = SubbenchmarkManager.getInstance().getExtraTime() / (long) 1e9;
-				CentralLogger.getInstance().finish();
+				CentralLogger.getInstance().finish(configName);
 				SubbenchmarkManager.getInstance().finish(new File("subbenchmarks.csv"), configName, durationSec);
 
 				storageStatistics = multiDB.getStorageStatistics();
