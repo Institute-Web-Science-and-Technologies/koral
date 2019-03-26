@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNode.KeyValueSegmentContent;
 
 /**
@@ -81,6 +82,8 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		if (list.size() > capacity) {
 			evict();
 		}
+
+		CentralLogger.getInstance().addSizes(protectedSize, list.size());
 
 		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> oldValue = index.put(key, node);
 		if (oldValue != null) {

@@ -116,7 +116,7 @@ public class RandomAccessRowFile implements RowStorage {
 			// Capacity is calcuated by dividing the available space by estimated space per
 			// entry
 			long maxCacheEntries = maxCacheSize / estimatedSpacePerCacheEntry;
-			fileCache = new SegmentedLRUCache<Long, byte[]>(maxCacheEntries, maxCacheEntries / 3) {
+			fileCache = new SegmentedLRUCache<Long, byte[]>(maxCacheEntries, maxCacheEntries / 2) {
 
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {
@@ -450,8 +450,8 @@ public class RandomAccessRowFile implements RowStorage {
 				}
 			}
 			System.arraycopy(row, 0, block, blockOffset, row.length);
-			// TODO: Not always necessary
 			long start5 = System.nanoTime();
+			// TODO: Not always necessary
 			fileCache.update(blockId, block);
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				SubbenchmarkManager.getInstance().addFileTime(fileId,
