@@ -23,6 +23,8 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.cac
  */
 public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 
+	private final static int PROTECTED_MIN_HITS = 5;
+
 	private final Map<K, DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>>> index;
 
 	private final DoublyLinkedList<KeyValueSegmentContent<K, V, Segment>> list;
@@ -71,6 +73,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		node.content.key = key;
 		node.content.value = value;
 		node.content.segment = Segment.PROBATIONARY;
+		node.content.hits = 1;
 
 		if (mruProbationary != null) {
 			list.insertBefore(mruProbationary, node);
@@ -106,18 +109,30 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	}
 
 	void access(DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node) {
-		if (node == mruProbationary) {
-			mruProbationary = mruProbationary.after;
-		}
-		if (node != list.head()) {
-			list.remove(node);
-			list.prepend(node);
-		}
 		if (node.content.segment == Segment.PROBATIONARY) {
-			protectedSize++;
-			node.content.segment = Segment.PROTECTED;
-			if (protectedSize > protectedLimit) {
-				evictProtected();
+			node.content.hits++;
+			if (node.content.hits < PROTECTED_MIN_HITS) {
+				if (node != mruProbationary) {
+					list.remove(node);
+					list.insertBefore(mruProbationary, node);
+					mruProbationary = node;
+				}
+			} else {
+				if (node == mruProbationary) {
+					mruProbationary = mruProbationary.after;
+				}
+				list.remove(node);
+				list.prepend(node);
+				protectedSize++;
+				node.content.segment = Segment.PROTECTED;
+				if (protectedSize > protectedLimit) {
+					evictProtected();
+				}
+			}
+		} else {
+			if (node != list.head()) {
+				list.remove(node);
+				list.prepend(node);
 			}
 		}
 	}
@@ -169,6 +184,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	@Override
 	public void evict() {
 		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> lru = list.tail();
+		// TODO: Could be protected as well
 		assert lru.content.segment == Segment.PROBATIONARY;
 		list.remove(lru);
 		if (mruProbationary == lru) {
@@ -193,7 +209,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	}
 
 	/**
-	 * Evicts protected segment by moving the LRU element to the MRU end of the prohibited segment by shifting the
+	 * Evicts protected segment by moving the LRU element to the MRU end of the probationary segment by shifting the
 	 * {@link #mruProbationary} pointer to the previous element.
 	 */
 	private void evictProtected() {
@@ -206,6 +222,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		}
 		mruProbationary = lruProtected;
 		mruProbationary.content.segment = Segment.PROBATIONARY;
+		mruProbationary.content.hits = 0;
 		protectedSize--;
 	}
 

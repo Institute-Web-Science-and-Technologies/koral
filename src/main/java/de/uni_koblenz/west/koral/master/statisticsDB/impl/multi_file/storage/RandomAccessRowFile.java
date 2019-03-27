@@ -116,7 +116,7 @@ public class RandomAccessRowFile implements RowStorage {
 			// Capacity is calcuated by dividing the available space by estimated space per
 			// entry
 			long maxCacheEntries = maxCacheSize / estimatedSpacePerCacheEntry;
-			fileCache = new SegmentedLRUCache<Long, byte[]>(maxCacheEntries, maxCacheEntries / 2) {
+			fileCache = new SegmentedLRUCache<Long, byte[]>(maxCacheEntries, maxCacheEntries / 3) {
 
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {

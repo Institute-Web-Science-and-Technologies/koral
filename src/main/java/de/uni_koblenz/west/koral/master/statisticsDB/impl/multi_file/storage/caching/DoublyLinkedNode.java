@@ -16,5 +16,6 @@ public class DoublyLinkedNode<C> {
 
 	public static class KeyValueSegmentContent<K, V, S> extends KeyValueContent<K, V> {
 		S segment;
+		int hits;
 	}
 }
