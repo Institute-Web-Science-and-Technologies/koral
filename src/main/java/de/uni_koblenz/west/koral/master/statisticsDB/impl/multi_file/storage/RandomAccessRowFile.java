@@ -451,8 +451,9 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 			System.arraycopy(row, 0, block, blockOffset, row.length);
 			long start5 = System.nanoTime();
-			// TODO: Not always necessary
-			fileCache.update(blockId, block);
+			if (!cacheHit && !blockFound) {
+				fileCache.put(blockId, block);
+			}
 			if (StatisticsDBTest.SUBBENCHMARKS) {
 				SubbenchmarkManager.getInstance().addFileTime(fileId,
 						SubbenchmarkManager.FileSubbenchmarkTask.RARF_CACHING,
