@@ -42,4 +42,4 @@
 /gc.log
 /subbenchmarks.csv
 /CPUCB*.csv
-/SLRU-CacheSizesLog.csv
+/SLRU-CacheSizesLog*.csv
