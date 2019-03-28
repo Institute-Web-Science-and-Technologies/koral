@@ -117,7 +117,7 @@ public class StatisticsDBTest {
 		int rowDataLength = Integer.parseInt(args[argc++]);
 		long indexCacheSize = Long.parseLong(args[argc++]);
 		long extraFilesCacheSize = Long.parseLong(args[argc++]);
-		float habseAccessesWeight = Float.parseFloat(args[argc++]);
+		// float habseAccessesWeight = Float.parseFloat(args[argc++]);
 		String implementationNote = "";
 		if (args.length == (argc + 1)) {
 			implementationNote = args[argc++];
@@ -192,7 +192,7 @@ public class StatisticsDBTest {
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
 			statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks,
 					rowDataLength, true, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
-					habseAccessesWeight, FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
+					FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT, FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
 			return;

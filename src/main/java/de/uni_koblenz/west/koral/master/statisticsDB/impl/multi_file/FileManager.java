@@ -31,7 +31,7 @@ public class FileManager {
 
 	public static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
 
-	public static final float DEFAULT_HABSE_ACCESSES_WEIGHT = 0.5f;
+	public static final float DEFAULT_HABSE_ACCESSES_WEIGHT = 1.0f;
 
 	public static final int DEFAULT_HABSE_HISTORY_LENGTH = 100_000;
 
