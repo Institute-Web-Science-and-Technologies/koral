@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration.ConfigurationKey;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNode.KeyValueSegmentContent;
 
 /**
@@ -23,7 +25,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.cac
  */
 public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 
-	private final static int PROTECTED_MIN_HITS = 5;
+	private final int protectedMinHits;
 
 	private final Map<K, DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>>> index;
 
@@ -61,6 +63,9 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	public SegmentedLRUCache(long capacity, long protectedLimit) {
 		this.capacity = capacity;
 		this.protectedLimit = protectedLimit;
+
+		protectedMinHits = (int) SimpleConfiguration.getInstance()
+				.getValue(ConfigurationKey.SLRU_PROTECTED_MIN_HITS);
 
 		index = new HashMap<>();
 		list = new DoublyLinkedList<>();
@@ -111,7 +116,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	void access(DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node) {
 		if (node.content.segment == Segment.PROBATIONARY) {
 			node.content.hits++;
-			if (node.content.hits < PROTECTED_MIN_HITS) {
+			if (node.content.hits < protectedMinHits) {
 				if (node != mruProbationary) {
 					list.remove(node);
 					list.insertBefore(mruProbationary, node);

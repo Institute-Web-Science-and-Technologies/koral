@@ -16,7 +16,8 @@ public class SimpleConfiguration {
 	private final HashMap<ConfigurationKey, Object> config;
 
 	public static enum ConfigurationKey {
-		RLE_EXTENSION_LENGTH
+		RLE_EXTENSION_LENGTH,
+		SLRU_PROTECTED_MIN_HITS
 	}
 
 	private SimpleConfiguration() {

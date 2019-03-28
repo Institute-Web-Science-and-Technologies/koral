@@ -37,6 +37,8 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatist
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration.ConfigurationKey;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
@@ -118,6 +120,7 @@ public class StatisticsDBTest {
 		long indexCacheSize = Long.parseLong(args[argc++]);
 		long extraFilesCacheSize = Long.parseLong(args[argc++]);
 		// float habseAccessesWeight = Float.parseFloat(args[argc++]);
+		int slruProtectedMinHits = Integer.parseInt(args[argc++]);
 		String implementationNote = "";
 		if (args.length == (argc + 1)) {
 			implementationNote = args[argc++];
@@ -128,7 +131,8 @@ public class StatisticsDBTest {
 			return;
 		}
 
-//		SimpleConfiguration parameterConfig = SimpleConfiguration.getInstance();
+		SimpleConfiguration parameterConfig = SimpleConfiguration.getInstance();
+		parameterConfig.setValue(ConfigurationKey.SLRU_PROTECTED_MIN_HITS, slruProtectedMinHits);
 
 		Configuration conf = new Configuration();
 		if (storageDir == null) {
