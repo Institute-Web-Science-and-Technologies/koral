@@ -43,3 +43,4 @@
 /subbenchmarks.csv
 /CPUCB*.csv
 /SLRU-CacheSizesLog*.csv
+/SLRU-HitsHistogram*.csv
