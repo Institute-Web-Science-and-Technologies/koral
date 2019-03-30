@@ -79,6 +79,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		node.content.value = value;
 		node.content.segment = Segment.PROBATIONARY;
 		node.content.hits = 1;
+		node.content.inCacheHits = 1;
 
 		if (mruProbationary != null) {
 			list.insertBefore(mruProbationary, node);
@@ -149,6 +150,11 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 			return null;
 		}
 		access(node);
+		if (node.content.segment == Segment.PROBATIONARY) {
+			node.content.inCacheHits++;
+		} else if (node.content.segment == Segment.PROTECTED) {
+			node.content.inProtectedHits++;
+		}
 		return node.content.value;
 	}
 
@@ -189,7 +195,8 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	@Override
 	public void evict() {
 		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> lru = list.tail();
-		// TODO: Could be protected as well
+		// Cannot be protected (as long as protected max capacity is less than total capacity and evict is only called
+		// on full cache)
 		assert lru.content.segment == Segment.PROBATIONARY;
 		list.remove(lru);
 		if (mruProbationary == lru) {
@@ -199,6 +206,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 				mruProbationary = null;
 			}
 		}
+		CentralLogger.getInstance().addInCacheHits(lru.content.inCacheHits);
 		removeEldest(lru.content.key, lru.content.value);
 	}
 
@@ -229,6 +237,8 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		mruProbationary.content.segment = Segment.PROBATIONARY;
 		mruProbationary.content.hits = 0;
 		protectedSize--;
+		CentralLogger.getInstance().addInProtectedHits(lruProtected.content.inProtectedHits);
+		lruProtected.content.inProtectedHits = 0;
 	}
 
 	@Override

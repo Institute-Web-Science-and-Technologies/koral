@@ -4,6 +4,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -22,6 +26,11 @@ public class CentralLogger {
 
 	private final LinkedList<Long> protectedSizes, totalCacheSizes;
 
+	/**
+	 * Maps from how many hits happened to how many blocks had this many hits
+	 */
+	private final Map<Long, Long> inProtectedHits, inCacheHits;
+
 	private long sizesCounter;
 
 	private long protectedSizesAggregator, totalCacheSizesAggregator;
@@ -31,6 +40,8 @@ public class CentralLogger {
 	private CentralLogger() {
 		protectedSizes = new LinkedList<>();
 		totalCacheSizes = new LinkedList<>();
+		inProtectedHits = new TreeMap<>();
+		inCacheHits = new TreeMap<>();
 	}
 
 	public static CentralLogger getInstance() {
@@ -52,6 +63,22 @@ public class CentralLogger {
 		}
 	}
 
+	public void addInProtectedHits(long hits) {
+		Long currentHits = inProtectedHits.get(hits);
+		if (currentHits == null) {
+			currentHits = 0L;
+		}
+		inProtectedHits.put(hits, currentHits + 1);
+	}
+
+	public void addInCacheHits(long hits) {
+		Long currentHits = inCacheHits.get(hits);
+		if (currentHits == null) {
+			currentHits = 0L;
+		}
+		inCacheHits.put(hits, currentHits + 1);
+	}
+
 	public void finish(String configName) {
 		System.out.println("===== CentralLogger:");
 		System.out.println("===== End CentralLogger");
@@ -65,6 +92,28 @@ public class CentralLogger {
 			assert protectedSizes.size() == totalCacheSizes.size();
 			while (!protectedSizes.isEmpty()) {
 				csvPrinter.printRecord(protectedSizes.removeFirst(), totalCacheSizes.removeFirst());
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+		try (CSVPrinter csvPrinter = new CSVPrinter(
+				new OutputStreamWriter(new FileOutputStream("SLRU-HitsHistogram_" + configName + ".csv", false),
+						"UTF-8"),
+				csvFileFormat);) {
+			csvPrinter.printRecord("HITS", "IN_PROTECTED", "IN_CACHE");
+			Set<Long> allHitNumbers = new TreeSet<>(inCacheHits.keySet());
+			allHitNumbers.addAll(inProtectedHits.keySet());
+			for (Long hitNumber : allHitNumbers) {
+				Long p = inProtectedHits.get(hitNumber);
+				if (p == null) {
+					p = 0L;
+				}
+				Long c = inCacheHits.get(hitNumber);
+				if (c == null) {
+					c = 0L;
+				}
+				csvPrinter.printRecord(hitNumber, p, c);
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
