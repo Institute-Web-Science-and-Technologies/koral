@@ -153,6 +153,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		if (node.content.segment == Segment.PROBATIONARY) {
 			node.content.inCacheHits++;
 		} else if (node.content.segment == Segment.PROTECTED) {
+			node.content.inCacheHits++;
 			node.content.inProtectedHits++;
 		}
 		return node.content.value;
