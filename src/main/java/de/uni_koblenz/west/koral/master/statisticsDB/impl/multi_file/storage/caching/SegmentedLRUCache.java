@@ -183,14 +183,14 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	@Override
 	public void remove(K key) {
 		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node = index.get(key);
-		list.remove(node);
-		index.remove(key);
 		if (node.content.segment == Segment.PROTECTED) {
 			protectedSize--;
 		}
 		if (node == mruProbationary) {
 			mruProbationary = mruProbationary.after;
 		}
+		list.remove(node);
+		index.remove(key);
 	}
 
 	@Override
@@ -199,7 +199,6 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		// Cannot be protected (as long as protected max capacity is less than total capacity and evict is only called
 		// on full cache)
 		assert lru.content.segment == Segment.PROBATIONARY;
-		list.remove(lru);
 		if (mruProbationary == lru) {
 			mruProbationary = mruProbationary.before;
 			if (mruProbationary.content.segment == Segment.PROTECTED) {
@@ -207,6 +206,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 				mruProbationary = null;
 			}
 		}
+		list.remove(lru);
 		CentralLogger.getInstance().addInCacheHits(lru.content.inCacheHits);
 		removeEldest(lru.content.key, lru.content.value);
 	}
