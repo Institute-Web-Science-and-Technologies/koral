@@ -69,6 +69,10 @@ public class StatisticsDBTest {
 
 	public static final boolean WATCH_FILE_FLOW = false;
 
+	public static final boolean LOG_SLRU_CACHE_SIZES = false;
+
+	public static final boolean LOG_SLRU_CACHE_HITS = false;
+
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
 				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> <RLE extension length> [implementationNote]");

@@ -10,6 +10,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogg
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration.ConfigurationKey;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNode.KeyValueSegmentContent;
+import playground.StatisticsDBTest;
 
 /**
  * Implementation based on: R. Karedla, J. S. Love and B. G. Wherry, "Caching strategies to improve disk system
@@ -92,7 +93,9 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 			evict();
 		}
 
-		CentralLogger.getInstance().addSizes(protectedSize, list.size());
+		if (StatisticsDBTest.LOG_SLRU_CACHE_SIZES) {
+			CentralLogger.getInstance().addSizes(protectedSize, list.size());
+		}
 
 		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> oldValue = index.put(key, node);
 		if (oldValue != null) {
@@ -207,7 +210,9 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 			}
 		}
 		list.remove(lru);
-		CentralLogger.getInstance().addInCacheHits(lru.content.inCacheHits);
+		if (StatisticsDBTest.LOG_SLRU_CACHE_HITS) {
+			CentralLogger.getInstance().addInCacheHits(lru.content.inCacheHits);
+		}
 		removeEldest(lru.content.key, lru.content.value);
 	}
 
@@ -238,7 +243,9 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		mruProbationary.content.segment = Segment.PROBATIONARY;
 		mruProbationary.content.hits = 0;
 		protectedSize--;
-		CentralLogger.getInstance().addInProtectedHits(lruProtected.content.inProtectedHits);
+		if (StatisticsDBTest.LOG_SLRU_CACHE_HITS) {
+			CentralLogger.getInstance().addInProtectedHits(lruProtected.content.inProtectedHits);
+		}
 		lruProtected.content.inProtectedHits = 0;
 	}
 
