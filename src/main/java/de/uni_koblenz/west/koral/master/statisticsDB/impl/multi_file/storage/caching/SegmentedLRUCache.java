@@ -49,7 +49,9 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	 */
 	private final long protectedLimit;
 
-	static enum Segment {
+	private final DoublyLinkedNodeRecycler<KeyValueSegmentContent<K, V, Segment>> recycler;
+
+	public static enum Segment {
 		PROBATIONARY,
 		PROTECTED
 	}
@@ -61,9 +63,11 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	 * @param protectedLimit
 	 *            The maximum amount of elements in the protected segment
 	 */
-	public SegmentedLRUCache(long capacity, long protectedLimit) {
+	public SegmentedLRUCache(long capacity, long protectedLimit,
+			DoublyLinkedNodeRecycler<KeyValueSegmentContent<K, V, Segment>> recycler) {
 		this.capacity = capacity;
 		this.protectedLimit = protectedLimit;
+		this.recycler = recycler;
 
 		protectedMinHits = (int) SimpleConfiguration.getInstance()
 				.getValue(ConfigurationKey.SLRU_PROTECTED_MIN_HITS);
@@ -74,8 +78,11 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 
 	@Override
 	public void put(K key, V value) {
-		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node = new DoublyLinkedNode<>();
-		node.content = new KeyValueSegmentContent<>();
+		DoublyLinkedNode<KeyValueSegmentContent<K, V, Segment>> node = recycler.retrieve();
+		if (node == null) {
+			node = new DoublyLinkedNode<>();
+			node.content = new KeyValueSegmentContent<>();
+		}
 		node.content.key = key;
 		node.content.value = value;
 		node.content.segment = Segment.PROBATIONARY;
@@ -213,6 +220,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		if (StatisticsDBTest.LOG_SLRU_CACHE_HITS) {
 			CentralLogger.getInstance().addInCacheHits(lru.content.inCacheHits);
 		}
+		recycler.dump(lru);
 		removeEldest(lru.content.key, lru.content.value);
 	}
 

@@ -15,6 +15,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Subbenchmar
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.Cache;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNodeRecycler;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.ObjectRecycler;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.SegmentedLRUCache;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.LRUSharedCache;
@@ -116,7 +117,8 @@ public class RandomAccessRowFile implements RowStorage {
 			// Capacity is calcuated by dividing the available space by estimated space per
 			// entry
 			long maxCacheEntries = maxCacheSize / estimatedSpacePerCacheEntry;
-			fileCache = new SegmentedLRUCache<Long, byte[]>(maxCacheEntries, maxCacheEntries / 3) {
+			fileCache = new SegmentedLRUCache<Long, byte[]>(maxCacheEntries, maxCacheEntries / 3,
+					DoublyLinkedNodeRecycler.getSegmentedLRUCacheRecycler()) {
 
 				@Override
 				protected void removeEldest(Long blockId, byte[] block) {

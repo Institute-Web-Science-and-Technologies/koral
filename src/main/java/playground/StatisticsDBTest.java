@@ -41,6 +41,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfi
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration.ConfigurationKey;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNodeRecycler;
 
 /**
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
@@ -234,6 +235,7 @@ public class StatisticsDBTest {
 				totalExtraFilesTime = SubbenchmarkManager.getInstance().getExtraTime() / (long) 1e9;
 				CentralLogger.getInstance().finish(configName);
 				SubbenchmarkManager.getInstance().finish(new File("subbenchmarks.csv"), configName, durationSec);
+				DoublyLinkedNodeRecycler.getSegmentedLRUCacheRecycler().printStats();
 
 				storageStatistics = multiDB.getStorageStatistics();
 				for (Entry<Long, long[]> entry : storageStatistics.entrySet()) {
