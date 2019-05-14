@@ -73,13 +73,16 @@ public class RandomAccessRowFile implements RowStorage {
 			boolean recycleBlocks) {
 		this.fileId = fileId;
 		this.rowLength = rowLength;
-		if (blockSize >= rowLength) {
-			// Default case: At least one row fits into a block
+		if (blockSize >= (2 * rowLength)) {
+			// Default case: Mulriple rows fit into a block
 			rowsAsBlocks = false;
 			rowsPerBlock = blockSize / rowLength;
 		} else {
-			System.err.println("Warning: In RandomAccessRowFile ID " + fileId + " the cache block size (" + blockSize
-					+ ") is smaller than row length (" + rowLength + "). Resizing blocks to row length.");
+			if (blockSize < rowLength) {
+				System.err
+						.println("Warning: In RandomAccessRowFile ID " + fileId + " the cache block size (" + blockSize
+								+ ") is smaller than row length (" + rowLength + "). Resizing blocks to row length.");
+			}
 			rowsAsBlocks = true;
 			rowsPerBlock = 1;
 		}

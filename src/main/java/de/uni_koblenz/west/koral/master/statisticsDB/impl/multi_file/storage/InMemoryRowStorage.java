@@ -37,16 +37,19 @@ class InMemoryRowStorage implements RowStorage {
 			SharedSpaceManager cacheSpaceManager, SharedSpaceConsumer cacheSpaceConsumer) {
 		this.fileId = fileId;
 		this.rowLength = rowLength;
-		if (cacheBlockSize >= rowLength) {
-			// Default case: At least one row fits into a block
+		if (cacheBlockSize >= (2 * rowLength)) {
+			// Default case: Multiple rows fit into a block
 			rowsAsBlocks = false;
 			rowsPerBlock = cacheBlockSize / rowLength;
 			// Fit size of block to row data
 			this.cacheBlockSize = rowsPerBlock * rowLength;
 		} else {
-			System.err
-					.println("Warning: In InMemoryRowStorage ID " + fileId + " the cache block size (" + cacheBlockSize
-							+ ") is smaller than row length (" + rowLength + "). Resizing blocks to row length.");
+			if (cacheBlockSize < rowLength) {
+				System.err
+						.println("Warning: In InMemoryRowStorage ID " + fileId + " the cache block size ("
+								+ cacheBlockSize
+								+ ") is smaller than row length (" + rowLength + "). Resizing blocks to row length.");
+			}
 			rowsAsBlocks = true;
 			rowsPerBlock = 1;
 			this.cacheBlockSize = rowLength;
