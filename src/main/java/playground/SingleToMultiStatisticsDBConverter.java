@@ -80,8 +80,8 @@ public class SingleToMultiStatisticsDBConverter {
 		MultiFileGraphStatisticsDatabase newDatabase = null;
 		if (rowDataLength >= 0) {
 			newDatabase = new MultiFileGraphStatisticsDatabase(statisticsDir.getCanonicalPath(), numberOfChunks,
-					rowDataLength, true, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
-					FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
+					rowDataLength, FileManager.DEFAULT_BLOCK_SIZE, true, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
+					FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, FileManager.DEFAULT_RECYCLER_CAPACITY, FileManager.DEFAULT_MAX_OPEN_FILES, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
 					FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
 		} else {
 			newDatabase = new MultiFileGraphStatisticsDatabase(statisticsDir.getCanonicalPath(), numberOfChunks, null);
