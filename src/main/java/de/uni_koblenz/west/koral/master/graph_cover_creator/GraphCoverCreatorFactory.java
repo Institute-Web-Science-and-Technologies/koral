@@ -23,6 +23,7 @@ import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.GreedyEdgeColor
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HashCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.HierarchicalCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutCover;
+import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MinimalEdgeCutOverCover;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.MoleculeHashCoverCreator;
 import de.uni_koblenz.west.koral.master.graph_cover_creator.impl.VerticalCoverCreator;
 
@@ -52,6 +53,8 @@ public class GraphCoverCreatorFactory {
         return new GreedyEdgeColoringCoverCreator(logger, measurementCollector);
       case MOLECULE_HASH:
         return new MoleculeHashCoverCreator(logger, measurementCollector);
+      case MEC_OVER:
+        return new MinimalEdgeCutOverCover(logger, measurementCollector);
       default:
         return null;
 

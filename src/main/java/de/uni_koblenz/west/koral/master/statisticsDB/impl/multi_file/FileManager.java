@@ -333,7 +333,6 @@ public class FileManager {
 				} else {
 					throw new RuntimeException("Corrupt extra files metadata file");
 				}
-
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
