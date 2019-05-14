@@ -31,6 +31,10 @@ public class FileManager {
 
 	public static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
 
+	public static final int DEFAULT_RECYCLER_CAPACITY = 1024;
+
+	public static final int DEFAULT_BLOCK_SIZE = 4096;
+
 	public static final float DEFAULT_HABSE_ACCESSES_WEIGHT = 1.0f;
 
 	public static final int DEFAULT_HABSE_HISTORY_LENGTH = 100_000;
@@ -53,11 +57,18 @@ public class FileManager {
 
 	private long maxResourceId;
 
-	public FileManager(String storagePath, int mainFileRowLength, int maxOpenFiles, long indexFileCacheSize,
-			long extraFilesCacheSize, float habseAccessesWeight, int habseHistoryLength, Logger logger) {
+	private final int blockSize;
+
+	private final int recyclerCapacity;
+
+	public FileManager(String storagePath, int mainFileRowLength, int blockSize, int maxOpenFiles,
+			long indexFileCacheSize, long extraFilesCacheSize, int recyclerCapacity, float habseAccessesWeight,
+			int habseHistoryLength, Logger logger) {
 		this.storagePath = storagePath;
+		this.blockSize = blockSize;
 		this.indexFileCacheSize = indexFileCacheSize;
 		this.mainFileRowLength = mainFileRowLength;
+		this.recyclerCapacity = recyclerCapacity;
 		this.logger = logger;
 
 		if (extraFilesCacheSize > 0) {
@@ -93,13 +104,14 @@ public class FileManager {
 	}
 
 	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, Logger logger) {
-		this(storagePath, mainFileRowLength, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE,
-				DEFAULT_EXTRAFILES_CACHE_SIZE, DEFAULT_HABSE_ACCESSES_WEIGHT, DEFAULT_HABSE_HISTORY_LENGTH, logger);
+		this(storagePath, mainFileRowLength, DEFAULT_BLOCK_SIZE, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE,
+				DEFAULT_EXTRAFILES_CACHE_SIZE, DEFAULT_RECYCLER_CAPACITY, DEFAULT_HABSE_ACCESSES_WEIGHT,
+				DEFAULT_HABSE_HISTORY_LENGTH, logger);
 	}
 
 	void setup() {
-		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, indexFileCacheSize, false, true,
-				logger);
+		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, blockSize, indexFileCacheSize, 0,
+				true, logger);
 	}
 
 	/**
@@ -226,8 +238,8 @@ public class FileManager {
 					System.nanoTime() - start);
 		}
 		if (extra == null) {
-			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), fileId, rowLength,
-					extraCacheSpaceManager, null, true, logger);
+			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), fileId, rowLength, blockSize,
+					extraCacheSpaceManager, recyclerCapacity, null, true, logger);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
@@ -309,8 +321,9 @@ public class FileManager {
 					listIndex++;
 					if (listIndex == dataLength) {
 						// Reading one entry is done, store and reset everything for next one
-						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength,
-								extraCacheSpaceManager, list, false, logger));
+						extraFiles.put(fileId,
+								new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength, blockSize,
+										extraCacheSpaceManager, recyclerCapacity, list, false, logger));
 						fileId = -1;
 						rowLength = -1;
 						dataLength = -1;

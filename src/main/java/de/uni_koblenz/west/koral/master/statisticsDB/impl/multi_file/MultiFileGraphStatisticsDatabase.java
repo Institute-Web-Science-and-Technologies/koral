@@ -67,9 +67,9 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		}
 	}
 
-	public MultiFileGraphStatisticsDatabase(String statisticsDir, int numberOfChunks, int rowDataLength,
-			boolean rowLengthsAsIds, long indexCacheSize, long extraFilesCacheSize, float habseAccessesWeight,
-			int habseHistoryLength, Logger logger) {
+	public MultiFileGraphStatisticsDatabase(String statisticsDir, int numberOfChunks, int rowDataLength, int blockSize,
+			boolean rowLengthsAsIds, long indexCacheSize, long extraFilesCacheSize, int recyclerCapacity,
+			int maxOpenFiles, float habseAccessesWeight, int habseHistoryLength, Logger logger) {
 		this.rowLengthsAsIds = rowLengthsAsIds;
 		this.logger = logger;
 
@@ -99,15 +99,17 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		rowManager = new StatisticsRowManager(this.numberOfChunks, this.rowDataLength);
 		mainfileRowLength = rowManager.getMainFileRowLength();
 
-		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, FileManager.DEFAULT_MAX_OPEN_FILES,
-				indexCacheSize, extraFilesCacheSize, habseAccessesWeight, habseHistoryLength, logger);
+		fileManager = new FileManager(statisticsDirPath, mainfileRowLength, blockSize, maxOpenFiles,
+				indexCacheSize, extraFilesCacheSize, recyclerCapacity, habseAccessesWeight, habseHistoryLength, logger);
 
 		dirty = false;
 	}
 
 	public MultiFileGraphStatisticsDatabase(String statisticsDir, short numberOfChunks, Logger logger) {
-		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, true, FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
-				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
+		this(statisticsDir, numberOfChunks, DEFAULT_ROW_DATA_LENGTH, FileManager.DEFAULT_BLOCK_SIZE, true,
+				FileManager.DEFAULT_INDEX_FILE_CACHE_SIZE,
+				FileManager.DEFAULT_EXTRAFILES_CACHE_SIZE, FileManager.DEFAULT_RECYCLER_CAPACITY,
+				FileManager.DEFAULT_MAX_OPEN_FILES, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
 				FileManager.DEFAULT_HABSE_HISTORY_LENGTH, logger);
 	}
 

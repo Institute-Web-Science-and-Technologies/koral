@@ -12,10 +12,11 @@ public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowSto
 
 	private final ReusableIDGenerator freeSpaceIndex;
 
-	public ExtraStorageAccessor(String storageFilePath, long fileId, int rowLength,
-			HABSESharedSpaceManager extraCacheSpaceManager, long[] loadedFreeSpaceIndex, boolean createIfNotExisting,
-			Logger logger) {
-		super(storageFilePath, fileId, rowLength, extraCacheSpaceManager, true, createIfNotExisting, logger);
+	public ExtraStorageAccessor(String storageFilePath, long fileId, int rowLength, int blockSize,
+			HABSESharedSpaceManager extraCacheSpaceManager, int recyclerCapacity, long[] loadedFreeSpaceIndex,
+			boolean createIfNotExisting, Logger logger) {
+		super(storageFilePath, fileId, rowLength, blockSize, extraCacheSpaceManager, recyclerCapacity,
+				createIfNotExisting, logger);
 		freeSpaceIndex = new ReusableIDGenerator(loadedFreeSpaceIndex);
 	}
 

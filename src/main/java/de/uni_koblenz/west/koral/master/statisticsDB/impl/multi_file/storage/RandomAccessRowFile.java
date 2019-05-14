@@ -59,8 +59,6 @@ public class RandomAccessRowFile implements RowStorage {
 
 	private final boolean rowsAsBlocks;
 
-	private final boolean recycleBlocks;
-
 	private final long fileId;
 
 	private final Set<Long> uncachedBlocks;
@@ -68,11 +66,14 @@ public class RandomAccessRowFile implements RowStorage {
 	// Metastatistics for read benchmarks
 	private long cacheHits, cacheMisses, notExisting;
 
+	private final int recyclerCapacity;
+
 	private RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
 			SharedSpaceManager cacheSpaceManager, SharedSpaceConsumer cacheSpaceConsumer, int blockSize,
-			boolean recycleBlocks) {
+			int recyclerCapacity) {
 		this.fileId = fileId;
 		this.rowLength = rowLength;
+		this.recyclerCapacity = recyclerCapacity;
 		if (blockSize >= (2 * rowLength)) {
 			// Default case: Mulriple rows fit into a block
 			rowsAsBlocks = false;
@@ -91,12 +92,8 @@ public class RandomAccessRowFile implements RowStorage {
 		cacheBlockSize = dataLength + 1;
 		estimatedSpacePerCacheEntry = ESTIMATED_SPACE_PER_LRUCACHE_ENTRY_WITHOUT_DATA + cacheBlockSize;
 
-		this.recycleBlocks = recycleBlocks;
-		if (recycleBlocks) {
-			// TODO: Size should be considered for cache usage (i.e. if we want to recycle
-			// 1000 blocks, we have
-			// 1000*cacheBlockSize less space for the actual cache)
-			blockRecycler = new ObjectRecycler<>(1024);
+		if (recyclerCapacity > 0) {
+			blockRecycler = new ObjectRecycler<>(recyclerCapacity);
 		} else {
 			blockRecycler = null;
 		}
@@ -135,13 +132,14 @@ public class RandomAccessRowFile implements RowStorage {
 	}
 
 	public RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, long maxCacheSize, int blockSize,
-			boolean recycleBlocks) {
-		this(storageFilePath, fileId, rowLength, maxCacheSize, null, null, blockSize, recycleBlocks);
+			int recyclerCapacity) {
+		this(storageFilePath, fileId, rowLength, maxCacheSize, null, null, blockSize, recyclerCapacity);
 	}
 
 	public RandomAccessRowFile(String storageFilePath, long fileId, int rowLength, SharedSpaceManager cacheSpaceManager,
-			SharedSpaceConsumer cacheSpaceConsumer, int blockSize, boolean recycleBlocks) {
-		this(storageFilePath, fileId, rowLength, -1, cacheSpaceManager, cacheSpaceConsumer, blockSize, recycleBlocks);
+			SharedSpaceConsumer cacheSpaceConsumer, int blockSize, int recyclerCapacity) {
+		this(storageFilePath, fileId, rowLength, -1, cacheSpaceManager, cacheSpaceConsumer, blockSize,
+				recyclerCapacity);
 	}
 
 	private void onRemoveEldest(Long blockId, byte[] block) {
@@ -166,7 +164,7 @@ public class RandomAccessRowFile implements RowStorage {
 			StorageLogWriter.getInstance().logBlockFlushEvent(fileId, blockId,
 					fileCache.size() * estimatedSpacePerCacheEntry, getPercentageCached(), dirty);
 		}
-		if (RandomAccessRowFile.this.recycleBlocks) {
+		if (RandomAccessRowFile.this.recyclerCapacity > 0) {
 			blockRecycler.dump(block);
 		}
 	}
@@ -330,7 +328,7 @@ public class RandomAccessRowFile implements RowStorage {
 
 		// Initialize block array
 		byte[] block = null;
-		if (recycleBlocks) {
+		if (recyclerCapacity > 0) {
 			block = blockRecycler.retrieve();
 		}
 		if (block == null) {
@@ -445,7 +443,7 @@ public class RandomAccessRowFile implements RowStorage {
 			}
 
 			if (block == null) {
-				if (recycleBlocks) {
+				if (recyclerCapacity > 0) {
 					block = blockRecycler.retrieve();
 				}
 				if (block == null) {
@@ -593,7 +591,7 @@ public class RandomAccessRowFile implements RowStorage {
 				// Clear dirty flag
 				block[dataLength] = 0;
 			}
-			if (recycleBlocks) {
+			if (recyclerCapacity > 0) {
 				blockRecycler.printStats(String.valueOf(fileId));
 			}
 		}

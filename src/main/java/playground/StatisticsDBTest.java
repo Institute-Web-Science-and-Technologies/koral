@@ -37,8 +37,6 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.SingleFileGraphStatist
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration.ConfigurationKey;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNodeRecycler;
@@ -121,14 +119,21 @@ public class StatisticsDBTest {
 
 		String implementation = args[argc++];
 		System.out.println("Chosen implementation: " + implementation);
-		int rowDataLength = Integer.parseInt(args[argc++]);
-		long indexCacheSize = Long.parseLong(args[argc++]);
-		long extraFilesCacheSize = Long.parseLong(args[argc++]);
-		// float habseAccessesWeight = Float.parseFloat(args[argc++]);
-		int slruProtectedMinHits = Integer.parseInt(args[argc++]);
+		int rowDataLength;
+		long indexCacheSize, extraFilesCacheSize;
 		String implementationNote = "";
-		if (args.length == (argc + 1)) {
-			implementationNote = args[argc++];
+		Configuration conf = new Configuration();
+		if (args.length > argc) {
+			rowDataLength = Integer.parseInt(args[argc++]);
+			indexCacheSize = Long.parseLong(args[argc++]);
+			extraFilesCacheSize = Long.parseLong(args[argc++]);
+			if (args.length == (argc + 1)) {
+				implementationNote = args[argc++];
+			}
+		} else {
+			rowDataLength = conf.getRowDataLength();
+			indexCacheSize = conf.getIndexCacheSize();
+			extraFilesCacheSize = conf.getExtraCacheSize();
 		}
 		if (args.length > argc) {
 			System.err.println("Too many arguments.");
@@ -136,19 +141,22 @@ public class StatisticsDBTest {
 			return;
 		}
 
-		SimpleConfiguration parameterConfig = SimpleConfiguration.getInstance();
-		parameterConfig.setValue(ConfigurationKey.SLRU_PROTECTED_MIN_HITS, slruProtectedMinHits);
+		// Uncomment to simply store experimental parameters in a singleton class
+//		SimpleConfiguration parameterConfig = SimpleConfiguration.getInstance();
 
-		Configuration conf = new Configuration();
+		int blockSize = conf.getBlockSize();
+		int recyclerCapacity = conf.getRecyclerCapacity();
+		int maxOpenFiles = conf.getMaxOpenFiles();
+
 		if (storageDir == null) {
 			// Default to tmp dir
 			storageDir = new File(conf.getStatisticsDir(true));
 		}
 		if (storageDir.exists() && (storageDir.listFiles().length > 0)) {
 			System.err.println("WARNING: Given storage directory " + storageDir
-					+ " is not empty. Content will be deleted in 10 seconds. Press Ctrl+C to abort.");
+					+ " is not empty. Content will be deleted in 5 seconds. Press Ctrl+C to abort.");
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e1) {
 				throw new RuntimeException(e1);
 			}
@@ -200,8 +208,9 @@ public class StatisticsDBTest {
 			statisticsDB = new SingleFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks);
 		} else if (implementation.trim().equalsIgnoreCase("multi")) {
 			statisticsDB = new MultiFileGraphStatisticsDatabase(storageDir.getCanonicalPath(), numberOfChunks,
-					rowDataLength, true, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
-					FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT, FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
+					rowDataLength, blockSize, true, indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
+					recyclerCapacity, maxOpenFiles, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
+					FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
 		} else {
 			System.err.println("Unknown implementation: " + implementation);
 			return;

@@ -12,8 +12,6 @@ import playground.StatisticsDBTest;
 
 public class StorageAccessor implements RowStorage {
 
-	private static final int DEFAULT_CACHE_BLOCKSIZE = 4096;
-
 	protected final long fileId;
 
 	private final Logger logger;
@@ -26,38 +24,44 @@ public class StorageAccessor implements RowStorage {
 
 	private final HABSESharedSpaceManager cacheSpaceManager;
 
-	private final boolean recycleBlocks;
-
 	private RowStorage cache;
 
 	private RowStorage file;
 
 	RowStorage currentStorage;
 
-	private StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize,
-			HABSESharedSpaceManager cacheSpaceManager, boolean recycleBlocks, boolean createIfNotExisting,
+	private final int blockSize;
+
+	private final int recyclerCapacity;
+
+	private StorageAccessor(String storageFilePath, long fileId, int rowLength, int blockSize, long maxCacheSize,
+			HABSESharedSpaceManager cacheSpaceManager, int recyclerCapacity, boolean createIfNotExisting,
 			Logger logger) {
 		this.fileId = fileId;
 		this.storageFilePath = storageFilePath;
 		this.rowLength = rowLength;
+		this.blockSize = blockSize;
+		this.recyclerCapacity = recyclerCapacity;
 		this.logger = logger;
 		this.cacheSpaceManager = cacheSpaceManager;
-		this.recycleBlocks = recycleBlocks;
 
 		this.maxCacheSize = maxCacheSize;
 		open(createIfNotExisting);
 	}
 
-	public StorageAccessor(String storageFilePath, long fileId, int rowLength, long maxCacheSize, boolean recycleBlocks,
+	public StorageAccessor(String storageFilePath, long fileId, int rowLength, int blockSize, long maxCacheSize,
+			int recyclerCapacity,
 			boolean createIfNotExisting, Logger logger) {
-		this(storageFilePath, fileId, rowLength, maxCacheSize, null, recycleBlocks, createIfNotExisting, logger);
+		this(storageFilePath, fileId, rowLength, blockSize, maxCacheSize, null, recyclerCapacity, createIfNotExisting,
+				logger);
 	}
 
-	public StorageAccessor(String storageFilePath, long fileId, int rowLength,
+	public StorageAccessor(String storageFilePath, long fileId, int rowLength, int blockSize,
 			HABSESharedSpaceManager cacheSpaceManager,
-			boolean recycleBlocks, boolean createIfNotExisting, Logger logger) {
+			int recyclerCapacity, boolean createIfNotExisting, Logger logger) {
 		// maxCacheSize is set to zero, because this parameter is only relevant if cacheSpaceManager == null
-		this(storageFilePath, fileId, rowLength, 0, cacheSpaceManager, recycleBlocks, createIfNotExisting, logger);
+		this(storageFilePath, fileId, rowLength, blockSize, 0, cacheSpaceManager, recyclerCapacity, createIfNotExisting,
+				logger);
 	}
 
 	@Override
@@ -69,23 +73,22 @@ public class StorageAccessor implements RowStorage {
 		if (!new File(storageFilePath).exists() && !createIfNotExisting) {
 			throw new RuntimeException("File " + storageFilePath + " does not exist");
 		}
-		// TODO: Extract cache blocksize as own parameter to CLI/config
 		if (cacheSpaceManager == null) {
 			// Use fixed parameter as cache size limit
-			file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, maxCacheSize, DEFAULT_CACHE_BLOCKSIZE,
-					recycleBlocks);
+			file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, maxCacheSize, blockSize,
+					recyclerCapacity);
 			currentStorage = file;
 			if (file.length() < maxCacheSize) {
-				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, maxCacheSize, this);
+				cache = new InMemoryRowStorage(fileId, rowLength, blockSize, maxCacheSize, this);
 			}
 		} else {
 			// Use the SharedSpaceManager as cache size limit manager
 			file = new RandomAccessRowFile(storageFilePath, fileId, rowLength, cacheSpaceManager, this,
-					DEFAULT_CACHE_BLOCKSIZE, recycleBlocks);
+					blockSize, recyclerCapacity);
 			currentStorage = file;
 			long storageLength = file.length();
 			if (cacheSpaceManager.isAvailable(storageLength)) {
-				cache = new InMemoryRowStorage(fileId, rowLength, DEFAULT_CACHE_BLOCKSIZE, cacheSpaceManager, this);
+				cache = new InMemoryRowStorage(fileId, rowLength, blockSize, cacheSpaceManager, this);
 				if (!cacheSpaceManager.request(this, storageLength)) {
 					// This might also be thrown if this consumer has isAbleToMakeRoomForOwnRequests() set to false
 					throw new RuntimeException("Could not request allegedly available space");
