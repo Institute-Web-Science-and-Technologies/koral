@@ -64,7 +64,7 @@ public class StatisticsDBTest {
 
 	public static final boolean ENABLE_STORAGE_LOGGING = false;
 
-	public static final boolean SUBBENCHMARKS = true;
+	public static final boolean SUBBENCHMARKS = false;
 
 	public static final boolean WATCH_FILE_FLOW = false;
 
@@ -280,11 +280,17 @@ public class StatisticsDBTest {
 				SimpleDateFormat dateFormatter = new SimpleDateFormat("dd.MM.yy HH:mm");
 				String date = dateFormatter.format(new Date());
 				long extraFilesSize = getExtraFilesSize(storageDir);
+				int extraFilesCount = 0;
+				for (Long extraFileLength : freeSpaceIndexLengths.values()) {
+					if (extraFileLength > 0) {
+						extraFilesCount++;
+					}
+				}
 				writeBenchmarkToCSV(resultCSV, date, tripleCount, numberOfChunks, rowDataLength, indexCacheSize,
 						extraFilesCacheSize, implementation, coveringAlgorithm, implementationNote, durationSec,
 						totalInputReadTime, totalIndexFileTime, totalExtraFilesTime, totalCacheHits,
 						totalCacheMisses, totalHitrate, dirSize, indexFileLength,
-						extraFilesSize, totalEntries, unusedBytes);
+						extraFilesSize, extraFilesCount, totalEntries, unusedBytes);
 				System.out.println("Writing file distribution to CSV...");
 				writeFileDistributionToCSV(configNameWithoutCaches, conf.getStatisticsDir(true), freeSpaceIndexLengths);
 			}
@@ -329,7 +335,7 @@ public class StatisticsDBTest {
 			printer.printRecord("DATE_FINISHED", "TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB",
 					"EXTRAFILES_CACHE_MB", "DB_IMPL", "COV_ALG", "NOTE", "DURATION_SEC", "INPUT_TIME", "INDEX_TIME",
 					"EXTRA_TIME", "TOTAL_CACHE_HITS", "TOTAL_CACHE_MISSES", "TOTAL_HITRATE", "DIR_SIZE_BYTES",
-					"INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "TOTAL_ENTRIES",
+					"INDEX_SIZE_BYTES", "EXTRAFILES_SIZE_BYTES", "EXTRAFILES_COUNT", "TOTAL_ENTRIES",
 					"UNUSED_BYTES");
 		}
 		printer.printRecord(row);
