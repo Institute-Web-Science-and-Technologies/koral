@@ -74,7 +74,7 @@ public class StatisticsDBTest {
 
 	private static void printUsage() {
 		System.out.println("Usage: java " + StatisticsDBTest.class.getName()
-				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> <RLE extension length> [implementationNote]");
+				+ " <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <implementation: single|multi> <rowDataLength> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");
 	}
 
 	public static void main(String[] args) throws IOException {
