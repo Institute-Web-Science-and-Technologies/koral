@@ -101,7 +101,7 @@ public class Configuration implements Configurable {
   }
 
   public void setFTPServer(String ftpServerIP) {
-    setMaster(ftpServerIP, Configuration.DEFAULT_FTP_PORT);
+    setFTPServer(ftpServerIP, Configuration.DEFAULT_FTP_PORT);
   }
 
   public void setFTPServer(String ftpServerIP, String ftpServerPort) {
