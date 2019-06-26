@@ -144,11 +144,16 @@ public class Configuration implements Configurable {
             } catch (IOException e) {
               // false, port is not free
             }
-            String[] nextSlave = getSlave(i + 1);
-            if (slave[0] != nextSlave[0]) {
-              flagCheckPort = false;
+            if ((i + 1) < getNumberOfSlaves()) {
+              String[] nextSlave = getSlave(i + 1);
+              if (slave[0] != nextSlave[0]) {
+                flagCheckPort = false;
+              } else {
+                slave = nextSlave;
+                i++;
+              }
             } else {
-              i++;
+              flagCheckPort = false;
             }
           }
         }
