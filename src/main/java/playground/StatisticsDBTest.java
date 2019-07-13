@@ -55,7 +55,7 @@ public class StatisticsDBTest {
 
 	private static final boolean COLLECT_META_STATISTICS = false;
 
-	private static final boolean WRITE_STATISTICS_DATA = false;
+	private static final boolean WRITE_STATISTICS_DATA = true;
 
 	/*
 	 * Performance influencing flags. Making these constant allows removal of all related code at compile time
@@ -216,8 +216,42 @@ public class StatisticsDBTest {
 			return;
 		}
 		try (GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);) {
+			final long rows = 3_000_000_000L;
 			long start = System.currentTimeMillis();
-			statistics.collectStatistics(encodedFiles);
+			String benchmarkMode = "default";
+			if (benchmarkMode.equals("default")) {
+				statistics.collectStatistics(encodedFiles);
+			} else if (benchmarkMode.equals("increment_one_resource")) {
+				for (long i = 0; i < rows; i++) {
+					statisticsDB.incrementSubjectCount(1, 0);
+				}
+			} else if (benchmarkMode.equals("increment_each_resource_once")) {
+				for (long i = 0; i < rows; i++) {
+					// Skip over half the rows each time
+					long rid = 1 + (i / 2) + ((i % 2) == 0 ? 0 : rows / 2);
+					statisticsDB.incrementSubjectCount(rid, 0);
+				}
+			} else if (benchmarkMode.equals("increment_column_wise")) {
+				for (int r = 0; r < 3; r++) {
+					for (int c = 0; c < numberOfChunks; c++) {
+						for (long rid = 1; rid <= (rows / 3 / numberOfChunks); rid++) {
+							switch (r) {
+							case 0:
+								statisticsDB.incrementSubjectCount(rid, c);
+								break;
+							case 1:
+								statisticsDB.incrementPropertyCount(rid, c);
+								break;
+							case 2:
+								statisticsDB.incrementObjectCount(rid, c);
+								break;
+							}
+						}
+					}
+				}
+			} else {
+				throw new RuntimeException("Invalid benchmark mode");
+			}
 			long time = System.currentTimeMillis() - start;
 
 			String timeFormatted = formatTime(time);
