@@ -245,6 +245,7 @@ public abstract class QueryOperatorBase extends QueryTaskBase implements QueryOp
         if (firstJoinVar == -1) {
           // parent task has no join variables
           // send to computer with smallest id
+          mapping.updateContainment((int) (getID() >>> (Short.SIZE + Integer.SIZE)), 1);
           messageSender.sendQueryMapping(mapping, getID(),
                   parentBaseID | 0x00_01_00_00_00_00_00_00l, recycleCache);
           numberOfEmittedMappings[1]++;
