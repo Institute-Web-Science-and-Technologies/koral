@@ -237,6 +237,7 @@ public class CachedFileReceiverQueue implements Closeable {
         fileInput1.close();
         fileInput1 = null;
       }
+      new FileOutputStream(fileBuffer1).close();
       switch (status) {
         case MEMORY_FILE1:
           status = QueueStatus.MEMORY_MEMORY;
@@ -269,6 +270,7 @@ public class CachedFileReceiverQueue implements Closeable {
         fileInput2.close();
         fileInput2 = null;
       }
+      new FileOutputStream(fileBuffer2).close();
       switch (status) {
         case MEMORY_FILE2:
           status = QueueStatus.MEMORY_MEMORY;
