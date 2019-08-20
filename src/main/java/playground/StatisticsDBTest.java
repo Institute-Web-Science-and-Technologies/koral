@@ -55,7 +55,7 @@ public class StatisticsDBTest {
 
 	private static final boolean COLLECT_META_STATISTICS = false;
 
-	private static final boolean WRITE_STATISTICS_DATA = true;
+	private static final boolean WRITE_STATISTICS_DATA = false;
 
 	/*
 	 * Performance influencing flags. Making these constant allows removal of all related code at compile time

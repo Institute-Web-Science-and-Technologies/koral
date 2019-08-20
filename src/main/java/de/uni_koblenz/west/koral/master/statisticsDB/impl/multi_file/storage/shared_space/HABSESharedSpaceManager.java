@@ -96,7 +96,9 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			double exceedence = usedCacheShare - allowedShare;
 			// Greater or equal comparison because it might be possible that each file uses exactly its allowed share,
 			// resulting in zero exceedences only
-			if (exceedence >= maxExceedence) {
+			// Also note that it is impossible to have a consumer here that owns no space, because then it would not be
+			// in the recentAccessCount map.
+			if ((exceedence >= maxExceedence)) {
 				maxExceedence = exceedence;
 				habseConsumer = consumer;
 			}
@@ -112,16 +114,33 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	 */
 	@Override
 	protected boolean makeRoom(SharedSpaceConsumer requester, long amount) {
+		SharedSpaceConsumer lastHabse = null;
+		int hangCounter = 0;
 		for (SharedSpaceConsumer consumer; (consumer = findHABSE()) != null;) {
+			if (lastHabse == consumer) {
+				hangCounter++;
+				System.out.println("Hanging");
+//				throw new RuntimeException("Hanging at same Habse consumer");
+			}
 			if ((consumer == requester) && !consumer.isAbleToMakeRoomForOwnRequests()) {
+				// If isAbleToMakeRoomForOwnRequests() returns false, we cannot call makeRoom() on this consumer.
+				// We return false, so the requester can then still take measures to make room, e.g. by switching
+				// to a different implementation.
+				if (hangCounter > 0) {
+					System.out.println("Hanged for " + hangCounter + " iterations");
+				}
 				return false;
 			}
 			while (consumer.makeRoom()) {
 				// Free up space until either enough is available or nothing is left to free up
 				if ((maxSize - used) >= amount) {
+					if (hangCounter > 0) {
+						System.out.println("Hanged for " + hangCounter + " iterations");
+					}
 					return true;
 				}
 			}
+			lastHabse = consumer;
 		}
 		throw new RuntimeException("Could not find any more HABSE consumers");
 	}
