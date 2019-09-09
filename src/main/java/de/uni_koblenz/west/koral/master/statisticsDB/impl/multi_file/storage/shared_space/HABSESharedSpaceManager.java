@@ -1,6 +1,7 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -41,6 +42,9 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 
 	private final float accessesWeight;
 
+	private SharedSpaceConsumer[] recyclableConsumerArray;
+	private double[] recyclableExceedencesArray;
+
 	/**
 	 *
 	 * @param fileManager
@@ -62,24 +66,42 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	}
 
 	/**
-	 * Finds the consumer that currently has the highest access based share exceedence (HABSE), i.e. the largest
+	 * Lazily returns the consumers sorted by their highest access based share exceedence (HABSE), i.e. the largest
 	 * absolute difference of used to allowed cache share.
 	 *
 	 * @return
 	 */
-	private SharedSpaceConsumer findHABSE() {
+	private Iterator<SharedSpaceConsumer> findHABSE() {
 		long start = 0;
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 			start = System.nanoTime();
 		}
-		double maxExceedence = 0;
-		SharedSpaceConsumer habseConsumer = null;
+
 		long totalAccessCosts = 0;
 		if (accessesWeight < 1) {
 			for (SharedSpaceConsumer c : recentAccessCount.keySet()) {
 				totalAccessCosts += c.accessCosts();
 			}
 		}
+
+		SharedSpaceConsumer[] consumers;
+		double[] exceedences;
+		int consumerCount = recentAccessCount.keySet().size();
+		if ((recyclableConsumerArray != null) && (recyclableConsumerArray.length == consumerCount)) {
+			consumers = recyclableConsumerArray;
+		} else {
+			consumers = new SharedSpaceConsumer[consumerCount];
+			recyclableConsumerArray = consumers;
+		}
+		if ((recyclableExceedencesArray != null) && (recyclableExceedencesArray.length == consumerCount)) {
+			exceedences = recyclableExceedencesArray;
+		} else {
+			exceedences = new double[consumerCount];
+			recyclableExceedencesArray = exceedences;
+		}
+
+		// Generate two arrays with all the consumers and their respective exceedence value for use in the iterator
+		int i = 0;
 		for (Entry<SharedSpaceConsumer, Long> e : recentAccessCount.entrySet()) {
 			SharedSpaceConsumer consumer = e.getKey();
 			long recentAccesses = e.getValue();
@@ -94,19 +116,53 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			double usedCacheShare = getSpaceUsed(consumer) / (double) maxSize;
 
 			double exceedence = usedCacheShare - allowedShare;
-			// Greater or equal comparison because it might be possible that each file uses exactly its allowed share,
-			// resulting in zero exceedences only
-			// Also note that it is impossible to have a consumer here that owns no space, because then it would not be
-			// in the recentAccessCount map.
-			if ((exceedence >= maxExceedence)) {
-				maxExceedence = exceedence;
-				habseConsumer = consumer;
-			}
+
+			consumers[i] = consumer;
+			exceedences[i] = exceedence;
+			i++;
 		}
 		if (StatisticsDBTest.SUBBENCHMARKS) {
 			SubbenchmarkManager.getInstance().addTime(SUBBENCHMARK_TASK.HABSE_FIND, System.nanoTime() - start);
 		}
-		return habseConsumer;
+
+		return new Iterator<SharedSpaceConsumer>() {
+
+			private SharedSpaceConsumer nextHabseConsumer = findNext();
+
+			private SharedSpaceConsumer findNext() {
+				int maxIndex = -1;
+				double maxExceedence = 0;
+				SharedSpaceConsumer habseConsumer = null;
+				for (int i = 0; i < consumers.length; i++) {
+					// Greater or equal comparison because it might be possible that each file uses exactly its allowed
+					// share, resulting in zero exceedences only
+					// Also note that it is impossible to have a consumer here that owns no space, because then it would
+					// not be in the recentAccessCount map.
+					if ((exceedences[i] >= maxExceedence)) {
+						maxExceedence = exceedences[i];
+						habseConsumer = consumers[i];
+						maxIndex = i;
+					}
+				}
+				if (maxIndex >= 0) {
+					// Mark found maximum to exclude from next search
+					exceedences[maxIndex] = -1;
+				}
+				return habseConsumer;
+			}
+
+			@Override
+			public boolean hasNext() {
+				return nextHabseConsumer != null;
+			}
+
+			@Override
+			public SharedSpaceConsumer next() {
+				SharedSpaceConsumer next = nextHabseConsumer;
+				nextHabseConsumer = findNext();
+				return next;
+			}
+		};
 	}
 
 	/**
@@ -116,7 +172,9 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 	protected boolean makeRoom(SharedSpaceConsumer requester, long amount) {
 		SharedSpaceConsumer lastHabse = null;
 		int hangCounter = 0;
-		for (SharedSpaceConsumer consumer; (consumer = findHABSE()) != null;) {
+		Iterator<SharedSpaceConsumer> habses = findHABSE();
+		while (habses.hasNext()) {
+			SharedSpaceConsumer consumer = habses.next();
 			if (lastHabse == consumer) {
 				hangCounter++;
 				System.out.println("Hanging");
