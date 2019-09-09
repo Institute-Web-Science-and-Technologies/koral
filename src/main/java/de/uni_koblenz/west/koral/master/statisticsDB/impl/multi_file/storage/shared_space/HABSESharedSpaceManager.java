@@ -131,11 +131,10 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 
 			private SharedSpaceConsumer findNext() {
 				int maxIndex = -1;
-				double maxExceedence = 0;
+				// Minimum exceedence is -1, because it is the difference between two 0..1 ratios
+				double maxExceedence = -1;
 				SharedSpaceConsumer habseConsumer = null;
 				for (int i = 0; i < consumers.length; i++) {
-					// Greater or equal comparison because it might be possible that each file uses exactly its allowed
-					// share, resulting in zero exceedences only
 					// Also note that it is impossible to have a consumer here that owns no space, because then it would
 					// not be in the recentAccessCount map.
 					if ((exceedences[i] >= maxExceedence)) {
@@ -177,7 +176,7 @@ public class HABSESharedSpaceManager extends SharedSpaceManager {
 			SharedSpaceConsumer consumer = habses.next();
 			if (lastHabse == consumer) {
 				hangCounter++;
-				System.out.println("Hanging");
+				System.out.println("Hanging at consumer " + consumer);
 //				throw new RuntimeException("Hanging at same Habse consumer");
 			}
 			if ((consumer == requester) && !consumer.isAbleToMakeRoomForOwnRequests()) {
