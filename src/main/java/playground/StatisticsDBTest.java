@@ -216,25 +216,25 @@ public class StatisticsDBTest {
 			return;
 		}
 		try (GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);) {
-			final long rows = 3_000_000_000L;
+			final long operations = 3_000_000_000L;
 			long start = System.currentTimeMillis();
 			String benchmarkMode = "default";
 			if (benchmarkMode.equals("default")) {
 				statistics.collectStatistics(encodedFiles);
 			} else if (benchmarkMode.equals("increment_one_resource")) {
-				for (long i = 0; i < rows; i++) {
+				for (long i = 0; i < operations; i++) {
 					statisticsDB.incrementSubjectCount(1, 0);
 				}
 			} else if (benchmarkMode.equals("increment_each_resource_once")) {
-				for (long i = 0; i < rows; i++) {
+				for (long i = 0; i < operations; i++) {
 					// Skip over half the rows each time
-					long rid = 1 + (i / 2) + ((i % 2) == 0 ? 0 : rows / 2);
+					long rid = 1 + (i / 2) + ((i % 2) == 0 ? 0 : operations / 2);
 					statisticsDB.incrementSubjectCount(rid, 0);
 				}
 			} else if (benchmarkMode.equals("increment_column_wise")) {
 				for (int r = 0; r < 3; r++) {
 					for (int c = 0; c < numberOfChunks; c++) {
-						for (long rid = 1; rid <= (rows / 3 / numberOfChunks); rid++) {
+						for (long rid = 1; rid <= (operations / 3 / numberOfChunks); rid++) {
 							switch (r) {
 							case 0:
 								statisticsDB.incrementSubjectCount(rid, c);
