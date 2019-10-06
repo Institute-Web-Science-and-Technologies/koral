@@ -380,7 +380,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 		// Stores file ids of all extra files that are defragged and therefore need to be exchanged by the temporary
 		// files.
 		Set<Long> defraggedFiles = new TreeSet<>();
-		for (int resourceId = 1; resourceId <= getMaxId(); resourceId++) {
+		for (long resourceId = 1; resourceId <= getMaxId(); resourceId++) {
 			if (!loadRow(resourceId)) {
 				throw new RuntimeException("Empty row for resource " + resourceId + " found while defragging");
 			}
