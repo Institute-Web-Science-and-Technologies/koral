@@ -12,6 +12,8 @@ import java.util.TreeSet;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
+import playground.StatisticsDBTest;
+
 /**
  * General-purpose singleton class for all kinds of meta-logging. May be used to collect metrics or statistics of
  * different implementation parts without much effort for development/experimenting. Is not supposed to be used in
@@ -84,39 +86,43 @@ public class CentralLogger {
 		System.out.println("===== End CentralLogger");
 
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
-		try (CSVPrinter csvPrinter = new CSVPrinter(
-				new OutputStreamWriter(new FileOutputStream("SLRU-CacheSizesLog_" + configName + ".csv", false),
-						"UTF-8"),
-				csvFileFormat);) {
-			csvPrinter.printRecord("PROTECTED_SIZE", "TOTAL_CACHE_SIZE");
-			assert protectedSizes.size() == totalCacheSizes.size();
-			while (!protectedSizes.isEmpty()) {
-				csvPrinter.printRecord(protectedSizes.removeFirst(), totalCacheSizes.removeFirst());
+		if (StatisticsDBTest.LOG_SLRU_CACHE_SIZES) {
+			try (CSVPrinter csvPrinter = new CSVPrinter(
+					new OutputStreamWriter(new FileOutputStream("SLRU-CacheSizesLog_" + configName + ".csv", false),
+							"UTF-8"),
+					csvFileFormat);) {
+				csvPrinter.printRecord("PROTECTED_SIZE", "TOTAL_CACHE_SIZE");
+				assert protectedSizes.size() == totalCacheSizes.size();
+				while (!protectedSizes.isEmpty()) {
+					csvPrinter.printRecord(protectedSizes.removeFirst(), totalCacheSizes.removeFirst());
+				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
 		}
 
-		try (CSVPrinter csvPrinter = new CSVPrinter(
-				new OutputStreamWriter(new FileOutputStream("SLRU-HitsHistogram_" + configName + ".csv", false),
-						"UTF-8"),
-				csvFileFormat);) {
-			csvPrinter.printRecord("HITS", "IN_PROTECTED", "IN_CACHE");
-			Set<Long> allHitNumbers = new TreeSet<>(inCacheHits.keySet());
-			allHitNumbers.addAll(inProtectedHits.keySet());
-			for (Long hitNumber : allHitNumbers) {
-				Long p = inProtectedHits.get(hitNumber);
-				if (p == null) {
-					p = 0L;
+		if (StatisticsDBTest.LOG_SLRU_CACHE_HITS) {
+			try (CSVPrinter csvPrinter = new CSVPrinter(
+					new OutputStreamWriter(new FileOutputStream("SLRU-HitsHistogram_" + configName + ".csv", false),
+							"UTF-8"),
+					csvFileFormat);) {
+				csvPrinter.printRecord("HITS", "IN_PROTECTED", "IN_CACHE");
+				Set<Long> allHitNumbers = new TreeSet<>(inCacheHits.keySet());
+				allHitNumbers.addAll(inProtectedHits.keySet());
+				for (Long hitNumber : allHitNumbers) {
+					Long p = inProtectedHits.get(hitNumber);
+					if (p == null) {
+						p = 0L;
+					}
+					Long c = inCacheHits.get(hitNumber);
+					if (c == null) {
+						c = 0L;
+					}
+					csvPrinter.printRecord(hitNumber, p, c);
 				}
-				Long c = inCacheHits.get(hitNumber);
-				if (c == null) {
-					c = 0L;
-				}
-				csvPrinter.printRecord(hitNumber, p, c);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
 		}
 	}
 
