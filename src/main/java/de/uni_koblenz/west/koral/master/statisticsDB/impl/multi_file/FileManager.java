@@ -85,8 +85,6 @@ public class FileManager {
 			FileFlowWatcher.createInstance(storagePath);
 		}
 
-		// TODO: We only enforce maxOpenFiles and maxExtraCacheSize separately
-
 		extraFiles = new LRUCache<Long, ExtraRowStorage>(maxOpenFiles) {
 			@Override
 			protected void removeEldest(Long fileId, ExtraRowStorage storage) {

@@ -55,7 +55,6 @@ public class SampledAggregationsListener implements StorageLogReadListener {
 			if (!files.containsKey(fileId)) {
 				String fileName = "aggregations_fileId" + fileId + (alignToGlobal ? "_globalAligned" : "") + ".csv.gz";
 				File file = new File(outputPath, fileName);
-				// TODO: Does it make sense to collect all metrics both from a local and global perspective?
 				LinkedList<Metric> metrics = new LinkedList<>();
 				metrics.add(new CacheUsageMetric());
 				metrics.add(new FileSizeMetric());

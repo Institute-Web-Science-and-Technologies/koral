@@ -9,8 +9,8 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.sha
 public interface RowStorage extends AutoCloseable, SharedSpaceConsumer {
 
 	/**
-	 * TODO: What does this do? Should it be idempotent? - Can be called after close() to reopen - Throws exception if
-	 * createIfNotExisting is false and file doesn't exist Currently not idempotent
+	 * Prepares the storage for further accesses. Can be called after close() to reopen. Throws exception if
+	 * createIfNotExisting is false and file doesn't exist.
 	 *
 	 * @param createIfNotExisting
 	 */
@@ -45,7 +45,7 @@ public interface RowStorage extends AutoCloseable, SharedSpaceConsumer {
 	public void storeBlocks(Iterator<Entry<Long, byte[]>> blocks) throws IOException;
 
 	/**
-	 * TODO: If valid == false, storage must be reopened
+	 * If this method returns false, storage must be reopened
 	 *
 	 * @return
 	 */
