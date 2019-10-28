@@ -1,5 +1,12 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log;
 
+/**
+ * Stores information about an element in a row layout. Such an element is basically a data type and has attributes like
+ * how much space it needs.
+ *
+ * @author Philipp Töws
+ *
+ */
 public enum ElementType {
 	BIT(1L),
 	BYTE(Byte.MAX_VALUE, Byte.BYTES),

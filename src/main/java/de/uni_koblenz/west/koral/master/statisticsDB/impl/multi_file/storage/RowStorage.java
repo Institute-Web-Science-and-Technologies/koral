@@ -6,6 +6,12 @@ import java.util.Map.Entry;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceConsumer;
 
+/**
+ * Describes a storage implementation for rows of the statistics database.
+ *
+ * @author Philipp Töws
+ *
+ */
 public interface RowStorage extends AutoCloseable, SharedSpaceConsumer {
 
 	/**

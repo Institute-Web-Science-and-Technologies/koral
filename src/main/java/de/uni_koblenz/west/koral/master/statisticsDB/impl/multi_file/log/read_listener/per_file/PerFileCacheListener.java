@@ -6,6 +6,12 @@ import java.util.Map;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.CSVWriter;
 
+/**
+ * Accumulates cache-related values for a single file.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class PerFileCacheListener {
 
 	private final CSVWriter csvWriter;

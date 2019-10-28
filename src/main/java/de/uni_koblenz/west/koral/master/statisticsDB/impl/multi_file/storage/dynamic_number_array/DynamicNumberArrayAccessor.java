@@ -2,6 +2,13 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.dy
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 
+/**
+ * Wraps {@link DynamicNumberArray} by dynamically changing the backend implementation depending on the required size,
+ * where each possible backend's per-element capacity are fixed and different.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class DynamicNumberArrayAccessor implements DynamicNumberArray {
 
 	public static final int DEFAULT_CAPACITY = 10;

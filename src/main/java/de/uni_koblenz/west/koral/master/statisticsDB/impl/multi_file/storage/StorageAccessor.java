@@ -10,6 +10,13 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Subbenchmar
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 import playground.StatisticsDBTest;
 
+/**
+ * Represents a file of the statistics database. Can use either an {@link InMemoryRowStorage} or a
+ * {@link RandomAccessRowFile} as storage backend, and switches it when necessary.
+ * 
+ * @author Philipp Töws
+ *
+ */
 public class StorageAccessor implements RowStorage {
 
 	protected final long fileId;

@@ -2,6 +2,12 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log;
 
 import java.util.Map;
 
+/**
+ * Singleton wrapper to read rows of a log containing key-value data.
+ * 
+ * @author Philipp Töws
+ *
+ */
 public class LogRow {
 
 	private static LogRow instance;
@@ -10,8 +16,7 @@ public class LogRow {
 
 	private Map<String, Object> data;
 
-	private LogRow() {
-	}
+	private LogRow() {}
 
 	static LogRow getInstance(int rowType, Map<String, Object> data) {
 		if (instance == null) {

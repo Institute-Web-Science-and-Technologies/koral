@@ -3,6 +3,13 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ca
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNode.KeyValueSegmentContent;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.SegmentedLRUCache.Segment;
 
+/**
+ * Stores {@link DoublyLinkedNode}s to allow recycling without having to create new objects.
+ * 
+ * @author Philipp Töws
+ *
+ * @param <C>
+ */
 public class DoublyLinkedNodeRecycler<C> {
 
 	private final DoublyLinkedList<C> nodes;

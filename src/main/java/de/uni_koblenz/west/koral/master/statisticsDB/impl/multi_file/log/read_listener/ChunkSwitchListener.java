@@ -13,6 +13,12 @@ import org.apache.commons.csv.CSVPrinter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogEvent;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
 
+/**
+ * Listens to chunk-switch events (when a new chunk of the input dataset is read).
+ *
+ * @author Philipp Töws
+ *
+ */
 public class ChunkSwitchListener implements StorageLogReadListener {
 	private final CSVPrinter csvPrinter;
 

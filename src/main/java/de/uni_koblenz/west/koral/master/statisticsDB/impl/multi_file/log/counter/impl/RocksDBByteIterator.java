@@ -7,6 +7,12 @@ import java.util.NoSuchElementException;
 
 import org.rocksdb.RocksIterator;
 
+/**
+ * Iterator for the elements of an {@link RocksDBStore}.
+ * 
+ * @author Philipp Töws
+ *
+ */
 public class RocksDBByteIterator implements Iterator<byte[]>, Closeable {
 
 	private final RocksIterator iterator;

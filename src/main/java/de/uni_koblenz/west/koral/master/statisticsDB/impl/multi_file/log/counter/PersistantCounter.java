@@ -4,6 +4,12 @@ import java.util.Iterator;
 
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 
+/**
+ * Counter that uses a {@link PersistantStore} as storage backend.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class PersistantCounter implements Counter {
 
 	private final PersistantStore store;

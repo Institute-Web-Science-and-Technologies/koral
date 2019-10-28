@@ -6,6 +6,12 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.Metric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.aggregations.GlobalPercentageAggregator;
 
+/**
+ * Collects the amount of accesses.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class AccessRateMetric extends Metric {
 
 	public AccessRateMetric() {

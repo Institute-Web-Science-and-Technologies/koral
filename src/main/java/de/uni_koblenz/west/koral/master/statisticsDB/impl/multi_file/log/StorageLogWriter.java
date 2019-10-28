@@ -6,6 +6,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+/**
+ * Is called for different types of accesses and stores the given meta information about these accesses bundled as
+ * "events" in a {@link CompressedLogWriter}.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class StorageLogWriter {
 
 	public static final String KEY_FILEID = "fileId";
@@ -85,16 +92,16 @@ public class StorageLogWriter {
 	 *            Which part of the file was accessed. For cache-enabled access, this would be the block id, while for
 	 *            cache-disabled access it would the rowId. Is used to check how often each chunk is used.
 	 * @param write
-	 *            Wether this access is a writer or read access.
+	 *            Whether this access is a write or read access.
 	 * @param fileStorage
 	 *            True if a file-based implementation (cached or uncached) is accessed, False for in-memory-only
 	 *            implementations.
 	 * @param cacheUsage
 	 *            Current size of this file only in bytes.
 	 * @param cacheHit
-	 *            Wether the chunk that contains the row was found in the cache.
+	 *            Whether the chunk that contains the row was found in the cache.
 	 * @param found
-	 *            Wether the requested row was found, either in cache or in file. False means it is a new row.
+	 *            Whether the requested row was found, either in cache or in file. False means it is a new row.
 	 */
 	public void logAccessEvent(long fileId, long position, boolean write, boolean fileStorage, long cacheUsage,
 			byte percentageCached, long fileSize, boolean cacheHit, boolean found, long time) {

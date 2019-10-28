@@ -4,6 +4,12 @@ import java.util.Map;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogEvent;
 
+/**
+ * Base class for each metric which might accumulate the values differently.
+ *
+ * @author Philipp Töws
+ *
+ */
 public abstract class Metric {
 
 	protected Aggregator aggregator;

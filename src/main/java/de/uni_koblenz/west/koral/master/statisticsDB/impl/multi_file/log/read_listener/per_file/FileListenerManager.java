@@ -7,6 +7,12 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
+/**
+ * Wraps the per-file listeners by managing a listener for each separate file, creating them if necessary.
+ * 
+ * @author Philipp Töws
+ *
+ */
 public class FileListenerManager implements StorageLogReadListener {
 
 	private final Map<Byte, PerFileCacheListener> cacheListener;

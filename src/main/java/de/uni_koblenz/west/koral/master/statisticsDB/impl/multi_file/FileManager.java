@@ -23,6 +23,13 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.sha
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
 import playground.StatisticsDBTest;
 
+/**
+ * Topmost class for anything storage related. Acts as an adapter to store and reads statistic rows of row
+ * storages/files. Also persists and loads metadata of these files for reopening the database.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class FileManager {
 
 	public static final int DEFAULT_MAX_OPEN_FILES = 1000;

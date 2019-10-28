@@ -4,8 +4,8 @@ import java.util.Map;
 
 /**
  * Used for transferring pairs of block id and block data between storage implementations.
- * 
- * @author philipp
+ *
+ * @author Philipp Töws
  *
  */
 class BlockEntry implements Map.Entry<Long, byte[]> {
@@ -16,8 +16,7 @@ class BlockEntry implements Map.Entry<Long, byte[]> {
 
 	private static BlockEntry blockEntry;
 
-	private BlockEntry() {
-	}
+	private BlockEntry() {}
 
 	public static BlockEntry getInstance(long blockId, byte[] block) {
 		if (blockEntry == null) {

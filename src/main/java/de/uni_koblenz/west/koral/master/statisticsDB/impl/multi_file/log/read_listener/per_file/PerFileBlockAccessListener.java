@@ -15,6 +15,12 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.Counter;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.HashMapCounter;
 
+/**
+ * Counts which blocks were accessed for a specific file.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class PerFileBlockAccessListener {
 
 	private final boolean alignToGlobal;

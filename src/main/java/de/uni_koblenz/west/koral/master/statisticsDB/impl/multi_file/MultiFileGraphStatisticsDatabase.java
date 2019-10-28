@@ -22,7 +22,7 @@ import playground.StatisticsDBTest;
  * The main class of this implementation, manages the {@link StatisticsRowManager} and persistence through
  * {@link FileManager}.
  *
- * @author philipp
+ * @author Philipp Töws
  *
  */
 public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase {

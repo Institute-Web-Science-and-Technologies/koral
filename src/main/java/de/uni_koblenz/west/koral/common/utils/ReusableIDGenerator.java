@@ -28,6 +28,7 @@ import playground.StatisticsDBTest;
  * Returns the first unused int id starting at zero.
  *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
+ * @author Philipp Töws
  *
  */
 public class ReusableIDGenerator {
@@ -180,7 +181,8 @@ public class ReusableIDGenerator {
 	 *
 	 */
 	private static enum SATR_CALLER {
-		NEXT, RELEASE
+		NEXT,
+		RELEASE
 	}
 
 	private void shiftArrayToRight(int firstIndexToShift, int numberShifts, SATR_CALLER caller) {

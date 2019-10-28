@@ -20,7 +20,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_li
 
 /**
  * Acts as an adapter between the StorageLogEvent calls and the individual aggregation instances for each file. Creates
- * and manages these instances per file while also triggering a simultaneous aggregation for all files. Also determiens
+ * and manages these instances per file while also triggering a simultaneous aggregation for all files.
  *
  * @author Philipp Töws
  *

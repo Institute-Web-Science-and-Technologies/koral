@@ -3,6 +3,12 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counte
 import java.util.HashMap;
 import java.util.Iterator;
 
+/**
+ * Counter that uses a simple Java HashMap as storage.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class HashMapCounter implements Counter {
 
 	private final HashMap<Long, Long> store;

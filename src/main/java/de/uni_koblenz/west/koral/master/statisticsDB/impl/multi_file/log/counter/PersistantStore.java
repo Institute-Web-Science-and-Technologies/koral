@@ -3,6 +3,12 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counte
 import java.io.Closeable;
 import java.util.Iterator;
 
+/**
+ * General interface for key-value persistant stores.
+ *
+ * @author Philipp Töws
+ *
+ */
 public interface PersistantStore extends Closeable, Iterable<byte[]> {
 
 	/**

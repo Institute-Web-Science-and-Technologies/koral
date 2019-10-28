@@ -11,7 +11,7 @@ import playground.StatisticsDBTest;
 /**
  * Handles the raw bytes of each row, interprets and updates them.
  *
- * @author philipp
+ * @author Philipp Töws
  *
  */
 public class StatisticsRowManager {

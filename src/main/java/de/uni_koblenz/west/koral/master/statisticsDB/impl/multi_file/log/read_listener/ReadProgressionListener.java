@@ -4,6 +4,12 @@ import java.util.Map;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
 
+/**
+ * Listens to log to provide a progression output on stdout.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class ReadProgressionListener implements StorageLogReadListener {
 
 	private long rowCounter;
@@ -31,7 +37,6 @@ public class ReadProgressionListener implements StorageLogReadListener {
 	}
 
 	@Override
-	public void close() {
-	}
+	public void close() {}
 
 }

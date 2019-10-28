@@ -2,6 +2,14 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ca
 
 import java.util.LinkedList;
 
+/**
+ * Allows recycling of generic objects, with a limited capacity.
+ *
+ * @author Philipp Töws
+ *
+ * @param <T>
+ *            The type of the objects that are recycled.
+ */
 public class ObjectRecycler<T> {
 
 	private final LinkedList<T> objects;

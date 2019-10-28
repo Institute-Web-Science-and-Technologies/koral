@@ -15,6 +15,14 @@ import java.util.zip.GZIPOutputStream;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils;
 
+/**
+ * Stores key-value pairs as rows based on a given row layout into a gzipped binary file. A layout describes how many
+ * bytes each value needs. The layout is stored as a header for later decompressing. Additionally, for example booleans
+ * are compressed by storing them as single bits.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class CompressedLogWriter {
 
 	private final Map<Integer, Map<String, ElementType>> rowLayouts;

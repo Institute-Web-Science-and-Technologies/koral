@@ -12,6 +12,12 @@ import org.rocksdb.RocksDBException;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.counter.PersistantStore;
 
+/**
+ * General purpose Wrapper for RocksDB storage. Also provides an element iterator.
+ * 
+ * @author Philipp Töws
+ *
+ */
 public class RocksDBStore implements PersistantStore {
 
 	private RocksDB counter;

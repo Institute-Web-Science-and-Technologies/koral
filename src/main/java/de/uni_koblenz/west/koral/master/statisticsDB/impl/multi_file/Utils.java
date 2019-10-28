@@ -1,5 +1,11 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 
+/**
+ * Bundles different low-level frequently-used utility functions.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class Utils {
 
 	private Utils() {}

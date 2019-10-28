@@ -12,6 +12,12 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
+/**
+ * Listens to file switch events (when a row migrates to a different extra file) and generates a CSV based on this.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class FileFlowWatcher {
 
 	private static FileFlowWatcher instance;

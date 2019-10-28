@@ -13,6 +13,9 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.cac
 import playground.StatisticsDBTest;
 
 /**
+ * LRU Cache with different segments (protected and probationary), with the idea, that often-accessed elements are
+ * allowed to be stored in the protected segment, where evicts don't happen often.
+ *
  * Implementation based on: R. Karedla, J. S. Love and B. G. Wherry, "Caching strategies to improve disk system
  * performance," in Computer, vol. 27, no. 3, pp. 38-46, March 1994. doi: 10.1109/2.268884 URL:
  * https://ieeexplore.ieee.org/document/268884

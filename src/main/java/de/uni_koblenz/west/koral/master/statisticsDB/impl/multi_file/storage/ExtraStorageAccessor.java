@@ -8,6 +8,12 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Subbenchmar
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 import playground.StatisticsDBTest;
 
+/**
+ * Extends the basic {@link StorageAccessor} for extra storages by using a free space index (RLE list).
+ *
+ * @author Philipp Töws
+ *
+ */
 public class ExtraStorageAccessor extends StorageAccessor implements ExtraRowStorage {
 
 	private final ReusableIDGenerator freeSpaceIndex;

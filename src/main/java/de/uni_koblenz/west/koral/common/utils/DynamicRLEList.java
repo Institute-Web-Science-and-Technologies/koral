@@ -25,10 +25,10 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.Dyn
 import playground.StatisticsDBTest;
 
 /**
- * Returns the first unused int id starting at zero.
+ * Attempt to replace RLE list with arrays with fixed per-element-bits with a dynamic and more space-efficient
+ * {@link DynamicNumberArray} implementation.
  *
- * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
- *
+ * @author Philipp Töws
  */
 public class DynamicRLEList {
 

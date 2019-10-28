@@ -13,6 +13,12 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.sha
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceManager;
 import playground.StatisticsDBTest;
 
+/**
+ * Row storage that stores the rows bundled as blocks fully in memory, in a HashMap of byte arrays.
+ *
+ * @author Philipp Töws
+ *
+ */
 class InMemoryRowStorage implements RowStorage {
 
 	private final int rowLength;

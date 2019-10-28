@@ -8,6 +8,13 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogReadListener;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 
+/**
+ * Collects the amount of used implementations, i.e. how many files used in-memory and
+ * random-access-file-implementations.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class ImplementationListener implements StorageLogReadListener {
 
 	/**

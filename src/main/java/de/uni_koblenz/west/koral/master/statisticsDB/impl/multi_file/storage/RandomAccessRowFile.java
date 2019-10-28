@@ -22,6 +22,14 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.sha
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceManager;
 import playground.StatisticsDBTest;
 
+/**
+ * Row storage that stores its rows bundled as blocks in a {@link RandomAccessFile} but additionally provides a caching
+ * layer for the blocks. If a {@link SharedSpaceManager} is given, a special {@link LRUSharedCache} is used.
+ *
+ *
+ * @author Philipp Töws
+ *
+ */
 public class RandomAccessRowFile implements RowStorage {
 
 	private static final int ESTIMATED_SPACE_PER_LRUCACHE_ENTRY_WITHOUT_DATA = 128 /* index entry */

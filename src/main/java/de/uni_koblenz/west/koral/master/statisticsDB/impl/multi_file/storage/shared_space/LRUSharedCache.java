@@ -2,6 +2,16 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.sh
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUList;
 
+/**
+ * An LRU Cache that uses a {@link SharedSpaceManager} to manage how much space each consumer can have.
+ *
+ * @author Philipp Töws
+ *
+ * @param <K>
+ *            Type of the key of the cache elements.
+ * @param <V>
+ *            Type of the value of the cache elements.
+ */
 public class LRUSharedCache<K, V> extends LRUList<K, V> implements AutoCloseable {
 
 	private final SharedSpaceManager sharedSpaceManager;

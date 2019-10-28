@@ -7,6 +7,12 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.Storage
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.Metric;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.read_listener.per_file_aggregations.aggregations.FileLocalAverageAggregator;
 
+/**
+ * Collects the cache usage values.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class CacheUsageMetric extends Metric {
 
 	public CacheUsageMetric() {

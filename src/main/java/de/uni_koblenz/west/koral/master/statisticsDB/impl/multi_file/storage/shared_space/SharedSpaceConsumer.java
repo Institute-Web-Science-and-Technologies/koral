@@ -1,5 +1,12 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space;
 
+/**
+ * Models an entity that wants to consume space of a shared and limited space. Corresponds to an extra file in the sense
+ * of the statistics database.
+ *
+ * @author Philipp Töws
+ *
+ */
 public interface SharedSpaceConsumer {
 
 	/**
