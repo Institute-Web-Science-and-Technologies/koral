@@ -260,7 +260,6 @@ public class StatisticsRowManager {
 		bytesPerValue = extractBytesPerValue();
 
 		positionEncoding = optimalPositionEncoding(positionCount);
-//		Logger.log("Enc: " + positionEncoding + ", PC: " + positionCount);
 		positionLength = getPositionLength(positionEncoding, positionCount);
 		updateDataLength();
 
@@ -366,7 +365,6 @@ public class StatisticsRowManager {
 		positionLength = positionListEntryLength;
 		bytesPerValue = 1;
 		positionEncoding = PositionEncoding.LIST;
-		// TODO: update bpv and pC in metadataBits?
 		updateDataLength();
 	}
 
@@ -416,7 +414,6 @@ public class StatisticsRowManager {
 	void incrementOccurence(ResourceType resourceType, int chunk) {
 		int columnNumber = getColumnNumber(resourceType, chunk);
 		int currentOccurenceValueIndex = getOccurenceValueIndex(columnNumber);
-//		Logger.log("Col: " + columnNumber + "; OVI: " + currentOccurenceValueIndex);
 		if (currentOccurenceValueIndex < 0) {
 			// Resource never occured at this column position yet
 			if (StatisticsDBTest.WATCH_FILE_FLOW) {
@@ -427,10 +424,8 @@ public class StatisticsRowManager {
 				long[] oldOccurences = decodeOccurenceData();
 				// Add new occurence
 				oldOccurences[columnNumber] = 1;
-//				Logger.log("Occurences now: " + Arrays.toString(oldOccurences));
 				positionCount++;
 				positionEncoding = optimalPositionEncoding(positionCount);
-//				Logger.log("Switched to " + positionEncoding);
 				encodeOccurenceData(oldOccurences);
 			} else {
 				// Insert value into dataBytes at the correct position
@@ -483,8 +478,6 @@ public class StatisticsRowManager {
 			}
 			updatePositionCount();
 		} else {
-//			Logger.log("DB: " + Arrays.toString(dataBytes));
-//			Logger.log("PL: " + positionLength);
 			// Resource column has entry that will be updated now
 			// Get occurence value
 			long occurences = Utils.variableBytes2Long(dataBytes,
@@ -499,10 +492,8 @@ public class StatisticsRowManager {
 				long[] oldOccurences = decodeOccurenceData();
 				// Update current occurence
 				oldOccurences[columnNumber] += 1;
-//				Logger.log("new OC: " + Arrays.toString(oldOccurences));
 				bytesPerValue++;
 				// Rewrite values
-				// TODO: Why not just encodeOccurenceData()?
 				dataBytes = Utils.extendArray(dataBytes, positionCount);
 				int positionIndex = 0;
 				for (int i = 0; i < oldOccurences.length; i++) {
@@ -512,7 +503,6 @@ public class StatisticsRowManager {
 						positionIndex++;
 					}
 				}
-//				Logger.log("DB: " + Arrays.toString(dataBytes));
 				updateBytesPerValue();
 			} else {
 				// Update data bytes/the one occurence value
@@ -535,7 +525,6 @@ public class StatisticsRowManager {
 	long[] decodeOccurenceData() {
 		long[] occurenceValues = new long[3 * numberOfChunks];
 		int[] positions = extractPositions();
-//		Logger.log("Positions: " + Arrays.toString(positions));
 		for (int i = 0; i < positions.length; i++) {
 			long occurences = Utils.variableBytes2Long(dataBytes, positionLength + (i * bytesPerValue), bytesPerValue);
 			occurenceValues[positions[i]] = occurences;

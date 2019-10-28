@@ -246,7 +246,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				}
 				fileManager.writeIndexRow(resourceId, rowManager.getRow());
 			} else {
-// Row is in extra file
+				// Row is in extra file
 				long fileIdWrite = getCurrentFileId();
 				long extraFileRowId = rowManager.getExternalFileRowId();
 				long newExtraFileRowID = extraFileRowId;
@@ -272,10 +272,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					// Overwrite old extra file entry
 					fileManager.writeExternalRow(fileIdWrite, extraFileRowId, rowManager.getDataBytes());
 				}
-//				SimpleLogger.log("->E " + fileIdWrite + "/" + newExtraFileRowID + ": "
-//						+ Arrays.toString(rowManager.getDataBytes()));
 			}
-//			SimpleLogger.log("New Row: " + Arrays.toString(rowManager.getRow()));
 
 		} catch (IOException e) {
 			close();
@@ -328,7 +325,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	 * @return True if the row was found in the index.
 	 */
 	private boolean loadRow(long resourceId) throws IOException {
-//		SimpleLogger.log("----- ID " + resourceId);
 		byte[] row = fileManager.readIndexRow(resourceId);
 		long start = 0;
 		if (StatisticsDBTest.SUBBENCHMARKS) {
@@ -342,7 +338,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 					System.nanoTime() - start);
 		}
 		boolean dataExternal = rowManager.load(row);
-//		SimpleLogger.log("row " + resourceId + ": " + Arrays.toString(rowManager.getRow()));
 		if (dataExternal) {
 			long fileId = getCurrentFileId();
 			long rowId = rowManager.getExternalFileRowId();
@@ -351,7 +346,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 				throw new RuntimeException("Row " + rowId + " not found in extra file " + fileId);
 			}
 			rowManager.loadExternalRow(dataBytes);
-//			SimpleLogger.log("E (" + rowManager.getFileId() + ") Row: " + Arrays.toString(dataBytes));
 		}
 		return true;
 	}
@@ -359,7 +353,6 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	private void insertEntryInExtraFile() throws IOException {
 		long newExtraFileRowId = fileManager.writeExternalRow(getCurrentFileId(), rowManager.getDataBytes());
 		checkIfDataBytesLengthIsEnough(newExtraFileRowId);
-//		SimpleLogger.log("I->E " + newExtraFileRowId + ": " + Arrays.toString(rowManager.getDataBytes()));
 		rowManager.updateExtraRowId(newExtraFileRowId);
 	}
 

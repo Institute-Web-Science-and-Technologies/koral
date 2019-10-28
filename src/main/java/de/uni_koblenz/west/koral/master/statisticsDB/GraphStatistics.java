@@ -29,8 +29,8 @@ import de.uni_koblenz.west.koral.common.io.EncodingFileFormat;
 import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
-import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
 import playground.StatisticsDBTest;
 
@@ -66,9 +66,7 @@ public class GraphStatistics implements Closeable {
 	}
 
 	public void collectStatistics(File[] encodedChunks) {
-//		long start = System.nanoTime();
 		clear();
-//		CentralLogger.getInstance().addTime("CLEARING", System.nanoTime() - start);
 		for (int i = 0; i < encodedChunks.length; i++) {
 			collectStatistics(i, encodedChunks[i]);
 		}
@@ -96,7 +94,6 @@ public class GraphStatistics implements Closeable {
 	}
 
 	public void count(long subject, long property, long object, int chunk) {
-//		SimpleLogger.log("Chunk " + chunk + ": _" + subject + "_" + property + "_" + object + "_");
 		// Remove ownership bits
 		database.incrementSubjectCount(subject & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
 		database.incrementPropertyCount(property & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
