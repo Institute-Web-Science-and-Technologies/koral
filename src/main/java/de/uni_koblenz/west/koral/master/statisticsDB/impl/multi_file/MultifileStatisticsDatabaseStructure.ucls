@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<class-diagram version="1.2.3" icons="true" automaticImage="PNG" always-add-relationships="false" generalizations="true" 
+  realizations="true" associations="true" dependencies="false" nesting-relationships="true" router="FAN">  
+  <class id="1" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/MultiFileGraphStatisticsDatabase.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="447" y="-143"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="2" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.StatisticsRowManager" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/StatisticsRowManager.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="885" y="-148"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="false" package="false" protected="false" private="false" static="true"/>      
+      <operations public="false" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="3" language="java" name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.Utils" 
+    project="koral" file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/Utils.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="1185" y="-138"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="4" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.StorageAccessor" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/StorageAccessor.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="1084" y="1377"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <interface id="5" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RowStorage" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/RowStorage.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="729" y="998"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </interface>  
+  <interface id="6" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/ExtraRowStorage.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="1584" y="964"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </interface>  
+  <class id="7" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraStorageAccessor" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/ExtraStorageAccessor.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="1588" y="1353"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="8" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RandomAccessRowFile" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/RandomAccessRowFile.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="608" y="1412"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="9" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.InMemoryRowStorage" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/InMemoryRowStorage.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="106" y="1361"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="10" language="java" name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.BlockEntry" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/BlockEntry.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="216" y="1755"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <interface id="11" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.Cache" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/caching/Cache.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="-732" y="845"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </interface>  
+  <class id="12" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/caching/LRUCache.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="-339" y="1314"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="13" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUList" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/caching/LRUList.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="-733" y="1198"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="14" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.ObjectRecycler" project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/caching/ObjectRecycler.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="612" y="1748"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="false" package="false" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="15" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedList" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/caching/DoublyLinkedList.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="-980" y="1634"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="16" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNode" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/caching/DoublyLinkedNode.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="-564" y="1646"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="17" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.DoublyLinkedNodeRecycler" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/caching/DoublyLinkedNodeRecycler.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="-981" y="1869"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="false" package="false" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="false"/>    
+    </display>  
+  </class>  
+  <class id="18" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/shared_space/HABSESharedSpaceManager.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="328" y="794"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <interface id="19" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceConsumer" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/shared_space/SharedSpaceConsumer.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="335" y="1002"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </interface>  
+  <class id="20" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.SharedSpaceManager" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/shared_space/SharedSpaceManager.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="-128" y="794"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="21" language="java" 
+    name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.LRUSharedCache" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/storage/shared_space/LRUSharedCache.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="-127" y="1003"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <class id="22" language="java" name="de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.FileManager" 
+    project="koral" 
+    file="/koral/src/main/java/de/uni_koblenz/west/koral/master/statisticsDB/impl/multi_file/FileManager.java" 
+    binary="false" corner="BOTTOM_RIGHT">    
+    <position height="-1" width="-1" x="443" y="431"/>    
+    <display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="false" package="false" protected="false" private="false" static="true"/>      
+      <operations public="true" package="true" protected="true" private="false" static="true"/>    
+    </display>  
+  </class>  
+  <association id="23">    
+    <end type="SOURCE" refId="13" navigable="false">      
+      <attribute id="24" name="index">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </attribute>      
+      <multiplicity id="25" minimum="0" maximum="2147483647">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="16" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="26">    
+    <end type="SOURCE" refId="22" navigable="false">      
+      <attribute id="27" name="extraCacheSpaceManager">        
+        <position height="0" width="0" x="-144" y="-189"/>      
+      </attribute>      
+      <multiplicity id="28" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-144" y="-189"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="18" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="29">    
+    <end type="SOURCE" refId="20" navigable="false">      
+      <attribute id="30" name="fileManager">        
+        <position height="0" width="0" x="-46" y="-279"/>      
+      </attribute>      
+      <multiplicity id="31" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-46" y="-279"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="22" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="32">    
+    <end type="SOURCE" refId="1" navigable="false">      
+      <attribute id="33" name="fileManager">        
+        <position height="0" width="0" x="-46" y="-279"/>      
+      </attribute>      
+      <multiplicity id="34" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-46" y="-279"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="22" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="35">    
+    <end type="SOURCE" refId="7"/>    
+    <end type="TARGET" refId="4"/>  
+  </generalization>  
+  <association id="36">    
+    <bendpoint x="431" y="1150"/>    
+    <bendpoint x="-387" y="1143"/>    
+    <bendpoint x="-388" y="956"/>    
+    <end type="SOURCE" refId="8" navigable="false">      
+      <attribute id="37" name="fileCache">        
+        <position height="0" width="0" x="-190" y="10"/>      
+      </attribute>      
+      <multiplicity id="38" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-190" y="10"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="11" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="39">    
+    <bendpoint x="1077" y="794"/>    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="40" name="cacheSpaceManager">        
+        <position height="0" width="0" x="-144" y="-189"/>      
+      </attribute>      
+      <multiplicity id="41" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-144" y="-189"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="18" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="42">    
+    <end type="SOURCE" refId="5"/>    
+    <end type="TARGET" refId="19"/>  
+  </generalization>  
+  <association id="43">    
+    <bendpoint x="102" y="877"/>    
+    <end type="SOURCE" refId="9" navigable="false">      
+      <attribute id="44" name="cacheSpaceManager">        
+        <position height="0" width="0" x="-190" y="-169"/>      
+      </attribute>      
+      <multiplicity id="45" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-190" y="-169"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="20" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="46">    
+    <end type="SOURCE" refId="16" navigable="false">      
+      <attribute id="47" name="before">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </attribute>      
+      <multiplicity id="48" minimum="0" maximum="1">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="16" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="49">    
+    <end type="SOURCE" refId="7"/>    
+    <end type="TARGET" refId="6"/>  
+  </realization>  
+  <association id="50">    
+    <bendpoint x="-776" y="1619"/>    
+    <end type="SOURCE" refId="15" navigable="false">      
+      <attribute id="51" name="tail">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </attribute>      
+      <multiplicity id="52" minimum="0" maximum="1">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="16" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="53">    
+    <end type="SOURCE" refId="8" navigable="false">      
+      <attribute id="54" name="blockRecycler">        
+        <position height="0" width="0" x="482" y="-246"/>      
+      </attribute>      
+      <multiplicity id="55" minimum="0" maximum="1">        
+        <position height="0" width="0" x="482" y="-246"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="14" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="56">    
+    <end type="SOURCE" refId="8"/>    
+    <end type="TARGET" refId="5"/>  
+  </realization>  
+  <association id="57">    
+    <end type="SOURCE" refId="9" navigable="false">      
+      <attribute id="58" name="cacheSpaceConsumer">        
+        <position height="0" width="0" x="-140" y="-144"/>      
+      </attribute>      
+      <multiplicity id="59" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-140" y="-144"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="19" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="60">    
+    <end type="SOURCE" refId="13"/>    
+    <end type="TARGET" refId="11"/>  
+  </realization>  
+  <generalization id="61">    
+    <end type="SOURCE" refId="21"/>    
+    <end type="TARGET" refId="13"/>  
+  </generalization>  
+  <association id="62">    
+    <end type="SOURCE" refId="22" navigable="false">      
+      <attribute id="63" name="extraFiles">        
+        <position height="0" width="0" x="-190" y="10"/>      
+      </attribute>      
+      <multiplicity id="64" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-190" y="10"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="11" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="65">    
+    <end type="SOURCE" refId="12"/>    
+    <end type="TARGET" refId="13"/>  
+  </generalization>  
+  <realization id="66">    
+    <bendpoint x="969" y="1098"/>    
+    <end type="SOURCE" refId="4"/>    
+    <end type="TARGET" refId="5"/>  
+  </realization>  
+  <generalization id="67">    
+    <end type="SOURCE" refId="18"/>    
+    <end type="TARGET" refId="20"/>  
+  </generalization>  
+  <association id="68">    
+    <end type="SOURCE" refId="1" navigable="false">      
+      <attribute id="69" name="rowManager">        
+        <position height="0" width="0" x="305" y="-536"/>      
+      </attribute>      
+      <multiplicity id="70" minimum="0" maximum="1">        
+        <position height="0" width="0" x="305" y="-536"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="2" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization id="71">    
+    <bendpoint x="420" y="1119"/>    
+    <end type="SOURCE" refId="9"/>    
+    <end type="TARGET" refId="5"/>  
+  </realization>  
+  <association id="72">    
+    <end type="SOURCE" refId="18" navigable="false">      
+      <attribute id="73" name="accessHistory">        
+        <position height="17" width="73" x="361" y="928"/>      
+      </attribute>      
+      <multiplicity id="74" minimum="0" maximum="2147483647">        
+        <position height="15" width="21" x="435" y="927"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="19" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="75">    
+    <end type="SOURCE" refId="21" navigable="false">      
+      <attribute id="76" name="sharedSpaceConsumer">        
+        <position height="0" width="0" x="-140" y="-144"/>      
+      </attribute>      
+      <multiplicity id="77" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-140" y="-144"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="19" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="78">    
+    <bendpoint x="-417" y="1716"/>    
+    <bendpoint x="-338" y="1717"/>    
+    <bendpoint x="-338" y="1649"/>    
+    <end type="SOURCE" refId="16" navigable="false">      
+      <attribute id="79" name="after">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </attribute>      
+      <multiplicity id="80" minimum="0" maximum="1">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="16" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="81">    
+    <end type="SOURCE" refId="4" navigable="false">      
+      <attribute id="82" name="currentStorage">        
+        <position height="0" width="0" x="129" y="187"/>      
+      </attribute>      
+      <multiplicity id="83" minimum="0" maximum="1">        
+        <position height="15" width="23" x="824" y="1155"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="84">    
+    <end type="SOURCE" refId="6"/>    
+    <end type="TARGET" refId="5"/>  
+  </generalization>  
+  <association id="85">    
+    <end type="SOURCE" refId="17" navigable="false">      
+      <attribute id="86" name="segmentedLRUCacheRecycler">        
+        <position height="0" width="0" x="-119" y="-239"/>      
+      </attribute>      
+      <multiplicity id="87" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-119" y="-239"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="17" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="88">    
+    <bendpoint x="-767" y="1666"/>    
+    <end type="SOURCE" refId="15" navigable="false">      
+      <attribute id="89" name="head">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </attribute>      
+      <multiplicity id="90" minimum="0" maximum="1">        
+        <position height="0" width="0" x="179" y="-275"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="16" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="91">    
+    <end type="SOURCE" refId="21" navigable="false">      
+      <attribute id="92" name="sharedSpaceManager">        
+        <position height="0" width="0" x="-190" y="-169"/>      
+      </attribute>      
+      <multiplicity id="93" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-190" y="-169"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="20" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="94">    
+    <end type="SOURCE" refId="17" navigable="false">      
+      <attribute id="95" name="nodes">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </attribute>      
+      <multiplicity id="96" minimum="0" maximum="1">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="97">    
+    <end type="SOURCE" refId="10" navigable="false">      
+      <attribute id="98" name="blockEntry">        
+        <position height="0" width="0" x="489" y="-246"/>      
+      </attribute>      
+      <multiplicity id="99" minimum="0" maximum="1">        
+        <position height="0" width="0" x="489" y="-246"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="10" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="100">    
+    <end type="SOURCE" refId="22" navigable="false">      
+      <attribute id="101" name="index">        
+        <position height="0" width="0" x="-181" y="196"/>      
+      </attribute>      
+      <multiplicity id="102" minimum="0" maximum="1">        
+        <position height="0" width="0" x="-181" y="196"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="5" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association id="103">    
+    <end type="SOURCE" refId="13" navigable="false">      
+      <attribute id="104" name="list">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </attribute>      
+      <multiplicity id="105" minimum="0" maximum="1">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <classifier-display autosize="true" stereotype="false" package="true" initial-value="false" signature="true" 
+    sort-features="false" accessors="true" visibility="true">    
+    <attributes public="true" package="true" protected="false" private="false" static="true"/>    
+    <operations public="true" package="true" protected="true" private="false" static="true"/>  
+  </classifier-display>  
+  <association-display labels="true" multiplicity="true"/>
+</class-diagram>
