@@ -18,6 +18,7 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.Ext
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraStorageAccessor;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RowStorage;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.StorageAccessor;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.Cache;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
@@ -48,7 +49,7 @@ public class FileManager {
 
 	private final Logger logger;
 
-	private final LRUCache<Long, ExtraRowStorage> extraFiles;
+	private final Cache<Long, ExtraRowStorage> extraFiles;
 
 	private final String storagePath;
 
@@ -326,9 +327,8 @@ public class FileManager {
 					listIndex++;
 					if (listIndex == dataLength) {
 						// Reading one entry is done, store and reset everything for next one
-						extraFiles.put(fileId,
-								new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength, blockSize,
-										extraCacheSpaceManager, recyclerCapacity, list, false, logger));
+						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength,
+								blockSize, extraCacheSpaceManager, recyclerCapacity, list, false, logger));
 						fileId = -1;
 						rowLength = -1;
 						dataLength = -1;

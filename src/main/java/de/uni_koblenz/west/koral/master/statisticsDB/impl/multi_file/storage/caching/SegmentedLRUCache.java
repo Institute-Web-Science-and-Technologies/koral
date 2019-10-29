@@ -1,10 +1,12 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
 
 import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.CentralLogger;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SimpleConfiguration;
@@ -55,8 +57,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	private final DoublyLinkedNodeRecycler<KeyValueSegmentContent<K, V, Segment>> recycler;
 
 	public static enum Segment {
-		PROBATIONARY,
-		PROTECTED
+		PROBATIONARY, PROTECTED
 	}
 
 	/**
@@ -72,8 +73,7 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 		this.protectedLimit = protectedLimit;
 		this.recycler = recycler;
 
-		protectedMinHits = (int) SimpleConfiguration.getInstance()
-				.getValue(ConfigurationKey.SLRU_PROTECTED_MIN_HITS);
+		protectedMinHits = (int) SimpleConfiguration.getInstance().getValue(ConfigurationKey.SLRU_PROTECTED_MIN_HITS);
 
 		index = new HashMap<>();
 		list = new DoublyLinkedList<>();
@@ -276,6 +276,26 @@ public class SegmentedLRUCache<K, V> implements Cache<K, V> {
 	@Override
 	public boolean isEmpty() {
 		return list.isEmpty();
+	}
+
+	@Override
+	public Set<K> keySet() {
+		return index.keySet();
+	}
+
+	@Override
+	public Collection<V> values() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Collection<Entry<K, V>> entrySet() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Iterator<Entry<K, V>> iteratorFromLast() {
+		throw new UnsupportedOperationException();
 	}
 
 }
