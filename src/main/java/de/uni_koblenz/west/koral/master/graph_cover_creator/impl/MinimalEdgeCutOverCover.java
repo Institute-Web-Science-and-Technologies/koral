@@ -56,7 +56,6 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
@@ -341,7 +340,6 @@ public class MinimalEdgeCutOverCover extends GraphCoverCreatorBase {
             MinimalEdgeCutOverCover.MAX_CASH_SIZE);
     partition2chunk.delete();
 
-    ArrayList<long[]> stmtsOut = new ArrayList<>();
     try (EncodedLongFileInputStream partitionsInput = new EncodedLongFileInputStream(partitions);
             LongIterator partitionsIterator = partitionsInput.iterator();
             EncodedLongFileInputStream partition2chunkSortedInput = new EncodedLongFileInputStream(
@@ -361,7 +359,6 @@ public class MinimalEdgeCutOverCover extends GraphCoverCreatorBase {
           long subject = partitionsIterator.next();
           long property = partitionsIterator.next();
           long object = partitionsIterator.next();
-          stmtsOut.add(new long[] { subject, property, object });
           Statement statement = Statement.getStatement(getRequiredInputEncoding(),
                   NumberConversion.long2bytes(subject), NumberConversion.long2bytes(property),
                   NumberConversion.long2bytes(object), containment);
