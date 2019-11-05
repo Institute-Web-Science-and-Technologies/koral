@@ -28,14 +28,14 @@ import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGr
 
 public class StatisticsDBRead {
 
-  private static final boolean WRITE_STATISTICS_DATA = false;
+	private static final boolean WRITE_STATISTICS_DATA = false;
 
-  private static void printUsage() {
-    System.out.println(
-        "Usage: java -jar StatisticsDBRead.jar <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <indexCacheSizeMB> <extraFilesCacheSizeMB> <HABSE accesses weight> <HABSE history length> [implementationNote]");
-  }
+	private static void printUsage() {
+		System.out.println(
+				"Usage: java -jar StatisticsDBRead.jar <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");
+	}
 
-  public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException {
 		boolean fileLogging = true;
 		File encodedChunksDir = new File(args[0]);
 		if (!encodedChunksDir.exists() || !encodedChunksDir.isDirectory()) {
@@ -74,8 +74,8 @@ public class StatisticsDBRead {
 		long indexCacheSize = Long.parseLong(args[4]);
 		long extraFilesCacheSize = Long.parseLong(args[5]);
 		String implementationNote = "";
-		if (args.length == 9) {
-			implementationNote = args[8];
+		if (args.length == 7) {
+			implementationNote = args[6];
 		}
 
 		String datasetName = encodedChunksDir.getName();
@@ -116,8 +116,11 @@ public class StatisticsDBRead {
 		System.out.println("Reading Statistics...");
 
 		MultiFileGraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(
-				storageDir.getCanonicalPath(), numberOfChunks, -99, FileManager.DEFAULT_BLOCK_SIZE, true, indexCacheSize * 1024 * 1024L,
-				extraFilesCacheSize * 1024 * 1024L, FileManager.DEFAULT_RECYCLER_CAPACITY, FileManager.DEFAULT_MAX_OPEN_FILES, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT, FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
+				storageDir.getCanonicalPath(), numberOfChunks, -99, FileManager.DEFAULT_BLOCK_SIZE, true,
+				indexCacheSize * 1024 * 1024L,
+				extraFilesCacheSize * 1024 * 1024L, FileManager.DEFAULT_RECYCLER_CAPACITY,
+				FileManager.DEFAULT_MAX_OPEN_FILES, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
+				FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
 
 		long optimizationPreventer = 0;
 		GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);
@@ -163,98 +166,98 @@ public class StatisticsDBRead {
 		System.out.println("Finished at " + new Date());
 	}
 
-  private static File[] getEncodedChunkFiles(File encodedChunksDir) {
-    File[] encodedFiles = encodedChunksDir.listFiles(new FilenameFilter() {
-      @Override
-      public boolean accept(File dir, String name) {
-        return name.contains("chunk") && name.endsWith(".gz");
-      }
-    });
-    Arrays.sort(encodedFiles, new Comparator<File>() {
-      @Override
-      public int compare(File file1, File file2) {
-        int chunkIndex1 = Integer.parseInt(file1.getName().split("\\.")[0].replace("chunk", ""));
-        int chunkIndex2 = Integer.parseInt(file2.getName().split("\\.")[0].replace("chunk", ""));
-        return Integer.compare(chunkIndex1, chunkIndex2);
-      }
-    });
-    System.out.println("Recognized chunk files:");
-    for (File file : encodedFiles) {
-      System.out.println(file);
-    }
-    return encodedFiles;
-  }
+	private static File[] getEncodedChunkFiles(File encodedChunksDir) {
+		File[] encodedFiles = encodedChunksDir.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.contains("chunk") && name.endsWith(".gz");
+			}
+		});
+		Arrays.sort(encodedFiles, new Comparator<File>() {
+			@Override
+			public int compare(File file1, File file2) {
+				int chunkIndex1 = Integer.parseInt(file1.getName().split("\\.")[0].replace("chunk", ""));
+				int chunkIndex2 = Integer.parseInt(file2.getName().split("\\.")[0].replace("chunk", ""));
+				return Integer.compare(chunkIndex1, chunkIndex2);
+			}
+		});
+		System.out.println("Recognized chunk files:");
+		for (File file : encodedFiles) {
+			System.out.println(file);
+		}
+		return encodedFiles;
+	}
 
-  private static void writeBenchmarkToCSV(File resultFile, int tripleCount, int numberOfChunks, int dataBytes,
-      long indexCacheSize, long extraFilesCacheSize, String coveringAlgorithm, String implementationNote,
-      long durationSec, long totalCacheHits, long totalCacheMisses, double totalHitrate)
-      throws UnsupportedEncodingException, FileNotFoundException, IOException {
-    CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
-    CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
-        csvFileFormat);
-    if (resultFile.length() == 0) {
-      printer.printRecord("TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB", "EXTRAFILES_CACHE_MB",
-          "COV_ALG", "NOTE", "DURATION_SEC", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE");
-    }
-    printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
-        coveringAlgorithm, implementationNote, durationSec, totalCacheHits, totalCacheMisses, totalHitrate);
-    printer.close();
-  }
+	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, int numberOfChunks, int dataBytes,
+			long indexCacheSize, long extraFilesCacheSize, String coveringAlgorithm, String implementationNote,
+			long durationSec, long totalCacheHits, long totalCacheMisses, double totalHitrate)
+			throws UnsupportedEncodingException, FileNotFoundException, IOException {
+		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
+				csvFileFormat);
+		if (resultFile.length() == 0) {
+			printer.printRecord("TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB", "EXTRAFILES_CACHE_MB",
+					"COV_ALG", "NOTE", "DURATION_SEC", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE");
+		}
+		printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
+				coveringAlgorithm, implementationNote, durationSec, totalCacheHits, totalCacheMisses, totalHitrate);
+		printer.close();
+	}
 
-  private static void writeStorageStatisticsToCSV(String configName, String storageDir,
-      Map<Long, long[]> storageStatistics, long totalCacheHits, long totalCacheMisses, long totalNotExisting,
-      double totalHitrate) throws IOException {
-    CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
-    CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(
-        new FileOutputStream("storageStatistics-" + configName + ".csv", false), "UTF-8"), csvFileFormat);
-    printer.printRecord("FILE_ID", "FILE_SIZE", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE", "NOT_EXISTING");
-    for (Entry<Long, long[]> entry : storageStatistics.entrySet()) {
-      long fileId = entry.getKey();
-      long[] values = entry.getValue();
-      File file;
-      if (fileId == 0) {
-        file = new File(storageDir, "statistics");
-      } else {
-        file = new File(storageDir, String.valueOf(fileId));
-      }
-      double hitrate = values[0] / (double) (values[0] + values[1]);
-      printer.printRecord(fileId, file.length(), values[0], values[1], String.format("%.3f", hitrate), values[2]);
-    }
-    printer.println();
-    printer.printRecord("TOTAL", "", totalCacheHits, totalCacheMisses, String.format("%.3f", totalHitrate),
-        totalNotExisting);
-    printer.close();
+	private static void writeStorageStatisticsToCSV(String configName, String storageDir,
+			Map<Long, long[]> storageStatistics, long totalCacheHits, long totalCacheMisses, long totalNotExisting,
+			double totalHitrate) throws IOException {
+		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(
+				new FileOutputStream("storageStatistics-" + configName + ".csv", false), "UTF-8"), csvFileFormat);
+		printer.printRecord("FILE_ID", "FILE_SIZE", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE", "NOT_EXISTING");
+		for (Entry<Long, long[]> entry : storageStatistics.entrySet()) {
+			long fileId = entry.getKey();
+			long[] values = entry.getValue();
+			File file;
+			if (fileId == 0) {
+				file = new File(storageDir, "statistics");
+			} else {
+				file = new File(storageDir, String.valueOf(fileId));
+			}
+			double hitrate = values[0] / (double) (values[0] + values[1]);
+			printer.printRecord(fileId, file.length(), values[0], values[1], String.format("%.3f", hitrate), values[2]);
+		}
+		printer.println();
+		printer.printRecord("TOTAL", "", totalCacheHits, totalCacheMisses, String.format("%.3f", totalHitrate),
+				totalNotExisting);
+		printer.close();
 
-  }
+	}
 
-  private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {
-    // There is currently no easy way to obtain the maxId on a db that was reopened
-    // This is the max id of the dataset hash_4C_6M
-    long maxId = 3625965;
-    try {
-      CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
-      CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(outputDir.getCanonicalPath()
-          + File.separator + statisticsDB.getClass().getSimpleName() + "-statistics.csv"), "UTF-8"),
-          csvFileFormat);
-      for (long l : statisticsDB.getChunkSizes()) {
-        printer.print(l);
-      }
-      printer.println();
-      for (int id = 1; id <= maxId; id++) {
-        for (long l : statisticsDB.getStatisticsForResource(id)) {
-          printer.print(l);
-        }
-        // SingleDB has another zero entry per column for total resources, add that one as well for easier
-        // diffing
-        if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
-          printer.print(0);
-        }
-        printer.println();
-      }
-      printer.close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
+	private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {
+		// There is currently no easy way to obtain the maxId on a db that was reopened
+		// This is the max id of the dataset hash_4C_6M
+		long maxId = 3625965;
+		try {
+			CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
+			CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(outputDir.getCanonicalPath()
+					+ File.separator + statisticsDB.getClass().getSimpleName() + "-statistics.csv"), "UTF-8"),
+					csvFileFormat);
+			for (long l : statisticsDB.getChunkSizes()) {
+				printer.print(l);
+			}
+			printer.println();
+			for (int id = 1; id <= maxId; id++) {
+				for (long l : statisticsDB.getStatisticsForResource(id)) {
+					printer.print(l);
+				}
+				// SingleDB has another zero entry per column for total resources, add that one as well for easier
+				// diffing
+				if (statisticsDB instanceof MultiFileGraphStatisticsDatabase) {
+					printer.print(0);
+				}
+				printer.println();
+			}
+			printer.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 }
