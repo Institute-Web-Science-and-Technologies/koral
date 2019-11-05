@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -32,7 +33,7 @@ public class StatisticsDBRead {
 
 	private static void printUsage() {
 		System.out.println(
-				"Usage: java -jar StatisticsDBRead.jar <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <indexCacheSizeMB> <extraFilesCacheSizeMB> [implementationNote]");
+				"Usage: java -jar StatisticsDBRead.jar <encodedChunksDir> <logDir> <storageDir> <resultCSVFile> <indexCacheSizeMB> <extraFilesCacheSizeMB> <readMode> [implementationNote]");
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -73,9 +74,10 @@ public class StatisticsDBRead {
 
 		long indexCacheSize = Long.parseLong(args[4]);
 		long extraFilesCacheSize = Long.parseLong(args[5]);
+		String readMode = args[6];
 		String implementationNote = "";
-		if (args.length == 7) {
-			implementationNote = args[6];
+		if (args.length == 8) {
+			implementationNote = args[7];
 		}
 
 		String datasetName = encodedChunksDir.getName();
@@ -96,7 +98,7 @@ public class StatisticsDBRead {
 			}
 			tripleCount = Integer.parseInt(datasetInfo[2].replace("M", "000000").replace("K", "000"));
 			configName = "read_" + coveringAlgorithm + "_" + numberOfChunks + "C_" + datasetInfo[2] + "T_"
-					+ indexCacheSize + "IC_" + extraFilesCacheSize + "EC";
+					+ indexCacheSize + "IC_" + extraFilesCacheSize + "EC_" + readMode;
 			configName += implementationNote.isEmpty() ? "" : "_" + implementationNote.replace(" ", "-");
 		} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
 			System.err.println(
@@ -123,23 +125,65 @@ public class StatisticsDBRead {
 				FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
 
 		long optimizationPreventer = 0;
+		Random random = new Random();
 		GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);
-		long start = System.currentTimeMillis();
-		for (int i = 0; i < encodedFiles.length; i++) {
-			EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, encodedFiles[i]);
-			for (Statement statement : in) {
-				optimizationPreventer += statistics.getTotalSubjectFrequency(statement.getSubjectAsLong());
-				optimizationPreventer += statistics.getTotalPropertyFrequency(statement.getPropertyAsLong());
-				optimizationPreventer += statistics.getTotalObjectFrequency(statement.getObjectAsLong());
-			}
-			in.close();
-			System.out.println("Chunk " + i + " done.");
-		}
-		long durationSec = (System.currentTimeMillis() - start) / 1000;
-		System.out.println("Reading took " + durationSec + " sec");
-		System.out.println(optimizationPreventer);
-		System.out.println("Writing benchmark results to CSV...");
 
+		long start = System.currentTimeMillis();
+		if (readMode == "DATASET") {
+			for (int i = 0; i < encodedFiles.length; i++) {
+				EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, encodedFiles[i]);
+				for (Statement statement : in) {
+					optimizationPreventer += statistics.getTotalSubjectFrequency(statement.getSubjectAsLong());
+					optimizationPreventer += statistics.getTotalPropertyFrequency(statement.getPropertyAsLong());
+					optimizationPreventer += statistics.getTotalObjectFrequency(statement.getObjectAsLong());
+				}
+				in.close();
+				System.out.println("Chunk " + i + " done.");
+			}
+		} else if (readMode == "SEQUENTIAL_ROWS_FULL_COLUMN") {
+			for (long r = 1; r <= statisticsDB.getMaxId(); r++) {
+				for (int c = 0; c < (3 * numberOfChunks); c++) {
+					optimizationPreventer += readTableCell(statistics, r, c);
+				}
+			}
+		} else if (readMode == "SEQUENTIAL_ROWS_RANDOM_COLUMN") {
+			int columnAccesses = 30;
+			for (long r = 1; r <= statisticsDB.getMaxId(); r++) {
+				for (int access = 0; access < columnAccesses; access++) {
+					int c = random.nextInt(3 * numberOfChunks);
+					optimizationPreventer += readTableCell(statistics, r, c);
+				}
+			}
+		} else if (readMode == "RANDOM_ROW_SEQUENTIAL_COLUMNS") {
+			long rowAccesses = 3_000_000_000L;
+			for (long access = 0; access < rowAccesses; access++) {
+				long r = (long) (random.nextDouble() * statisticsDB.getMaxId()) + 1;
+				for (int c = 0; c < (3 * numberOfChunks); c++) {
+					optimizationPreventer += readTableCell(statistics, r, c);
+				}
+			}
+
+		} else if (readMode == "RANDOM_ROW_RANDOM_COLUMN") {
+			long rowAccesses = 3_000_000_000L;
+			int columnAccesses = 30;
+			for (long rowAccess = 0; rowAccess < rowAccesses; rowAccess++) {
+				long r = (long) (random.nextDouble() * statisticsDB.getMaxId()) + 1;
+				for (int colAccess = 0; colAccess < columnAccesses; colAccess++) {
+					int c = random.nextInt(3 * numberOfChunks);
+					optimizationPreventer += readTableCell(statistics, r, c);
+				}
+			}
+		} else {
+			System.err.println("Invalid read mode: " + readMode);
+			System.exit(1);
+		}
+		long durationSec = (System.currentTimeMillis() - start)
+				/ 1000;
+		System.out.println("Reading took " + durationSec + " sec");
+
+		System.out.println(optimizationPreventer);
+
+		System.out.println("Writing benchmark results to CSV...");
 		Map<Long, long[]> storageStatistics = statisticsDB.getStorageStatistics();
 		long totalCacheHits = 0, totalCacheMisses = 0, totalNotExisting = 0;
 		for (Entry<Long, long[]> entry : storageStatistics.entrySet()) {
@@ -149,10 +193,12 @@ public class StatisticsDBRead {
 			totalNotExisting += values[2];
 		}
 		double totalHitrate = totalCacheHits / (double) (totalCacheHits + totalCacheMisses);
+
 		writeStorageStatisticsToCSV(configName, storageDir.getCanonicalPath(), storageStatistics, totalCacheHits,
 				totalCacheMisses, totalNotExisting, totalHitrate);
 
-		writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, statisticsDB.getRowDataLength(), indexCacheSize,
+		writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, readMode, statisticsDB.getRowDataLength(),
+				indexCacheSize,
 				extraFilesCacheSize, coveringAlgorithm, implementationNote, durationSec, totalCacheHits,
 				totalCacheMisses, totalHitrate);
 
@@ -188,18 +234,34 @@ public class StatisticsDBRead {
 		return encodedFiles;
 	}
 
-	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, int numberOfChunks, int dataBytes,
-			long indexCacheSize, long extraFilesCacheSize, String coveringAlgorithm, String implementationNote,
-			long durationSec, long totalCacheHits, long totalCacheMisses, double totalHitrate)
-			throws UnsupportedEncodingException, FileNotFoundException, IOException {
+	private static long readTableCell(GraphStatistics statistics, long row, int col) {
+		int t = col / 3;
+		int chunk = col % 3;
+		switch (t) {
+		case 0:
+			return statistics.getSubjectFrequency(row, chunk);
+		case 1:
+			return statistics.getPropertyFrequency(row, chunk);
+		case 2:
+			return statistics.getObjectFrequency(row, chunk);
+		}
+		return 0L;
+	}
+
+	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, int numberOfChunks, String readMode,
+			int dataBytes, long indexCacheSize, long extraFilesCacheSize, String coveringAlgorithm,
+			String implementationNote, long durationSec, long totalCacheHits, long totalCacheMisses,
+			double totalHitrate) throws UnsupportedEncodingException, FileNotFoundException,
+			IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
 				csvFileFormat);
 		if (resultFile.length() == 0) {
-			printer.printRecord("TRIPLES", "CHUNKS", "ROW_DATA_LENGTH", "INDEX_CACHE_MB", "EXTRAFILES_CACHE_MB",
-					"COV_ALG", "NOTE", "DURATION_SEC", "CACHE_HITS", "CACHE_MISSES", "CACHE_HITRATE");
+			printer.printRecord("TRIPLES", "CHUNKS", "READMODE", "ROW_DATA_LENGTH", "INDEX_CACHE_MB",
+					"EXTRAFILES_CACHE_MB", "COV_ALG", "NOTE", "DURATION_SEC", "CACHE_HITS", "CACHE_MISSES",
+					"CACHE_HITRATE");
 		}
-		printer.printRecord(tripleCount, numberOfChunks, dataBytes, indexCacheSize, extraFilesCacheSize,
+		printer.printRecord(tripleCount, numberOfChunks, readMode, dataBytes, indexCacheSize, extraFilesCacheSize,
 				coveringAlgorithm, implementationNote, durationSec, totalCacheHits, totalCacheMisses, totalHitrate);
 		printer.close();
 	}
@@ -230,6 +292,12 @@ public class StatisticsDBRead {
 
 	}
 
+	/**
+	 * Writes the collected tabular data into a csv. Only used for debugging.
+	 *
+	 * @param outputDir
+	 * @param statisticsDB
+	 */
 	private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {
 		// There is currently no easy way to obtain the maxId on a db that was reopened
 		// This is the max id of the dataset hash_4C_6M
