@@ -1,6 +1,9 @@
 package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * A key-value storage that implements removing the "most useless" element according to a chosen strategy via
@@ -20,6 +23,14 @@ public interface Cache<K, V> extends Iterable<Entry<K, V>> {
 	public void update(K key, V newValue);
 
 	public V get(K key);
+
+	public Set<K> keySet();
+
+	public Collection<V> values();
+
+	public Collection<Entry<K, V>> entrySet();
+
+	public Iterator<Entry<K, V>> iteratorFromLast();
 
 	public void remove(K key);
 
