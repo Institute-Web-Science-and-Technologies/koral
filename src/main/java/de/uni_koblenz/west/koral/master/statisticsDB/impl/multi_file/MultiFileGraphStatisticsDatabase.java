@@ -444,9 +444,7 @@ public class MultiFileGraphStatisticsDatabase implements GraphStatisticsDatabase
 	}
 
 	/**
-	 * Only works if all entries were written in this session
-	 *
-	 * @return
+	 * @return The maximal resource id in the current storage.
 	 */
 	public long getMaxId() {
 		return fileManager.getMaxResourceId();

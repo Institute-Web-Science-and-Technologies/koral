@@ -307,6 +307,10 @@ public class FileManager {
 	private void loadExtraFiles() {
 		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(extraFilesMetadataFile)) {
 			LongIterator iterator = input.iterator();
+			if (!iterator.hasNext()) {
+				throw new RuntimeException("Metadata File " + extraFilesMetadataFile + " empty");
+			}
+			maxResourceId = iterator.next();
 			long fileId = -1;
 			int rowLength = -1;
 			int dataLength = -1;
@@ -350,6 +354,7 @@ public class FileManager {
 			extraStorage.flush();
 		}
 		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(extraFilesMetadataFile, false)) {
+			out.writeLong(maxResourceId);
 			Long[] keys = new Long[extraFiles.keySet().size()];
 			extraFiles.keySet().toArray(keys);
 			Arrays.sort(keys);
