@@ -131,5 +131,29 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
       conf.setUseTransactionsForJoinCache(Boolean.parseBoolean(enableTransactions));
     }
   }
+  
+  public void deserializeRowDataLength(Configuration conf, String rowDataLength) {
+	  conf.setRowDataLength(Integer.parseInt(rowDataLength));
+  }
+  
+  public void deserializeIndexCacheSize(Configuration conf, String indexCacheSize) {
+	  conf.setIndexCacheSize(Integer.parseInt(indexCacheSize));
+  }
+  
+  public void deserializeExtraCacheSize(Configuration conf, String extraCacheSize) {
+	  conf.setExtraCacheSize(Integer.parseInt(extraCacheSize));
+  }
+  
+  public void deserializeRecyclerCapacity(Configuration conf, String recyclerCapacity) {
+	  conf.setRecyclerCapacity(Integer.parseInt(recyclerCapacity));
+  }
+  
+  public void deserializeBlockSize(Configuration conf, String blockSize) {
+	  conf.setBlockSize(Integer.parseInt(blockSize));
+  }
+  
+  public void deserializeMaxOpenFiles(Configuration conf, String maxOpenFiles) {
+	  conf.setMaxOpenFiles(Integer.parseInt(maxOpenFiles));
+  }
 
 }

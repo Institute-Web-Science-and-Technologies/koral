@@ -113,5 +113,28 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
   public String serializeEnableTransactionsForJoinCache(Configuration conf) {
     return new Boolean(conf.useTransactionsForJoinCache()).toString();
   }
+  
+  public String serializeRowDataLength(Configuration conf) {
+	  return new Integer(conf.getRowDataLength()).toString();
+  }
+  
+  public String serializeIndexCacheSize(Configuration conf) {
+	  return new Integer(conf.getIndexCacheSize()).toString();
+  }
 
+  public String serializeExtraCacheSize(Configuration conf) {
+	  return new Integer(conf.getExtraCacheSize()).toString();
+  }
+  
+  public String serializeRecyclerCapacity(Configuration conf) {
+	  return new Integer(conf.getRecyclerCapacity()).toString();
+  }
+  
+  public String serializeBlockSize(Configuration conf) {
+	  return new Integer(conf.getBlockSize()).toString();
+  }
+  
+  public String serializeMaxOpenFiles(Configuration conf) {
+	  return new Integer(conf.getMaxOpenFiles()).toString();
+  }
 }
