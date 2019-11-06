@@ -139,13 +139,13 @@ public class StatisticsDBRead {
 				in.close();
 				System.out.println("Chunk " + i + " done.");
 			}
-		} else if (readMode.equals("SEQUENTIAL_ROWS_FULL_COLUMN")) {
+		} else if (readMode.equals("SEQUENTIAL_ROWS_SEQUENTIAL_COLUMNS")) {
 			for (long r = 1; r <= statisticsDB.getMaxId(); r++) {
 				for (int c = 0; c < (3 * numberOfChunks); c++) {
 					optimizationPreventer += readTableCell(statistics, r, c);
 				}
 			}
-		} else if (readMode.equals("SEQUENTIAL_ROWS_RANDOM_COLUMN")) {
+		} else if (readMode.equals("SEQUENTIAL_ROWS_RANDOM_COLUMNS")) {
 			int columnAccesses = 30;
 			for (long r = 1; r <= statisticsDB.getMaxId(); r++) {
 				for (int access = 0; access < columnAccesses; access++) {
@@ -153,7 +153,7 @@ public class StatisticsDBRead {
 					optimizationPreventer += readTableCell(statistics, r, c);
 				}
 			}
-		} else if (readMode.equals("RANDOM_ROW_SEQUENTIAL_COLUMNS")) {
+		} else if (readMode.equals("RANDOM_ROWS_SEQUENTIAL_COLUMNS")) {
 			long rowAccesses = statisticsDB.getMaxId();
 			for (long access = 0; access < rowAccesses; access++) {
 				long r = (long) (random.nextDouble() * statisticsDB.getMaxId()) + 1;
@@ -162,7 +162,7 @@ public class StatisticsDBRead {
 				}
 			}
 
-		} else if (readMode.equals("RANDOM_ROW_RANDOM_COLUMN")) {
+		} else if (readMode.equals("RANDOM_ROWS_RANDOM_COLUMNS")) {
 			long rowAccesses = statisticsDB.getMaxId();
 			int columnAccesses = 30;
 			for (long rowAccess = 0; rowAccess < rowAccesses; rowAccess++) {
