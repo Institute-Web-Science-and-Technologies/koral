@@ -119,17 +119,16 @@ public class StatisticsDBRead {
 
 		MultiFileGraphStatisticsDatabase statisticsDB = new MultiFileGraphStatisticsDatabase(
 				storageDir.getCanonicalPath(), numberOfChunks, -99, FileManager.DEFAULT_BLOCK_SIZE, true,
-				indexCacheSize * 1024 * 1024L,
-				extraFilesCacheSize * 1024 * 1024L, FileManager.DEFAULT_RECYCLER_CAPACITY,
-				FileManager.DEFAULT_MAX_OPEN_FILES, FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT,
-				FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
+				indexCacheSize * 1024 * 1024L, extraFilesCacheSize * 1024 * 1024L,
+				FileManager.DEFAULT_RECYCLER_CAPACITY, FileManager.DEFAULT_MAX_OPEN_FILES,
+				FileManager.DEFAULT_HABSE_ACCESSES_WEIGHT, FileManager.DEFAULT_HABSE_HISTORY_LENGTH, null);
 
 		long optimizationPreventer = 0;
 		Random random = new Random();
 		GraphStatistics statistics = new GraphStatistics(statisticsDB, numberOfChunks, null);
 
 		long start = System.currentTimeMillis();
-		if (readMode == "DATASET") {
+		if (readMode.equals("DATASET")) {
 			for (int i = 0; i < encodedFiles.length; i++) {
 				EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, encodedFiles[i]);
 				for (Statement statement : in) {
@@ -140,13 +139,13 @@ public class StatisticsDBRead {
 				in.close();
 				System.out.println("Chunk " + i + " done.");
 			}
-		} else if (readMode == "SEQUENTIAL_ROWS_FULL_COLUMN") {
+		} else if (readMode.equals("SEQUENTIAL_ROWS_FULL_COLUMN")) {
 			for (long r = 1; r <= statisticsDB.getMaxId(); r++) {
 				for (int c = 0; c < (3 * numberOfChunks); c++) {
 					optimizationPreventer += readTableCell(statistics, r, c);
 				}
 			}
-		} else if (readMode == "SEQUENTIAL_ROWS_RANDOM_COLUMN") {
+		} else if (readMode.equals("SEQUENTIAL_ROWS_RANDOM_COLUMN")) {
 			int columnAccesses = 30;
 			for (long r = 1; r <= statisticsDB.getMaxId(); r++) {
 				for (int access = 0; access < columnAccesses; access++) {
@@ -154,8 +153,8 @@ public class StatisticsDBRead {
 					optimizationPreventer += readTableCell(statistics, r, c);
 				}
 			}
-		} else if (readMode == "RANDOM_ROW_SEQUENTIAL_COLUMNS") {
-			long rowAccesses = 3_000_000_000L;
+		} else if (readMode.equals("RANDOM_ROW_SEQUENTIAL_COLUMNS")) {
+			long rowAccesses = statisticsDB.getMaxId();
 			for (long access = 0; access < rowAccesses; access++) {
 				long r = (long) (random.nextDouble() * statisticsDB.getMaxId()) + 1;
 				for (int c = 0; c < (3 * numberOfChunks); c++) {
@@ -163,8 +162,8 @@ public class StatisticsDBRead {
 				}
 			}
 
-		} else if (readMode == "RANDOM_ROW_RANDOM_COLUMN") {
-			long rowAccesses = 3_000_000_000L;
+		} else if (readMode.equals("RANDOM_ROW_RANDOM_COLUMN")) {
+			long rowAccesses = statisticsDB.getMaxId();
 			int columnAccesses = 30;
 			for (long rowAccess = 0; rowAccess < rowAccesses; rowAccess++) {
 				long r = (long) (random.nextDouble() * statisticsDB.getMaxId()) + 1;
@@ -177,8 +176,7 @@ public class StatisticsDBRead {
 			System.err.println("Invalid read mode: " + readMode);
 			System.exit(1);
 		}
-		long durationSec = (System.currentTimeMillis() - start)
-				/ 1000;
+		long durationSec = (System.currentTimeMillis() - start) / 1000;
 		System.out.println("Reading took " + durationSec + " sec");
 
 		System.out.println(optimizationPreventer);
@@ -198,8 +196,7 @@ public class StatisticsDBRead {
 				totalCacheMisses, totalNotExisting, totalHitrate);
 
 		writeBenchmarkToCSV(resultCSV, tripleCount, numberOfChunks, readMode, statisticsDB.getRowDataLength(),
-				indexCacheSize,
-				extraFilesCacheSize, coveringAlgorithm, implementationNote, durationSec, totalCacheHits,
+				indexCacheSize, extraFilesCacheSize, coveringAlgorithm, implementationNote, durationSec, totalCacheHits,
 				totalCacheMisses, totalHitrate);
 
 		if (WRITE_STATISTICS_DATA) {
@@ -251,8 +248,7 @@ public class StatisticsDBRead {
 	private static void writeBenchmarkToCSV(File resultFile, int tripleCount, int numberOfChunks, String readMode,
 			int dataBytes, long indexCacheSize, long extraFilesCacheSize, String coveringAlgorithm,
 			String implementationNote, long durationSec, long totalCacheHits, long totalCacheMisses,
-			double totalHitrate) throws UnsupportedEncodingException, FileNotFoundException,
-			IOException {
+			double totalHitrate) throws UnsupportedEncodingException, FileNotFoundException, IOException {
 		CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 		CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(resultFile, true), "UTF-8"),
 				csvFileFormat);
