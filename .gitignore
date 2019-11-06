@@ -45,3 +45,4 @@
 /SLRU-CacheSizesLog*.csv
 /SLRU-HitsHistogram*.csv
 /db
+/results-read.csv
