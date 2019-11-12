@@ -306,12 +306,14 @@ public class FileManager {
 	}
 
 	private void loadExtraFiles() {
+		System.out.println("Reading extra files metadata file...");
 		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(extraFilesMetadataFile)) {
 			LongIterator iterator = input.iterator();
 			if (!iterator.hasNext()) {
 				throw new RuntimeException("Metadata File " + extraFilesMetadataFile + " empty");
 			}
 			maxResourceId = iterator.next();
+			System.out.println("Max resource ID: " + maxResourceId);
 			long fileId = -1;
 			int rowLength = -1;
 			int dataLength = -1;
@@ -343,6 +345,7 @@ public class FileManager {
 					throw new RuntimeException("Corrupt extra files metadata file");
 				}
 			}
+			System.out.println("Loaded extra files metadata.");
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
