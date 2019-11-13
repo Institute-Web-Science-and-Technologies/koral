@@ -202,7 +202,7 @@ public class StatisticsDBRead {
 		if (WRITE_STATISTICS_DATA) {
 			// Read statistics and write into csv
 			System.out.println("Writing statistics to file...");
-			writeStatisticsToCSV(encodedChunksDir, statisticsDB);
+			writeStatisticsToCSV(encodedChunksDir, statisticsDB, statisticsDB.getMaxId());
 		}
 
 		statistics.close();
@@ -294,10 +294,7 @@ public class StatisticsDBRead {
 	 * @param outputDir
 	 * @param statisticsDB
 	 */
-	private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB) {
-		// There is currently no easy way to obtain the maxId on a db that was reopened
-		// This is the max id of the dataset hash_4C_6M
-		long maxId = 3625965;
+	private static void writeStatisticsToCSV(File outputDir, GraphStatisticsDatabase statisticsDB, long maxId) {
 		try {
 			CSVFormat csvFileFormat = CSVFormat.RFC4180.withRecordSeparator('\n');
 			CSVPrinter printer = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(outputDir.getCanonicalPath()
