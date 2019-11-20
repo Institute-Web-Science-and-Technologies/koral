@@ -278,7 +278,7 @@ public class MinimalEdgeCutOverCover extends GraphCoverCreatorBase {
               System.currentTimeMillis());
     }
     ProcessBuilder processBuilder = new ProcessBuilder("gpmetis", metisInputGraph.getAbsolutePath(),
-            new Integer(numberOfGraphChunks).toString());
+            Integer.valueOf(numberOfGraphChunks).toString());
     if (logger == null) {
       processBuilder.inheritIO();
     }

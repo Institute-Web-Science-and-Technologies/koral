@@ -23,6 +23,8 @@ import de.uni_koblenz.west.koral.common.config.impl.Configuration;
 import de.uni_koblenz.west.koral.common.config.impl.XMLDeserializer;
 import de.uni_koblenz.west.koral.common.config.impl.XMLSerializer;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * If a new configuration option is added to {@link Configuration}, this class
  * updates the existing configuration file and the configuration file tamplate.
@@ -32,13 +34,16 @@ import de.uni_koblenz.west.koral.common.config.impl.XMLSerializer;
  */
 public class UpdateConfigs {
 
-  public static void main(String[] args) throws InstantiationException, IllegalAccessException {
+  public static void main(String[] args)
+          throws InstantiationException, IllegalAccessException, IllegalArgumentException,
+          InvocationTargetException, NoSuchMethodException, SecurityException {
     UpdateConfigs.update("koralConfig.xml");
     UpdateConfigs.update("koralConfig.xml.template");
   }
 
   private static void update(String confFile)
-          throws InstantiationException, IllegalAccessException {
+          throws InstantiationException, IllegalAccessException, IllegalArgumentException,
+          InvocationTargetException, NoSuchMethodException, SecurityException {
     Configurable conf = new XMLDeserializer().deserialize(Configuration.class, confFile);
     new XMLSerializer().serialize(conf, confFile);
   }

@@ -216,8 +216,8 @@ public class GraphLoaderTask extends Thread implements Closeable {
     if ((state == LoadingState.START) && (measurementCollector != null)) {
       measurementCollector.measureValue(MeasurementType.LOAD_GRAPH_START,
               System.currentTimeMillis(), coverStrategy.toString(),
-              new Integer(replicationPathLength).toString(),
-              new Integer(numberOfGraphChunks).toString());
+              Integer.valueOf(replicationPathLength).toString(),
+              Integer.valueOf(numberOfGraphChunks).toString());
     }
     coverCreator = GraphCoverCreatorFactory.getGraphCoverCreator(coverStrategy, logger,
             measurementCollector);

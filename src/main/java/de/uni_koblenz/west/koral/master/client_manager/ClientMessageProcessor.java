@@ -172,7 +172,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
             new byte[] { MessageType.CLIENT_CONNECTION_CONFIRMATION.getValue() });
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.CLIENT_STARTS_CONNECTION,
-              System.currentTimeMillis(), address, new Integer(clientID).toString());
+              System.currentTimeMillis(), address, Integer.valueOf(clientID).toString());
     }
   }
 
@@ -336,7 +336,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
     }
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.CLIENT_DROP_START,
-              System.currentTimeMillis(), new Integer(clientID).toString());
+              System.currentTimeMillis(), Integer.valueOf(clientID).toString());
     }
     Thread keepAliveThread = new ClientConnectionKeepAliveTask(clientConnections, clientID);
     keepAliveThread.start();
@@ -346,7 +346,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
             MessageType.CLIENT_COMMAND_SUCCEEDED, "Database is dropped, successfully.", logger));
     if (measurementCollector != null) {
       measurementCollector.measureValue(MeasurementType.CLIENT_DROP_END, System.currentTimeMillis(),
-              new Integer(clientID).toString());
+              Integer.valueOf(clientID).toString());
     }
     if (logger != null) {
       logger.finer("Database is dropped.");
@@ -437,7 +437,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
       clientConnections.closeConnection(cID.intValue());
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.CLIENT_CLOSES_CONNECTION,
-                System.currentTimeMillis(), address, new Integer(cID).toString());
+                System.currentTimeMillis(), address, Integer.valueOf(cID).toString());
       }
     } else if (logger != null) {
       logger.finest("ignoring attempt from client " + address
@@ -489,7 +489,7 @@ public class ClientMessageProcessor implements Closeable, ClosedConnectionListen
       clientAddress2Id.remove(address);
       if (measurementCollector != null) {
         measurementCollector.measureValue(MeasurementType.CLIENT_CONNECTION_TIMEOUT,
-                System.currentTimeMillis(), address, new Integer(clientID).toString());
+                System.currentTimeMillis(), address, Integer.valueOf(clientID).toString());
       }
     }
   }

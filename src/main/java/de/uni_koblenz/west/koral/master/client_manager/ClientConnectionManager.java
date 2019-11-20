@@ -129,12 +129,12 @@ public class ClientConnectionManager implements Closeable {
           logger.finer("connected to client " + i + ": " + clientIPAndPort);
         }
         outClientSockets.set(i, socket);
-        latestLifeSignalTimeFromClient.set(i, new Long(System.currentTimeMillis()));
+        latestLifeSignalTimeFromClient.set(i, Long.valueOf(System.currentTimeMillis()));
         return i;
       }
     }
     outClientSockets.add(socket);
-    latestLifeSignalTimeFromClient.add(new Long(System.currentTimeMillis()));
+    latestLifeSignalTimeFromClient.add(Long.valueOf(System.currentTimeMillis()));
 
     if (logger != null) {
       logger.finer("connected to client " + (outClientSockets.size() - 1) + ": " + clientIPAndPort);
@@ -144,7 +144,7 @@ public class ClientConnectionManager implements Closeable {
   }
 
   public void updateTimerFor(int clientID) {
-    latestLifeSignalTimeFromClient.set(clientID, new Long(System.currentTimeMillis()));
+    latestLifeSignalTimeFromClient.set(clientID, Long.valueOf(System.currentTimeMillis()));
   }
 
   public boolean isConnectionClosed(int client) {

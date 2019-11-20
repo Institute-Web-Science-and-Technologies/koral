@@ -44,12 +44,15 @@ import javax.xml.stream.events.XMLEvent;
 public class XMLDeserializer {
 
   public Configurable deserialize(Class<? extends Configurable> configurableClass,
-          String confFileName) throws InstantiationException, IllegalAccessException {
+          String confFileName)
+          throws InstantiationException, IllegalAccessException, IllegalArgumentException,
+          InvocationTargetException, NoSuchMethodException, SecurityException {
     return deserialize(configurableClass, new File(confFileName));
   }
 
   public Configurable deserialize(Class<? extends Configurable> configurableClass, File confFile)
-          throws InstantiationException, IllegalAccessException {
+          throws InstantiationException, IllegalAccessException, IllegalArgumentException,
+          InvocationTargetException, NoSuchMethodException, SecurityException {
     try (BufferedReader br = new BufferedReader(
             new InputStreamReader(new FileInputStream(confFile), "UTF-8"));) {
       return deserialize(configurableClass, br);
@@ -60,8 +63,10 @@ public class XMLDeserializer {
   }
 
   public Configurable deserialize(Class<? extends Configurable> configurableClass,
-          Reader confFileReader) throws InstantiationException, IllegalAccessException {
-    Configurable conf = configurableClass.newInstance();
+          Reader confFileReader)
+          throws InstantiationException, IllegalAccessException, IllegalArgumentException,
+          InvocationTargetException, NoSuchMethodException, SecurityException {
+    Configurable conf = configurableClass.getDeclaredConstructor().newInstance();
     deserialize(conf, confFileReader);
     return conf;
   }

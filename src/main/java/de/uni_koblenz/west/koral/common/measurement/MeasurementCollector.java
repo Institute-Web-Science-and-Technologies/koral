@@ -66,32 +66,32 @@ public class MeasurementCollector implements Closeable {
   }
 
   public void measureValue(MeasurementType type, boolean value) {
-    measureValue(type, new Boolean(value).toString());
+    measureValue(type, Boolean.valueOf(value).toString());
   }
 
   public void measureValue(MeasurementType type, byte value) {
-    measureValue(type, new Byte(value).toString());
+    measureValue(type, Byte.valueOf(value).toString());
   }
 
   public void measureValue(MeasurementType type, short value) {
-    measureValue(type, new Short(value).toString());
+    measureValue(type, Short.valueOf(value).toString());
   }
 
   public void measureValue(MeasurementType type, int value) {
-    measureValue(type, new Integer(value).toString());
+    measureValue(type, Integer.valueOf(value).toString());
   }
 
   public void measureValue(MeasurementType type, long value) {
-    measureValue(type, new Long(value).toString());
+    measureValue(type, Long.valueOf(value).toString());
   }
 
   public void measureValue(MeasurementType type, char value) {
-    measureValue(type, new Character(value).toString());
+    measureValue(type, Character.valueOf(value).toString());
   }
 
   public void measureValue(MeasurementType type, long time, String... values) {
     String[] newValues = new String[values.length + 1];
-    newValues[0] = new Long(time).toString();
+    newValues[0] = Long.valueOf(time).toString();
     System.arraycopy(values, 0, newValues, 1, values.length);
     measureValue(type, newValues);
   }

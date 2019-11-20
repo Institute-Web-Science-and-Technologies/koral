@@ -19,8 +19,8 @@ package de.uni_koblenz.west.koral.common.config.impl;
 import de.uni_koblenz.west.koral.common.config.ConfigurableSerializer;
 
 /**
- * Provides methods to convert the field values of {@link Configuration} to the property values in the configuration
- * file.
+ * Provides methods to convert the field values of {@link Configuration} to the
+ * property values in the configuration file.
  *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
@@ -67,7 +67,7 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
   }
 
   public String serializeClientConnectionTimeout(Configuration conf) {
-    return new Long(conf.getClientConnectionTimeout()).toString();
+    return Long.valueOf(conf.getClientConnectionTimeout()).toString();
   }
 
   public String serializeLogLevel(Configuration conf) {
@@ -83,58 +83,58 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
   }
 
   public String serializeMaxDictionaryWriteBatchSize(Configuration conf) {
-    return new Integer(conf.getMaxDictionaryWriteBatchSize()).toString();
+    return Integer.valueOf(conf.getMaxDictionaryWriteBatchSize()).toString();
   }
 
   public String serializeEnableTransactionsForTripleStore(Configuration conf) {
-    return new Boolean(conf.useTransactionsForTripleStore()).toString();
+    return Boolean.valueOf(conf.useTransactionsForTripleStore()).toString();
   }
 
   public String serializeSizeOfMappingRecycleCache(Configuration conf) {
-    return new Integer(conf.getSizeOfMappingRecycleCache()).toString();
+    return Integer.valueOf(conf.getSizeOfMappingRecycleCache()).toString();
   }
 
   public String serializeUnbalanceThresholdForWorkerThreads(Configuration conf) {
-    return new Double(conf.getUnbalanceThresholdForWorkerThreads()).toString();
+    return Double.valueOf(conf.getUnbalanceThresholdForWorkerThreads()).toString();
   }
 
   public String serializeMappingBundleSize(Configuration conf) {
-    return new Integer(conf.getMappingBundleSize()).toString();
+    return Integer.valueOf(conf.getMappingBundleSize()).toString();
   }
 
   public String serializeReceiverQueueSize(Configuration conf) {
-    return new Integer(conf.getReceiverQueueSize()).toString();
+    return Integer.valueOf(conf.getReceiverQueueSize()).toString();
   }
 
   public String serializeMappingsPerOperationRound(Configuration conf) {
-    return new Integer(conf.getMaxEmittedMappingsPerRound()).toString();
+    return Integer.valueOf(conf.getMaxEmittedMappingsPerRound()).toString();
   }
 
   public String serializeEnableTransactionsForJoinCache(Configuration conf) {
-    return new Boolean(conf.useTransactionsForJoinCache()).toString();
+    return Boolean.valueOf(conf.useTransactionsForJoinCache()).toString();
   }
-  
+
   public String serializeRowDataLength(Configuration conf) {
-	  return new Integer(conf.getRowDataLength()).toString();
+    return Integer.valueOf(conf.getRowDataLength()).toString();
   }
-  
+
   public String serializeIndexCacheSize(Configuration conf) {
-	  return new Integer(conf.getIndexCacheSize()).toString();
+    return Integer.valueOf(conf.getIndexCacheSize()).toString();
   }
 
   public String serializeExtraCacheSize(Configuration conf) {
-	  return new Integer(conf.getExtraCacheSize()).toString();
+    return Integer.valueOf(conf.getExtraCacheSize()).toString();
   }
-  
+
   public String serializeRecyclerCapacity(Configuration conf) {
-	  return new Integer(conf.getRecyclerCapacity()).toString();
+    return Integer.valueOf(conf.getRecyclerCapacity()).toString();
   }
-  
+
   public String serializeBlockSize(Configuration conf) {
-	  return new Integer(conf.getBlockSize()).toString();
+    return Integer.valueOf(conf.getBlockSize()).toString();
   }
-  
+
   public String serializeMaxOpenFiles(Configuration conf) {
-	  return new Integer(conf.getMaxOpenFiles()).toString();
+    return Integer.valueOf(conf.getMaxOpenFiles()).toString();
   }
 }
