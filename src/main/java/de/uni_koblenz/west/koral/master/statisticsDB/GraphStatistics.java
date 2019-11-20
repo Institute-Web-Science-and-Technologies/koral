@@ -30,6 +30,9 @@ import de.uni_koblenz.west.koral.common.io.Statement;
 import de.uni_koblenz.west.koral.common.utils.NumberConversion;
 import de.uni_koblenz.west.koral.master.dictionary.DictionaryEncoder;
 import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.MultiFileGraphStatisticsDatabase;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.SubbenchmarkManager;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
+import playground.StatisticsDBTest;
 
 /**
  * Stores statistical information about the occurrence of resources in the different graph chunks. It receives its data
@@ -53,7 +56,7 @@ public class GraphStatistics implements Closeable {
 		// TODO enable
 		// database = new SQLiteGraphStatisticsDatabase(conf.getStatisticsDir(),
 		// numberOfChunks);
-		database = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks);
+		database = new MultiFileGraphStatisticsDatabase(conf.getStatisticsDir(true), numberOfChunks, logger);
 	}
 
 	public GraphStatistics(GraphStatisticsDatabase database, short numberOfChunks, Logger logger) {
@@ -74,20 +77,27 @@ public class GraphStatistics implements Closeable {
 			return;
 		}
 		try (EncodedFileInputStream in = new EncodedFileInputStream(EncodingFileFormat.EEE, chunk);) {
+			long start = System.nanoTime();
 			for (Statement statement : in) {
+				SubbenchmarkManager.getInstance().addInputReadTime(System.nanoTime() - start);
 				count(statement.getSubjectAsLong(), statement.getPropertyAsLong(), statement.getObjectAsLong(),
 						chunkIndex);
+				start = System.nanoTime();
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-
+		System.out.println("Chunk " + chunkIndex + " done.");
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLogWriter.getInstance().logChunkSwitchEvent();
+		}
 	}
 
 	public void count(long subject, long property, long object, int chunk) {
-		database.incrementSubjectCount(subject, chunk);
-		database.incrementPropertyCount(property, chunk);
-		database.incrementObjectCount(object, chunk);
+		// Remove ownership bits
+		database.incrementSubjectCount(subject & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
+		database.incrementPropertyCount(property & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
+		database.incrementObjectCount(object & 0x00_00_FF_FF_FF_FF_FF_FFL, chunk);
 		database.incrementNumberOfTriplesPerChunk(chunk);
 	}
 

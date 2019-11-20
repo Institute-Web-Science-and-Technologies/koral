@@ -3,80 +3,159 @@ package de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileInputStream;
 import de.uni_koblenz.west.koral.common.io.EncodedLongFileOutputStream;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.FileFlowWatcher;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.log.StorageLogWriter;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraRowStorage;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.ExtraStorageAccessor;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.RowStorage;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.StorageAccessor;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.Cache;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.caching.LRUCache;
+import de.uni_koblenz.west.koral.master.statisticsDB.impl.multi_file.storage.shared_space.HABSESharedSpaceManager;
 import de.uni_koblenz.west.koral.master.utils.LongIterator;
+import playground.StatisticsDBTest;
 
+/**
+ * Topmost class for anything storage related. Acts as an adapter to store and reads statistic rows of row
+ * storages/files. Also persists and loads metadata of these files for reopening the database.
+ *
+ * @author Philipp Töws
+ *
+ */
 public class FileManager {
 
-	private static final int DEFAULT_MAX_OPEN_FILES = 1000;
+	public static final int DEFAULT_MAX_OPEN_FILES = 1000;
 
-	private final LRUCache<Long, ExtraRowFile> extraFiles;
+	public static final int DEFAULT_INDEX_FILE_CACHE_SIZE = 100 * 1024 * 1024;
+
+	public static final int DEFAULT_EXTRAFILES_CACHE_SIZE = 10 * 1024 * 1024;
+
+	public static final int DEFAULT_RECYCLER_CAPACITY = 1024;
+
+	public static final int DEFAULT_BLOCK_SIZE = 4096;
+
+	public static final float DEFAULT_HABSE_ACCESSES_WEIGHT = 1.0f;
+
+	public static final int DEFAULT_HABSE_HISTORY_LENGTH = 100_000;
+
+	private final Logger logger;
+
+	private final Cache<Long, ExtraRowStorage> extraFiles;
 
 	private final String storagePath;
 
-	private final File freeSpaceIndexFile;
+	private final long indexFileCacheSize;
 
-	private RowFile index;
+	private final int mainFileRowLength;
 
-	public FileManager(String storagePath, int maxOpenFiles) {
+	private final File extraFilesMetadataFile;
+
+	private RowStorage index;
+
+	private final HABSESharedSpaceManager extraCacheSpaceManager;
+
+	private long maxResourceId;
+
+	private final int blockSize;
+
+	private final int recyclerCapacity;
+
+	public FileManager(String storagePath, int mainFileRowLength, int blockSize, int maxOpenFiles,
+			long indexFileCacheSize, long extraFilesCacheSize, int recyclerCapacity, float habseAccessesWeight,
+			int habseHistoryLength, Logger logger) {
 		this.storagePath = storagePath;
-		if (!this.storagePath.endsWith(File.separator)) {
-			storagePath += File.separator;
+		this.blockSize = blockSize;
+		this.indexFileCacheSize = indexFileCacheSize;
+		this.mainFileRowLength = mainFileRowLength;
+		this.recyclerCapacity = recyclerCapacity;
+		this.logger = logger;
+
+		if (extraFilesCacheSize > 0) {
+			extraCacheSpaceManager = new HABSESharedSpaceManager(this, extraFilesCacheSize, habseAccessesWeight,
+					habseHistoryLength);
+		} else {
+			extraCacheSpaceManager = null;
 		}
 
-		extraFiles = new LRUCache<Long, ExtraRowFile>(maxOpenFiles) {
+		if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+			StorageLogWriter.createInstance(storagePath);
+		}
+		if (StatisticsDBTest.WATCH_FILE_FLOW) {
+			FileFlowWatcher.createInstance(storagePath);
+		}
+
+		extraFiles = new LRUCache<Long, ExtraRowStorage>(maxOpenFiles) {
 			@Override
-			protected void removeEldest(LRUCache<Long, ExtraRowFile>.DoublyLinkedNode eldest) {
-				// Don't call super, because this way the ExtraFileRow is retained in the internal index
-				eldest.value.close();
+			protected void removeEldest(Long fileId, ExtraRowStorage storage) {
+				// Don't call super so the ExtraFileRow is retained in the internal index
+				storage.close();
 			}
 		};
 
-		freeSpaceIndexFile = new File(storagePath + "freeSpaceIndex");
-		if (freeSpaceIndexFile.exists()) {
+		extraFilesMetadataFile = new File(storagePath, "extraFilesMetadata");
+		if (extraFilesMetadataFile.exists()) {
 			loadExtraFiles();
 		}
 		setup();
+
 	}
 
-	public FileManager(String storagePath) {
-		this(storagePath, DEFAULT_MAX_OPEN_FILES);
+	public FileManager(String storagePath, int mainFileRowLength, int maxExtraFilesAmount, Logger logger) {
+		this(storagePath, mainFileRowLength, DEFAULT_BLOCK_SIZE, DEFAULT_MAX_OPEN_FILES, DEFAULT_INDEX_FILE_CACHE_SIZE,
+				DEFAULT_EXTRAFILES_CACHE_SIZE, DEFAULT_RECYCLER_CAPACITY, DEFAULT_HABSE_ACCESSES_WEIGHT,
+				DEFAULT_HABSE_HISTORY_LENGTH, logger);
 	}
 
 	void setup() {
-		index = new RowFile(storagePath + "statistics", true);
+		index = new StorageAccessor(storagePath + "statistics", 0, mainFileRowLength, blockSize, indexFileCacheSize, 0,
+				true, logger);
 	}
 
 	/**
 	 * Writes a row into the index file.
 	 *
-	 * @param rowId
-	 *            Which row will be (over-)written
+	 * @param resourceId
+	 *            Which resource will be (over-)written
 	 * @param row
 	 *            The bytes of the row, its full length will be written
 	 * @throws IOException
 	 */
-	void writeIndexRow(long rowId, byte[] row) throws IOException {
-		index.writeRow(rowId, row);
+	void writeIndexRow(long resourceId, byte[] row) throws IOException {
+		if (!index.valid()) {
+			index.open(false);
+		}
+		// resourceIds start at 1
+		index.writeRow(resourceId - 1, row);
+		if (resourceId > maxResourceId) {
+			maxResourceId = resourceId;
+		}
 	}
 
 	/**
 	 * Retrieves a row from the index file.
 	 *
-	 * @param rowId
-	 *            Which row to read
+	 * @param resourceId
+	 *            Which resource to read
 	 * @param rowLength
 	 *            How long a row in the index file is in bytes
 	 * @return The read bytes, with a length of rowLength
 	 * @throws IOException
 	 */
-	byte[] readIndexRow(long rowId, int rowLength) throws IOException {
-		return index.readRow(rowId, rowLength);
+	byte[] readIndexRow(long resourceId) throws IOException {
+		if (!index.valid()) {
+			index.open(false);
+		}
+		// resourceIds start at 1
+		return index.readRow(resourceId - 1);
 	}
 
 	/**
@@ -90,7 +169,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	long writeExternalRow(long fileId, byte[] row) throws IOException {
-		ExtraRowFile extraFile = getExtraFile(fileId, true);
+		ExtraRowStorage extraFile = getOrCreateExtraFile(fileId, row.length);
 		return extraFile.writeRow(row);
 	}
 
@@ -107,7 +186,7 @@ public class FileManager {
 	 * @throws IOException
 	 */
 	void writeExternalRow(long fileId, long rowId, byte[] row) throws IOException {
-		ExtraRowFile extraFile = getExtraFile(fileId, true);
+		ExtraRowStorage extraFile = getExtraFile(fileId);
 		extraFile.writeRow(rowId, row);
 	}
 
@@ -123,9 +202,9 @@ public class FileManager {
 	 * @return The read bytes with a length of rowLength
 	 * @throws IOException
 	 */
-	byte[] readExternalRow(long fileId, long rowId, int rowLength) throws IOException {
-		ExtraRowFile extraFile = getExtraFile(fileId, false);
-		return extraFile.readRow(rowId, rowLength);
+	byte[] readExternalRow(long fileId, long rowId) throws IOException {
+		ExtraRowStorage extraFile = getExtraFile(fileId);
+		return extraFile.readRow(rowId);
 	}
 
 	/**
@@ -138,28 +217,65 @@ public class FileManager {
 	 *            Which row to remove
 	 */
 	void deleteExternalRow(long fileId, long rowId) {
-		getExtraFile(fileId, false).deleteRow(rowId);
+		getExtraFile(fileId).deleteRow(rowId);
+	}
+
+	public Iterator<Entry<Long, ExtraRowStorage>> getLRUExtraFiles() {
+		return extraFiles.iteratorFromLast();
 	}
 
 	/**
-	 * Returns a RandomAccessFile instance of the specified extra file. If it needs to be created or re-opened, it's
-	 * also registered in the {@link #extraFiles} index.
+	 * Returns a ExtraRowStorage instance of the specified extra file. If it needs to be created or re-opened, it's also
+	 * registered in the {@link #extraFiles} index.
 	 *
 	 * @param fileId
 	 *            The identifier of the extra file. Equals the metadata bits of a main file row.
-	 * @param createIfNotExisting
-	 *            If the file should be created if it doesn't exist already
 	 * @return A RandomAccessFile instance of the specified extra file
 	 * @throws IOException
 	 */
-	private ExtraRowFile getExtraFile(long fileId, boolean createIfNotExisting) {
-		ExtraRowFile extra = extraFiles.get(fileId);
+	private ExtraRowStorage getOrCreateExtraFile(long fileId, int rowLength) {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
+		ExtraRowStorage extra = extraFiles.get(fileId);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.GET_EXTRA_FILE,
+					System.nanoTime() - start);
+		}
 		if (extra == null) {
-			extra = new ExtraRowFile(storagePath + String.valueOf(fileId), createIfNotExisting);
+			extra = new ExtraStorageAccessor(storagePath + String.valueOf(fileId), fileId, rowLength, blockSize,
+					extraCacheSpaceManager, recyclerCapacity, null, true, logger);
 			extraFiles.put(fileId, extra);
 		}
 		if (!extra.valid()) {
-			extra.open(createIfNotExisting);
+			extra.open(true);
+		}
+		return extra;
+	}
+
+	/**
+	 * Returns a ExtraRowStorage instance of the specified extra file, similar to
+	 * {@link #getOrCreateExtraFile(long, int)}. This method won't try to create a storage if it doesn't exist, and will
+	 * throw an exception instead.
+	 *
+	 * @param fileId
+	 * @return
+	 */
+	private ExtraRowStorage getExtraFile(long fileId) {
+		long start = 0;
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			start = System.nanoTime();
+		}
+		ExtraRowStorage extra = extraFiles.get(fileId);
+		if (StatisticsDBTest.SUBBENCHMARKS) {
+			SubbenchmarkManager.getInstance().addTime(SubbenchmarkManager.SUBBENCHMARK_TASK.GET_EXTRA_FILE,
+					System.nanoTime() - start);
+		}
+		if (extra == null) {
+			throw new RuntimeException("File " + fileId + " does not exist");
+		} else if (!extra.valid()) {
+			extra.open(false);
 		}
 		return extra;
 	}
@@ -168,17 +284,38 @@ public class FileManager {
 	 * Deletes all extra files that are empty. Files must be closed with {@link #close()} beforehand.
 	 */
 	void deleteEmptyFiles() {
-		for (ExtraRowFile extraRowFile : extraFiles.values()) {
+		for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
+			ExtraRowStorage extraRowFile = entry.getValue();
 			if (extraRowFile.isEmpty()) {
 				extraRowFile.delete();
+				extraFiles.remove(entry.getKey());
 			}
 		}
 	}
 
+	void deleteExtraFile(long fileId) {
+		ExtraRowStorage extraRowFile = extraFiles.get(fileId);
+		extraRowFile.delete();
+		extraFiles.remove(fileId);
+	}
+
+	void defragFreeSpaceIndexes() {
+		for (ExtraRowStorage extraRowFile : extraFiles.values()) {
+			extraRowFile.defragFreeSpaceIndex();
+		}
+	}
+
 	private void loadExtraFiles() {
-		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(freeSpaceIndexFile)) {
+		System.out.println("Reading extra files metadata file...");
+		try (EncodedLongFileInputStream input = new EncodedLongFileInputStream(extraFilesMetadataFile)) {
 			LongIterator iterator = input.iterator();
+			if (!iterator.hasNext()) {
+				throw new RuntimeException("Metadata File " + extraFilesMetadataFile + " empty");
+			}
+			maxResourceId = iterator.next();
+			System.out.println("Max resource ID: " + maxResourceId);
 			long fileId = -1;
+			int rowLength = -1;
 			int dataLength = -1;
 			long[] list = null;
 			int listIndex = 0;
@@ -186,6 +323,8 @@ public class FileManager {
 				long l = iterator.next();
 				if (fileId == -1) {
 					fileId = l;
+				} else if (rowLength == -1) {
+					rowLength = (int) l;
 				} else if (dataLength == -1) {
 					dataLength = (int) l;
 					list = new long[dataLength];
@@ -194,35 +333,42 @@ public class FileManager {
 					listIndex++;
 					if (listIndex == dataLength) {
 						// Reading one entry is done, store and reset everything for next one
-						extraFiles.put(fileId, new ExtraRowFile(storagePath + fileId, false, list));
+						extraFiles.put(fileId, new ExtraStorageAccessor(storagePath + fileId, fileId, rowLength,
+								blockSize, extraCacheSpaceManager, recyclerCapacity, list, false, logger));
 						fileId = -1;
+						rowLength = -1;
 						dataLength = -1;
 						list = null;
 						listIndex = 0;
 					}
 				} else {
-					iterator.close();
 					throw new RuntimeException("Corrupt extra files metadata file");
 				}
 			}
-			iterator.close();
+			System.out.println("Loaded extra files metadata.");
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	void flush() {
-		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(freeSpaceIndexFile, false)) {
+	void flush() throws IOException {
+		index.flush();
+		for (ExtraRowStorage extraStorage : extraFiles.values()) {
+			extraStorage.flush();
+		}
+		try (EncodedLongFileOutputStream out = new EncodedLongFileOutputStream(extraFilesMetadataFile, false)) {
+			out.writeLong(maxResourceId);
 			Long[] keys = new Long[extraFiles.keySet().size()];
 			extraFiles.keySet().toArray(keys);
 			Arrays.sort(keys);
 			for (long fileId : keys) {
-				ExtraRowFile extraFile = extraFiles.get(fileId);
+				ExtraRowStorage extraFile = extraFiles.get(fileId);
 				if (extraFile.isEmpty()) {
 					continue;
 				}
 				long[] data = extraFile.getFreeSpaceIndexData();
 				out.writeLong(fileId);
+				out.writeLong(extraFile.getRowLength());
 				out.writeLong(data.length);
 				for (int i = 0; i < data.length; i++) {
 					out.writeLong(data[i]);
@@ -240,26 +386,44 @@ public class FileManager {
 		return index.length();
 	}
 
+	long getMaxResourceId() {
+		return maxResourceId;
+	}
+
 	Map<Long, Long> getFreeSpaceIndexLengths() {
 		Map<Long, Long> lengths = new TreeMap<>();
-		for (Entry<Long, ExtraRowFile> entry : extraFiles.entrySet()) {
+		for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
 			lengths.put(entry.getKey(), (long) entry.getValue().getFreeSpaceIndexData().length);
 		}
 		return lengths;
 	}
 
-	/**
-	 * Clears internal fields, without actually deleting the files.
-	 */
-	void clear() {
-		index = null;
-		extraFiles.clear();
+	Map<Long, long[]> getStorageStatistics() {
+		Map<Long, long[]> statistics = new HashMap<>();
+		statistics.put(0L, ((StorageAccessor) index).getStorageStatistics());
+		for (Entry<Long, ExtraRowStorage> entry : extraFiles.entrySet()) {
+			StorageAccessor storageAccessor = (StorageAccessor) entry.getValue();
+			statistics.put(entry.getKey(), storageAccessor.getStorageStatistics());
+		}
+		return statistics;
 	}
 
 	void close() {
-		index.close();
-		extraFiles.values().forEach(extraRowFile -> extraRowFile.close());
-		deleteEmptyFiles();
+		try {
+			flush();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			index.close();
+			extraFiles.values().forEach(extraRowStorage -> extraRowStorage.close());
+			deleteEmptyFiles();
+			if (StatisticsDBTest.ENABLE_STORAGE_LOGGING) {
+				StorageLogWriter.getInstance().close();
+			}
+			if (StatisticsDBTest.WATCH_FILE_FLOW) {
+				FileFlowWatcher.getInstance().close();
+			}
+		}
 	}
 
 }

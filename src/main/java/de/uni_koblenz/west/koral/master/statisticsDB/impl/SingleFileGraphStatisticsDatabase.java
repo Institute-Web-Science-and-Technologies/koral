@@ -163,6 +163,7 @@ public class SingleFileGraphStatisticsDatabase implements GraphStatisticsDatabas
 				statistics.readFully(row);
 			} catch (EOFException e) {
 				// there exists no values yet
+				// Or: The row was not fully written
 			}
 
 			long[] result = new long[(numberOfChunks * 3) + 1];
@@ -187,12 +188,14 @@ public class SingleFileGraphStatisticsDatabase implements GraphStatisticsDatabas
 		int sizeOfRow = (Long.BYTES * numberOfChunks * 3) + Long.BYTES;
 		long sizeOfTriplesPerChunk = Long.BYTES * numberOfChunks;
 		long maxId = 0;
+		long fileLength = 0;
 		try {
-			maxId = ((statistics.length() - sizeOfTriplesPerChunk) / sizeOfRow) + 2;
+			fileLength = statistics.length();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		maxId = (int) Math.ceil((fileLength - sizeOfTriplesPerChunk) / (double) sizeOfRow);
 		return maxId;
 	}
 
@@ -208,37 +211,70 @@ public class SingleFileGraphStatisticsDatabase implements GraphStatisticsDatabas
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("TriplesPerChunk ");
-		for (long l : getChunkSizes()) {
-			sb.append("\t").append(l);
-		}
-		sb.append("\n");
-		sb.append("ResourceID");
-		for (int i = 0; i < numberOfChunks; i++) {
-			sb.append(";").append("subjectInChunk").append(i);
-		}
-		for (int i = 0; i < numberOfChunks; i++) {
-			sb.append(";").append("propertyInChunk").append(i);
-		}
-		for (int i = 0; i < numberOfChunks; i++) {
-			sb.append(";").append("objectInChunk").append(i);
-		}
-		sb.append(";").append("overallOccurrance");
+		int sizeOfRow = (Long.BYTES * numberOfChunks * 3) + Long.BYTES;
+		long fileLength = 0;
 		try {
-			int sizeOfRow = (Long.BYTES * numberOfChunks * 3) + Long.BYTES;
-			long sizeOfTriplesPerChunk = Long.BYTES * numberOfChunks;
-			long maxId = (statistics.length() - sizeOfTriplesPerChunk) / sizeOfRow;
-			for (long id = 1; id <= maxId; id++) {
-				sb.append("\n");
-				sb.append(id);
-				for (long value : getStatisticsForResource(id)) {
-					sb.append(";").append(value);
+			fileLength = statistics.length();
+			statistics.seek(0);
+			sb.append(statistics.readLong() + ",");
+			sb.append(statistics.readLong() + ",");
+			sb.append(statistics.readLong() + ",");
+			sb.append(statistics.readLong());
+			sb.append("FP: " + statistics.getFilePointer() + "\n");
+			byte[] file = new byte[(int) (fileLength - statistics.getFilePointer())];
+			statistics.readFully(file);
+			int i = 0;
+			int c = 0;
+			for (; i < (file.length / sizeOfRow); i++) {
+				for (int j = 0; j < ((numberOfChunks * 3) + 1); j++) {
+					sb.append(NumberConversion.bytes2long(file, (i * sizeOfRow) + (j * Long.BYTES)) + ", ");
 				}
+				sb.append("\n");
+				c++;
 			}
+			sb.append("Total Rows: ").append(c).append("\n");
+			sb.append("Rest:\n");
+			for (int j = i * sizeOfRow; j < file.length; j++) {
+				sb.append(file[j] + ", ");
+			}
+			sb.append("\n");
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return sb.toString();
+//		StringBuilder sb = new StringBuilder();
+//		sb.append("TriplesPerChunk ");
+//		for (long l : getChunkSizes()) {
+//			sb.append("\t").append(l);
+//		}
+//		sb.append("\n");
+//		sb.append("ResourceID");
+//		for (int i = 0; i < numberOfChunks; i++) {
+//			sb.append(";").append("subjectInChunk").append(i);
+//		}
+//		for (int i = 0; i < numberOfChunks; i++) {
+//			sb.append(";").append("propertyInChunk").append(i);
+//		}
+//		for (int i = 0; i < numberOfChunks; i++) {
+//			sb.append(";").append("objectInChunk").append(i);
+//		}
+//		sb.append(";").append("overallOccurrance");
+//		try {
+//			int sizeOfRow = (Long.BYTES * numberOfChunks * 3) + Long.BYTES;
+//			long sizeOfTriplesPerChunk = Long.BYTES * numberOfChunks;
+//			long maxId = (statistics.length() - sizeOfTriplesPerChunk) / sizeOfRow;
+//			for (long id = 1; id <= maxId; id++) {
+//				sb.append("\n");
+//				sb.append(id);
+//				for (long value : getStatisticsForResource(id)) {
+//					sb.append(";").append(value);
+//				}
+//			}
+//		} catch (IOException e) {
+//			throw new RuntimeException(e);
+//		}
+//		return sb.toString();
 	}
 
 }

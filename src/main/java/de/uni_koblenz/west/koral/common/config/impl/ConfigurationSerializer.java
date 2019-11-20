@@ -19,9 +19,9 @@ package de.uni_koblenz.west.koral.common.config.impl;
 import de.uni_koblenz.west.koral.common.config.ConfigurableSerializer;
 
 /**
- * Provides methods to convert the field values of {@link Configuration} to the property values in
- * the configuration file.
- * 
+ * Provides methods to convert the field values of {@link Configuration} to the property values in the configuration
+ * file.
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -86,20 +86,8 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
     return new Integer(conf.getMaxDictionaryWriteBatchSize()).toString();
   }
 
-  public String serializeTripleStoreStorageType(Configuration conf) {
-    return conf.getTripleStoreStorageType().name();
-  }
-
   public String serializeEnableTransactionsForTripleStore(Configuration conf) {
     return new Boolean(conf.useTransactionsForTripleStore()).toString();
-  }
-
-  public String serializeEnableAsynchronousWritesForTripleStore(Configuration conf) {
-    return new Boolean(conf.isTripleStoreAsynchronouslyWritten()).toString();
-  }
-
-  public String serializeTripleStoreCacheType(Configuration conf) {
-    return conf.getTripleStoreCacheType().name();
   }
 
   public String serializeSizeOfMappingRecycleCache(Configuration conf) {
@@ -122,20 +110,31 @@ public class ConfigurationSerializer implements ConfigurableSerializer {
     return new Integer(conf.getMaxEmittedMappingsPerRound()).toString();
   }
 
-  public String serializeJoinCacheStorageType(Configuration conf) {
-    return conf.getJoinCacheStorageType().name();
-  }
-
   public String serializeEnableTransactionsForJoinCache(Configuration conf) {
     return new Boolean(conf.useTransactionsForJoinCache()).toString();
   }
-
-  public String serializeEnableAsynchronousWritesForJoinCache(Configuration conf) {
-    return new Boolean(conf.isJoinCacheAsynchronouslyWritten()).toString();
+  
+  public String serializeRowDataLength(Configuration conf) {
+	  return new Integer(conf.getRowDataLength()).toString();
+  }
+  
+  public String serializeIndexCacheSize(Configuration conf) {
+	  return new Integer(conf.getIndexCacheSize()).toString();
   }
 
-  public String serializeJoinCacheType(Configuration conf) {
-    return conf.getJoinCacheType().name();
+  public String serializeExtraCacheSize(Configuration conf) {
+	  return new Integer(conf.getExtraCacheSize()).toString();
   }
-
+  
+  public String serializeRecyclerCapacity(Configuration conf) {
+	  return new Integer(conf.getRecyclerCapacity()).toString();
+  }
+  
+  public String serializeBlockSize(Configuration conf) {
+	  return new Integer(conf.getBlockSize()).toString();
+  }
+  
+  public String serializeMaxOpenFiles(Configuration conf) {
+	  return new Integer(conf.getMaxOpenFiles()).toString();
+  }
 }

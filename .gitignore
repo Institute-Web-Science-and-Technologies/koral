@@ -27,4 +27,22 @@
 /koralConfig.xml
 /build/
 /target/
+# Lock files
+**/.~lock*
+
+# Output files of StatisticsDB
 /bigone_*_chunks.csv
+/SingleFileGraphStatisticsDatabase-statistics.csv
+/MultiFileGraphStatisticsDatabase-statistics.csv
+/fileDistribution-*.csv
+/metastatistics-*.txt
+/storageStatistics-*.csv
+/*results.csv
+/storage/
+/gc.log
+/subbenchmarks.csv
+/CPUCB*.csv
+/SLRU-CacheSizesLog*.csv
+/SLRU-HitsHistogram*.csv
+/db
+/results-read.csv

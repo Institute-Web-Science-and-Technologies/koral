@@ -20,13 +20,11 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import de.uni_koblenz.west.koral.common.config.ConfigurableDeserializer;
-import de.uni_koblenz.west.koral.common.mapDB.MapDBCacheOptions;
-import de.uni_koblenz.west.koral.common.mapDB.MapDBStorageOptions;
 
 /**
  * Provides methods to convert the property values in the configuration file to the field values of
  * {@link Configuration}.
- * 
+ *
  * @author Daniel Janke &lt;danijankATuni-koblenz.de&gt;
  *
  */
@@ -100,37 +98,10 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
     }
   }
 
-  public void deserializeTripleStoreStorageType(Configuration conf, String storageType) {
-    if ((storageType != null) && !storageType.isEmpty()) {
-      try {
-        conf.setTripleStoreStorageType(MapDBStorageOptions.valueOf(storageType.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
-    }
-  }
-
   public void deserializeEnableTransactionsForTripleStore(Configuration conf,
       String enableTransactions) {
     if ((enableTransactions != null) && !enableTransactions.isEmpty()) {
       conf.setUseTransactionsForTripleStore(Boolean.parseBoolean(enableTransactions));
-    }
-  }
-
-  public void deserializeEnableAsynchronousWritesForTripleStore(Configuration conf,
-      String writeAsynchronously) {
-    if ((writeAsynchronously != null) && !writeAsynchronously.isEmpty()) {
-      conf.setTripleStoreAsynchronouslyWritten(Boolean.parseBoolean(writeAsynchronously));
-    }
-  }
-
-  public void deserializeTripleStoreCacheType(Configuration conf, String cacheType) {
-    if ((cacheType != null) && !cacheType.isEmpty()) {
-      try {
-        conf.setTripleStoreCacheType(MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
     }
   }
 
@@ -154,38 +125,35 @@ public class ConfigurationDeserializer implements ConfigurableDeserializer {
     conf.setMaxEmittedMappingsPerRound(Integer.parseInt(mappingsPerRound));
   }
 
-  public void deserializeJoinCacheStorageType(Configuration conf, String storageType) {
-    if ((storageType != null) && !storageType.isEmpty()) {
-      try {
-        conf.setJoinCacheStorageType(MapDBStorageOptions.valueOf(storageType.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
-    }
-  }
-
   public void deserializeEnableTransactionsForJoinCache(Configuration conf,
       String enableTransactions) {
     if ((enableTransactions != null) && !enableTransactions.isEmpty()) {
       conf.setUseTransactionsForJoinCache(Boolean.parseBoolean(enableTransactions));
     }
   }
-
-  public void deserializeEnableAsynchronousWritesForJoinCache(Configuration conf,
-      String writeAsynchronously) {
-    if ((writeAsynchronously != null) && !writeAsynchronously.isEmpty()) {
-      conf.setJoinCacheAsynchronouslyWritten(Boolean.parseBoolean(writeAsynchronously));
-    }
+  
+  public void deserializeRowDataLength(Configuration conf, String rowDataLength) {
+	  conf.setRowDataLength(Integer.parseInt(rowDataLength));
   }
-
-  public void deserializeJoinCacheType(Configuration conf, String cacheType) {
-    if ((cacheType != null) && !cacheType.isEmpty()) {
-      try {
-        conf.setJoinCacheType(MapDBCacheOptions.valueOf(cacheType.toUpperCase()));
-      } catch (IllegalArgumentException e) {
-
-      }
-    }
+  
+  public void deserializeIndexCacheSize(Configuration conf, String indexCacheSize) {
+	  conf.setIndexCacheSize(Integer.parseInt(indexCacheSize));
+  }
+  
+  public void deserializeExtraCacheSize(Configuration conf, String extraCacheSize) {
+	  conf.setExtraCacheSize(Integer.parseInt(extraCacheSize));
+  }
+  
+  public void deserializeRecyclerCapacity(Configuration conf, String recyclerCapacity) {
+	  conf.setRecyclerCapacity(Integer.parseInt(recyclerCapacity));
+  }
+  
+  public void deserializeBlockSize(Configuration conf, String blockSize) {
+	  conf.setBlockSize(Integer.parseInt(blockSize));
+  }
+  
+  public void deserializeMaxOpenFiles(Configuration conf, String maxOpenFiles) {
+	  conf.setMaxOpenFiles(Integer.parseInt(maxOpenFiles));
   }
 
 }
