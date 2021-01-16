@@ -46,30 +46,6 @@
 		<value>100000</value>
 	</property>
 	<property>
-		<name>tripleStoreStorageType</name>
-		<description>Defines how the triple store is persisted:
-MEMORY = triples are only stored in memory
-MEMORY_MAPPED_FILE = triples are stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required.
-RANDOM_ACCESS_FILE = triples are is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.</description>
-		<value>MEMORY_MAPPED_FILE</value>
-	</property>
-	<property>
-		<name>enableAsynchronousWritesForTripleStore</name>
-		<description>If set to true, updates are written in a separate thread asynchronously.</description>
-		<value>true</value>
-	</property>
-	<property>
-		<name>tripleStoreCacheType</name>
-		<description>Defines how the instance cache works:
-NONE = no instances are cached
-HASH_TABLE = a cached instance is deleted, if a hash collision occurs
-LEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size
-HARD_REFERENCE = no instance is removed from the cache automatically
-SOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full
-WEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them</description>
-		<value>HASH_TABLE</value>
-	</property>
-	<property>
 		<name>sizeOfMappingRecycleCache</name>
 		<description>In order to prevent a frequent garbage collection, Mapping objects are recycled. This option defines how many Mapping objects should be cached for reuse.</description>
 		<value>100000</value>
@@ -93,29 +69,5 @@ WEAK_REFERENCE = instances are removed from the cache by the garbage collector, 
 		<name>mappingsPerOperationRound</name>
 		<description>Defines the maximum amount of mappings that are emitted by a query operation before the scheduler executes the next operation.</description>
 		<value>100</value>
-	</property>
-	<property>
-		<name>joinCacheStorageType</name>
-		<description>Defines how the join cache is persisted:
-MEMORY = triples are only stored in memory
-MEMORY_MAPPED_FILE = triples are stored as a file located in dictionaryDir which is mapped to memory. In Linux no additional caching is required.
-RANDOM_ACCESS_FILE = triples are is stored as a file located in dictionaryDir. Each dictionary lookup will result in a file access.</description>
-		<value>MEMORY_MAPPED_FILE</value>
-	</property>
-	<property>
-		<name>enableAsynchronousWritesForJoinCache</name>
-		<description>If set to true, updates are written in a separate thread asynchronously.</description>
-		<value>true</value>
-	</property>
-	<property>
-		<name>joinCacheType</name>
-		<description>Defines how the join cache works:
-NONE = no instances are cached
-HASH_TABLE = a cached instance is deleted, if a hash collision occurs
-LEAST_RECENTLY_USED = the least recently used instance is deleted, if the cache reaches its maximum size
-HARD_REFERENCE = no instance is removed from the cache automatically
-SOFT_REFERENCE = instances are removed from the cache by the garbage collector, if no hard reference exists on them and the memory is full
-WEAK_REFERENCE = instances are removed from the cache by the garbage collector, as soon as no hard reference exists on them</description>
-		<value>HASH_TABLE</value>
 	</property>
 </config>
